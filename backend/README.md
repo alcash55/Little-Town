@@ -1,23 +1,66 @@
 # Flask Backend
 This is a Flask backend for an application that handles events. The backend consists of the following components:
 
-* `main.py`: The main Flask application that sets up the routes and runs the server.
-* `database.py`: A script that handles the database connection and initialization.
-* `requirements.txt`: A list of the Python packages required by the application.
-* `controllers/`: A directory containing modules that define the controllers for each endpoint.
-* `models/`: A directory containing the SQLAlchemy models for the database tables.
+## Directory tree
+```bash
+backend
+│   README.md
+│   requirements.txt
+│
+├───flask_app
+│   │   config.py
+│   │
+│   └───app
+│       │   extensions.py
+│       │   __init__.py
+│       │
+│       ├───events
+│       │       routes.py
+│       │       __init__.py
+│       │
+│       ├───main
+│       │       routes.py
+│       │       __init__.py
+│       │
+│       └───models
+│               event.py
+│               __init__.py
+│
+└───tests
+```
+
+* `README.md`: This file provides an overview of the project and its structure.
+* `requirements.txt`: This file lists all the Python packages required to run the application.
+* `flask_app/config.py`: This file contains the configuration settings for the application, including the database config.
+* `flask_app/app/extensions.py`: This file initializes the Flask-Migrate and Flask-SQLAlchemy extensions.
+* `flask_app/app/__init__.py`: This file creates the Flask application factory, which initializes the application and its extensions.
+* `flask_app/app/events`: This directory contains the Flask blueprint for the events module.
+* `flask_app/app/models`: This directory contains the SQLAlchemy models for the application's database.
+* `tests`: This directory contains unit tests for the application.
 
 ## Usage
-To run the backend, you need to have Python 3 installed on your machine. You can install the required packages by running the following command:
+To run the backend, you need to have Python 3 installed on your machine.
+
+Navigate to `backend` directory:
+
+```bash
+cd backend
+```
+
+Install required packages by running the following command:
 
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-To start the server, run the following command:
+To start the development server, run the following command:
 
 ```bash
-python main.py
+flask --app flask_app/app run
 ```
 
 This will start the server on http://localhost:5000/.
+
+## Tests
+
+TODO
