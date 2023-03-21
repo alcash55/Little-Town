@@ -17,7 +17,7 @@ def get_events():
 @bp.route("/events", methods=["POST"])
 def create_event():
     data = request.get_json()
-    event = Event(name=data["name"], date=data["date"], location=data["location"])
+    event = Event(name=data["name"], description=data.get("description"))
     db.session.add(event)
     db.session.commit()
     return jsonify(event.to_dict()), 201
@@ -34,8 +34,7 @@ def update_event(event_id):
     event = Event.query.get_or_404(event_id)
     data = request.get_json()
     event.name = data.get("name", event.name)
-    event.date = data.get("date", event.date)
-    event.location = data.get("location", event.location)
+    event.description = data.get("description", event.description)
     db.session.commit()
     return jsonify(event.to_dict()), 200
 
