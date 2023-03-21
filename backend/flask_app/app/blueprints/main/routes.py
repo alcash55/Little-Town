@@ -1,4 +1,4 @@
-from app.main import bp
+from app.blueprints.main import bp
 from flask import render_template
 
 
