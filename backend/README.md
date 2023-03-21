@@ -34,7 +34,7 @@ backend
 * `flask_app/config.py`: This file contains the configuration settings for the application, including the database config.
 * `flask_app/app/extensions.py`: This file initializes the Flask-Migrate and Flask-SQLAlchemy extensions.
 * `flask_app/app/__init__.py`: This file creates the Flask application factory, which initializes the application and its extensions.
-* `flask_app/app/events`: This directory contains the Flask blueprint for the events module.
+* `flask_app/app/blueprints`: This directory contains the Flask blueprints and routes.
 * `flask_app/app/models`: This directory contains the SQLAlchemy models for the application's database.
 * `tests`: This directory contains unit tests for the application.
 
