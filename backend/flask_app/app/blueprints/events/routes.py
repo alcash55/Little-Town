@@ -1,12 +1,13 @@
-from app.events import bp
+from app.blueprints.events import bp
 from app.extensions import db
 from app.models.event import Event
 from flask import jsonify, render_template, request
 
 
-@bp.route('/')
+@bp.route("/")
 def index():
-    return render_template('events/index.html')
+    return render_template("events/index.html")
+
 
 @bp.route("/events", methods=["GET"])
 def get_events():
