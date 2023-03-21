@@ -1,5 +1,5 @@
 # Flask Backend
-This is a Flask backend for an application that handles events. The backend consists of the following components:
+This is a Flask backend for an LT Event application
 
 ## Directory tree
 ```bash
@@ -60,6 +60,38 @@ flask --app flask_app/app run
 ```
 
 This will start the server on http://localhost:5000/.
+
+## Database
+To create the database with all tables, run the following command in the `backend` directory:
+
+
+```bash
+flask --app flask_app/app shell
+```
+
+In the shell, run the following function to create the database:
+
+```bash
+db.create_all()
+quit()
+```
+
+Use `db.drop_all()` to clean database and `db.create_all()` to recreate database.
+
+### Migration
+To make changes to the database, use Flask-Migrate's command-line tool
+
+Create a new migration with following command:
+
+```bash
+flask --app flask_app/app db migrate -m "message"
+```
+
+Apply the migration to the database with following command:
+
+```bash
+flask --app flask_app/app db upgrade
+```
 
 ## Tests
 
