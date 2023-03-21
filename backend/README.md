@@ -8,29 +8,25 @@ backend
 │   requirements.txt
 │
 ├───flask_app
+│   │   app.db
 │   │   config.py
 │   │
 │   └───app
-│       │   extensions.py
 │       │   __init__.py
+│       │   extensions.py
 │       │
-│       ├───events
-│       │       routes.py
-│       │       __init__.py
-│       │
-│       ├───main
-│       │       routes.py
-│       │       __init__.py
+│       ├───blueprints
 │       │
 │       └───models
-│               event.py
-│               __init__.py
 │
-└───tests
+├───migrations
+│
+└───test
 ```
 
 * `README.md`: This file provides an overview of the project and its structure.
 * `requirements.txt`: This file lists all the Python packages required to run the application.
+* `migrations`: This directory contains Flask-Migrations files.
 * `flask_app/config.py`: This file contains the configuration settings for the application, including the database config.
 * `flask_app/app/extensions.py`: This file initializes the Flask-Migrate and Flask-SQLAlchemy extensions.
 * `flask_app/app/__init__.py`: This file creates the Flask application factory, which initializes the application and its extensions.
