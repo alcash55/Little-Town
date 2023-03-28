@@ -43,6 +43,24 @@ Navigate to `backend` directory:
 cd backend
 ```
 
+Create virtual environment:
+
+```bash
+python -m venv venv
+```
+
+Activate virtual env:
+
+Windows:
+```bash
+venv\Scripts\activate.bat
+```
+
+Linux/MacOS:
+```bash
+source venv/bin/activate
+```
+
 Install required packages by running the following command:
 
 ```bash
