@@ -22,7 +22,7 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
         justifyContent: "space-between",
         alignItems: "center",
         flexGrow: 1,
-        maxHeight: "75px",
+        height: "50px",
         px: 4,
       }}
     >

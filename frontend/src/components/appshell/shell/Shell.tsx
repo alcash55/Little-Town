@@ -31,9 +31,9 @@ export function Shell() {
   // const sidebarComponent = loadSidebar == true ? <CircularProgress /> : </>
 
   return (
-    <Box sx={{ width: "100%", height: "100%" }}>
+    <Box sx={{ width: "100%", height: "100%", bgcolor: "red" }}>
       <Bar openSidebar={openSidebar} setOpenSidebar={setOpenSidebar} />
-      <Box sx={{ height: "100%", pt: "40px" }}>
+      <Box sx={{ height: "100%", pt: "50px" }}>
         <AllRoutes />
       </Box>
     </Box>
