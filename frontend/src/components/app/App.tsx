@@ -7,7 +7,7 @@ const Shell = React.lazy(() => import("../appshell/shell/Shell"));
 
 export const App = () => {
   return (
-    <Suspense fallback={<CircularProgress />}>
+    <Suspense fallback={<CircularProgress color="success" />}>
       <Providers>
         <Shell />
       </Providers>
