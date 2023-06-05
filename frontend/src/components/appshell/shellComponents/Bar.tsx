@@ -1,5 +1,6 @@
-import { AppBar, IconButton, Typography } from "@mui/material";
+import { AppBar, IconButton, Typography, Box } from "@mui/material";
 import { Menu } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   openSidebar: boolean;
@@ -11,6 +12,8 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
     setOpenSidebar(!openSidebar);
   };
 
+  const navigate = useNavigate();
+
   return (
     <AppBar
       sx={{
@@ -19,14 +22,20 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
         justifyContent: "space-between",
         alignItems: "center",
         flexGrow: 1,
-        height: 50,
+        maxHeight: "75px",
         px: 4,
       }}
     >
       <IconButton onClick={toggleSidebar}>
         <Menu />
       </IconButton>
-      <Typography>Little Town</Typography>
+
+      <Box
+        onClick={() => navigate("/")}
+        sx={{ "&hover": { cursor: "pointer" } }}
+      >
+        <Typography>Little Town</Typography>
+      </Box>
     </AppBar>
   );
 };
