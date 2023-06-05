@@ -5,7 +5,7 @@ export const routes = createRoutes({
   fallback_route: "/404",
   layouts: {},
   routes: [
-    { path: "/404", element: <Pages.Error /> },
+    { path: "*", element: <Pages.Error /> },
     {
       path: "/bingo",
       element: <Pages.Bingo />,
