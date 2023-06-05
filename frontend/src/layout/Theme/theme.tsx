@@ -32,11 +32,11 @@ export const ThemeContext = createContext<IThemeContext>(defaultTheme);
 export const darkTheme = createTheme({
   palette: {
     primary: {
-      main: "orange",
+      main: "#0052cc",
     },
 
     secondary: {
-      main: "green",
+      main: "#edf2ff",
     },
   },
 });
