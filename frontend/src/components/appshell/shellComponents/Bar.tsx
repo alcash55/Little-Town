@@ -30,11 +30,23 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
         <Menu />
       </IconButton>
 
-      <Box
-        onClick={() => navigate("/")}
-        sx={{ "&hover": { cursor: "pointer" } }}
-      >
-        <Typography>Little Town</Typography>
+      <Box>
+        <Typography
+          onClick={() => navigate("/")}
+          component={"div"}
+          sx={{
+            "&:hover": { cursor: "pointer" },
+            width: "100px",
+            height: "44px",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          noWrap
+          fontSize={18}
+        >
+          Little Town
+        </Typography>
       </Box>
     </AppBar>
   );
