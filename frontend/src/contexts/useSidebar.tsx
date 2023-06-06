@@ -36,15 +36,16 @@ export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
     setTimeout(() => {
       const newSidebar = [
         {
-          title: "Bingo",
-          href: "/bingo",
-          icon: "Casino",
-        },
-        {
           title: "Home",
           href: "/",
           icon: "Home",
         },
+        {
+          title: "Bingo",
+          href: "/bingo",
+          icon: "Casino",
+        },
+
         {
           title: "Discord",
           href: "https://discord.com/invite/NqzwU3TyUT",
