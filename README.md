@@ -1,2 +1,5 @@
-# lt-event-app
-Little Town OSRS event app for creating events with variety of different type of games.
+# Little Town Website
+
+Website built for the members of the Little Town clan in [Old School Runescape](https://oldschool.runescape.com/) for bingos and other clan activites.
+
+Built by Cash & Leipuri
