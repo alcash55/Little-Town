@@ -8,7 +8,7 @@ import {
 import { useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useSidebar } from "../../../contexts";
-import { Bar } from "../shellComponents";
+import { Bar, SideBar } from "../shellComponents";
 import { AllRoutes } from "../../Routes";
 
 export function Shell() {
@@ -28,11 +28,16 @@ export function Shell() {
     }
   }, [currentLocation]);
 
-  // const sidebarComponent = loadSidebar == true ? <CircularProgress /> : </>
+  const sidebarComponent = sidebar;
 
   return (
     <Box sx={{ width: "100%", height: "100%", bgcolor: "red" }}>
       <Bar openSidebar={openSidebar} setOpenSidebar={setOpenSidebar} />
+      <SideBar
+        openSidebar={openSidebar}
+        setOpenSidebar={setOpenSidebar}
+        sidebarItems={sidebarComponent}
+      />
       <Box sx={{ height: "100%", pt: "50px" }}>
         <AllRoutes />
       </Box>
