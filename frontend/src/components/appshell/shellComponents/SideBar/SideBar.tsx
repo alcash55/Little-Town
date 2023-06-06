@@ -86,7 +86,7 @@ const Sidebar = ({
               IconComponent = Discord;
               break;
             default:
-              IconComponent = Casino; // Set a default icon component
+              IconComponent = Looks; // Set a default icon component
           }
           return (
             <Button
