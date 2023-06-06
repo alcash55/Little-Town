@@ -60,15 +60,6 @@ const Sidebar = ({
   };
 
   const SideBarItems = () => {
-    // const navigation = async (href: string) => {
-    //   if (href.includes("discord")) {
-    //     let link = href.slice(1);
-    //     console.log(link);
-    //   } else {
-    //     await navigate(href);
-    //   }
-    // };
-
     return (
       <Box
         sx={{
