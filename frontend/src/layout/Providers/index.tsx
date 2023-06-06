@@ -6,7 +6,7 @@ import { SidebarProvider } from "../../contexts";
 
 export function Providers({ children }: PropsWithChildren<{}>) {
   return (
-    <Router basename="https://culinarist.github.io/lt-event-app/">
+    <Router basename="/lt-event-app">
       <SidebarProvider>
         <ThemeProvider>{children}</ThemeProvider>
       </SidebarProvider>
