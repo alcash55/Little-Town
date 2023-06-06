@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Close } from "@mui/icons-material";
+import { Close, Casino, Home, Looks } from "@mui/icons-material";
+import Discord from "../../../../assets/Images/Discord";
 import {
   Box,
   Button,
@@ -71,27 +72,63 @@ const Sidebar = ({
           py: 2,
         }}
       >
-        {sidebarItems.map((item: SidebarItem) => (
-          <Button
-            component={Link}
-            to={`${item.href}`}
-            target={item.href.includes("discord") ? "_blank" : ""}
-            color="inherit"
-            sx={{
-              my: 1,
-              width: "100%",
-              display: "flex",
-              justifyContent: "center",
-            }}
-            key={item.title}
-          >
-            <SvgIcon>{item.icon}</SvgIcon>
-            <Typography>{item.title}</Typography>
-          </Button>
-        ))}
+        {sidebarItems.map((item: SidebarItem) => {
+          let IconComponent;
+
+          switch (item.icon) {
+            case "Casino":
+              IconComponent = Casino;
+              break;
+            case "Home":
+              IconComponent = Home;
+              break;
+            case "Discord":
+              IconComponent = Discord;
+              break;
+            default:
+              IconComponent = Casino; // Set a default icon component
+          }
+          return (
+            <Button
+              startIcon={<IconComponent />} // Render the icon component
+              component={Link}
+              to={`${item.href}`}
+              target={item.href.includes("discord") ? "_blank" : ""}
+              color="inherit"
+              sx={{
+                my: 1,
+                width: "100%",
+                display: "flex",
+                justifyContent: "center",
+              }}
+              key={item.title}
+            >
+              <Typography>{item.title}</Typography>
+            </Button>
+          );
+        })}
       </Box>
     );
   };
+
+  // function getIcons(iconName: string) {
+  //   let result;
+  //   const expr: string = iconName;
+  //   switch (expr) {
+  //     case "Casino":
+  //       result = Casino;
+  //       break;
+  //     case "Home":
+  //       result = Home;
+  //       break;
+  //     case "Discord":
+  //       result = discord;
+  //       break;
+  //     default:
+  //       result = Looks;
+  //   }
+  //   return result;
+  // }
 
   return (
     <Drawer
