@@ -111,25 +111,6 @@ const Sidebar = ({
     );
   };
 
-  // function getIcons(iconName: string) {
-  //   let result;
-  //   const expr: string = iconName;
-  //   switch (expr) {
-  //     case "Casino":
-  //       result = Casino;
-  //       break;
-  //     case "Home":
-  //       result = Home;
-  //       break;
-  //     case "Discord":
-  //       result = discord;
-  //       break;
-  //     default:
-  //       result = Looks;
-  //   }
-  //   return result;
-  // }
-
   return (
     <Drawer
       anchor={"left"}
