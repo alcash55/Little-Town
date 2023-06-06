@@ -1,4 +1,5 @@
 import { AppBar, IconButton, Typography, Box } from "@mui/material";
+import "@fontsource/pacifico";
 import { Menu } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 
@@ -42,6 +43,7 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
+            fontFamily: "'pacifico', cursive",
           }}
           noWrap
           fontSize={18}
