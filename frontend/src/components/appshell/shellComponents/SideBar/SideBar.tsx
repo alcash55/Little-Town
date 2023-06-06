@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { SidebarItem } from "../../../../contexts";
+import "@fontsource/pacifico";
 
 interface Props {
   openSidebar: boolean;
@@ -45,7 +46,9 @@ const Sidebar = ({
             alignItems: "center",
           }}
         >
-          <Typography fontSize={18}>Little Town</Typography>
+          <Typography fontFamily={"'pacifico', cursive"} fontSize={18}>
+            Little Town
+          </Typography>
           <IconButton onClick={closeSideBar}>
             <Close />
           </IconButton>
