@@ -42,7 +42,7 @@ export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
         },
         {
           title: "Home",
-          href: "/home",
+          href: "/",
           icon: "home-icon",
         },
         // Sidebaritems can be added here
