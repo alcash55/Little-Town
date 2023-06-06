@@ -31,7 +31,7 @@ export function Shell() {
   const sidebarComponent = sidebar;
 
   return (
-    <Box sx={{ width: "100%", height: "100%", bgcolor: "red" }}>
+    <Box sx={{ width: "100%", height: "100%" }}>
       <Bar openSidebar={openSidebar} setOpenSidebar={setOpenSidebar} />
       <SideBar
         openSidebar={openSidebar}
