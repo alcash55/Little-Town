@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Close } from "@mui/icons-material";
 import {
   Box,
@@ -15,13 +16,24 @@ interface Props {
   openSidebar: boolean;
   setOpenSidebar: (value: boolean) => void;
   sidebarItems: SidebarItem[];
+  width: string | number;
 }
 
-const Sidebar = ({ openSidebar, setOpenSidebar, sidebarItems }: Props) => {
+const Sidebar = ({
+  openSidebar,
+  setOpenSidebar,
+  sidebarItems,
+  width,
+}: Props) => {
   const navigate = useNavigate();
+  const [drawerWidth, setDrawerWidth] = useState(width);
   const closeSideBar = () => {
     setOpenSidebar(false);
   };
+
+  useEffect(() => {
+    setDrawerWidth(width);
+  }, [window.innerWidth]);
 
   const SideBarTopItem = () => {
     return (
@@ -76,7 +88,7 @@ const Sidebar = ({ openSidebar, setOpenSidebar, sidebarItems }: Props) => {
       anchor={"left"}
       open={openSidebar}
       onClose={closeSideBar}
-      PaperProps={{ sx: { width: "15%" } }}
+      PaperProps={{ sx: { width: drawerWidth, overflowX: "hidden" } }}
     >
       <Box sx={{ width: "100%", px: 2, py: 2 }}>
         <SideBarTopItem />
