@@ -37,6 +37,7 @@ export function Shell() {
         openSidebar={openSidebar}
         setOpenSidebar={setOpenSidebar}
         sidebarItems={sidebarComponent}
+        width={isMobile ? "100%" : isTablet ? "50%" : tempSidebar ? 240 : 240}
       />
       <Box sx={{ height: "100%", pt: "50px" }}>
         <AllRoutes />
