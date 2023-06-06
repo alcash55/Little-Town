@@ -23,7 +23,8 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
         alignItems: "center",
         flexGrow: 1,
         height: "50px",
-        px: 4,
+        pr: 4,
+        pl: 3,
       }}
     >
       <IconButton onClick={toggleSidebar}>
