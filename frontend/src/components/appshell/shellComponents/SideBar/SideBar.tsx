@@ -44,6 +44,9 @@ const Sidebar = ({ openSidebar, setOpenSidebar, sidebarItems }: Props) => {
   };
 
   const SideBarItems = () => {
+    const navigation = async (href: string) => {
+      await navigate(href);
+    };
     return (
       <Box
         sx={{
@@ -56,10 +59,12 @@ const Sidebar = ({ openSidebar, setOpenSidebar, sidebarItems }: Props) => {
         }}
       >
         {sidebarItems.map((item: SidebarItem) => (
-          <Button sx={{ my: 1, width: "100%" }} key={item.title}>
-            <Typography onClick={() => navigate(`/${item.href}`)}>
-              {item.title}
-            </Typography>
+          <Button
+            sx={{ my: 1, width: "100%" }}
+            key={item.title}
+            onClick={() => navigation(`/${item.href}`)}
+          >
+            <Typography>{item.title}</Typography>
           </Button>
         ))}
       </Box>
