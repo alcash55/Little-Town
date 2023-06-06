@@ -1,0 +1,1 @@
+import{j as r}from"./index-b74afd51.js";import{B as t}from"./Shell-2cb42ca4.js";const o=()=>r(t,{sx:{bgcolor:"#424242",height:"100%",display:"flex",justifyContent:"center",alignItems:"center"},children:"404"}),n=o;export{n as default};
