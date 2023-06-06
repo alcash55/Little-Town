@@ -8,8 +8,9 @@ import {
   IconButton,
   Toolbar,
   Typography,
+  SvgIcon,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { SidebarItem } from "../../../../contexts";
 import "@fontsource/pacifico";
 
@@ -59,9 +60,15 @@ const Sidebar = ({
   };
 
   const SideBarItems = () => {
-    const navigation = async (href: string) => {
-      await navigate(href);
-    };
+    // const navigation = async (href: string) => {
+    //   if (href.includes("discord")) {
+    //     let link = href.slice(1);
+    //     console.log(link);
+    //   } else {
+    //     await navigate(href);
+    //   }
+    // };
+
     return (
       <Box
         sx={{
@@ -75,10 +82,19 @@ const Sidebar = ({
       >
         {sidebarItems.map((item: SidebarItem) => (
           <Button
-            sx={{ my: 1, width: "100%" }}
+            component={Link}
+            to={`${item.href}`}
+            target={item.href.includes("discord") ? "_blank" : ""}
+            color="inherit"
+            sx={{
+              my: 1,
+              width: "100%",
+              display: "flex",
+              justifyContent: "center",
+            }}
             key={item.title}
-            onClick={() => navigation(`/${item.href}`)}
           >
+            <SvgIcon>{item.icon}</SvgIcon>
             <Typography>{item.title}</Typography>
           </Button>
         ))}
