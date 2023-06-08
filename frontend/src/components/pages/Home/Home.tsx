@@ -1,5 +1,4 @@
 import { Box, Typography } from "@mui/material";
-import "@fontsource/pacifico";
 import cat from "../../../assets/Images/cat.svg";
 import cum from "../../../assets/Images/cum.svg";
 import fish from "../../../assets/Images/fish.svg";
@@ -49,11 +48,7 @@ const Home = () => {
           pl: 2,
         }}
       >
-        <Typography
-          variant="h1"
-          fontSize={36}
-          fontFamily={"'pacifico', cursive"}
-        >
+        <Typography variant="h1" fontSize={48}>
           Welcome to Little Town!
         </Typography>
 
@@ -77,7 +72,8 @@ const Home = () => {
         </Box>
         <Typography
           variant={"body1"}
-          fontSize={18}
+          fontWeight={500}
+          fontSize={26}
           pt={1}
           pl={0.5}
           width={"65%"}
