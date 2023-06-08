@@ -1,5 +1,4 @@
 import { AppBar, IconButton, Typography, Box } from "@mui/material";
-import "@fontsource/pacifico";
 import { Menu } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 
@@ -28,7 +27,7 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
         pl: 3,
       }}
     >
-      <IconButton onClick={toggleSidebar}>
+      <IconButton onClick={toggleSidebar} sx={{ color: "white" }}>
         <Menu />
       </IconButton>
 
@@ -36,6 +35,7 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
         <Typography
           onClick={() => navigate("/")}
           component={"div"}
+          variant="h1"
           sx={{
             "&:hover": { cursor: "pointer" },
             width: "100px",
@@ -43,7 +43,6 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            fontFamily: "'pacifico', cursive",
           }}
           noWrap
           fontSize={18}
