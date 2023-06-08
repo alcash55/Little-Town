@@ -1,72 +1,43 @@
 import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import {
   ThemeProvider as MuiThemeProvider,
   CssBaseline,
   createTheme,
 } from "@mui/material";
-import type { Theme } from "@mui/material";
-
-export interface IThemeContext {
-  type: "dark";
-  toggle: () => void;
-}
-
-const defaultType = (): "dark" => {
-  //only want to support dark theme for now
-  return "dark";
-};
-
-export const defaultTheme: IThemeContext = {
-  type: defaultType(),
-  toggle: () => undefined,
-};
-
-export const ThemeContext = createContext<IThemeContext>(defaultTheme);
+import "@fontsource/pacifico";
+import "@fontsource/inter";
 
 export const darkTheme = createTheme({
   palette: {
     primary: {
-      main: "#0052cc",
+      main: "#424242",
     },
 
     secondary: {
-      main: "#edf2ff",
+      main: "#121212",
+    },
+  },
+  typography: {
+    h1: {
+      fontFamily: "'pacifico', cursive",
+      fontWeight: 300,
+      fontSize: "6rem",
+      lineHeight: 1,
+      letterSpacing: "-0.01562em",
+    },
+    body1: {
+      fontFamily: "'Inter', sans-serif",
+      fontWeight: 400,
+      fontSize: "1rem",
+      lineHeight: 1.5,
+      letterSpacing: "0.00938em",
     },
   },
 });
 
 export function ThemeProvider({ children }: React.PropsWithChildren<{}>) {
-  const [theme, setThemeType] = useState<"dark">(defaultType());
-  const [ltTheme, setltTheme] = useState<Theme>(
-    createTheme({ palette: { mode: theme } })
-  );
-
-  useEffect(() => {
-    if (theme === ltTheme.palette.mode) return;
-    setltTheme(createTheme({ palette: { mode: theme } }));
-  }, [theme]);
-
-  const setLocalStorage = useCallback((type: "dark") => {
-    localStorage.setItem("theme-type", type);
-  }, []);
-
-  const toggle = useCallback(() => {
-    const newType = theme !== "dark" ? "dark" : "dark";
-    setLocalStorage(newType);
-    setThemeType(newType);
-  }, [setLocalStorage, setThemeType, theme]);
-
   return (
-    <ThemeContext.Provider value={{ type: theme, toggle }}>
-      <MuiThemeProvider theme={ltTheme}>
-        <CssBaseline>{children}</CssBaseline>
-      </MuiThemeProvider>
-    </ThemeContext.Provider>
+    <MuiThemeProvider theme={darkTheme}>
+      <CssBaseline>{children}</CssBaseline>
+    </MuiThemeProvider>
   );
 }
