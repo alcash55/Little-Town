@@ -120,7 +120,7 @@ const Sidebar = ({
         sx: {
           width: drawerWidth,
           overflowX: "hidden",
-          bgcolor: darkTheme.palette.primary.main,
+          bgcolor: darkTheme.palette.secondary.main,
         },
       }}
     >
