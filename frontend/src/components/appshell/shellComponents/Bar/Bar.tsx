@@ -1,6 +1,7 @@
 import { AppBar, IconButton, Typography, Box } from "@mui/material";
 import { Menu } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
+import { darkTheme } from "../../../../layout/Theme";
 
 interface Props {
   openSidebar: boolean;
@@ -17,6 +18,7 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
   return (
     <AppBar
       sx={{
+        bgcolor: darkTheme.palette.secondary.main,
         display: "flex",
         flexDirection: "row",
         justifyContent: "space-between",
