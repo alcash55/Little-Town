@@ -9,11 +9,10 @@ import {
   IconButton,
   Toolbar,
   Typography,
-  SvgIcon,
 } from "@mui/material";
 import { useNavigate, Link } from "react-router-dom";
 import { SidebarItem } from "../../../../contexts";
-import "@fontsource/pacifico";
+import { darkTheme } from "../../../../layout/Theme";
 
 interface Props {
   openSidebar: boolean;
@@ -40,7 +39,7 @@ const Sidebar = ({
 
   const SideBarTopItem = () => {
     return (
-      <Box>
+      <>
         <Toolbar
           sx={{
             display: "flex",
@@ -48,15 +47,15 @@ const Sidebar = ({
             alignItems: "center",
           }}
         >
-          <Typography fontFamily={"'pacifico', cursive"} fontSize={18}>
+          <Typography variant={"h1"} fontSize={24} sx={{ color: "white" }}>
             Little Town
           </Typography>
-          <IconButton onClick={closeSideBar}>
+          <IconButton onClick={closeSideBar} sx={{ color: "white" }}>
             <Close />
           </IconButton>
         </Toolbar>
-        <Divider sx={{ color: "white" }} />
-      </Box>
+        <Divider sx={{ bgcolor: "white" }} />
+      </>
     );
   };
 
@@ -100,6 +99,7 @@ const Sidebar = ({
                 width: "100%",
                 display: "flex",
                 justifyContent: "center",
+                color: "white",
               }}
               key={item.title}
             >
@@ -116,9 +116,15 @@ const Sidebar = ({
       anchor={"left"}
       open={openSidebar}
       onClose={closeSideBar}
-      PaperProps={{ sx: { width: drawerWidth, overflowX: "hidden" } }}
+      PaperProps={{
+        sx: {
+          width: drawerWidth,
+          overflowX: "hidden",
+          bgcolor: darkTheme.palette.secondary.main,
+        },
+      }}
     >
-      <Box sx={{ width: "100%", px: 2, py: 2 }}>
+      <Box sx={{ width: "100%", px: 1, py: 2 }}>
         <SideBarTopItem />
         <SideBarItems />
       </Box>
