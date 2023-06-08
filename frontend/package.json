@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://culinarist.github.io/lt-event-app/",
+  "homepage": "https://alcash55.github.io/Little-Town/",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
