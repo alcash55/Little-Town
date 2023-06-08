@@ -1,5 +1,6 @@
-import { Box } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import { DataGrid, GridColDef, GridValueGetterParams } from "@mui/x-data-grid";
+import { darkTheme } from "../../../layout/Theme";
 
 const Bingo = () => {
   const columns: GridColDef[] = [
@@ -40,37 +41,63 @@ const Bingo = () => {
     { id: 3, lastName: "Lannister", firstName: "Jaime", age: 45 },
     { id: 4, lastName: "Stark", firstName: "Arya", age: 16 },
     { id: 5, lastName: "Targaryen", firstName: "Daenerys", age: null },
-    { id: 6, lastName: "Melisandre", firstName: null, age: 150 },
+    { id: 6, lastName: "Melisandre", firstName: "Toff", age: 150 },
     { id: 7, lastName: "Clifford", firstName: "Ferrara", age: 44 },
     { id: 8, lastName: "Frances", firstName: "Rossini", age: 36 },
     { id: 9, lastName: "Roxie", firstName: "Harvey", age: 65 },
   ];
 
   return (
-    <Box
+    <Stack
+      spacing={5}
+      justifyContent="center"
+      p={2}
       sx={{
-        bgcolor: "#424242",
+        width: "100%",
         height: "100%",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
+        bgcolor: darkTheme.palette.primary.main,
       }}
     >
+      <Typography
+        variant="h1"
+        sx={{
+          fontSize: 42,
+          textAlign: "center",
+        }}
+      >
+        Bingo Scores
+      </Typography>
+      <Typography
+        variant="body1"
+        sx={{
+          fontSize: 24,
+          textAlign: "center",
+        }}
+      >
+        The Scores may take sometime to update
+      </Typography>
       <DataGrid
         rows={rows}
         columns={columns}
-        initialState={{
-          pagination: {
-            paginationModel: {
-              pageSize: 5,
-            },
-          },
-        }}
-        pageSizeOptions={[5]}
-        checkboxSelection
+        // initialState={{
+        //   pagination: {
+        //     paginationModel: {
+        //       pageSize: 10,
+        //     },
+        //   },
+        // }}
+        // pageSizeOptions={[9]}
         disableRowSelectionOnClick
+        sx={{
+          bgcolor: darkTheme.palette.primary.main,
+          color: "white",
+          height: 250,
+        }}
       />
-    </Box>
+      <Typography variant="h1" pb={2} sx={{ fontSize: 42 }}>
+        Winning Team:
+      </Typography>
+    </Stack>
   );
 };
 
