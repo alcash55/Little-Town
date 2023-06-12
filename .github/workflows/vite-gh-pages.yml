@@ -30,13 +30,10 @@ jobs:
         with:
           node-version: 14
           cache: "yarn"
-      - name: Install dependencies
+      - name: Install dependencies & build
         run: |
           cd frontend
           yarn
-      - name: Build
-        run: |
-          cd frontend
           yarn build
       - name: Setup Pages
         uses: actions/configure-pages@v3
