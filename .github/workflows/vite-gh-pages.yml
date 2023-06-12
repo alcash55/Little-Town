@@ -31,9 +31,7 @@ jobs:
           node-version: 14
           cache: "yarn"
       - name: Install dependencies
-        run: |
-          cd frontend/
-          yarn
+        run: yarn
       - name: Build
         run: yarn build
       - name: Setup Pages
