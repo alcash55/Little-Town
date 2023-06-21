@@ -55,6 +55,12 @@ export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
           href: "/BingoBoard",
           icon: "BoardGame",
         },
+        {
+          title: "Team Progress",
+          href: "/TeamProgress",
+          icon: "EmojiEvents",
+        },
+
         // Sidebaritems can be added here
       ];
       setSidebar(newSidebar);

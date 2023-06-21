@@ -14,5 +14,13 @@ export const routes = createRoutes({
       path: "/",
       element: <Pages.Home />,
     },
+    {
+      path: "/BingoBoard",
+      element: <Pages.BingoBoard />,
+    },
+    {
+      path: "/TeamProgress",
+      element: <Pages.TeamProgress />,
+    },
   ],
 });
