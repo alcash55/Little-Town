@@ -41,9 +41,9 @@ export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
           icon: "Home",
         },
         {
-          title: "Bingo",
-          href: "/bingo",
-          icon: "Casino",
+          title: "Team Data",
+          href: "/TeamData",
+          icon: "BarChart",
         },
 
         {

@@ -2,7 +2,7 @@ import { Stack, Typography } from "@mui/material";
 import { DataGrid, GridColDef, GridValueGetterParams } from "@mui/x-data-grid";
 import { darkTheme } from "../../../layout/Theme";
 
-const Bingo = () => {
+const TeamData = () => {
   const columns: GridColDef[] = [
     { field: "id", headerName: "ID", width: 90 },
     {
@@ -101,4 +101,4 @@ const Bingo = () => {
   );
 };
 
-export default Bingo;
+export default TeamData;
