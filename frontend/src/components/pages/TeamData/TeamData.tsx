@@ -94,9 +94,6 @@ const TeamData = () => {
           height: 250,
         }}
       />
-      <Typography variant="h1" pb={2} sx={{ fontSize: 42 }}>
-        Winning Team:
-      </Typography>
     </Stack>
   );
 };
