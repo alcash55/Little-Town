@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Close, Casino, Home, Looks } from "@mui/icons-material";
+import { Close, Home, Looks, BarChart, EmojiEvents } from "@mui/icons-material";
 import Discord from "../../../../assets/Images/Discord";
+import BoardGame from "../../../../assets/Images/BoardGame";
 import {
   Box,
   Button,
@@ -75,14 +76,20 @@ const Sidebar = ({
           let IconComponent;
 
           switch (item.icon) {
-            case "Casino":
-              IconComponent = Casino;
+            case "BarChart":
+              IconComponent = BarChart;
               break;
             case "Home":
               IconComponent = Home;
               break;
             case "Discord":
               IconComponent = Discord;
+              break;
+            case "BoardGame":
+              IconComponent = BoardGame;
+              break;
+            case "EmojiEvents":
+              IconComponent = EmojiEvents;
               break;
             default:
               IconComponent = Looks; // Set a default icon component
