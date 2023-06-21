@@ -7,8 +7,8 @@ export const routes = createRoutes({
   routes: [
     { path: "*", element: <Pages.Error /> },
     {
-      path: "/bingo",
-      element: <Pages.Bingo />,
+      path: "/TeamData",
+      element: <Pages.TeamData />,
     },
     {
       path: "/",
