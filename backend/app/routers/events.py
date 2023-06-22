@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from .. import schemas
-from ..db import models, get_db
+from ..db import get_db, models
 
 router = APIRouter()
 
@@ -14,6 +14,7 @@ def create_event(event: schemas.EventCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_event)
     return db_event
+
 
 # @app.post("/users/", response_model=schemas.User)
 # def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):

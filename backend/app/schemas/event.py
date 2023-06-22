@@ -15,5 +15,6 @@ class Event(EventBase):
     class Config:
         orm_mode = True
 
+
 class EventCreate(EventBase):
     pass
