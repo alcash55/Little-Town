@@ -8,6 +8,7 @@ app = FastAPI()
 
 app.include_router(events.router)
 
+
 @app.get("/healthz/")
 async def health_check():
     return {"status_code": 200, "message": "OK"}
