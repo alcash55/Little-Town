@@ -10,6 +10,9 @@ __pycache__/
 # C extensions
 *.so
 
+credentials.json
+
+
 # Distribution / packaging
 .Python
 build/
