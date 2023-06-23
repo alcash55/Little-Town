@@ -1,35 +1,31 @@
-import {
-  ThemeProvider as MuiThemeProvider,
-  CssBaseline,
-  createTheme,
-} from "@mui/material";
-import "@fontsource/pacifico";
-import "@fontsource/inter";
+import { ThemeProvider as MuiThemeProvider, CssBaseline, createTheme } from '@mui/material';
+import '@fontsource/pacifico';
+import '@fontsource/inter';
 
 export const darkTheme = createTheme({
   palette: {
     primary: {
-      main: "#424242",
+      main: '#424242',
     },
 
     secondary: {
-      main: "#121212",
+      main: '#121212',
     },
   },
   typography: {
     h1: {
       fontFamily: "'pacifico', cursive",
       fontWeight: 300,
-      fontSize: "6rem",
+      fontSize: '6rem',
       lineHeight: 1,
-      letterSpacing: "-0.01562em",
+      letterSpacing: '-0.01562em',
     },
     body1: {
       fontFamily: "'Inter', sans-serif",
       fontWeight: 400,
-      fontSize: "1rem",
+      fontSize: '1rem',
       lineHeight: 1.5,
-      letterSpacing: "0.00938em",
+      letterSpacing: '0.00938em',
     },
   },
 });
