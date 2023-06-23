@@ -1,8 +1,6 @@
-import { Navigate } from 'react-router-dom';
 import type { RouteObject } from 'react-router-dom';
 import type { RouteConfig, PageLayoutObject, PageLayout } from './types';
 import { isValidPageLayout } from './types';
-import React from 'react';
 
 /**
  * This is a function that can be called on a SINGLE `RouteConfig` that will
