@@ -1,19 +1,21 @@
 import { Box, Typography } from '@mui/material';
+import { darkTheme } from '../../../layout/Theme';
 
-const Error = () => {
+const BingoRules = () => {
   return (
     <Box
       sx={{
-        bgcolor: '#424242',
+        bgcolor: darkTheme.palette.primary.main,
+        width: '100%',
         height: '100%',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
       }}
     >
-      <Typography variant="h1">404</Typography>
+      <Typography variant="h1">Da Rules</Typography>
     </Box>
   );
 };
 
-export default Error;
+export default BingoRules;
