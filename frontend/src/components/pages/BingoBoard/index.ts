@@ -1,1 +1,1 @@
-export { default } from "./BingoBoard";
+export { default } from './BingoBoard';
