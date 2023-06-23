@@ -1,5 +1,5 @@
-from .event import Event
+from .events import Event, EventCreate
 
 __all__ = [
-    "Event",
+    "Event", "EventCreate",
 ]
