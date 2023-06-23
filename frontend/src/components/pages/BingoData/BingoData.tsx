@@ -1,9 +1,46 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Stack } from '@mui/material';
+import axios from 'axios';
+import { useState, useEffect } from 'react';
 
 const BingoData = () => {
+  const [results, setResults] = useState<string>('results did not work :(');
+  const [data, setData] = useState<string>('data did not work :(');
+
+  const baseURL = 'http://localhost:8000/';
+  const sheetID = '1UjU_uigJ_ZSvOpj2TiZ51nKgJYJd4I2QyJ5aM--mF7I';
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await axios.get(`${baseURL}sheets/${sheetID}/tab/Sheet1/range/E10:G13`);
+        console.log(data);
+        setResults(JSON.stringify(data.data));
+      } catch (e) {
+        console.log(e);
+        setResults('error');
+      }
+    })();
+  }, [results]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await axios.get(`${baseURL}sheets/${sheetID}/tab/Sheet1/cell/E10`);
+        console.log(data);
+        setData(JSON.stringify(data.data));
+      } catch (e) {
+        console.log(e);
+        setData('error');
+      }
+    })();
+  }, [results]);
+
   return (
-    <Box>
-      <Typography>Team Progress</Typography>
+    <Box sx={{ width: '100%', height: '100%' }}>
+      <Stack spacing={2}>
+        <Typography> {results}</Typography>
+        <Typography> {data}</Typography>
+      </Stack>
     </Box>
   );
 };
