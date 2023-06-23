@@ -22,7 +22,6 @@ backend
 
 - `README.md`: This file provides an overview of the project and its structure.
 - `requirements.txt`: This file lists all the Python packages required to run the application.
-- `app/migrations`: This directory contains Flask-Migrations files.
 - `app/config.py`: This file contains the configuration settings for the application, including the database config.
 - `app/__init__.py`: Empty file that indicates that this is Python module.
 - `app/routers`: This directory contains API endpoints (routes).
