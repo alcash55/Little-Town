@@ -67,6 +67,8 @@ uvicorn app.main:app --reload
 
 This will start the server on http://localhost:8000/.
 
+You can now open `http://localhost:8000/` in your browser to test that API works. Alternatively you can try healtz endpoint `http://localhost:8000/healthz/`.
+
 ## Database
 To create the database with all tables, run the following command in the `backend` directory:
 
