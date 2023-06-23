@@ -60,7 +60,6 @@ export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
           href: "https://discord.com/invite/NqzwU3TyUT",
           icon: "Discord",
         },
-
         // Sidebaritems can be added here
       ];
       setSidebar(newSidebar);
