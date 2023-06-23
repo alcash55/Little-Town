@@ -1,7 +1,7 @@
 """APP/Database deploy script"""
 
-from db import engine
-from db.models.base import Base
+from database import engine
+from models.base import Base
 
 
 def main():
