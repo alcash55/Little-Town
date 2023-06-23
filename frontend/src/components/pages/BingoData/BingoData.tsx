@@ -1,6 +1,7 @@
 import { Box, Typography, Stack } from '@mui/material';
 import axios from 'axios';
 import { useState, useEffect } from 'react';
+import { darkTheme } from '../../../layout/Theme';
 
 const BingoData = () => {
   const [results, setResults] = useState<string>('results did not work :(');
@@ -36,10 +37,10 @@ const BingoData = () => {
   }, [results]);
 
   return (
-    <Box sx={{ width: '100%', height: '100%' }}>
-      <Stack spacing={2}>
-        <Typography> {results}</Typography>
-        <Typography> {data}</Typography>
+    <Box sx={{ width: '100%', height: '100%', bgcolor: darkTheme.palette.primary.main }}>
+      <Stack spacing={5}>
+        <Typography variant="h2"> {results}</Typography>
+        <Typography variant="h2"> {data}</Typography>
       </Stack>
     </Box>
   );
