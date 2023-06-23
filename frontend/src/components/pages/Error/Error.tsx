@@ -1,4 +1,4 @@
-import { Box } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 
 const Error = () => {
   return (
@@ -11,7 +11,7 @@ const Error = () => {
         alignItems: 'center',
       }}
     >
-      404
+      <Typography variant="h1">404</Typography>
     </Box>
   );
 };
