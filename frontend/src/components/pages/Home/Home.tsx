@@ -85,11 +85,11 @@ const Home = () => {
             />
           ))}
         </Box>
+
         <Typography
           variant={"body1"}
           fontWeight={500}
           fontSize={sm ? "1rem" : md ? "1.3rem" : "1.5rem"}
-          pt={1}
           pl={0.5}
           width={sm ? "100%" : "65%"}
         >
