@@ -1,1 +1,1 @@
-export { default } from "./TeamData";
+export { default } from './TeamData';
