@@ -6,4 +6,5 @@ export const Pages = {
   Error: lazy(() => import('./Error')),
   BingoBoard: lazy(() => import('./BingoBoard')),
   BingoData: lazy(() => import('./BingoData')),
+  BingoRules: lazy(() => import('./BingoRules')),
 };

@@ -41,15 +41,21 @@ export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
           icon: 'Home',
         },
         {
-          title: 'Team Data',
-          href: '/TeamData',
-          icon: 'BarChart',
+          title: 'Bingo Rules',
+          href: '/BingoRules',
+          icon: 'Gavel',
         },
         {
           title: 'Bingo Board',
           href: '/BingoBoard',
           icon: 'BoardGame',
         },
+        {
+          title: 'Team Data',
+          href: '/TeamData',
+          icon: 'BarChart',
+        },
+
         {
           title: 'Bingo Data',
           href: '/BingoData',
