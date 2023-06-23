@@ -1,4 +1,5 @@
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, useTheme, useMediaQuery } from "@mui/material";
+import { useEffect, useState } from "react";
 import cat from "../../../assets/Images/cat.svg";
 import cum from "../../../assets/Images/cum.svg";
 import fish from "../../../assets/Images/fish.svg";
@@ -12,6 +13,19 @@ import greenLootBeam from "../../../assets/Images/greenLootBeam.gif";
 import littleTown from "../../../assets/Images/Little_Town.png";
 
 const Home = () => {
+  const [breakpoint, setBreakpoint] = useState<string>("");
+  const theme = useTheme();
+  const sm = useMediaQuery(theme.breakpoints.down("sm"));
+  const md = useMediaQuery(theme.breakpoints.down("md"));
+
+  useEffect(() => {
+    if (window.length <= 600) {
+      setBreakpoint("sm");
+    } else {
+      setBreakpoint("");
+    }
+  }, [window.length, breakpoint]);
+
   const gangIcons = [
     cat,
     cum,
@@ -27,11 +41,12 @@ const Home = () => {
   return (
     <Box
       sx={{
-        backgroundImage: "linear-gradient(to bottom, #2A9D8F, #000000)",
+        backgroundImage: "linear-gradient(to bottom, #2A9D8F, #0d0d0d)",
         height: "100%",
         display: "flex",
         justifyContent: "center",
-        p: 5,
+        pr: 5,
+        pl: 5,
         alignItems: "center",
         flexDirection: "row",
       }}
@@ -73,10 +88,10 @@ const Home = () => {
         <Typography
           variant={"body1"}
           fontWeight={500}
-          fontSize={26}
+          fontSize={sm ? "1rem" : md ? "1.3rem" : "1.5rem"}
           pt={1}
           pl={0.5}
-          width={"65%"}
+          width={sm ? "100%" : "65%"}
         >
           In this Little Town, we strive to create a welcoming and inclusive
           community for all players. We believe that diversity is what makes our
@@ -85,34 +100,39 @@ const Home = () => {
           individuality is a key ingredient in building a vibrant community!
         </Typography>
       </Box>
-      <Box
-        sx={{
-          width: "40%",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          pb: 5,
-        }}
-      >
-        <img
-          src={greenLootBeam}
-          alt={"Loot Beam"}
-          width="150"
-          height="auto"
-          style={{ transform: "rotate(8deg)" }}
-        />
-        <img
-          src={littleTown}
-          alt="Little Town Logo"
-          width="60"
-          height="60"
-          style={{
-            borderRadius: "10px",
-            transform: "rotate(15deg)",
+
+      {sm ? (
+        <></>
+      ) : (
+        <Box
+          sx={{
+            width: "40%",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "start",
+            pb: 5,
           }}
-        />
-      </Box>
+        >
+          <img
+            src={greenLootBeam}
+            alt={"Loot Beam"}
+            width="140"
+            height="auto"
+            style={{ transform: "rotate(8deg)" }}
+          />
+          <img
+            src={littleTown}
+            alt="Little Town Logo"
+            width="60"
+            height="60"
+            style={{
+              borderRadius: "10px",
+              transform: "rotate(15deg)",
+            }}
+          />
+        </Box>
+      )}
     </Box>
   );
 };
