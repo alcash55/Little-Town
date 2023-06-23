@@ -1,14 +1,14 @@
-import { Box } from "@mui/material";
+import { Box } from '@mui/material';
 
 const Error = () => {
   return (
     <Box
       sx={{
-        bgcolor: "#424242",
-        height: "100%",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
+        bgcolor: '#424242',
+        height: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
       }}
     >
       404
