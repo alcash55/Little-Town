@@ -46,11 +46,6 @@ export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
           icon: "BarChart",
         },
         {
-          title: "Discord",
-          href: "https://discord.com/invite/NqzwU3TyUT",
-          icon: "Discord",
-        },
-        {
           title: "Bingo Board",
           href: "/BingoBoard",
           icon: "BoardGame",
@@ -59,6 +54,11 @@ export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
           title: "Team Progress",
           href: "/TeamProgress",
           icon: "EmojiEvents",
+        },
+        {
+          title: "Discord",
+          href: "https://discord.com/invite/NqzwU3TyUT",
+          icon: "Discord",
         },
 
         // Sidebaritems can be added here
