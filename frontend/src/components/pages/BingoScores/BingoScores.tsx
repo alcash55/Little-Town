@@ -9,7 +9,7 @@ interface DataPoint {
   y: number;
 }
 
-const BingoData = () => {
+const BingoScores = () => {
   const teamColors = ['#39f76c', '#854cc2', '#d95f27'];
   const teamNames = ['Based Cigar', 'Gorilla Grip Bussies', 'Stark Industries'];
   const chartData: DataPoint[][] = [
@@ -104,7 +104,7 @@ const BingoData = () => {
   );
 };
 
-export default BingoData;
+export default BingoScores;
 
 // const [results, setResults] = useState<string>('results did not work :(');
 // const [data, setData] = useState<string>('data did not work :(');
