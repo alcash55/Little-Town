@@ -19,8 +19,8 @@ export const routes = createRoutes({
       element: <Pages.BingoBoard />,
     },
     {
-      path: '/BingoData',
-      element: <Pages.BingoData />,
+      path: '/BingoScores',
+      element: <Pages.BingoScores />,
     },
     {
       path: '/BingoRules',
