@@ -57,8 +57,8 @@ export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
         },
 
         {
-          title: 'Bingo Data',
-          href: '/BingoData',
+          title: 'Bingo Scores',
+          href: '/BingoScores',
           icon: 'EmojiEvents',
         },
         {
