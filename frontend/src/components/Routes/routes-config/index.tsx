@@ -1,8 +1,6 @@
-import { Navigate } from "react-router-dom";
-import type { RouteObject } from "react-router-dom";
-import type { RouteConfig, PageLayoutObject, PageLayout } from "./types";
-import { isValidPageLayout } from "./types";
-import React from "react";
+import type { RouteObject } from 'react-router-dom';
+import type { RouteConfig, PageLayoutObject, PageLayout } from './types';
+import { isValidPageLayout } from './types';
 
 /**
  * This is a function that can be called on a SINGLE `RouteConfig` that will
@@ -14,7 +12,7 @@ import React from "react";
 const routeConfigToRouteObj = <T extends PageLayoutObject>(
   { wrapper = undefined, ...route_props }: RouteConfig<T>,
   page_layout_map: T,
-  fallback_route: string
+  fallback_route: string,
 ) => {
   // Return if we don't have an element to wrap
   const hasElement = !!route_props.element;
@@ -29,7 +27,7 @@ const routeConfigToRouteObj = <T extends PageLayoutObject>(
     /// Recursive, because we have to do what we just did for all the children
     /// Ignore undefined children if top level isn't nested
     route_props.children = route_props.children.map((d) =>
-      routeConfigToRouteObj(d, page_layout_map, fallback_route)
+      routeConfigToRouteObj(d, page_layout_map, fallback_route),
     );
   }
   return route_props as RouteObject;
@@ -41,7 +39,7 @@ const routeConfigToRouteObj = <T extends PageLayoutObject>(
  */
 export const createRoutes = <
   PageLayouts extends PageLayoutObject,
-  PageLayoutKeys = PageLayout<PageLayouts>
+  PageLayoutKeys = PageLayout<PageLayouts>,
 >({
   routes,
   layouts,
@@ -57,6 +55,6 @@ export const createRoutes = <
 }) => {
   const FALLBACK_ROUTE = fallback_route; // route we redirect to if not logged in
   return routes.map((route: RouteConfig<PageLayouts>) =>
-    routeConfigToRouteObj<PageLayouts>(route, layouts, FALLBACK_ROUTE)
+    routeConfigToRouteObj<PageLayouts>(route, layouts, FALLBACK_ROUTE),
   ) as RouteObject[];
 };
