@@ -1,3 +1,6 @@
-Flask
-Flask-SQLAlchemy
-Flask-Migrate
+fastapi
+google-api-python-client
+google-auth
+pydantic
+sqlalchemy
+uvicorn[standard]

@@ -1,5 +1,5 @@
-import type { PropsWithChildren } from "react";
-import { createContext, useState, useEffect, useContext, useMemo } from "react";
+import type { PropsWithChildren } from 'react';
+import { createContext, useState, useEffect, useContext, useMemo } from 'react';
 
 export interface SidebarItem {
   title: string;
@@ -36,31 +36,36 @@ export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
     setTimeout(() => {
       const newSidebar = [
         {
-          title: "Home",
-          href: "/",
-          icon: "Home",
+          title: 'Home',
+          href: '/',
+          icon: 'Home',
         },
         {
-          title: "Team Data",
-          href: "/TeamData",
-          icon: "BarChart",
+          title: 'Bingo Rules',
+          href: '/BingoRules',
+          icon: 'Gavel',
         },
         {
-          title: "Discord",
-          href: "https://discord.com/invite/NqzwU3TyUT",
-          icon: "Discord",
+          title: 'Bingo Board',
+          href: '/BingoBoard',
+          icon: 'BoardGame',
         },
         {
-          title: "Bingo Board",
-          href: "/BingoBoard",
-          icon: "BoardGame",
-        },
-        {
-          title: "Team Progress",
-          href: "/TeamProgress",
-          icon: "EmojiEvents",
+          title: 'Team Data',
+          href: '/TeamData',
+          icon: 'BarChart',
         },
 
+        {
+          title: 'Bingo Scores',
+          href: '/BingoScores',
+          icon: 'EmojiEvents',
+        },
+        {
+          title: 'Discord',
+          href: 'https://discord.com/invite/NqzwU3TyUT',
+          icon: 'Discord',
+        },
         // Sidebaritems can be added here
       ];
       setSidebar(newSidebar);
@@ -75,7 +80,7 @@ export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
           loading,
           sidebar,
         }),
-        [loading, sidebar]
+        [loading, sidebar],
       )}
     >
       {children}

@@ -1,26 +1,30 @@
-import { Pages } from "../pages";
-import { createRoutes } from "./routes-config";
+import { Pages } from '../pages';
+import { createRoutes } from './routes-config';
 
 export const routes = createRoutes({
-  fallback_route: "/404",
+  fallback_route: '/404',
   layouts: {},
   routes: [
-    { path: "*", element: <Pages.Error /> },
+    { path: '*', element: <Pages.Error /> },
     {
-      path: "/TeamData",
+      path: '/TeamData',
       element: <Pages.TeamData />,
     },
     {
-      path: "/",
+      path: '/',
       element: <Pages.Home />,
     },
     {
-      path: "/BingoBoard",
+      path: '/BingoBoard',
       element: <Pages.BingoBoard />,
     },
     {
-      path: "/TeamProgress",
-      element: <Pages.TeamProgress />,
+      path: '/BingoScores',
+      element: <Pages.BingoScores />,
+    },
+    {
+      path: '/BingoRules',
+      element: <Pages.BingoRules />,
     },
   ],
 });

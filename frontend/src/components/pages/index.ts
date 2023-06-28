@@ -1,9 +1,10 @@
-import { lazy } from "react";
+import { lazy } from 'react';
 
 export const Pages = {
-  TeamData: lazy(() => import("./TeamData")),
-  Home: lazy(() => import("./Home")),
-  Error: lazy(() => import("./Error")),
-  BingoBoard: lazy(() => import("./BingoBoard")),
-  TeamProgress: lazy(() => import("./TeamProgress")),
+  TeamData: lazy(() => import('./TeamData')),
+  Home: lazy(() => import('./Home')),
+  Error: lazy(() => import('./Error')),
+  BingoBoard: lazy(() => import('./BingoBoard')),
+  BingoRules: lazy(() => import('./BingoRules')),
+  BingoScores: lazy(() => import('./BingoScores')),
 };

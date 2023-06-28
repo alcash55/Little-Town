@@ -1,19 +1,11 @@
-import { useEffect, useState } from "react";
-import { Close, Home, Looks, BarChart, EmojiEvents } from "@mui/icons-material";
-import Discord from "../../../../assets/Images/Discord";
-import BoardGame from "../../../../assets/Images/BoardGame";
-import {
-  Box,
-  Button,
-  Divider,
-  Drawer,
-  IconButton,
-  Toolbar,
-  Typography,
-} from "@mui/material";
-import { useNavigate, Link } from "react-router-dom";
-import { SidebarItem } from "../../../../contexts";
-import { darkTheme } from "../../../../layout/Theme";
+import { useEffect, useState } from 'react';
+import { Close, Home, Looks, BarChart, EmojiEvents, Gavel } from '@mui/icons-material';
+import Discord from '../../../../assets/Images/Discord';
+import BoardGame from '../../../../assets/Images/BoardGame';
+import { Box, Button, Divider, Drawer, IconButton, Toolbar, Typography } from '@mui/material';
+import { useNavigate, Link } from 'react-router-dom';
+import { SidebarItem } from '../../../../contexts';
+import { darkTheme } from '../../../../layout/Theme';
 
 interface Props {
   openSidebar: boolean;
@@ -22,12 +14,7 @@ interface Props {
   width: string | number;
 }
 
-const Sidebar = ({
-  openSidebar,
-  setOpenSidebar,
-  sidebarItems,
-  width,
-}: Props) => {
+const Sidebar = ({ openSidebar, setOpenSidebar, sidebarItems, width }: Props) => {
   const navigate = useNavigate();
   const [drawerWidth, setDrawerWidth] = useState(width);
   const closeSideBar = () => {
@@ -43,19 +30,19 @@ const Sidebar = ({
       <>
         <Toolbar
           sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
           }}
         >
-          <Typography variant={"h1"} fontSize={24} sx={{ color: "white" }}>
+          <Typography variant={'h1'} fontSize={24} sx={{ color: 'white' }}>
             Little Town
           </Typography>
-          <IconButton onClick={closeSideBar} sx={{ color: "white" }}>
+          <IconButton onClick={closeSideBar} sx={{ color: 'white' }}>
             <Close />
           </IconButton>
         </Toolbar>
-        <Divider sx={{ bgcolor: "white" }} />
+        <Divider sx={{ bgcolor: 'white' }} />
       </>
     );
   };
@@ -64,11 +51,11 @@ const Sidebar = ({
     return (
       <Box
         sx={{
-          width: "100%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
           py: 2,
         }}
       >
@@ -76,20 +63,23 @@ const Sidebar = ({
           let IconComponent;
 
           switch (item.icon) {
-            case "BarChart":
+            case 'BarChart':
               IconComponent = BarChart;
               break;
-            case "Home":
+            case 'Home':
               IconComponent = Home;
               break;
-            case "Discord":
+            case 'Discord':
               IconComponent = Discord;
               break;
-            case "BoardGame":
+            case 'BoardGame':
               IconComponent = BoardGame;
               break;
-            case "EmojiEvents":
+            case 'EmojiEvents':
               IconComponent = EmojiEvents;
+              break;
+            case 'Gavel':
+              IconComponent = Gavel;
               break;
             default:
               IconComponent = Looks; // Set a default icon component
@@ -99,14 +89,14 @@ const Sidebar = ({
               startIcon={<IconComponent />} // Render the icon component
               component={Link}
               to={`${item.href}`}
-              target={item.href.includes("discord") ? "_blank" : ""}
+              target={item.href.includes('discord') ? '_blank' : ''}
               color="inherit"
               sx={{
                 my: 1,
-                width: "100%",
-                display: "flex",
-                justifyContent: "center",
-                color: "white",
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'center',
+                color: 'white',
               }}
               key={item.title}
             >
@@ -120,18 +110,18 @@ const Sidebar = ({
 
   return (
     <Drawer
-      anchor={"left"}
+      anchor={'left'}
       open={openSidebar}
       onClose={closeSideBar}
       PaperProps={{
         sx: {
           width: drawerWidth,
-          overflowX: "hidden",
+          overflowX: 'hidden',
           bgcolor: darkTheme.palette.secondary.main,
         },
       }}
     >
-      <Box sx={{ width: "100%", px: 1, py: 2 }}>
+      <Box sx={{ width: '100%', px: 1, py: 2 }}>
         <SideBarTopItem />
         <SideBarItems />
       </Box>
