@@ -1,12 +1,21 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Path, Query
-from sqlalchemy.orm import Session
 
 from ..config import google_sheets_service
 from .. import schemas
+from ..caching import timed_lru_cache
 
 router = APIRouter()
+
+
+@timed_lru_cache(seconds=5)
+def read_sheet_data(sheet_id, range):
+    print("Fetching data from sheet instead of cache")
+    sheet = google_sheets_service.spreadsheets()
+    result = sheet.values().get(spreadsheetId=sheet_id, range=range).execute()
+    values = result.get("values", [])
+    return values
 
 
 @router.get("/sheets/{sheet_id}/tab/{tab_name}/range/{range_id}")
@@ -16,9 +25,7 @@ async def get_range(
     range_id: Annotated[str, Path()]
 ):
     range = f"{tab_name}!{range_id}"
-    sheet = google_sheets_service.spreadsheets()
-    result = sheet.values().get(spreadsheetId=sheet_id, range=range).execute()
-    values = result.get("values", [])
+    values = read_sheet_data(sheet_id, range)
     return values
 
 
