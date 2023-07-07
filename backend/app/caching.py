@@ -1,6 +1,7 @@
 from functools import lru_cache, wraps
 from datetime import datetime, timedelta
 
+
 def timed_lru_cache(seconds: int, maxsize: int = 128):
     def wrapper_cache(func):
         func = lru_cache(maxsize=maxsize)(func)
