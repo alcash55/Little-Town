@@ -9,7 +9,7 @@ from ..caching import timed_lru_cache
 router = APIRouter()
 
 
-@timed_lru_cache(seconds=5)
+@timed_lru_cache(seconds=10)
 def read_sheet_data(sheet_id, range):
     print("Fetching data from sheet instead of cache")
     sheet = google_sheets_service.spreadsheets()
