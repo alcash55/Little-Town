@@ -125,15 +125,9 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
     >
       <Box sx={{ width: '100%', height: '100%', px: 1, py: 2 }}>
         <SideBarTopItem />
-        {loading ? (
-          <LoadingContainer loading={loading} width={80} height={80}>
-            <></>
-          </LoadingContainer>
-        ) : (
-          <>
-            <SideBarItems />
-          </>
-        )}
+        <LoadingContainer loading={loading} width={100} height={100}>
+          <SideBarItems />
+        </LoadingContainer>
       </Box>
     </Drawer>
   );
