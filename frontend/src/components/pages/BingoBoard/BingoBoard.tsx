@@ -1,19 +1,8 @@
 import { Box, Typography } from '@mui/material';
 import bingoBoard from '../../../assets/Images/BingoBoardExample.png';
 import { darkTheme } from '../../../layout/Theme';
-import axios from 'axios';
 
 const BingoBoard = () => {
-  const getData = async () => {
-    try {
-      const { data: data } = await axios.get('/api/data');
-      return data;
-    } catch (e) {
-      console.log(e);
-      return 'unable to get data';
-    }
-  };
-
   return (
     <Box
       sx={{
