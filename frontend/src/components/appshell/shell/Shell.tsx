@@ -28,6 +28,7 @@ export function Shell() {
     <Box sx={{ width: '100%', height: '100%' }}>
       <Bar openSidebar={openSidebar} setOpenSidebar={setOpenSidebar} />
       <SideBar
+        loading={loadSidebar}
         openSidebar={openSidebar}
         setOpenSidebar={setOpenSidebar}
         sidebarItems={sidebarComponent}
