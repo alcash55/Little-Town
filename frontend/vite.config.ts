@@ -6,7 +6,7 @@ export default defineConfig({
   build: {
     outDir: '../dist',
   },
-  base: '/Little-Town/',
+  base: './Little-Town/',
   plugins: [react()],
   server: {
     port: 3000,
