@@ -9,7 +9,7 @@ export const App = () => {
   return (
     <Suspense
       fallback={
-        <LoadingContainer loading={true} width={300} height={300}>
+        <LoadingContainer loading={true} width={250} height={250}>
           <></>
         </LoadingContainer>
       }
