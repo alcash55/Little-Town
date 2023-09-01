@@ -83,9 +83,8 @@ const Home = () => {
           width={sm ? '100%' : '65%'}
         >
           In this Little Town, we strive to create a welcoming and inclusive community for all
-          players. We believe that diversity is what makes our clan strong and interesting. We
-          celebrate our differences and encourage everyone to be themselves, as we understand that
-          individuality is a key ingredient in building a vibrant community!
+          players. We celebrate our differences and encourage everyone to be themselves, as we
+          understand that individuality is a key ingredient in building a vibrant community!
         </Typography>
       </Box>
 
