@@ -6,16 +6,17 @@ import { Box, Button, Divider, Drawer, IconButton, Toolbar, Typography } from '@
 import { useNavigate, Link } from 'react-router-dom';
 import { SidebarItem } from '../../../../contexts';
 import { darkTheme } from '../../../../layout/Theme';
+import { LoadingContainer } from '../../../LoadingContainer/LoadingContainer';
 
 interface Props {
+  loading: boolean;
   openSidebar: boolean;
   setOpenSidebar: (value: boolean) => void;
   sidebarItems: SidebarItem[];
   width: string | number;
 }
 
-const Sidebar = ({ openSidebar, setOpenSidebar, sidebarItems, width }: Props) => {
-  const navigate = useNavigate();
+const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: Props) => {
   const [drawerWidth, setDrawerWidth] = useState(width);
   const closeSideBar = () => {
     setOpenSidebar(false);
@@ -117,13 +118,22 @@ const Sidebar = ({ openSidebar, setOpenSidebar, sidebarItems, width }: Props) =>
         sx: {
           width: drawerWidth,
           overflowX: 'hidden',
+          overflowY: 'hidden',
           bgcolor: darkTheme.palette.secondary.main,
         },
       }}
     >
-      <Box sx={{ width: '100%', px: 1, py: 2 }}>
+      <Box sx={{ width: '100%', height: '100%', px: 1, py: 2 }}>
         <SideBarTopItem />
-        <SideBarItems />
+        {loading ? (
+          <LoadingContainer loading={loading} width={100} height={100}>
+            <></>
+          </LoadingContainer>
+        ) : (
+          <>
+            <SideBarItems />
+          </>
+        )}
       </Box>
     </Drawer>
   );
