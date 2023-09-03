@@ -1,8 +1,7 @@
 import { Box, Typography } from '@mui/material';
 import { VictoryChart, VictoryLine, VictoryLegend, VictoryAxis, Curve } from 'victory';
-// import axios from 'axios';
-// import { useState, useEffect } from 'react';
 import { darkTheme } from '../../../layout/Theme';
+import { useBingoScores } from './useBingoScores';
 
 interface DataPoint {
   x: Date;
@@ -39,6 +38,8 @@ const BingoScores = () => {
     ],
     // Add more lines if needed
   ];
+
+  useBingoScores();
 
   return (
     <Box
