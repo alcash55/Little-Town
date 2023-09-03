@@ -55,7 +55,7 @@ const BingoScores = () => {
       }}
     >
       <Typography p={3} variant="h1">
-        Team Points
+        Total Team XP
       </Typography>
 
       <VictoryChart>
