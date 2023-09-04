@@ -62,14 +62,14 @@ export const Countdown: React.FC<CountdownProps> = ({ targetDate }) => {
                 height={100}
                 innerRadius={50}
                 radius={25}
-                labels={() => null}
-              />
-              <VictoryLabel
-                textAnchor={'middle'}
-                x={50}
-                y={175}
-                text={`${t}${unit[idx]}`}
-                style={{ fill: 'black' }}
+                labelComponent={
+                  <VictoryLabel
+                    textAnchor={'middle'}
+                    x={50}
+                    text={`${t}${unit[idx]}`}
+                    style={{ fill: 'black' }}
+                  />
+                }
               />
             </React.Fragment>
           </svg>
