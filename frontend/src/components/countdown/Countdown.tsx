@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import Typography, { Box } from '@mui/material';
-import { VictoryPie, VictoryAnimation, VictoryLabel } from 'victory';
+import { Box } from '@mui/material';
+import { VictoryPie, VictoryLabel } from 'victory';
 
 interface CountdownProps {
   targetDate: Date;
@@ -42,36 +42,34 @@ export const Countdown: React.FC<CountdownProps> = ({ targetDate }) => {
     return (
       <Box display={'flex'} width={'100%'}>
         {currentTime.map((t: number, idx: number) => (
-          <svg viewBox="0 0 200 200" width="100%" height="100%">
-            <React.Fragment key={idx}>
-              <VictoryPie
-                standalone={false}
-                colorScale={['gray']}
-                data={[{ y: 360 }]}
-                width={100}
-                height={100}
-                innerRadius={50}
-                radius={25}
-                labels={() => null}
-              />
-              <VictoryPie
-                standalone={false}
-                colorScale={['brown', 'transparent']}
-                data={[{ y: 360 }, { y: 360 - percentages[idx] }]}
-                width={100}
-                height={100}
-                innerRadius={50}
-                radius={25}
-                labelComponent={
-                  <VictoryLabel
-                    textAnchor={'middle'}
-                    x={50}
-                    text={`${t}${unit[idx]}`}
-                    style={{ fill: 'black' }}
-                  />
-                }
-              />
-            </React.Fragment>
+          <svg key={idx} viewBox="0 0 200 200" width="100%" height="100%">
+            <VictoryPie
+              standalone={false}
+              colorScale={['gray']}
+              data={[{ y: 360 }]}
+              width={100}
+              height={100}
+              innerRadius={50}
+              radius={25}
+              labels={() => null}
+            />
+            <VictoryPie
+              standalone={false}
+              colorScale={['brown', 'transparent']}
+              data={[{ y: 360 }, { y: 360 - percentages[idx] }]}
+              width={100}
+              height={100}
+              innerRadius={50}
+              radius={25}
+              labelComponent={
+                <VictoryLabel
+                  textAnchor={'middle'}
+                  x={50}
+                  text={`${t}${unit[idx]}`}
+                  style={{ fill: 'black' }}
+                />
+              }
+            />
           </svg>
         ))}
       </Box>
