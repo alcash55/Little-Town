@@ -3,7 +3,7 @@ import { Close, Home, Looks, BarChart, EmojiEvents, Gavel } from '@mui/icons-mat
 import Discord from '../../../../assets/Images/Discord';
 import BoardGame from '../../../../assets/Images/BoardGame';
 import { Box, Button, Divider, Drawer, IconButton, Toolbar, Typography } from '@mui/material';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { SidebarItem } from '../../../../contexts';
 import { darkTheme } from '../../../../layout/Theme';
 import { LoadingContainer } from '../../../LoadingContainer/LoadingContainer';
@@ -123,7 +123,7 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
         },
       }}
     >
-      <Box sx={{ width: '100%', height: '100%', px: 1, py: 2 }}>
+      <Box sx={{ width: '100%', height: '100%', px: 1 }}>
         <SideBarTopItem />
         <LoadingContainer loading={loading} width={100} height={100}>
           <SideBarItems />
