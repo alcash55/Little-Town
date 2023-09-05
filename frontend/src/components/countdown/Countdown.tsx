@@ -63,6 +63,7 @@ export const Countdown: React.FC<CountdownProps> = ({ targetDate }) => {
                 height={50}
                 innerRadius={13}
                 radius={15}
+                cornerRadius={30}
                 labels={() => null}
                 labelComponent={
                   <VictoryLabel
