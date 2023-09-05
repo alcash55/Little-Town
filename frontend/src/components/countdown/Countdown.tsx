@@ -27,6 +27,7 @@ export const Countdown: React.FC<CountdownProps> = ({ targetDate }) => {
   }, [targetDate]);
 
   const formatTime = (time: number) => {
+    // converts the range to stay between 0-59
     const seconds = Math.floor((time / 1000) % 60);
     const minutes = Math.floor((time / 1000 / 60) % 60);
     const hours = Math.floor((time / (1000 * 60 * 60)) % 24);
@@ -42,7 +43,7 @@ export const Countdown: React.FC<CountdownProps> = ({ targetDate }) => {
             <VictoryPie
               standalone={false}
               colorScale={['gray']}
-              data={[{ y: 90 }]}
+              data={[{ y: 59 }]}
               width={100}
               height={100}
               innerRadius={50}
@@ -51,10 +52,9 @@ export const Countdown: React.FC<CountdownProps> = ({ targetDate }) => {
               labels={() => null}
             />
             <VictoryPie
-              animate={{ duration: 100 }}
               standalone={false}
-              colorScale={['transparent', 'brown']}
-              data={[{ y: 60 }, { y: 59 - t }]}
+              colorScale={['green', 'transparent']}
+              data={[{ y: 59 - t }, { y: t }]}
               width={100}
               height={100}
               innerRadius={50}
