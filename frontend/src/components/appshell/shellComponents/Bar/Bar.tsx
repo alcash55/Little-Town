@@ -1,4 +1,4 @@
-import { AppBar, IconButton, Typography, Box } from '@mui/material';
+import { AppBar, IconButton, Typography } from '@mui/material';
 import { Menu } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { darkTheme } from '../../../../layout/Theme';
@@ -33,25 +33,23 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
         <Menu />
       </IconButton>
 
-      <Box>
-        <Typography
-          onClick={() => navigate('/')}
-          component={'div'}
-          variant="h1"
-          sx={{
-            '&:hover': { cursor: 'pointer' },
-            width: '100px',
-            height: '44px',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-          noWrap
-          fontSize={18}
-        >
-          Little Town
-        </Typography>
-      </Box>
+      <Typography
+        onClick={() => navigate('/')}
+        component={'div'}
+        variant="h1"
+        sx={{
+          '&:hover': { cursor: 'pointer' },
+          width: '100px',
+          height: '44px',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+        noWrap
+        fontSize={18}
+      >
+        Little Town
+      </Typography>
     </AppBar>
   );
 };
