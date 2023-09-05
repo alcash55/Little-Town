@@ -25,8 +25,7 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
         alignItems: 'center',
         flexGrow: 1,
         height: '50px',
-        pr: 4,
-        pl: 3,
+        px: 2,
       }}
     >
       <IconButton aria-label="Toggle Sidebar" onClick={toggleSidebar} sx={{ color: 'white' }}>
