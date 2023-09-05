@@ -5,7 +5,7 @@ import { SidebarProvider } from '../../contexts';
 
 export function Providers({ children }: PropsWithChildren<{}>) {
   return (
-    <Router basename="/Little-Town">
+    <Router basename="/Little-Town/">
       <SidebarProvider>
         <ThemeProvider>{children}</ThemeProvider>
       </SidebarProvider>
