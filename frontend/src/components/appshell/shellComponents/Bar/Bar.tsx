@@ -20,7 +20,6 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
       sx={{
         bgcolor: darkTheme.palette.secondary.main,
         display: 'flex',
-        flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         flexGrow: 1,
