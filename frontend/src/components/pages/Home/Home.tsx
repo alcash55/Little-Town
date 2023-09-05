@@ -24,7 +24,7 @@ const Home = () => {
   const [breakpoint, setBreakpoint] = useState<string>('');
   const theme = useTheme();
   const sm = useMediaQuery(theme.breakpoints.down('sm'));
-  const md = useMediaQuery(theme.breakpoints.down('md'));
+  const md = useMediaQuery(theme.breakpoints.down(800));
   const bingoDate = new Date('2024-01-05T23:59:59');
   const gangIcons = [cat, cum, fish, skull, ketchup, redHat, foot, astral, blackHeart];
 
@@ -98,7 +98,7 @@ const Home = () => {
       <Typography variant="h1" fontSize={48} pb={2}>
         Welcome to Little Town!
       </Typography>
-      <Typography variant="body1" fontSize={28}>
+      <Typography variant="body1" fontSize={sm ? 24 : 28}>
         In our Little Town, we strive to create a welcoming and inclusive community for all players.
         We celebrate our differences and encourage everyone to be themselves, as we understand that
         individuality is a key ingredient in building a vibrant community!
@@ -118,14 +118,14 @@ const Home = () => {
         alignItems: 'center',
       }}
     >
-      {sm ? <></> : <Lootbeam name={'Lili'} image={heart} item={'Heart'} />}
+      {md ? <></> : <Lootbeam name={'Lili'} image={heart} item={'Heart'} />}
 
       <Stack height={'100%'} justifyContent={'space-evenly'}>
         <Header />
         <Countdown targetDate={bingoDate} />
       </Stack>
 
-      {sm ? <></> : <Lootbeam name={'Ken'} image={PenancePet} item={'BA pet'} />}
+      {md ? <></> : <Lootbeam name={'Ken'} image={PenancePet} item={'BA pet'} />}
     </Box>
   );
 };
