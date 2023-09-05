@@ -95,7 +95,7 @@ const Home = () => {
         flexDirection: 'column',
       }}
     >
-      <Typography variant="h1" fontSize={48}>
+      <Typography variant="h1" fontSize={48} pb={2}>
         Welcome to Little Town!
       </Typography>
       <Typography variant="body1" fontSize={28}>
