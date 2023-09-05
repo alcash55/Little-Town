@@ -25,7 +25,7 @@ export function Shell() {
   const sidebarComponent = sidebar;
 
   return (
-    <Box sx={{ width: '100%', height: '100%' }}>
+    <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Bar openSidebar={openSidebar} setOpenSidebar={setOpenSidebar} />
       <SideBar
         loading={loadSidebar}
@@ -34,7 +34,7 @@ export function Shell() {
         sidebarItems={sidebarComponent}
         width={isMobile ? '100%' : isTablet ? '50%' : tempSidebar ? 240 : 240}
       />
-      <Box sx={{ height: '100%', pt: '50px' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <AllRoutes />
       </Box>
     </Box>
