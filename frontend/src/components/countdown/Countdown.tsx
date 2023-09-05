@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box } from '@mui/material';
-import { VictoryPie, VictoryLabel } from 'victory';
+import { VictoryPie, VictoryLabel, VictoryAnimation } from 'victory';
 
 interface CountdownProps {
   targetDate: Date;
@@ -35,10 +35,6 @@ export const Countdown: React.FC<CountdownProps> = ({ targetDate }) => {
     const currentTime = [days, hours, minutes, seconds];
     const unit = ['d', 'h', 'm', 's'];
 
-    // Calculate percentages for each time unit
-    const totalSeconds = days * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60 + seconds;
-    const percentages = currentTime.map((t: number) => (t / totalSeconds) * 100);
-
     return (
       <Box display={'flex'} width={'100%'}>
         {currentTime.map((t: number, idx: number) => (
@@ -46,27 +42,32 @@ export const Countdown: React.FC<CountdownProps> = ({ targetDate }) => {
             <VictoryPie
               standalone={false}
               colorScale={['gray']}
-              data={[{ y: 360 }]}
+              data={[{ y: 90 }]}
+              width={100}
+              height={100}
+              innerRadius={50}
+              radius={25}
+              cornerRadius={25}
+              labels={() => null}
+            />
+            <VictoryPie
+              animate={{ duration: 100 }}
+              standalone={false}
+              colorScale={['transparent', 'brown']}
+              data={[{ y: 60 }, { y: 59 - t }]}
               width={100}
               height={100}
               innerRadius={50}
               radius={25}
               labels={() => null}
-            />
-            <VictoryPie
-              standalone={false}
-              colorScale={['brown', 'transparent']}
-              data={[{ y: 360 }, { y: 360 - percentages[idx] }]}
-              width={100}
-              height={100}
-              innerRadius={50}
-              radius={25}
               labelComponent={
                 <VictoryLabel
                   textAnchor={'middle'}
+                  verticalAnchor={'middle'}
+                  y={50}
                   x={50}
                   text={`${t}${unit[idx]}`}
-                  style={{ fill: 'black' }}
+                  style={{ fill: 'black', fontSize: 20 }}
                 />
               }
             />
@@ -80,31 +81,3 @@ export const Countdown: React.FC<CountdownProps> = ({ targetDate }) => {
 
   return <>{timeData}</>;
 };
-
-{
-  /* <VictoryPie
-                standalone={false}
-                animate={{ duration: 2000 }}
-                data={[
-                  { x: unit[idx], y: percentages[idx] }, // Use the unit as x and percentage as y
-                  { x: 'Remaining', y: 360 - percentages[idx] }, // Remaining percentage
-                ]}
-                innerRadius={120}
-                cornerRadius={25}
-                colorScale={['#4caf50', '#f44336']}
-                labels={() => null}
-              />
-
-              <VictoryAnimation duration={1000} data={{ y: t }}>
-                {(animatedProps) => (
-                  <VictoryLabel
-                    textAnchor="middle"
-                    verticalAnchor="middle"
-                    x={location[idx]}
-                    y={300}
-                    text={`${animatedProps.y}${unit[idx]}`}
-                    style={{ fontSize: 45 }}
-                  />
-                )}
-              </VictoryAnimation> */
-}
