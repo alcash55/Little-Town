@@ -1,4 +1,4 @@
-import { useTheme, Theme, useMediaQuery, CircularProgress, Box } from '@mui/material';
+import { useTheme, useMediaQuery, Box } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useSidebar } from '../../../contexts';
