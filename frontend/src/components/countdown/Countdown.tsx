@@ -39,7 +39,7 @@ export const Countdown: React.FC<CountdownProps> = ({ targetDate }) => {
 
     return (
       <Stack justifyContent={'center'} alignItems={'center'}>
-        <Typography variant="h1" fontSize={38}>
+        <Typography variant="h1" fontSize={36}>
           Countdown to the next bingo!
         </Typography>
         <Box display={'flex'}>
@@ -57,7 +57,7 @@ export const Countdown: React.FC<CountdownProps> = ({ targetDate }) => {
               />
               <VictoryPie
                 standalone={false}
-                colorScale={['green', 'transparent']}
+                colorScale={['rgb(97 55 74)', 'transparent']}
                 data={[{ y: 59 - t }, { y: t }]}
                 width={50}
                 height={50}
