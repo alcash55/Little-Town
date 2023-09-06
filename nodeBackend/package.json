@@ -1,12 +1,12 @@
 {
   "name": "severlessfunctions",
   "version": "1.0.0",
-  "main": "index.ts",
+  "main": "index.js",
   "license": "MIT",
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "npx functions-framework --target=LittleTownFunctions [--signature-type=http] --port=8080"
+    "start": "npx functions-framework --source=dist --target=LittleTownFunctions [--signature-type=http]"
   },
   "devDependencies": {
     "@google-cloud/functions-framework": "^3.3.0",
