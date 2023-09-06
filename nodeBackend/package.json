@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "npx functions-framework --target=LittleTownFunctions [--signature-type=http]"
+    "start": "npx functions-framework --target=LittleTownFunctions [--signature-type=http] --port=8080"
   },
   "devDependencies": {
     "@google-cloud/functions-framework": "^3.3.0",
