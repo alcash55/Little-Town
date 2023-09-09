@@ -19,7 +19,7 @@ export const LittleTownFunctions: HttpFunction = async (req, res) => {
   } else if (req.method === "GET") {
     if (pathname === "/hiscores") {
       try {
-        const data = await hiscores("lucky buck2");
+        const data = await hiscores(queryParams.player);
         res.send(data);
       } catch (e) {
         console.log(e);
