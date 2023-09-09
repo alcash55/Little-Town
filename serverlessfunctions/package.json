@@ -1,16 +1,20 @@
 {
   "name": "severlessfunctions",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "src/index.js",
   "license": "MIT",
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "npx functions-framework --source=dist --target=LittleTownFunctions [--signature-type=http]"
+    "start": "npx functions-framework --source=dist --target=LittleTownFunctions [--signature-type=http]",
+    "dev": "concurrently \"tsc -w\" \"nodemon --watch ./ --exec yarn start\"",
+    "gcp-build": "npm run build"
   },
   "devDependencies": {
     "@google-cloud/functions-framework": "^3.3.0",
     "@types/node": "^20.5.9",
+    "concurrently": "^8.2.1",
+    "nodemon": "^3.0.1",
     "typescript": "^5.2.2"
   }
 }
