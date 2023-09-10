@@ -26,5 +26,9 @@ export const routes = createRoutes({
       path: '/BingoRules',
       element: <Pages.BingoRules />,
     },
+    {
+      path: '/BoardGame',
+      element: <Pages.BoardGame />,
+    },
   ],
 });

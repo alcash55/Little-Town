@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Close, Home, Looks, BarChart, EmojiEvents, Gavel } from '@mui/icons-material';
+import { Close, Home, Looks, BarChart, EmojiEvents, Gavel, Casino } from '@mui/icons-material';
 import Discord from '../../../../assets/Images/Discord';
 import BoardGame from '../../../../assets/Images/BoardGame';
 import { Box, Button, Divider, Drawer, IconButton, Toolbar, Typography } from '@mui/material';
@@ -81,6 +81,9 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
               break;
             case 'Gavel':
               IconComponent = Gavel;
+              break;
+            case 'Casino':
+              IconComponent = Casino;
               break;
             default:
               IconComponent = Looks; // Set a default icon component

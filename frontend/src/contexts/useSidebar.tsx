@@ -62,6 +62,11 @@ export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
           icon: 'EmojiEvents',
         },
         {
+          title: 'Board Game',
+          href: '/BoardGame',
+          icon: 'Casino',
+        },
+        {
           title: 'Discord',
           href: 'https://discord.com/invite/NqzwU3TyUT',
           icon: 'Discord',
