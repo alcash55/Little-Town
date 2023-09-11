@@ -75,6 +75,9 @@ const BoardGame = () => {
         label="Task"
         inputProps={{ color: 'white' }}
         sx={textfieldStyles}
+        InputLabelProps={{
+          style: { color: 'white' }, // Apply the label color here
+        }}
         value={task}
         onChange={(e) => setTask(e.target.value)}
       />
@@ -85,6 +88,9 @@ const BoardGame = () => {
         id="instructions"
         label="Instructions"
         sx={textfieldStyles}
+        InputLabelProps={{
+          style: { color: 'white' }, // Apply the label color here
+        }}
         value={instructions}
         onChange={(e) => setInstructions(e.target.value)}
       />
@@ -132,6 +138,9 @@ const BoardGame = () => {
         id="task"
         label="Task"
         sx={textfieldStyles}
+        InputLabelProps={{
+          style: { color: 'white' }, // Apply the label color here
+        }}
         value={task}
         onChange={(e) => setTask(e.target.value)}
       />
@@ -142,6 +151,9 @@ const BoardGame = () => {
         id="instructions"
         label="Number of Tiles"
         sx={textfieldStyles}
+        InputLabelProps={{
+          style: { color: 'white' }, // Apply the label color here
+        }}
         value={instructions}
         onChange={(e) => setInstructions(e.target.value)}
       />
