@@ -11,7 +11,6 @@ import {
   InputLabel,
 } from '@mui/material';
 import { darkTheme } from '../../../layout/Theme';
-import { Boss } from '../../types';
 import { bossList } from './bossList';
 
 const BoardGame = () => {
@@ -19,6 +18,7 @@ const BoardGame = () => {
   const [task, setTask] = useState('');
   const [instructions, setInstructions] = useState('');
   const [selectedBoss, setSelectedBoss] = useState('');
+  const [iconUrl, setIconUrl] = useState('');
   const bosses = bossList();
 
   const textfieldStyles = {
@@ -76,7 +76,7 @@ const BoardGame = () => {
         inputProps={{ color: 'white' }}
         sx={textfieldStyles}
         InputLabelProps={{
-          style: { color: 'white' }, // Apply the label color here
+          style: { color: 'white' },
         }}
         value={task}
         onChange={(e) => setTask(e.target.value)}
@@ -89,7 +89,7 @@ const BoardGame = () => {
         label="Instructions"
         sx={textfieldStyles}
         InputLabelProps={{
-          style: { color: 'white' }, // Apply the label color here
+          style: { color: 'white' },
         }}
         value={instructions}
         onChange={(e) => setInstructions(e.target.value)}
@@ -139,7 +139,7 @@ const BoardGame = () => {
         label="Task"
         sx={textfieldStyles}
         InputLabelProps={{
-          style: { color: 'white' }, // Apply the label color here
+          style: { color: 'white' },
         }}
         value={task}
         onChange={(e) => setTask(e.target.value)}
@@ -152,7 +152,7 @@ const BoardGame = () => {
         label="Number of Tiles"
         sx={textfieldStyles}
         InputLabelProps={{
-          style: { color: 'white' }, // Apply the label color here
+          style: { color: 'white' },
         }}
         value={instructions}
         onChange={(e) => setInstructions(e.target.value)}
