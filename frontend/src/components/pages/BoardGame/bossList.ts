@@ -1,3 +1,5 @@
+import { BossList } from '../../types';
+
 export const bossList = () => {
   let bosses = [
     'Barrows',
@@ -52,7 +54,7 @@ export const bossList = () => {
     'Tombs of Amascut',
   ];
 
-  const bossArray = bosses.sort().map((name: string, idx: number) => [{ name, id: idx }]);
-  console.log(bossArray);
+  const bossArray: BossList = bosses.sort().map((name: string, idx: number) => ({ name, id: idx }));
+
   return bossArray;
 };

@@ -11,7 +11,7 @@ import {
   InputLabel,
 } from '@mui/material';
 import { darkTheme } from '../../../layout/Theme';
-import { BossList } from '../../types';
+import { Boss } from '../../types';
 import { bossList } from './bossList';
 
 const BoardGame = () => {
@@ -19,6 +19,7 @@ const BoardGame = () => {
   const [task, setTask] = useState('');
   const [instructions, setInstructions] = useState('');
   const [selectedBoss, setSelectedBoss] = useState('');
+  const bosses = bossList();
 
   const textfieldStyles = {
     '& .MuiOutlinedInput-root': {
@@ -68,6 +69,7 @@ const BoardGame = () => {
     >
       <TextField
         multiline
+        fullWidth
         variant="outlined"
         id="task"
         label="Task"
@@ -78,6 +80,7 @@ const BoardGame = () => {
       />
       <TextField
         multiline
+        fullWidth
         variant="outlined"
         id="instructions"
         label="Instructions"
@@ -85,40 +88,29 @@ const BoardGame = () => {
         value={instructions}
         onChange={(e) => setInstructions(e.target.value)}
       />
-      <Box width={'50%'}>
-        <FormControl
-          fullWidth
+      <FormControl fullWidth>
+        <InputLabel
+          id="instructions"
           sx={{
-            '& .MuiOutlinedInput-notchedOutline': {
-              borderColor: 'white',
-              color: 'white',
-            },
+            color: 'white',
           }}
         >
-          <InputLabel
-            id="instructions"
-            sx={{
-              color: 'white',
-            }}
-          >
-            Select Tile Type
-          </InputLabel>
-          <Select
-            id="iconUrl"
-            label="Select Boss"
-            value={selectedBoss}
-            onChange={(e) => setSelectedBoss(e.target.value)}
-            sx={selectStyles}
-          >
-            {/* {bossList.map((boss) => (
-          <MenuItem key={boss.id} value={boss.name}>
-            {boss.name}
-          </MenuItem>
-        ))} */}
-            <MenuItem>hello</MenuItem>
-          </Select>
-        </FormControl>
-      </Box>
+          Select Tile Type
+        </InputLabel>
+        <Select
+          id="iconUrl"
+          label="Select Boss"
+          value={selectedBoss}
+          onChange={(e) => setSelectedBoss(e.target.value)}
+          sx={selectStyles}
+        >
+          {bosses.map((boss) => (
+            <MenuItem key={boss.id} value={boss.name}>
+              {boss.name}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
     </Box>
   );
 
@@ -134,58 +126,37 @@ const BoardGame = () => {
       }}
     >
       <TextField
+        fullWidth
         variant="outlined"
         multiline
         id="task"
         label="Task"
-        inputProps={{ color: 'white' }}
         sx={textfieldStyles}
         value={task}
         onChange={(e) => setTask(e.target.value)}
       />
       <TextField
+        fullWidth
         variant="outlined"
         multiline
         id="instructions"
-        label="Instructions"
-        inputProps={{ color: 'white' }}
+        label="Number of Tiles"
         sx={textfieldStyles}
         value={instructions}
         onChange={(e) => setInstructions(e.target.value)}
       />
-      <Box width={'50%'}>
-        <FormControl
-          fullWidth
-          sx={{
-            '& .MuiOutlinedInput-notchedOutline': {
-              borderColor: 'white',
-              color: 'white',
-            },
-          }}
-        >
-          <InputLabel
-            id="instructions"
-            sx={{
-              color: 'white',
-            }}
-          >
-            Select Tile Type
-          </InputLabel>
-          <Select
-            id="iconUrl"
-            label="Select Boss"
-            value={selectedBoss}
-            onChange={(e) => setSelectedBoss(e.target.value)}
-            sx={selectStyles}
-          >
-            {/* {bossList.map((boss) => (
-          <MenuItem key={boss.id} value={boss.name}>
-            {boss.name}
-          </MenuItem>
-        ))} */}
-          </Select>
-        </FormControl>
-      </Box>
+      {/* <TextField
+        variant="outlined"
+        multiline
+        id="icon"
+        label="Go Back Icon"
+        inputProps={{ color: 'white' }}
+        sx={textfieldStyles}
+        value={
+          'https://static.vecteezy.com/system/resources/thumbnails/000/589/654/small/40_436.jpg'
+        }
+        onChange={(e) => setInstructions(e.target.value)}
+      /> */}
     </Box>
   );
 
@@ -198,22 +169,14 @@ const BoardGame = () => {
   };
 
   return (
-    <Box height={'100%'} width={'100%'} p={2} sx={{ bgcolor: darkTheme.palette.primary.main }}>
+    <Box height={'100%'} width={'100%'} p={3} sx={{ bgcolor: darkTheme.palette.primary.main }}>
       <Stack spacing={2} justifyContent="center" alignItems="center" textAlign={'center'}>
-        <Typography variant="h1" paddingBottom={5}>
-          Board Game Config
-        </Typography>
-
         <Box width={'50%'}>
-          <FormControl
-            fullWidth
-            // sx={{
-            //   '& .MuiOutlinedInput-notchedOutline': {
-            //     borderColor: 'white',
-            //     color: 'white',
-            //   },
-            // }}
-          >
+          <Typography variant="h1" paddingBottom={10}>
+            Board Game Config
+          </Typography>
+
+          <FormControl fullWidth>
             <InputLabel
               id="instructions"
               sx={{
@@ -237,7 +200,6 @@ const BoardGame = () => {
 
           {type === 'A' ? typeA() : type === 'B' ? typeB() : <></>}
         </Box>
-
         <Button
           onClick={createJSON}
           variant="outlined"
