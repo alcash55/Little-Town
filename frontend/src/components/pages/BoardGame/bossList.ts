@@ -4,7 +4,7 @@ export const bossList = () => {
   let bosses = [
     'Barrows',
     'Giant Mole',
-    'Deranged Archaeologist',
+    'Deranged archaeologist',
     'Dagannoth Kings',
     'Sarachnis',
     'Kalphite Queen',
