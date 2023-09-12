@@ -26,7 +26,7 @@ export const bossList = () => {
     'Zulrah',
     'Vorkath',
     'Phantom Mustpah',
-    "The Nightmare & Phosani's Nightmare",
+    'The Nightmare',
     'Duke Sucellus',
     'The Leviathan',
     'The Whisperer',
