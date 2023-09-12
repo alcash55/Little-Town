@@ -54,7 +54,6 @@ const BoardGame = () => {
 
   const selectStyles = {
     width: '50%',
-
     '& .MuiInputBase-input': {
       color: 'white', // White text color
     },
@@ -108,7 +107,12 @@ const BoardGame = () => {
         value={instructions}
         onChange={(e) => setInstructions(e.target.value)}
       />
-      <FormControl fullWidth>
+
+      <FormControl
+        fullWidth
+        sx={{ left: '25%' }}
+        // sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+      >
         <InputLabel
           id="instructions"
           sx={{
@@ -216,7 +220,6 @@ const BoardGame = () => {
       spacing={3}
       justifyContent="center"
       alignItems="center"
-      textAlign={'center'}
       width={'100%'}
       height={'100%'}
       p={3}
@@ -226,7 +229,7 @@ const BoardGame = () => {
         Board Game Config
       </Typography>
 
-      <FormControl fullWidth>
+      <FormControl fullWidth sx={{ left: '25%' }}>
         <InputLabel
           id="instructions"
           sx={{
