@@ -164,9 +164,9 @@ const BoardGame = () => {
         );
       } else if (name === 'Grotesque Guardians') {
         setIconUrl(`https://oldschool.runescape.wiki/images/thumb/Dusk.png/128px-Dusk.png`);
-      } else if (name === 'Chamber of Xeric') {
+      } else if (name === 'Chambers of Xeric') {
         setIconUrl(
-          `https://oldschool.runescape.wiki/images/thumb/Great_Olm.png/128px-Great_Olm.png`,
+          `https://oldschool.runescape.wiki/images/thumb/Great_Olm.png/150px-Great_Olm.png`,
         );
       } else if (name === 'Theatre of Blood') {
         setIconUrl(
@@ -175,6 +175,38 @@ const BoardGame = () => {
       } else if (name === 'Tombs of Amascut') {
         setIconUrl(
           `https://oldschool.runescape.wiki/images/thumb/Tumeken%27s_Warden_%28level-489%29.png/128px-Tumeken%27s_Warden_%28level-489%29.png`,
+        );
+      } else if (name === 'Alchemical Hydra') {
+        setIconUrl(
+          `https://oldschool.runescape.wiki/images/thumb/Alchemical_Hydra_%28serpentine%29.png/128px-Alchemical_Hydra_%28serpentine%29.png`,
+        );
+      } else if (name === 'Dagannoth Kings') {
+        setIconUrl(
+          `https://oldschool.runescape.wiki/images/thumb/Dagannoth_Supreme.png/128px-Dagannoth_Supreme.png`,
+        );
+      } else if (name === "K'ril Tsutsaroth") {
+        setIconUrl(
+          `https://oldschool.runescape.wiki/images/thumb/K%27ril_Tsutsaroth.png/128px-K%27ril_Tsutsaroth.png`,
+        );
+      } else if (name === "Kree'arra") {
+        setIconUrl(
+          `https://oldschool.runescape.wiki/images/thumb/Kree%27arra.png/128px-Kree%27arra.png`,
+        );
+      } else if (name === 'Phantom Mustpah') {
+        setIconUrl(
+          `https://oldschool.runescape.wiki/images/thumb/Phantom_Muspah_%28ranged%29.png/128px-Phantom_Muspah_%28ranged%29.png`,
+        );
+      } else if (name === "Vet'ion") {
+        setIconUrl(
+          `https://oldschool.runescape.wiki/images/thumb/Vet%27ion.png/128px-Vet%27ion.png`,
+        );
+      } else if (name === 'Wintertodt') {
+        setIconUrl(
+          `https://oldschool.runescape.wiki/images/thumb/Howling_Snow_Storm.gif/128px-Howling_Snow_Storm.gif`,
+        );
+      } else if (name === 'Zulrah') {
+        setIconUrl(
+          `https://oldschool.runescape.wiki/images/thumb/Zulrah_%28serpentine%29.png/128px-Zulrah_%28serpentine%29.png`,
         );
       } else {
         const baseIconUrl = `https://oldschool.runescape.wiki/images/thumb/${formattedName}.png/128px-${formattedName}.png`;
