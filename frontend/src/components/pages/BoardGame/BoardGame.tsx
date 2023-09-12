@@ -209,7 +209,7 @@ const BoardGame = () => {
       instructions: instructions,
       icon_url: iconUrl,
     });
-  }, [task, type, tileName, selectedBoss, instructions]);
+  }, [task, type, tileName, selectedBoss, instructions, iconUrl]);
 
   return (
     <Stack
@@ -240,7 +240,7 @@ const BoardGame = () => {
           id="tileType"
           label="Select Tile Type"
           value={type}
-          onChange={(e) => handleTypeSelect(e.target.value as string)}
+          onChange={(e) => handleTypeSelect(e.target.value)}
           sx={selectStyles}
         >
           <MenuItem value={'A'}>A - Get Collection Log Drop</MenuItem>
@@ -263,9 +263,11 @@ const BoardGame = () => {
 
       {type === 'A' ? typeA() : type === 'B' ? typeB() : <></>}
 
-      <Typography width={'100%'} noWrap={false}>
-        {JSON.stringify(json)}
-      </Typography>
+      <Box style={{ overflow: 'auto', maxHeight: '400px' }}>
+        <Typography variant="body1" width={'100%'} noWrap={false}>
+          {JSON.stringify(json)}
+        </Typography>
+      </Box>
     </Stack>
   );
 };
