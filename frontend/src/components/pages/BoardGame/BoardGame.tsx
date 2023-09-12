@@ -11,10 +11,13 @@ import {
   InputLabel,
 } from '@mui/material';
 import { darkTheme } from '../../../layout/Theme';
+import { selectStyles } from '../../../assets/styles/boardGameStyles';
+import { textfieldStyles } from '../../../assets/styles/boardGameStyles';
 import { bossList } from './bossList';
 import { Tile } from '../../types';
 
 const BoardGame = () => {
+  const bosses = bossList();
   const [type, setType] = useState<string>('A');
   const [task, setTask] = useState('');
   const [instructions, setInstructions] = useState('');
@@ -28,45 +31,6 @@ const BoardGame = () => {
     instructions: instructions,
     icon_url: iconUrl,
   });
-
-  const bosses = bossList();
-
-  const textfieldStyles = {
-    width: '50%',
-    '& .MuiOutlinedInput-root': {
-      '& fieldset': {
-        borderColor: 'white', // White border color
-      },
-      '&:hover fieldset': {
-        borderColor: 'white', // White border color on hover
-      },
-      '&.Mui-focused fieldset': {
-        borderColor: 'white', // White border color when focused
-      },
-    },
-    '& .MuiInputBase-input': {
-      color: 'white', // White text color
-    },
-    '& .MuiInputLabel-root': {
-      color: 'white', // White label color
-    },
-  };
-
-  const selectStyles = {
-    width: '50%',
-    '& .MuiInputBase-input': {
-      color: 'white', // White text color
-    },
-
-    '& .MuiSelect-icon': {
-      color: 'white', // White icon color
-    },
-
-    '& .MuiOutlinedInput-notchedOutline': {
-      borderColor: 'white',
-      color: 'white',
-    },
-  };
 
   const typeA = () => (
     <Box
@@ -108,35 +72,42 @@ const BoardGame = () => {
         onChange={(e) => setInstructions(e.target.value)}
       />
 
-      <FormControl
-        fullWidth
-        sx={{ left: '25%' }}
-        // sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-evenly',
+          alignItems: 'center',
+          width: '50%',
+        }}
       >
-        <InputLabel
-          id="instructions"
-          sx={{
-            color: 'white',
-          }}
-        >
-          Select Boss
-        </InputLabel>
-        <Select
-          id="iconUrl"
-          label="Select Boss"
-          value={selectedBoss}
-          onChange={(e) => {
-            setSelectedBoss(e.target.value);
-          }}
-          sx={selectStyles}
-        >
-          {bosses.map((boss) => (
-            <MenuItem key={boss.id} value={boss.name}>
-              {boss.name}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+        <FormControl fullWidth>
+          <InputLabel
+            id="instructions"
+            sx={{
+              color: 'white',
+            }}
+          >
+            Select Boss
+          </InputLabel>
+          <Select
+            id="iconUrl"
+            label="Select Boss"
+            value={selectedBoss}
+            onChange={(e) => {
+              setSelectedBoss(e.target.value);
+            }}
+            sx={selectStyles}
+          >
+            {bosses.map((boss) => (
+              <MenuItem key={boss.id} value={boss.name}>
+                {boss.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <img src={iconUrl} alt={selectedBoss} />
+      </Box>
     </Box>
   );
 
@@ -186,9 +157,29 @@ const BoardGame = () => {
   const handleSelectedIcon = (name: string) => {
     setSelectedBoss(name);
     if (type === 'A') {
-      const formatedName = name.replace(/\s+/g, '_');
-      const baseIconUrl = `https://oldschool.runescape.wiki/images/thumb/${formatedName}.png/84px-${formatedName}.png?33092`;
-      setIconUrl(baseIconUrl);
+      const formattedName = name.replace(/\s+/g, '_').replace(/'/g, '%');
+      if (name === 'Barrows') {
+        setIconUrl(
+          `https://oldschool.runescape.wiki/images/thumb/Dharok_the_Wretched.png/128px-Dharok_the_Wretched.png`,
+        );
+      } else if (name === 'Grotesque Guardians') {
+        setIconUrl(`https://oldschool.runescape.wiki/images/thumb/Dusk.png/128px-Dusk.png`);
+      } else if (name === 'Chamber of Xeric') {
+        setIconUrl(
+          `https://oldschool.runescape.wiki/images/thumb/Great_Olm.png/128px-Great_Olm.png`,
+        );
+      } else if (name === 'Theatre of Blood') {
+        setIconUrl(
+          `https://oldschool.runescape.wiki/images/thumb/Verzik_Vitur.png/128px-Verzik_Vitur.png`,
+        );
+      } else if (name === 'Tombs of Amascut') {
+        setIconUrl(
+          `https://oldschool.runescape.wiki/images/thumb/Tumeken%27s_Warden_%28level-489%29.png/128px-Tumeken%27s_Warden_%28level-489%29.png`,
+        );
+      } else {
+        const baseIconUrl = `https://oldschool.runescape.wiki/images/thumb/${formattedName}.png/128px-${formattedName}.png`;
+        setIconUrl(baseIconUrl);
+      }
     } else {
       setIconUrl(
         'https://static.vecteezy.com/system/resources/thumbnails/000/589/654/small/40_436.jpg',
@@ -229,28 +220,29 @@ const BoardGame = () => {
         Board Game Config
       </Typography>
 
-      <FormControl fullWidth sx={{ left: '25%' }}>
-        <InputLabel
-          id="instructions"
-          sx={{
-            color: 'white',
-          }}
-        >
-          Select Tile Type
-        </InputLabel>
-        <Select
-          variant="outlined"
-          id="tileType"
-          label="Select Tile Type"
-          value={type}
-          onChange={(e) => handleTypeSelect(e.target.value)}
-          sx={selectStyles}
-        >
-          <MenuItem value={'A'}>A - Get Collection Log Drop</MenuItem>
-          <MenuItem value={'B'}>B - Go Back X amount of Tiles</MenuItem>
-        </Select>
-      </FormControl>
-
+      <Box sx={{ width: '50%' }}>
+        <FormControl fullWidth>
+          <InputLabel
+            id="instructions"
+            sx={{
+              color: 'white',
+            }}
+          >
+            Select Tile Type
+          </InputLabel>
+          <Select
+            variant="outlined"
+            id="tileType"
+            label="Select Tile Type"
+            value={type}
+            onChange={(e) => handleTypeSelect(e.target.value)}
+            sx={selectStyles}
+          >
+            <MenuItem value={'A'}>A - Get Collection Log Drop</MenuItem>
+            <MenuItem value={'B'}>B - Go Back X amount of Tiles</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
       <TextField
         fullWidth
         variant="outlined"
@@ -266,11 +258,20 @@ const BoardGame = () => {
 
       {type === 'A' ? typeA() : type === 'B' ? typeB() : <></>}
 
-      <Box style={{ overflow: 'auto', maxHeight: '400px' }}>
-        <Typography variant="body1" width={'100%'} noWrap={false}>
+      {/* <Box
+        sx={{
+          overflow: 'auto',
+          maxHeight: '400px',
+          maxWidth: '100%',
+          justifyContent: 'center',
+          alignItems: 'center',
+          display: 'flex',
+        }}
+      >
+        <Typography variant="body1" width={'50%'} noWrap={false}>
           {JSON.stringify(json)}
         </Typography>
-      </Box>
+      </Box> */}
     </Stack>
   );
 };
