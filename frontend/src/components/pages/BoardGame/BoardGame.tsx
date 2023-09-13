@@ -5,11 +5,13 @@ import {
   TextField,
   Select,
   Typography,
-  Button,
   MenuItem,
   FormControl,
   InputLabel,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
+import { CodeEditor } from '../../CodeEditor/CodeEditor';
 import { darkTheme } from '../../../layout/Theme';
 import { selectStyles } from '../../../assets/styles/boardGameStyles';
 import { textfieldStyles } from '../../../assets/styles/boardGameStyles';
@@ -17,6 +19,8 @@ import { bossList } from './bossList';
 import { Tile } from '../../types';
 
 const BoardGame = () => {
+  const theme = useTheme();
+  const md = useMediaQuery(theme.breakpoints.down(700));
   const bosses = bossList();
   const [type, setType] = useState<string>('A');
   const [task, setTask] = useState('');
@@ -106,7 +110,11 @@ const BoardGame = () => {
           </Select>
         </FormControl>
 
-        <img src={iconUrl} alt={selectedBoss} />
+        {!md ? (
+          <img src={iconUrl} alt={selectedBoss} style={{ width: 'auto', height: 128 }} />
+        ) : (
+          <></>
+        )}
       </Box>
     </Box>
   );
@@ -157,7 +165,7 @@ const BoardGame = () => {
   const handleSelectedIcon = (name: string) => {
     setSelectedBoss(name);
     if (type === 'A') {
-      const formattedName = name.replace(/\s+/g, '_').replace(/'/g, '%');
+      const formattedName = name.replace(/\s+/g, '_').replace(/'/g, '%27');
       if (name === 'Barrows') {
         setIconUrl(
           `https://oldschool.runescape.wiki/images/thumb/Dharok_the_Wretched.png/128px-Dharok_the_Wretched.png`,
@@ -166,7 +174,7 @@ const BoardGame = () => {
         setIconUrl(`https://oldschool.runescape.wiki/images/thumb/Dusk.png/128px-Dusk.png`);
       } else if (name === 'Chambers of Xeric') {
         setIconUrl(
-          `https://oldschool.runescape.wiki/images/thumb/Great_Olm.png/150px-Great_Olm.png`,
+          `https://oldschool.runescape.wiki/images/thumb/Great_Olm.png/128px-Great_Olm.png`,
         );
       } else if (name === 'Theatre of Blood') {
         setIconUrl(
@@ -184,21 +192,9 @@ const BoardGame = () => {
         setIconUrl(
           `https://oldschool.runescape.wiki/images/thumb/Dagannoth_Supreme.png/128px-Dagannoth_Supreme.png`,
         );
-      } else if (name === "K'ril Tsutsaroth") {
-        setIconUrl(
-          `https://oldschool.runescape.wiki/images/thumb/K%27ril_Tsutsaroth.png/128px-K%27ril_Tsutsaroth.png`,
-        );
-      } else if (name === "Kree'arra") {
-        setIconUrl(
-          `https://oldschool.runescape.wiki/images/thumb/Kree%27arra.png/128px-Kree%27arra.png`,
-        );
       } else if (name === 'Phantom Mustpah') {
         setIconUrl(
           `https://oldschool.runescape.wiki/images/thumb/Phantom_Muspah_%28ranged%29.png/128px-Phantom_Muspah_%28ranged%29.png`,
-        );
-      } else if (name === "Vet'ion") {
-        setIconUrl(
-          `https://oldschool.runescape.wiki/images/thumb/Vet%27ion.png/128px-Vet%27ion.png`,
         );
       } else if (name === 'Wintertodt') {
         setIconUrl(
@@ -209,8 +205,9 @@ const BoardGame = () => {
           `https://oldschool.runescape.wiki/images/thumb/Zulrah_%28serpentine%29.png/128px-Zulrah_%28serpentine%29.png`,
         );
       } else {
-        const baseIconUrl = `https://oldschool.runescape.wiki/images/thumb/${formattedName}.png/128px-${formattedName}.png`;
-        setIconUrl(baseIconUrl);
+        setIconUrl(
+          `https://oldschool.runescape.wiki/images/thumb/${formattedName}.png/128px-${formattedName}.png`,
+        );
       }
     } else {
       setIconUrl(
@@ -240,7 +237,7 @@ const BoardGame = () => {
 
   return (
     <Stack
-      spacing={3}
+      spacing={1}
       justifyContent="center"
       alignItems="center"
       width={'100%'}
@@ -248,8 +245,12 @@ const BoardGame = () => {
       p={3}
       sx={{ bgcolor: darkTheme.palette.primary.main }}
     >
-      <Typography variant="h1" paddingBottom={10} fontSize={64}>
+      <Typography variant="h1" fontSize={64} pb={2}>
         Board Game Config
+      </Typography>
+
+      <Typography variant="body1" fontSize={20}>
+        Fill out the form to have the JSON print out at the bottom
       </Typography>
 
       <Box sx={{ width: '50%' }}>
@@ -275,6 +276,7 @@ const BoardGame = () => {
           </Select>
         </FormControl>
       </Box>
+
       <TextField
         fullWidth
         variant="outlined"
@@ -290,20 +292,7 @@ const BoardGame = () => {
 
       {type === 'A' ? typeA() : type === 'B' ? typeB() : <></>}
 
-      {/* <Box
-        sx={{
-          overflow: 'auto',
-          maxHeight: '400px',
-          maxWidth: '100%',
-          justifyContent: 'center',
-          alignItems: 'center',
-          display: 'flex',
-        }}
-      >
-        <Typography variant="body1" width={'50%'} noWrap={false}>
-          {JSON.stringify(json)}
-        </Typography>
-      </Box> */}
+      <CodeEditor json={json} />
     </Stack>
   );
 };
