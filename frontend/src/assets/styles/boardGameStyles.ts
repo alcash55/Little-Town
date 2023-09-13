@@ -33,4 +33,7 @@ export const selectStyles = {
     borderColor: 'white',
     color: 'white',
   },
+  '&:hover .MuiOutlinedInput-notchedOutline': {
+    borderColor: 'white',
+  },
 };
