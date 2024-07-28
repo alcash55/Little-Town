@@ -24,11 +24,11 @@ const BoardGame = () => {
   const md = useMediaQuery(theme.breakpoints.down(700));
   const bosses = bossList();
   const [type, setType] = useState<string>('A');
-  const [task, setTask] = useState('');
-  const [instructions, setInstructions] = useState('');
-  const [selectedBoss, setSelectedBoss] = useState('');
-  const [tileName, setTileName] = useState('');
-  const [iconUrl, setIconUrl] = useState('');
+  const [task, setTask] = useState<string>('');
+  const [instructions, setInstructions] = useState<string>('');
+  const [selectedBoss, setSelectedBoss] = useState<string>('');
+  const [tileName, setTileName] = useState<string>('');
+  const [iconUrl, setIconUrl] = useState<string>('');
   const [json, setJson] = useState<Tile>({
     name: tileName,
     tile_type: type,
@@ -37,7 +37,7 @@ const BoardGame = () => {
     icon_url: iconUrl,
   });
 
-  const typeA = () => (
+  const form = (
     <Box
       sx={{
         display: 'flex',
@@ -63,12 +63,13 @@ const BoardGame = () => {
         value={task}
         onChange={(e) => setTask(e.target.value)}
       />
+
       <TextField
         multiline
         fullWidth
         variant="outlined"
         id="instructions"
-        label="Instructions"
+        label={type === 'A' ? 'Instructions' : 'Number of Tiles'}
         sx={textfieldStyles}
         InputLabelProps={{
           style: { color: 'white' },
@@ -77,91 +78,46 @@ const BoardGame = () => {
         onChange={(e) => setInstructions(e.target.value)}
       />
 
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-evenly',
-          alignItems: 'center',
-          width: '50%',
-        }}
-      >
-        <FormControl fullWidth>
-          <InputLabel
-            id="instructions"
-            sx={{
-              color: 'white',
-            }}
-          >
-            Select Boss
-          </InputLabel>
-          <Select
-            id="iconUrl"
-            label="Select Boss"
-            value={selectedBoss}
-            onChange={(e) => {
-              setSelectedBoss(e.target.value);
-            }}
-            sx={selectStyles}
-          >
-            {bosses.map((boss) => (
-              <MenuItem key={boss.id} value={boss.name}>
-                {boss.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+      {type === 'A' && (
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-evenly',
+            alignItems: 'center',
+            width: '50%',
+          }}
+        >
+          <FormControl fullWidth>
+            <InputLabel
+              id="instructions"
+              sx={{
+                color: 'white',
+              }}
+            >
+              Select Boss
+            </InputLabel>
+            <Select
+              id="iconUrl"
+              label="Select Boss"
+              value={selectedBoss}
+              onChange={(e) => {
+                setSelectedBoss(e.target.value);
+              }}
+              sx={selectStyles}
+            >
+              {bosses.map((boss) => (
+                <MenuItem key={boss.id} value={boss.name}>
+                  {boss.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
-        {!md ? (
-          <img src={iconUrl} alt={selectedBoss} style={{ width: 'auto', height: 128 }} />
-        ) : (
-          <></>
-        )}
-      </Box>
+          {!md && <img src={iconUrl} alt={selectedBoss} style={{ width: 'auto', height: 128 }} />}
+        </Box>
+      )}
     </Box>
   );
-
-  const typeB = () => {
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          flexDirection: 'column',
-          gap: 3,
-          mt: 2,
-          width: '100%',
-        }}
-      >
-        <TextField
-          fullWidth
-          variant="outlined"
-          multiline
-          id="task"
-          label="Task"
-          sx={textfieldStyles}
-          InputLabelProps={{
-            style: { color: 'white' },
-          }}
-          value={task}
-          onChange={(e) => setTask(e.target.value)}
-        />
-        <TextField
-          fullWidth
-          variant="outlined"
-          multiline
-          id="instructions"
-          label="Number of Tiles"
-          sx={textfieldStyles}
-          InputLabelProps={{
-            style: { color: 'white' },
-          }}
-          value={instructions}
-          onChange={(e) => setInstructions(e.target.value)}
-        />
-      </Box>
-    );
-  };
 
   const handleTypeSelect = (value: string) => {
     setType(value);
@@ -169,6 +125,7 @@ const BoardGame = () => {
 
   useEffect(() => {
     useIconUrl(selectedBoss, setSelectedBoss, type, setIconUrl);
+    console.log(iconUrl);
     setInstructions(instructions);
     setTask(task);
     setType(type);
@@ -237,7 +194,7 @@ const BoardGame = () => {
         }}
       />
 
-      {type === 'A' ? typeA() : type === 'B' ? typeB() : <></>}
+      {form}
 
       <CodeEditor json={json} />
     </Stack>
