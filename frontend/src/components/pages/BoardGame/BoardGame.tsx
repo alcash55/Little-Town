@@ -17,6 +17,7 @@ import { selectStyles } from '../../../assets/styles/boardGameStyles';
 import { textfieldStyles } from '../../../assets/styles/boardGameStyles';
 import { bossList } from './bossList';
 import { Tile } from '../../types';
+import { useIconUrl } from './useIconUrl';
 
 const BoardGame = () => {
   const theme = useTheme();
@@ -162,66 +163,12 @@ const BoardGame = () => {
     );
   };
 
-  const handleSelectedIcon = (name: string) => {
-    setSelectedBoss(name);
-    if (type === 'A') {
-      const formattedName = name.replace(/\s+/g, '_').replace(/'/g, '%27');
-      if (name === 'Barrows') {
-        setIconUrl(
-          `https://oldschool.runescape.wiki/images/thumb/Dharok_the_Wretched.png/128px-Dharok_the_Wretched.png`,
-        );
-      } else if (name === 'Grotesque Guardians') {
-        setIconUrl(`https://oldschool.runescape.wiki/images/thumb/Dusk.png/128px-Dusk.png`);
-      } else if (name === 'Chambers of Xeric') {
-        setIconUrl(
-          `https://oldschool.runescape.wiki/images/thumb/Great_Olm.png/128px-Great_Olm.png`,
-        );
-      } else if (name === 'Theatre of Blood') {
-        setIconUrl(
-          `https://oldschool.runescape.wiki/images/thumb/Verzik_Vitur.png/128px-Verzik_Vitur.png`,
-        );
-      } else if (name === 'Tombs of Amascut') {
-        setIconUrl(
-          `https://oldschool.runescape.wiki/images/thumb/Tumeken%27s_Warden_%28level-489%29.png/128px-Tumeken%27s_Warden_%28level-489%29.png`,
-        );
-      } else if (name === 'Alchemical Hydra') {
-        setIconUrl(
-          `https://oldschool.runescape.wiki/images/thumb/Alchemical_Hydra_%28serpentine%29.png/128px-Alchemical_Hydra_%28serpentine%29.png`,
-        );
-      } else if (name === 'Dagannoth Kings') {
-        setIconUrl(
-          `https://oldschool.runescape.wiki/images/thumb/Dagannoth_Supreme.png/128px-Dagannoth_Supreme.png`,
-        );
-      } else if (name === 'Phantom Mustpah') {
-        setIconUrl(
-          `https://oldschool.runescape.wiki/images/thumb/Phantom_Muspah_%28ranged%29.png/128px-Phantom_Muspah_%28ranged%29.png`,
-        );
-      } else if (name === 'Wintertodt') {
-        setIconUrl(
-          `https://oldschool.runescape.wiki/images/thumb/Howling_Snow_Storm.gif/128px-Howling_Snow_Storm.gif`,
-        );
-      } else if (name === 'Zulrah') {
-        setIconUrl(
-          `https://oldschool.runescape.wiki/images/thumb/Zulrah_%28serpentine%29.png/128px-Zulrah_%28serpentine%29.png`,
-        );
-      } else {
-        setIconUrl(
-          `https://oldschool.runescape.wiki/images/thumb/${formattedName}.png/128px-${formattedName}.png`,
-        );
-      }
-    } else {
-      setIconUrl(
-        'https://static.vecteezy.com/system/resources/thumbnails/000/589/654/small/40_436.jpg',
-      );
-    }
-  };
-
   const handleTypeSelect = (value: string) => {
     setType(value);
   };
 
   useEffect(() => {
-    handleSelectedIcon(selectedBoss);
+    useIconUrl(selectedBoss, setSelectedBoss, type, setIconUrl);
     setInstructions(instructions);
     setTask(task);
     setType(type);
@@ -298,23 +245,3 @@ const BoardGame = () => {
 };
 
 export default BoardGame;
-
-// {
-//   "name": "MyBoard",
-//   "tiles": [
-//     {
-//       "name": "Tile1",
-//       "tile_type": "TypeA",
-//       "task": "task for Tile 1",
-//       "instructions": 'insert task instructions'
-//       "icon_url": "A"
-//     },
-//     {
-//       "name": "Tile2",
-//       "tile_type": "TypeB",
-//       "task": "insert number of tiles to go back",
-//       "instructions": 'Go back'
-//       "icon_url": "Arrow back icon"
-//     }
-//   ]
-// }
