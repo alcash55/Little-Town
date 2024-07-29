@@ -1,0 +1,27 @@
+name: deploy functions
+
+on:
+  push:
+    branches: main
+
+jobs:
+  job_id:
+    runs-on: "ubuntu-latest"
+    permissions:
+      contents: "read"
+      id-token: "write"
+
+    steps:
+      - uses: "actions/checkout@v3"
+
+      - id: "auth"
+        uses: "google-github-actions/auth@v1"
+        with:
+          credentials_json: "${{ secrets.GOOGLE_SA}}"
+
+      - id: "deploy"
+        uses: "google-github-actions/deploy-cloud-functions@v1"
+        with:
+          name: "LittleTownFunctions"
+          runtime: "nodejs20"
+          source_dir: serverlessfunctions
