@@ -20,7 +20,7 @@ export const textfieldStyles = {
 };
 
 export const selectStyles = {
-  width: '50%',
+  width: '100%',
   '& .MuiInputBase-input': {
     color: 'white', // White text color
   },

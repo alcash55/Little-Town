@@ -1,4 +1,4 @@
-import { Box, Typography, useTheme, useMediaQuery, Stack } from '@mui/material';
+import { Box, Typography, useTheme, useMediaQuery, Stack, Button } from '@mui/material';
 import { useEffect, useState } from 'react';
 import cat from '../../../assets/Images/cat.svg';
 import cum from '../../../assets/Images/cum.svg';
@@ -118,14 +118,23 @@ const Home = () => {
         alignItems: 'center',
       }}
     >
-      {md ? <></> : <Lootbeam name={'Lili'} image={heart} item={'Heart'} />}
-
       <Stack height={'100%'} justifyContent={'space-evenly'}>
         <Header />
-        <Countdown targetDate={bingoDate} />
+        <Stack justifyContent={'space-evenly'} direction={'row'}>
+          <Button variant="contained" href="/BingoRules">
+            Bingo Rules
+          </Button>
+          <Button variant="contained" href="/BingoBoard">
+            Bingo Board
+          </Button>
+          <Button variant="contained" href="/TeamData">
+            Team Data
+          </Button>
+          <Button variant="contained" href="/BingoScores">
+            Bingo Scores
+          </Button>
+        </Stack>
       </Stack>
-
-      {md ? <></> : <Lootbeam name={'Ken'} image={PenancePet} item={'BA pet'} />}
     </Box>
   );
 };

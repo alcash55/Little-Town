@@ -7,5 +7,4 @@ export const Pages = {
   BingoBoard: lazy(() => import('./BingoBoard')),
   BingoRules: lazy(() => import('./BingoRules')),
   BingoScores: lazy(() => import('./BingoScores')),
-  BoardGame: lazy(() => import('./BoardGame')),
 };

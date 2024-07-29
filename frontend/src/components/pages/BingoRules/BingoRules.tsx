@@ -26,10 +26,10 @@ const BingoRules = () => {
         alignItems: 'center',
       }}
     >
-      {/* <Typography variant="h1">Da Rules</Typography> */}
-      <Button variant="outlined" onClick={handleClick} sx={{ color: 'white' }}>
+      <Typography variant="h1">Da Rules</Typography>
+      {/* <Button variant="outlined" onClick={handleClick} sx={{ color: 'white' }}>
         send request
-      </Button>
+      </Button> */}
     </Box>
   );
 };
