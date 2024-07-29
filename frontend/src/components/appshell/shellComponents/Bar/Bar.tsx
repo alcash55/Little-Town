@@ -24,16 +24,34 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
               aria-label="Toggle Sidebar"
               size="large"
               onClick={toggleSidebar}
-              sx={{ color: 'white' }}
+              sx={{
+                color: 'white',
+                '&:hover': {
+                  bgcolor: '#163a36',
+                },
+                '& .Mui-focusVisible': {
+                  bgcolor: '#163a36',
+                },
+                '& .Mui-focused': {
+                  bgcolor: '#163a36',
+                },
+                '&.Mui-active': {
+                  bgcolor: '#163a36',
+                },
+              }}
             >
               <Menu />
             </IconButton>
             <Typography
               onClick={() => navigate('/')}
-              component={'div'}
+              component={'a'}
               variant="h1"
+              tabIndex={0}
               sx={{
-                '&:hover': { cursor: 'pointer' },
+                '&:hover': {
+                  transform: 'scale(1.1)',
+                  animationName: 'hover',
+                },
                 width: '100px',
                 height: '44px',
                 display: 'flex',
@@ -50,7 +68,12 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
             size="large"
             aria-label="Login"
             // onClick={}
-            sx={{ color: 'white' }}
+            sx={{
+              color: 'white',
+              '&:hover': {
+                bgcolor: '#163a36',
+              },
+            }}
           >
             <Login />
           </IconButton>
