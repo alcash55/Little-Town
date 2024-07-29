@@ -1,5 +1,6 @@
 import { Box, Typography, useTheme, useMediaQuery, Stack, Button } from '@mui/material';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import cat from '../../../assets/Images/cat.svg';
 import cum from '../../../assets/Images/cum.svg';
 import fish from '../../../assets/Images/fish.svg';
@@ -11,8 +12,6 @@ import astral from '../../../assets/Images/astral.svg';
 import blackHeart from '../../../assets/Images/blackHeart.svg';
 import greenLootBeam from '../../../assets/Images/greenLootBeam.gif';
 import heart from '../../../assets/Images/Imbued_heart_detail.png';
-import { Countdown } from '../../countdown/Countdown';
-import PenancePet from '../../../assets/Images/PenancePet.png';
 
 interface LootbeamProps {
   image: string;
@@ -24,8 +23,8 @@ const Home = () => {
   const [breakpoint, setBreakpoint] = useState<string>('');
   const theme = useTheme();
   const sm = useMediaQuery(theme.breakpoints.down('sm'));
-  const md = useMediaQuery(theme.breakpoints.down(800));
-  const bingoDate = new Date('2024-01-05T23:59:59');
+  // const md = useMediaQuery(theme.breakpoints.down(800));
+  // const bingoDate = new Date('2024-01-05T23:59:59');
   const gangIcons = [cat, cum, fish, skull, ketchup, redHat, foot, astral, blackHeart];
 
   useEffect(() => {
@@ -36,34 +35,34 @@ const Home = () => {
     }
   }, [window.length, breakpoint]);
 
-  const Lootbeam = ({ image, name, item }: LootbeamProps) => (
-    <Box
-      sx={{
-        width: '40%',
-        height: '100%',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        flexDirection: 'column',
-        pt: 5,
-      }}
-    >
-      <img src={greenLootBeam} alt={'Loot Beam'} width="140px" height="auto" />
-      <img
-        src={image}
-        alt="Little Town Logo"
-        width="65"
-        height="65"
-        style={{
-          borderRadius: '10px',
-          marginTop: -80,
-        }}
-      />
-      <Typography fontWeight={700} variant={'h6'} sx={{ ml: 2, mt: 1 }}>
-        Not {name}'s {item}
-      </Typography>
-    </Box>
-  );
+  // const Lootbeam = ({ image, name, item }: LootbeamProps) => (
+  //   <Box
+  //     sx={{
+  //       width: '40%',
+  //       height: '100%',
+  //       display: 'flex',
+  //       justifyContent: 'center',
+  //       alignItems: 'center',
+  //       flexDirection: 'column',
+  //       pt: 5,
+  //     }}
+  //   >
+  //     <img src={greenLootBeam} alt={'Loot Beam'} width="140px" height="auto" />
+  //     <img
+  //       src={image}
+  //       alt="Little Town Logo"
+  //       width="65"
+  //       height="65"
+  //       style={{
+  //         borderRadius: '10px',
+  //         marginTop: -80,
+  //       }}
+  //     />
+  //     <Typography fontWeight={700} variant={'h6'} sx={{ ml: 2, mt: 1 }}>
+  //       Not {name}'s {item}
+  //     </Typography>
+  //   </Box>
+  // );
 
   const Gangs = () => (
     <Box
@@ -121,16 +120,16 @@ const Home = () => {
       <Stack height={'100%'} justifyContent={'space-evenly'}>
         <Header />
         <Stack justifyContent={'space-evenly'} direction={'row'}>
-          <Button variant="contained" href="/BingoRules">
+          <Button variant="contained" to="/BingoRules" component={Link}>
             Bingo Rules
           </Button>
-          <Button variant="contained" href="/BingoBoard">
+          <Button variant="contained" to="/BingoBoard" component={Link}>
             Bingo Board
           </Button>
-          <Button variant="contained" href="/TeamData">
+          <Button variant="contained" to="/TeamData" component={Link}>
             Team Data
           </Button>
-          <Button variant="contained" href="/BingoScores">
+          <Button variant="contained" to="/BingoScores" component={Link}>
             Bingo Scores
           </Button>
         </Stack>
