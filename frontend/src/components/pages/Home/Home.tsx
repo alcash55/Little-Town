@@ -28,22 +28,6 @@ const Home = () => {
   const gangIcons = [cat, cum, fish, skull, ketchup, redHat, foot, astral, blackHeart];
 
   /**
-   * @see https://codepen.io/ss/pen/wGXOxa
-   */
-  const headerAnimation = {
-    transition: 'transform 0.5s ease, color 0.3s ease',
-    '&:hover': {
-      '@keyframes wave': {
-        '0%': { top: '0px;' },
-        '50%': { top: '-15px;' },
-        '100%': { top: '0px' },
-      },
-
-      animation: 'wave 1.0s ease infinite',
-    },
-  };
-
-  /**
    * @see https://oldschool.runescape.wiki/w/Category:Clan_rank_icons?filefrom=Clan+icon+-+Runecrafter.png#mw-category-media
    */
   const Gangs = (
@@ -120,7 +104,7 @@ const Home = () => {
       }}
     >
       <Stack height={'100%'} justifyContent={'center'} spacing={3}>
-        <Typography variant="h1" fontSize={48} sx={headerAnimation}>
+        <Typography variant="h1" fontSize={48}>
           Welcome to Little Town!
         </Typography>
 

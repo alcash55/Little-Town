@@ -69,7 +69,7 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
 
           switch (item.icon) {
             case 'BarChart':
-              IconComponent = BarChart;
+              IconComponent = BarChart; // Team Data Page
               break;
             case 'Home':
               IconComponent = Home;
@@ -78,13 +78,13 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
               IconComponent = Discord;
               break;
             case 'BoardGame':
-              IconComponent = BoardGame;
+              IconComponent = BoardGame; // Bingo Board Page
               break;
             case 'EmojiEvents':
-              IconComponent = EmojiEvents;
+              IconComponent = EmojiEvents; // Scores Page
               break;
             case 'Gavel':
-              IconComponent = Gavel;
+              IconComponent = Gavel; // Rules Pages
               break;
             default:
               IconComponent = Looks; // Set a default icon component
