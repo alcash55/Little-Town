@@ -3,7 +3,6 @@ import { SvgIcon, SvgIconProps } from '@mui/material';
 const Discord = (props: SvgIconProps) => {
   return (
     <SvgIcon {...props}>
-      {/* Paste the SVG content here */}
       <svg
         version="1.1"
         viewBox="0 0 245 240"
