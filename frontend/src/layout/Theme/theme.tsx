@@ -1,7 +1,11 @@
 import { ThemeProvider as MuiThemeProvider, CssBaseline, createTheme } from '@mui/material';
 import '@fontsource/pacifico';
 import '@fontsource/inter';
+import cursor from '../../assets/Images/cursor-dragon-scimitar.png';
 
+/**
+ * @see https://bareynol.github.io/mui-theme-creator/
+ */
 export const darkTheme = createTheme({
   palette: {
     primary: {
@@ -26,6 +30,22 @@ export const darkTheme = createTheme({
       fontSize: '1rem',
       lineHeight: 1.5,
       letterSpacing: '0.00938em',
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          cursor: `url(${cursor}), auto`,
+        },
+      },
+    },
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          cursor: `url(${cursor}), auto`,
+        },
+      },
     },
   },
 });

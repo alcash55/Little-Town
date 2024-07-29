@@ -3,7 +3,6 @@ import { SvgIcon, SvgIconProps } from '@mui/material';
 const BoardGame = (props: SvgIconProps) => {
   return (
     <SvgIcon {...props}>
-      {/* Paste the SVG content here */}
       <svg
         xmlns="http://www.w3.org/2000/svg"
         xmlnsXlink="http://www.w3.org/1999/xlink"
