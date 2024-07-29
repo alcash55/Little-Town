@@ -29,15 +29,6 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
                 '&:hover': {
                   bgcolor: '#163a36',
                 },
-                '& .Mui-focusVisible': {
-                  bgcolor: '#163a36',
-                },
-                '& .Mui-focused': {
-                  bgcolor: '#163a36',
-                },
-                '&.Mui-active': {
-                  bgcolor: '#163a36',
-                },
               }}
             >
               <Menu />
