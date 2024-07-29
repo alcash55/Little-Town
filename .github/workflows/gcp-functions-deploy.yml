@@ -1,8 +1,7 @@
 name: deploy functions
 
 on:
-  push:
-    branches: main
+  workflow_dispatch:
 
 jobs:
   job_id:
