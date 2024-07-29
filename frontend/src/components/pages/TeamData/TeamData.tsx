@@ -65,7 +65,7 @@ const TeamData = () => {
           textAlign: 'center',
         }}
       >
-        Bingo Scores
+        Team Data
       </Typography>
       <Typography
         variant="body1"
