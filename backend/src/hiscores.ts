@@ -1,4 +1,4 @@
-import { skills, activities } from "./utils/responseList";
+import { skills, activities } from "./utils/responseList.js";
 
 /**
  * @see https://runescape.wiki/w/Application_programming_interface#Hiscores_Lite_2
@@ -79,7 +79,7 @@ export async function hiscores(rsn) {
       // If the key is valid, update its data
       if (key) {
         formattedOptions[key] = {
-          rank: rankStr,
+          // rank: rankStr,
           level: levelStr === -1 ? "unranked" : levelStr, // -1 as unranked
           experience: experienceStr,
         };
