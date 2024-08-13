@@ -41,6 +41,11 @@ export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
           icon: 'Home',
         },
         {
+          title: 'Admion Panel',
+          href: '/AdminPanel',
+          icon: 'AdminPanelSettings',
+        },
+        {
           title: 'Bingo Rules',
           href: '/BingoRules',
           icon: 'Gavel',
