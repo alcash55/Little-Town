@@ -1,4 +1,9 @@
-// https://runescape.wiki/w/Application_programming_interface#Hiscores_Lite_2
+/**
+ * @see https://runescape.wiki/w/Application_programming_interface#Hiscores_Lite_2
+ * @see https://docs.google.com/spreadsheets/d/1nDFtGK_8eV_945CeT86OO-Z5EZEQTMBoLaILf4brfYg/edit?gid=339392603#gid=339392603
+ * @param rsn
+ * @returns
+ */
 export const hiscores = async (rsn) => {
   const bosses = [
     "abyssal_sire",
@@ -27,6 +32,7 @@ export const hiscores = async (rsn) => {
     "kraken",
     "kreearra",
     "kril_tsutsaroth",
+    "lunar_chests",
     "mimic",
     "nightmare",
     "obor",
@@ -74,6 +80,8 @@ export const hiscores = async (rsn) => {
     "construction",
   ];
 
+  const currentList = [];
+
   const formattedResponse = (response: string) => {
     return response;
   };
@@ -91,4 +99,45 @@ export const hiscores = async (rsn) => {
   });
   const data = await response.text(); //type string
   return formattedResponse(data);
+};
+
+const data = {
+  player: "Lucky Buck2",
+  team: "team 1",
+  inital: {
+    slayer: 1000,
+    farming: 1000,
+    runecrafting: 1000,
+    hunter: 1000,
+    construction: 1000,
+    KingBlackDragon: 1000,
+    kreearra: 1000,
+    kril_tsutsaroth: 1000,
+    mimic: 1000,
+    nightmare: 1000,
+    obor: 1000,
+    sarachnis: 1000,
+    scorpia: 1000,
+    skotizo: 1000,
+    the_gauntlet: 1000,
+    the_corrupted_gauntlet: 1000,
+  },
+  current: {
+    slayer: 1000,
+    farming: 1000,
+    runecrafting: 1000,
+    hunter: 1000,
+    construction: 1000,
+    KingBlackDragon: 1000,
+    kreearra: 1000,
+    kril_tsutsaroth: 1000,
+    mimic: 1000,
+    nightmare: 1000,
+    obor: 1000,
+    sarachnis: 1000,
+    scorpia: 1000,
+    skotizo: 1000,
+    the_gauntlet: 1000,
+    the_corrupted_gauntlet: 1000,
+  },
 };
