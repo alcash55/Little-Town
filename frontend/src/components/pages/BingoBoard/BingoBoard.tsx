@@ -18,7 +18,7 @@ const BingoBoard = () => {
       <Typography p={3} variant="h1" fontSize={48} textAlign={'center'}>
         Bingo Board
       </Typography>
-      <img src={bingoBoard} width={900} height={'auto'} />
+      <img src={bingoBoard} width={900} height={'auto'} alt="test bingo board" />
     </Box>
   );
 };

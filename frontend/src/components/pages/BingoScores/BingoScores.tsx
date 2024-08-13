@@ -10,7 +10,7 @@ interface DataPoint {
 
 const BingoScores = () => {
   const teamColors = ['#39f76c', '#854cc2', '#d95f27'];
-  const teamNames = ['Based Cigar', 'Gorilla Grip Bussies', 'Stark Industries'];
+  const teamNames = ['Team 1', 'Team 2', 'Team 3'];
   const chartData: DataPoint[][] = [
     [
       { x: new Date(2023, 6, 23), y: 0 },
