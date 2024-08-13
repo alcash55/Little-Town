@@ -1,143 +1,101 @@
+import { skills, activities } from "./utils/responseList";
+
 /**
  * @see https://runescape.wiki/w/Application_programming_interface#Hiscores_Lite_2
- * @see https://docs.google.com/spreadsheets/d/1nDFtGK_8eV_945CeT86OO-Z5EZEQTMBoLaILf4brfYg/edit?gid=339392603#gid=339392603
- * @param rsn
- * @returns
+ * @returns {Promise<string>}
  */
-export const hiscores = async (rsn) => {
-  const bosses = [
-    "abyssal_sire",
-    "alchemical_hydra",
-    "barrows_chests",
-    "bryophyta",
-    "callisto",
-    "cerberus",
-    "chambers_of_xeric",
-    "chambers_of_xeric_challenge_mode",
-    "chaos_elemental",
-    "chaos_fanatic",
-    "commander_zilyana",
-    "corporeal_beast",
-    "crazy_archaeologist",
-    "dagannoth_prime",
-    "dagannoth_rex",
-    "dagannoth_supreme",
-    "deranged_archaeologist",
-    "general_graardor",
-    "giant_mole",
-    "grotesque_guardians",
-    "hespori",
-    "kalphite_queen",
-    "king_black_dragon",
-    "kraken",
-    "kreearra",
-    "kril_tsutsaroth",
-    "lunar_chests",
-    "mimic",
-    "nightmare",
-    "obor",
-    "sarachnis",
-    "scorpia",
-    "skotizo",
-    "the_gauntlet",
-    "the_corrupted_gauntlet",
-    "theatre_of_blood",
-    "thermonuclear_smoke_devil",
-    "tzkal_zuk",
-    "tztok_jad",
-    "venenatis",
-    "vetion",
-    "vorkath",
-    "wintertodt",
-    "zalcano",
-    "zulrah",
-  ];
+export async function hiscores(rsn) {
+  async function getHiscoreData() {
+    try {
+      const response = await fetch(
+        `https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player=${rsn}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-  const skills = [
-    "overall",
-    "attack",
-    "defence",
-    "strength",
-    "constitution",
-    "ranged",
-    "prayer",
-    "magic",
-    "cooking",
-    "woodcutting",
-    "fletching",
-    "fishing",
-    "firemaking",
-    "crafting",
-    "smithing",
-    "mining",
-    "herblore",
-    "agility",
-    "thieving",
-    "slayer",
-    "farming",
-    "runecrafting",
-    "hunter",
-    "construction",
-  ];
-
-  const currentList = [];
-
-  const formattedResponse = (response: string) => {
-    return response;
-  };
-
-  const response = await fetch(
-    `https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws?player=${rsn}`,
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      return response.text();
+    } catch (e) {
+      console.log(e);
+      throw new Error(e);
     }
-  ).catch((e) => {
-    return e;
-  });
-  const data = await response.text(); //type string
-  return formattedResponse(data);
-};
+  }
 
-const data = {
-  player: "Lucky Buck2",
-  team: "team 1",
-  inital: {
-    slayer: 1000,
-    farming: 1000,
-    runecrafting: 1000,
-    hunter: 1000,
-    construction: 1000,
-    KingBlackDragon: 1000,
-    kreearra: 1000,
-    kril_tsutsaroth: 1000,
-    mimic: 1000,
-    nightmare: 1000,
-    obor: 1000,
-    sarachnis: 1000,
-    scorpia: 1000,
-    skotizo: 1000,
-    the_gauntlet: 1000,
-    the_corrupted_gauntlet: 1000,
-  },
-  current: {
-    slayer: 1000,
-    farming: 1000,
-    runecrafting: 1000,
-    hunter: 1000,
-    construction: 1000,
-    KingBlackDragon: 1000,
-    kreearra: 1000,
-    kril_tsutsaroth: 1000,
-    mimic: 1000,
-    nightmare: 1000,
-    obor: 1000,
-    sarachnis: 1000,
-    scorpia: 1000,
-    skotizo: 1000,
-    the_gauntlet: 1000,
-    the_corrupted_gauntlet: 1000,
-  },
-};
+  /**
+   * Takes all types of skills/categories and formats them into an array of objects
+   * that each object has a skills/category object has three properties rank, level, and experience
+   * @returns {object[]}
+   */
+  function formatHiscoresOptions() {
+    let formattedActivites: {
+      [key: string]: { rank: number; level: number; experience: number };
+    } = {};
+
+    let formattedSkills: {
+      [key: string]: { rank: number; experience: number };
+    } = {};
+
+    // Populate formattedActivities
+    activities.forEach((activity) => {
+      formattedActivites[activity] = {
+        rank: 0,
+        level: 0,
+        experience: 0,
+      };
+    });
+
+    // Populate formattedSkills
+    skills.forEach((skill) => {
+      formattedSkills[skill] = {
+        rank: 0,
+        experience: 0,
+      };
+    });
+
+    return {
+      ...formattedSkills,
+      ...formattedActivites,
+    };
+  }
+
+  /**
+   * @param {string[]} hiscoreData - The raw hiscore data as a string.
+   * @param {object} formattedOptions - activitis & skills object.
+   * @returns {object} - activities & skills object with hiscore data.
+   */
+  function parseHiscores(hiscoreData, formattedOptions) {
+    const formattedHiscores = hiscoreData.trim().split("\n");
+
+    formattedHiscores.forEach((line, idx) => {
+      // Split the line into parts
+      const [rankStr, levelStr, experienceStr] = line.split(",").map(Number);
+
+      // Check if the index is valid in the formattedOptions
+      const key = Object.keys(formattedOptions)[idx];
+
+      // If the key is valid, update its data
+      if (key) {
+        formattedOptions[key] = {
+          rank: rankStr,
+          level: levelStr === -1 ? "unranked" : levelStr, // -1 as unranked
+          experience: experienceStr,
+        };
+      }
+    });
+
+    return formattedOptions;
+  }
+
+  try {
+    const hiscoreData = await getHiscoreData();
+    const formattedOptions = formatHiscoresOptions();
+    const parsedData = parseHiscores(hiscoreData, formattedOptions);
+
+    return parsedData;
+  } catch (e) {
+    console.log(e);
+  }
+}

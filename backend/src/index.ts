@@ -1,5 +1,5 @@
 import { HttpFunction } from "@google-cloud/functions-framework";
-import url from "node:url";
+import * as url from "url";
 import { hiscores } from "./hiscores.js";
 
 export const LittleTownFunctions: HttpFunction = async (req, res) => {
