@@ -70,14 +70,14 @@ const BingoScores = () => {
         ))}
 
         {/* X-Axis */}
-        <VictoryAxis
+        {/* <VictoryAxis
           tickFormat={(x) => new Date(x).toLocaleDateString()}
           style={{
             tickLabels: { fontSize: 12, padding: 5, color: 'red' },
             grid: { stroke: 'black', axis: 'black' },
             axis: { stroke: 'black' },
           }}
-        />
+        /> */}
 
         {/* Y-Axis */}
         <VictoryAxis

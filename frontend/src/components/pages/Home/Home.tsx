@@ -1,5 +1,17 @@
-import { Box, Typography, useTheme, useMediaQuery, Stack, Button } from '@mui/material';
-import { useEffect, useState } from 'react';
+import {
+  Box,
+  Typography,
+  useTheme,
+  useMediaQuery,
+  Stack,
+  Button,
+  IconButton,
+  Slide,
+  keyframes,
+} from '@mui/material';
+import { BarChart, EmojiEvents, Gavel } from '@mui/icons-material';
+import BoardGame from '../../../assets/Images/BoardGame';
+import { Link } from 'react-router-dom';
 import cat from '../../../assets/Images/cat.svg';
 import cum from '../../../assets/Images/cum.svg';
 import fish from '../../../assets/Images/fish.svg';
@@ -9,102 +21,72 @@ import redHat from '../../../assets/Images/redHat.svg';
 import foot from '../../../assets/Images/foot.svg';
 import astral from '../../../assets/Images/astral.svg';
 import blackHeart from '../../../assets/Images/blackHeart.svg';
-import greenLootBeam from '../../../assets/Images/greenLootBeam.gif';
-import heart from '../../../assets/Images/Imbued_heart_detail.png';
-import { Countdown } from '../../countdown/Countdown';
-import PenancePet from '../../../assets/Images/PenancePet.png';
-
-interface LootbeamProps {
-  image: string;
-  name: string;
-  item: string;
-}
 
 const Home = () => {
-  const [breakpoint, setBreakpoint] = useState<string>('');
   const theme = useTheme();
-  const sm = useMediaQuery(theme.breakpoints.down('sm'));
-  const md = useMediaQuery(theme.breakpoints.down(800));
-  const bingoDate = new Date('2024-01-05T23:59:59');
+  const isTablet = useMediaQuery(theme.breakpoints.down(630));
   const gangIcons = [cat, cum, fish, skull, ketchup, redHat, foot, astral, blackHeart];
 
-  useEffect(() => {
-    if (window.length <= 600) {
-      setBreakpoint('sm');
-    } else {
-      setBreakpoint('');
-    }
-  }, [window.length, breakpoint]);
-
-  const Lootbeam = ({ image, name, item }: LootbeamProps) => (
-    <Box
-      sx={{
-        width: '40%',
-        height: '100%',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        flexDirection: 'column',
-        pt: 5,
-      }}
-    >
-      <img src={greenLootBeam} alt={'Loot Beam'} width="140px" height="auto" />
-      <img
-        src={image}
-        alt="Little Town Logo"
-        width="65"
-        height="65"
-        style={{
-          borderRadius: '10px',
-          marginTop: -80,
+  /**
+   * @see https://oldschool.runescape.wiki/w/Category:Clan_rank_icons?filefrom=Clan+icon+-+Runecrafter.png#mw-category-media
+   */
+  const Gangs = (
+    <Slide direction="left" in={true} timeout={1000}>
+      <Box
+        sx={{
+          display: 'flex',
+          width: '100%',
+          justifyContent: 'space-between',
+          p: 1,
         }}
-      />
-      <Typography fontWeight={700} variant={'h6'} sx={{ ml: 2, mt: 1 }}>
-        Not {name}'s {item}
-      </Typography>
-    </Box>
+      >
+        {gangIcons.map((name, index) => (
+          <img
+            aria-label={'Little Town Gang Logos'}
+            key={index}
+            width="25"
+            height="auto"
+            src={name}
+          />
+        ))}
+      </Box>
+    </Slide>
   );
 
-  const Gangs = () => (
-    <Box
-      sx={{
-        display: 'flex',
-        width: sm ? '100%' : '65%',
-        justifyContent: 'space-between',
-        p: 1,
-      }}
-    >
-      {gangIcons.map((name, index) => (
-        <img
-          aria-label={'Little Town Gang Logos'}
-          key={index}
-          width="25"
-          height="auto"
-          src={name}
-        />
-      ))}
-    </Box>
-  );
-
-  const Header = () => (
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        flexDirection: 'column',
-      }}
-    >
-      <Typography variant="h1" fontSize={48} pb={2}>
-        Welcome to Little Town!
-      </Typography>
-      <Typography variant="body1" fontSize={sm ? 24 : 28}>
-        In our Little Town, we strive to create a welcoming and inclusive community for all players.
-        We celebrate our differences and encourage everyone to be themselves, as we understand that
-        individuality is a key ingredient in building a vibrant community!
-      </Typography>
-      <Gangs />
-    </Box>
+  const NavButtons = (
+    <>
+      {isTablet ? (
+        <>
+          <IconButton component={Link} to="BingoRules">
+            <Gavel />
+          </IconButton>
+          <IconButton component={Link} to="BingoBoard">
+            <BoardGame />
+          </IconButton>
+          <IconButton component={Link} to="TeamData">
+            <BarChart />
+          </IconButton>
+          <IconButton component={Link} to="BingoScores">
+            <EmojiEvents />
+          </IconButton>
+        </>
+      ) : (
+        <>
+          <Button variant="contained" to="/BingoRules" component={Link}>
+            Bingo Rules
+          </Button>
+          <Button variant="contained" to="/BingoBoard" component={Link}>
+            Bingo Board
+          </Button>
+          <Button variant="contained" to="/TeamData" component={Link}>
+            Team Data
+          </Button>
+          <Button variant="contained" to="/BingoScores" component={Link}>
+            Bingo Scores
+          </Button>
+        </>
+      )}
+    </>
   );
 
   return (
@@ -112,27 +94,24 @@ const Home = () => {
       sx={{
         backgroundImage: 'linear-gradient(to bottom, #2A9D8F, #0d0d0d)',
         height: '100%',
+        width: '100%',
         display: 'flex',
         justifyContent: 'center',
-        px: 5,
+        px: 2,
         alignItems: 'center',
+        textAlign: 'center',
+        xOverflow: 'hidden',
       }}
     >
-      <Stack height={'100%'} justifyContent={'space-evenly'}>
-        <Header />
-        <Stack justifyContent={'space-evenly'} direction={'row'}>
-          <Button variant="contained" href="/BingoRules">
-            Bingo Rules
-          </Button>
-          <Button variant="contained" href="/BingoBoard">
-            Bingo Board
-          </Button>
-          <Button variant="contained" href="/TeamData">
-            Team Data
-          </Button>
-          <Button variant="contained" href="/BingoScores">
-            Bingo Scores
-          </Button>
+      <Stack height={'100%'} justifyContent={'center'} spacing={3}>
+        <Typography variant="h1" fontSize={48}>
+          Welcome to Little Town!
+        </Typography>
+
+        {Gangs}
+
+        <Stack justifyContent={'space-evenly'} direction={'row'} spacing={2}>
+          {NavButtons}
         </Stack>
       </Stack>
     </Box>
