@@ -13,7 +13,7 @@ import BoardGame from '../../../../assets/Images/BoardGame';
 import { Box, Button, Divider, Drawer, IconButton, Toolbar, Typography } from '@mui/material';
 import ltVillage from '../../../../assets/Images/little-town-village.png';
 import { Link } from 'react-router-dom';
-import { SidebarItem } from '../../../../contexts';
+import { SidebarItem } from './useSidebar';
 import { darkTheme } from '../../../../layout/Theme';
 import { LoadingContainer } from '../../../LoadingContainer/LoadingContainer';
 

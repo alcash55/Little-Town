@@ -1,14 +1,23 @@
-import type { PropsWithChildren } from 'react';
-import { BrowserRouter as Router } from 'react-router-dom';
+import { Suspense } from 'react';
 import { ThemeProvider } from '../Theme';
-import { SidebarProvider } from '../../contexts';
+import { SidebarProvider } from '../../components/AppShell/InternalComponent/SideBar/useSidebar';
+import { AppShell } from '../../components/AppShell/AppShell';
+import { LoadingContainer } from '../../components/LoadingContainer/LoadingContainer';
 
-export function Providers({ children }: PropsWithChildren<{}>) {
+export function Providers() {
   return (
-    <Router>
+    <Suspense
+      fallback={
+        <LoadingContainer loading={true} width={250} height={250}>
+          <></>
+        </LoadingContainer>
+      }
+    >
       <ThemeProvider>
-        <SidebarProvider>{children}</SidebarProvider>
+        <SidebarProvider>
+          <AppShell />
+        </SidebarProvider>
       </ThemeProvider>
-    </Router>
+    </Suspense>
   );
 }
