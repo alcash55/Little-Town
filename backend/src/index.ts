@@ -2,6 +2,9 @@ import { HttpFunction } from "@google-cloud/functions-framework";
 import * as url from "url";
 import { hiscores } from "./hiscores.js";
 
+/**
+ * @see https://supabase.com/docs/reference/javascript/introduction
+ */
 export const LittleTownFunctions: HttpFunction = async (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
   const requestUrl = req.url;
