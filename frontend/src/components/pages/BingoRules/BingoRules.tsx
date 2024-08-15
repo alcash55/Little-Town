@@ -1,5 +1,4 @@
-import { Box, Button, Typography } from '@mui/material';
-import { darkTheme } from '../../../layout/Theme';
+import { Stack, Button, Typography } from '@mui/material';
 
 const BingoRules = () => {
   const handleClick = async () => {
@@ -16,21 +15,18 @@ const BingoRules = () => {
   };
 
   return (
-    <Box
-      sx={{
-        bgcolor: darkTheme.palette.primary.main,
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}
+    <Stack
+      component={'section'}
+      width={'100%'}
+      height={'100%'}
+      justifyContent={'center'}
+      alignItems={'center'}
     >
       <Typography variant="h1">Da Rules</Typography>
-      {/* <Button variant="outlined" onClick={handleClick} sx={{ color: 'white' }}>
+      <Button variant="outlined" onClick={handleClick} sx={{ color: 'white' }}>
         send request
-      </Button> */}
-    </Box>
+      </Button>
+    </Stack>
   );
 };
 

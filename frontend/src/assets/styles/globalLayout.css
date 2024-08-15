@@ -12,3 +12,7 @@ body,
 img {
     font-style: italic;
 }
+
+section {
+ background-color: #424242;
+}
