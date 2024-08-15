@@ -3,6 +3,8 @@ import { ThemeProvider } from '../Theme';
 import { SidebarProvider } from '../../components/AppShell/InternalComponent/SideBar/useSidebar';
 import { AppShell } from '../../components/AppShell/AppShell';
 import { LoadingContainer } from '../../components/LoadingContainer/LoadingContainer';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 
 export function Providers() {
   return (
@@ -13,11 +15,13 @@ export function Providers() {
         </LoadingContainer>
       }
     >
-      <ThemeProvider>
-        <SidebarProvider>
-          <AppShell />
-        </SidebarProvider>
-      </ThemeProvider>
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <ThemeProvider>
+          <SidebarProvider>
+            <AppShell />
+          </SidebarProvider>
+        </ThemeProvider>
+      </LocalizationProvider>
     </Suspense>
   );
 }
