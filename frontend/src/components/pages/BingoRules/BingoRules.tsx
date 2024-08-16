@@ -4,7 +4,7 @@ const BingoRules = () => {
   const handleClick = async () => {
     console.log('clicked');
     await fetch('http://localhost:8080/hiscores?player=Lucky Buck2', {
-      method: 'GET',
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
     })
       .then(async (response) => {
