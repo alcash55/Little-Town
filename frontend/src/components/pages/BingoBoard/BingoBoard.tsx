@@ -1,6 +1,9 @@
 import { Stack, Typography } from '@mui/material';
 import bingoBoard from '../../../assets/Images/BingoBoardExample.png';
 
+/**
+ * @see https://github.com/alcash55/Little-Town/blob/bb62a287a241cdf1f5dcbfee77b2526c296a36a9/frontend/src/components/pages/BoardGame/BoardGame.tsx
+ */
 const BingoBoard = () => {
   return (
     <Stack
