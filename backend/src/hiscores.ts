@@ -89,12 +89,22 @@ export async function hiscores(rsn) {
     return formattedOptions;
   }
 
+  function filterHiscoresforBingo(data) {
+    console.log(data);
+  }
+
+  async function sendHiscorestoDB(data) {
+    console.log(data);
+  }
+
   try {
     const hiscoreData = await getHiscoreData();
     const formattedOptions = formatHiscoresOptions();
     const parsedData = parseHiscores(hiscoreData, formattedOptions);
+    const filteredData = filterHiscoresforBingo(parsedData);
+    const sentData = await sendHiscorestoDB(filteredData);
 
-    return parsedData;
+    return filteredData;
   } catch (e) {
     console.log(e);
   }
