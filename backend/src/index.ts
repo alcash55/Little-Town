@@ -1,6 +1,7 @@
 import { HttpFunction } from "@google-cloud/functions-framework";
 import * as url from "url";
 import { hiscores } from "./hiscores.js";
+import { createBingo } from "./createBingo.js";
 
 /**
  * @see https://supabase.com/docs/reference/javascript/introduction
@@ -32,6 +33,7 @@ export const LittleTownFunctions: HttpFunction = async (req, res) => {
   } else if (req.method === "POST") {
     if (pathname === "/admin") {
       try {
+        const data = await createBingo(req.body);
       } catch (e) {
         console.log(e);
         res.status(500).send({ error: "Internal Server Error" });

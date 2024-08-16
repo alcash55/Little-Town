@@ -28,8 +28,25 @@ export const useAdminPanel = () => {
     setState(value);
   };
 
-  const handleSubmit = () => {
-    console.log('submitted');
+  const handleSubmit = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: bingoName,
+          start: startDate,
+          end: endDate,
+          size: boardSize,
+          numOfTeams: numberOfTeams,
+          teamNames: teamNames,
+        }),
+      });
+      console.log('clicked');
+      console.log(response);
+    } catch (e) {
+      console.log(e);
+    }
   };
 
   return {
