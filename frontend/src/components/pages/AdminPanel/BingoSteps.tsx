@@ -53,7 +53,10 @@ export const BingoSteps = () => {
                 views={['day', 'month', 'hours']}
                 showDaysOutsideCurrentMonth
                 disablePast
-                onChange={(e: any) => handleChange(e.target.value, setStartDate)}
+                value={new Date(startDate)}
+                onChange={(newDate) => {
+                  handleChange(newDate, setStartDate);
+                }}
                 slotProps={{
                   textField: {
                     required: true,
@@ -64,7 +67,10 @@ export const BingoSteps = () => {
                 label="End"
                 views={['day', 'month', 'hours']}
                 showDaysOutsideCurrentMonth
-                onChange={(e: any) => handleChange(e.target.value, setEndDate)}
+                value={new Date(endDate)}
+                onChange={(newDate) => {
+                  handleChange(newDate, setEndDate);
+                }}
                 slotProps={{
                   textField: {
                     required: true,
