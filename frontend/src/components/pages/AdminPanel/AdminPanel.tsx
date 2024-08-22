@@ -13,7 +13,39 @@ import { useAdminPanel } from './useAdminPanel';
 import { BingoSteps } from './BingoSteps';
 
 const AdminPanel = () => {
-  const { activeStep, handleNext, handleBack, handleSubmit } = useAdminPanel();
+  const {
+    bingoName,
+    setBingoName,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    boardSize,
+    setBoardSize,
+    numberOfTeams,
+    setNumberOfTeams,
+    teamNames,
+    setTeamNames,
+    activeStep,
+    handleNext,
+    handleBack,
+    handleSubmit,
+  } = useAdminPanel();
+
+  const steps = BingoSteps({
+    bingoName,
+    setBingoName,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    boardSize,
+    setBoardSize,
+    numberOfTeams,
+    setNumberOfTeams,
+    teamNames,
+    setTeamNames,
+  });
 
   return (
     <Stack
@@ -30,11 +62,11 @@ const AdminPanel = () => {
 
       <Box sx={{ width: '100%', maxWidth: 700 }}>
         <Stepper activeStep={activeStep} orientation="vertical">
-          {BingoSteps().map((step, idx) => (
+          {steps.map((step, idx) => (
             <Step key={idx}>
               <StepLabel icon={step.connector}>{step.title}</StepLabel>
               <StepContent>
-                {BingoSteps()[activeStep].questions.map((question, qIndex) => (
+                {steps[activeStep].questions.map((question, qIndex) => (
                   <Box key={qIndex} sx={{ mb: 2 }}>
                     <Typography variant="h6">{question.title}</Typography>
                     <Typography>{question.description}</Typography>
@@ -42,7 +74,7 @@ const AdminPanel = () => {
                   </Box>
                 ))}
                 <Box sx={{ mt: 2 }}>
-                  {activeStep === BingoSteps().length - 1 ? (
+                  {activeStep === steps.length - 1 ? (
                     <Button variant="contained" onClick={handleSubmit}>
                       Create Bingo
                     </Button>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { format, parse, addDays } from 'date-fns';
+import { format, addDays } from 'date-fns';
 
 export const useAdminPanel = () => {
   const dateFormat = 'MM/dd/yyyy/HH';
@@ -11,7 +11,7 @@ export const useAdminPanel = () => {
   const [endDate, setEndDate] = useState<string>(tomorrow);
   const [boardSize, setBoardSize] = useState<number>(16);
   const [numberOfTeams, setNumberOfTeams] = useState<number>(3);
-  const [teamNames, setTeamNames] = useState<string[]>([]);
+  const [teamNames, setTeamNames] = useState<string[]>(Array(numberOfTeams).fill(''));
   const [activeStep, setActiveStep] = useState<number>(0);
 
   const handleNext = () => {
@@ -22,29 +22,24 @@ export const useAdminPanel = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
-  const handleChange = (
-    value: string | any,
-    setState: React.Dispatch<React.SetStateAction<any>>,
-  ) => {
-    setState(value);
-  };
-
   const handleSubmit = async () => {
+    const data = {
+      name: bingoName,
+      start: startDate,
+      end: endDate,
+      size: boardSize,
+      numOfTeams: numberOfTeams,
+      teamNames: teamNames,
+    };
+    console.log(data);
     try {
       const response = await fetch('http://localhost:8080/admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: bingoName,
-          start: startDate,
-          end: endDate,
-          size: boardSize,
-          numOfTeams: numberOfTeams,
-          teamNames: teamNames,
-        }),
+        body: JSON.stringify(data),
       });
       console.log('clicked');
-      console.log(response);
+      console.log(response.body);
     } catch (e) {
       console.log(e);
     }
@@ -63,7 +58,6 @@ export const useAdminPanel = () => {
     setNumberOfTeams,
     teamNames,
     setTeamNames,
-    handleChange,
     handleNext,
     handleBack,
     activeStep,
