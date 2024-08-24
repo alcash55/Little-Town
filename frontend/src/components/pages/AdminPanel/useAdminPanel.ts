@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { format, addDays } from 'date-fns';
 
 export const useAdminPanel = () => {
@@ -13,12 +13,17 @@ export const useAdminPanel = () => {
   const [numberOfTeams, setNumberOfTeams] = useState<number>(3);
   const [teamNames, setTeamNames] = useState<string[]>(Array(numberOfTeams).fill(''));
   const [activeStep, setActiveStep] = useState<number>(0);
+  const [tab, setTab] = useState<number>(1);
 
-  const handleNext = () => {
+  const setActiveTab = (event: React.SyntheticEvent, newTab: number) => {
+    setTab(newTab);
+  };
+
+  const handleFormNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 
-  const handleBack = () => {
+  const handleFormBack = () => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
@@ -33,15 +38,34 @@ export const useAdminPanel = () => {
     };
     console.log(data);
     try {
-      const response = await fetch('http://localhost:8080/admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      console.log('clicked');
-      console.log(response.body);
+      if (validateForm()) {
+        const response = await fetch('http://localhost:8080/admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        console.log('clicked');
+        console.log(response.body);
+      } else {
+        throw new Error('Unable to create bingo, please check form');
+      }
     } catch (e) {
       console.log(e);
+    }
+  };
+
+  const validateDates = () => {};
+
+  const validateForm = () => {
+    const teams = teamNames.find((name) => {
+      name === '' ? name : '';
+    });
+
+    if (teams && bingoName) {
+      return true;
+    } else {
+      return false;
     }
   };
 
@@ -58,9 +82,12 @@ export const useAdminPanel = () => {
     setNumberOfTeams,
     teamNames,
     setTeamNames,
-    handleNext,
-    handleBack,
+    handleFormNext,
+    handleFormBack,
     activeStep,
     handleSubmit,
+    validateForm,
+    tab,
+    setActiveTab,
   };
 };

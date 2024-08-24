@@ -1,7 +1,7 @@
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 import GamesIcon from '@mui/icons-material/Games';
 import PeopleIcon from '@mui/icons-material/People';
-import { Box, FormControl, InputLabel, MenuItem, Select, TextField } from '@mui/material';
+import { Box, FormControl, InputLabel, MenuItem, Select, Stack, TextField } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { useAdminPanel } from './useAdminPanel';
 
@@ -53,7 +53,6 @@ export const BingoSteps = ({
               value={bingoName}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 setBingoName(e.target.value);
-                console.log(bingoName);
               }}
               fullWidth
               required={true}
@@ -109,7 +108,11 @@ export const BingoSteps = ({
           title: 'Board Size',
           description: 'Select the size of the bingo board.',
           stepComponent: (
-            <FormControl variant="standard" sx={{ m: 1, minWidth: 120 }} required={true}>
+            <FormControl
+              variant="standard"
+              sx={{ m: 1, minWidth: 120, width: 'auto' }}
+              required={true}
+            >
               <InputLabel id="board-size-label-label">Age</InputLabel>
               <Select
                 labelId="board-size-label"
@@ -151,10 +154,10 @@ export const BingoSteps = ({
       connector: <PeopleIcon />,
       questions: [
         {
-          title: 'What are the team names?',
-          description: 'Enter the names of the teams.',
+          title: 'Team Names',
+          description: "Enter each team's name.",
           stepComponent: (
-            <Box>
+            <Stack spacing={1} direction={'row'} justifyContent={'space-evenly'} width={'100%'}>
               {Array.from({ length: numberOfTeams }, (_, index) => (
                 <TextField
                   key={index}
@@ -167,10 +170,10 @@ export const BingoSteps = ({
                     setTeamNames(newTeamNames);
                   }}
                   variant="outlined"
-                  fullWidth
+                  sx={{ width: '50%' }}
                 />
               ))}
-            </Box>
+            </Stack>
           ),
         },
         {
