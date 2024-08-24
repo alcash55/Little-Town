@@ -176,11 +176,6 @@ export const BingoSteps = ({
             </Stack>
           ),
         },
-        {
-          title: 'Make the teams',
-          description: 'Enter the names of the teams.',
-          stepComponent: <TextField label="Team Names" variant="outlined" fullWidth />,
-        },
       ],
     },
   ];
