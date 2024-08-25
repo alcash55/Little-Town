@@ -48,14 +48,7 @@ export const darkTheme = createTheme({
     },
   },
   components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          cursor: `url(${cursor}), auto`,
-        },
-      },
-    },
-    MuiIconButton: {
+    MuiButtonBase: {
       styleOverrides: {
         root: {
           cursor: `url(${cursor}), auto`,
