@@ -1,19 +1,12 @@
-import {
-  Box,
-  Button,
-  Stack,
-  Step,
-  StepContent,
-  StepLabel,
-  Stepper,
-  Typography,
-  useTheme,
-  useMediaQuery,
-  Tabs,
-  Tab,
-} from '@mui/material';
+import { Box, Stack, Typography, Tabs, Tab, useMediaQuery, useTheme } from '@mui/material';
+import InfoIcon from '@mui/icons-material/Info';
+import AddAPhotoIcon from '@mui/icons-material/AddAPhoto';
+import GamepadIcon from '@mui/icons-material/Gamepad';
+import DashboardCustomizeIcon from '@mui/icons-material/DashboardCustomize';
+import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import { useAdminPanel } from './useAdminPanel';
-import { BingoBuilderForm } from './BingoBuilderForm';
+import { BingoBuilderForm } from './BingoBuilder/BingoBuilderForm';
+import BoardBuilder from './BoardBuilder/BoardBuilder';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -21,30 +14,41 @@ interface TabPanelProps {
   value: number;
 }
 
-const CustomTabPanel = (props: TabPanelProps) => {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
-  );
-};
-
-function a11yProps(index: number) {
-  return {
-    id: `simple-tab-${index}`,
-    'aria-controls': `simple-tabpanel-${index}`,
-  };
-}
-
 const AdminPanel = () => {
+  const theme = useTheme();
+  const isTablet = useMediaQuery(theme.breakpoints.down(600));
+  const isLargeMobile = useMediaQuery(theme.breakpoints.down(425));
+  const tabList = [
+    { icon: <InfoIcon />, lable: 'Bingo Overview', value: 1 },
+    { icon: <AddAPhotoIcon />, lable: 'Screenshot Submissions', value: 2 },
+    { icon: <DashboardCustomizeIcon />, lable: 'Board Builder', value: 3 },
+    { icon: <GamepadIcon />, lable: 'Bingo Builder', value: 4 },
+    { icon: <GroupAddIcon />, lable: 'Team Drafter', value: 5 },
+  ];
+
+  const CustomTabPanel = (props: TabPanelProps) => {
+    const { children, value, index, ...other } = props;
+
+    return (
+      <div
+        role="tabpanel"
+        hidden={value !== index}
+        id={`admin-panel-tabpanel-${index}`}
+        aria-labelledby={`admin-panel-tab-${index}`}
+        {...other}
+      >
+        {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      </div>
+    );
+  };
+
+  function a11yProps(index: number) {
+    return {
+      id: `simple-tab-${index}`,
+      'aria-controls': `simple-tabpanel-${index}`,
+    };
+  }
+
   const {
     bingoName,
     setBingoName,
@@ -81,7 +85,9 @@ const AdminPanel = () => {
           value={tab}
           onChange={setActiveTab}
           aria-label=""
-          variant="fullWidth"
+          variant={isLargeMobile ? 'scrollable' : 'fullWidth'}
+          scrollButtons={isLargeMobile}
+          allowScrollButtonsMobile={isLargeMobile}
           sx={{
             width: '100%',
             bgcolor: 'black',
@@ -95,13 +101,27 @@ const AdminPanel = () => {
             '& .MuiTabs-indicator': {
               backgroundColor: '#2A9D8F', // Indicator color
             },
+            '& .MuiTabs-scrollButtons': {
+              color: '#2A9D8F',
+              '& .Mui-disabled': {
+                opacity: 0.2,
+                color: '#2A9D8F',
+              },
+            },
           }}
         >
-          <Tab label="Bingo Overview" value={1} {...a11yProps(0)} />
-          <Tab label="Screenshot Submissions" value={2} {...a11yProps(1)} />
-          <Tab label="Bingo Builder" value={3} {...a11yProps(2)} />
-          <Tab label="Team Drafter" value={4} {...a11yProps(3)} />
+          {tabList.map((tab, idx) => (
+            <Tab
+              key={tab.lable}
+              icon={isTablet ? tab.icon : <></>}
+              label={isTablet ? '' : tab.lable}
+              value={tab.value}
+              {...a11yProps(idx)}
+              sx={{}}
+            />
+          ))}
         </Tabs>
+
         <Typography variant="h3" component={'h1'} textAlign={'center'}>
           Admin Panel
         </Typography>
@@ -114,6 +134,9 @@ const AdminPanel = () => {
             Screenshot Submissions
           </CustomTabPanel>
           <CustomTabPanel index={3} value={tab}>
+            <BoardBuilder boardSize={boardSize} />
+          </CustomTabPanel>
+          <CustomTabPanel index={4} value={tab}>
             <BingoBuilderForm
               activeStep={activeStep}
               bingoName={bingoName}
@@ -134,7 +157,8 @@ const AdminPanel = () => {
               validateForm={validateForm}
             />
           </CustomTabPanel>
-          <CustomTabPanel index={4} value={tab}>
+
+          <CustomTabPanel index={5} value={tab}>
             Team Drafter
           </CustomTabPanel>
         </Box>
