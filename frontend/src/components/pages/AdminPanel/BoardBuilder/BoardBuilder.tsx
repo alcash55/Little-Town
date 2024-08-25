@@ -19,7 +19,7 @@ interface BoardBuilderProps {
   boardSize: number;
 }
 
-const BoradBuilder = (props: BoardBuilderProps) => {
+const BoardBuilder = (props: BoardBuilderProps) => {
   const {
     tilesTypeOptions,
     tileType,
@@ -121,4 +121,4 @@ const BoradBuilder = (props: BoardBuilderProps) => {
   );
 };
 
-export default BoradBuilder;
+export default BoardBuilder;
