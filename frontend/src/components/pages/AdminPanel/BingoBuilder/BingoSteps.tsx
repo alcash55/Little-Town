@@ -3,7 +3,6 @@ import GamesIcon from '@mui/icons-material/Games';
 import PeopleIcon from '@mui/icons-material/People';
 import { Box, FormControl, InputLabel, MenuItem, Select, Stack, TextField } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { useAdminPanel } from '../useAdminPanel';
 
 interface BingoStepsProps {
   bingoName: string;
@@ -34,8 +33,6 @@ export const BingoSteps = ({
   teamNames,
   setTeamNames,
 }: BingoStepsProps) => {
-  const {} = useAdminPanel();
-
   const steps = [
     {
       title: 'Basic Information',
