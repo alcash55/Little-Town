@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "start": "npx functions-framework --source=dist --target=LittleTownFunctions [--signature-type=http]",
-    "dev": "concurrently \"tsc -w\" \"nodemon --watch ./ --exec yarn start\"",
+    "dev": "concurrently \"tsc -w\" \"nodemon --watch ./ --exec bun run start\"",
     "gcp-build": "npm run build"
   },
   "engines": {

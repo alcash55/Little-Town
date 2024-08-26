@@ -1,11 +1,19 @@
 import { useEffect, useState } from 'react';
-import { Close, Home, Looks, BarChart, EmojiEvents, Gavel } from '@mui/icons-material';
+import {
+  Close,
+  Home,
+  Looks,
+  BarChart,
+  EmojiEvents,
+  Gavel,
+  AdminPanelSettings,
+} from '@mui/icons-material';
 import Discord from '../../../../assets/Images/Discord';
 import BoardGame from '../../../../assets/Images/BoardGame';
 import { Box, Button, Divider, Drawer, IconButton, Toolbar, Typography } from '@mui/material';
 import ltVillage from '../../../../assets/Images/little-town-village.png';
 import { Link } from 'react-router-dom';
-import { SidebarItem } from '../../../../contexts';
+import { SidebarItem } from './useSidebar';
 import { darkTheme } from '../../../../layout/Theme';
 import { LoadingContainer } from '../../../LoadingContainer/LoadingContainer';
 
@@ -85,6 +93,9 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
               break;
             case 'Gavel':
               IconComponent = Gavel; // Rules Pages
+              break;
+            case 'AdminPanelSettings':
+              IconComponent = AdminPanelSettings; // Admin Panel Page
               break;
             default:
               IconComponent = Looks; // Set a default icon component

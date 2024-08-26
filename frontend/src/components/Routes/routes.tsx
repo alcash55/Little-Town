@@ -1,30 +1,17 @@
-import { Pages } from '../pages';
-import { createRoutes } from './routes-config';
+import { Providers } from '../../layout/Providers';
+import { Pages } from '../Pages';
+import { createBrowserRouter, Route, createRoutesFromElements } from 'react-router-dom';
 
-export const routes = createRoutes({
-  fallback_route: '/404',
-  layouts: {},
-  routes: [
-    { path: '*', element: <Pages.Error /> },
-    {
-      path: '/TeamData',
-      element: <Pages.TeamData />,
-    },
-    {
-      path: '/',
-      element: <Pages.Home />,
-    },
-    {
-      path: '/BingoBoard',
-      element: <Pages.BingoBoard />,
-    },
-    {
-      path: '/BingoScores',
-      element: <Pages.BingoScores />,
-    },
-    {
-      path: '/BingoRules',
-      element: <Pages.BingoRules />,
-    },
-  ],
-});
+export const Routes = createBrowserRouter(
+  createRoutesFromElements(
+    <Route path="/" element={<Providers />}>
+      <Route index element={<Pages.Home />} />
+      <Route path="/TeamData" element={<Pages.TeamData />} />
+      <Route path="/BingoBoard" element={<Pages.BingoBoard />} />
+      <Route path="/BingoScores" element={<Pages.BingoScores />} />
+      <Route path="/BingoRules" element={<Pages.BingoRules />} />
+      <Route path="/AdminPanel" element={<Pages.AdminPanel />} />
+      <Route path="/*" element={<Pages.Error />} />
+    </Route>,
+  ),
+);

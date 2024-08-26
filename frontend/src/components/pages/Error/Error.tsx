@@ -1,18 +1,20 @@
-import { Box, Typography } from '@mui/material';
+import { Stack, Button, Typography } from '@mui/material';
 
 const Error = () => {
   return (
-    <Box
-      sx={{
-        bgcolor: '#424242',
-        height: '100%',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}
+    <Stack
+      component={'section'}
+      width={'100%'}
+      height={'100%'}
+      justifyContent={'center'}
+      alignItems={'center'}
+      spacing={5}
     >
-      <Typography variant="h1">404</Typography>
-    </Box>
+      <Typography variant="h1">404 - Page Not Found</Typography>
+      <Button size="large" variant="contained" href="/">
+        Go Home
+      </Button>
+    </Stack>
   );
 };
 

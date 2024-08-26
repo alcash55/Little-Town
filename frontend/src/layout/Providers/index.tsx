@@ -1,14 +1,27 @@
-import type { PropsWithChildren } from 'react';
-import { BrowserRouter as Router } from 'react-router-dom';
+import { Suspense } from 'react';
 import { ThemeProvider } from '../Theme';
-import { SidebarProvider } from '../../contexts';
+import { SidebarProvider } from '../../components/AppShell/InternalComponent/SideBar/useSidebar';
+import { AppShell } from '../../components/AppShell/AppShell';
+import { LoadingContainer } from '../../components/LoadingContainer/LoadingContainer';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 
-export function Providers({ children }: PropsWithChildren<{}>) {
+export function Providers() {
   return (
-    <Router>
-      <ThemeProvider>
-        <SidebarProvider>{children}</SidebarProvider>
-      </ThemeProvider>
-    </Router>
+    <Suspense
+      fallback={
+        <LoadingContainer loading={true} width={250} height={250}>
+          <></>
+        </LoadingContainer>
+      }
+    >
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <ThemeProvider>
+          <SidebarProvider>
+            <AppShell />
+          </SidebarProvider>
+        </ThemeProvider>
+      </LocalizationProvider>
+    </Suspense>
   );
 }
