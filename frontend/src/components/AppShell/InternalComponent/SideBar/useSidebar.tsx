@@ -41,7 +41,7 @@ export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
           icon: 'Home',
         },
         {
-          title: 'Admion Panel',
+          title: 'Admin Panel',
           href: '/AdminPanel',
           icon: 'AdminPanelSettings',
         },
