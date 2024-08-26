@@ -19,7 +19,7 @@ jobs:
   deploy:
     environment:
       name: github-pages
-      url: https://alcash55.github.io/
+      url: https://alcash55.github.io/Little-Town
 
     runs-on: ubuntu-latest
     steps:
