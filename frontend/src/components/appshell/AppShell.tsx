@@ -4,6 +4,11 @@ import { useState, useEffect } from 'react';
 import { useSidebar } from './InternalComponent/SideBar/useSidebar';
 import { Bar, SideBar } from './InternalComponent';
 
+/**
+ *  AppShell component is the main component of the application. It contains the Bar component and the SideBar component.
+ *  It also contains the Outlet component which is used to render the content of the application with the correct routing.
+ * @returns {JSX.Element} The AppShell component
+ */
 export const AppShell = () => {
   const { loading: loadSidebar, sidebar } = useSidebar();
   const currentLocation = useLocation();
@@ -24,9 +29,7 @@ export const AppShell = () => {
   return (
     <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Bar openSidebar={openSidebar} setOpenSidebar={setOpenSidebar} />
-
       <Outlet />
-
       <SideBar
         loading={loadSidebar}
         openSidebar={openSidebar}
