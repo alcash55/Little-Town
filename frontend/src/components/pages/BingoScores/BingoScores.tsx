@@ -1,6 +1,5 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Stack, Typography } from '@mui/material';
 import { VictoryChart, VictoryLine, VictoryLegend, VictoryAxis, Curve } from 'victory';
-import { darkTheme } from '../../../layout/Theme';
 import { useBingoScores } from './useBingoScores';
 
 interface DataPoint {
@@ -10,7 +9,7 @@ interface DataPoint {
 
 const BingoScores = () => {
   const teamColors = ['#39f76c', '#854cc2', '#d95f27'];
-  const teamNames = ['Based Cigar', 'Gorilla Grip Bussies', 'Stark Industries'];
+  const teamNames = ['Team 1', 'Team 2', 'Team 3'];
   const chartData: DataPoint[][] = [
     [
       { x: new Date(2023, 6, 23), y: 0 },
@@ -42,15 +41,13 @@ const BingoScores = () => {
   useBingoScores();
 
   return (
-    <Box
+    <Stack
+      component={'section'}
+      width={'100%'}
+      height={'100%'}
+      justifyContent={'center'}
+      alignItems={'center'}
       sx={{
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        flexDirection: 'column',
-        bgcolor: darkTheme.palette.primary.main,
         p: 10,
       }}
     >
@@ -101,7 +98,7 @@ const BingoScores = () => {
           data={teamNames.map((name, index) => ({ name, symbol: { fill: teamColors[index] } }))}
         />
       </VictoryChart>
-    </Box>
+    </Stack>
   );
 };
 

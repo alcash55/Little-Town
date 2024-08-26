@@ -24,6 +24,21 @@ export const darkTheme = createTheme({
       lineHeight: 1,
       letterSpacing: '-0.01562em',
     },
+    h2: {
+      fontFamily: "'pacifico', cursive",
+    },
+    h3: {
+      fontFamily: "'pacifico', cursive",
+    },
+    h4: {
+      fontFamily: "'pacifico', cursive",
+    },
+    h5: {
+      fontFamily: "'pacifico', cursive",
+    },
+    h6: {
+      fontFamily: "'pacifico', cursive",
+    },
     body1: {
       fontFamily: "'Inter', sans-serif",
       fontWeight: 400,
@@ -33,14 +48,7 @@ export const darkTheme = createTheme({
     },
   },
   components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          cursor: `url(${cursor}), auto`,
-        },
-      },
-    },
-    MuiIconButton: {
+    MuiButtonBase: {
       styleOverrides: {
         root: {
           cursor: `url(${cursor}), auto`,

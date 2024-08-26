@@ -1,11 +1,10 @@
 import { useTheme, useMediaQuery, Box } from '@mui/material';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Outlet } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { useSidebar } from '../../../contexts';
-import { Bar, SideBar } from '../shellComponents';
-import { AllRoutes } from '../../Routes';
+import { useSidebar } from './InternalComponent/SideBar/useSidebar';
+import { Bar, SideBar } from './InternalComponent';
 
-export function Shell() {
+export const AppShell = () => {
   const { loading: loadSidebar, sidebar } = useSidebar();
   const currentLocation = useLocation();
 
@@ -22,23 +21,21 @@ export function Shell() {
     }
   }, [currentLocation]);
 
-  const sidebarComponent = sidebar;
-
   return (
     <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Bar openSidebar={openSidebar} setOpenSidebar={setOpenSidebar} />
+
+      <Outlet />
+
       <SideBar
         loading={loadSidebar}
         openSidebar={openSidebar}
         setOpenSidebar={setOpenSidebar}
-        sidebarItems={sidebarComponent}
+        sidebarItems={sidebar}
         width={isMobile ? '100%' : isTablet ? '50%' : tempSidebar ? 240 : 240}
       />
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <AllRoutes />
-      </Box>
     </Box>
   );
-}
+};
 
-export default Shell;
+export default AppShell;
