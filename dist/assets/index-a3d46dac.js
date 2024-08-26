@@ -1,1 +1,0 @@
-import{g as e,B as t,x as r}from"./index-4c2ad99e.js";import{T as a}from"./Shell-271381c2.js";const s=()=>e(t,{sx:{bgcolor:r.palette.primary.main,width:"100%",height:"100%",display:"flex",justifyContent:"center",alignItems:"center"},children:e(a,{variant:"h1",children:"Da Rules"})}),o=s;export{o as default};
