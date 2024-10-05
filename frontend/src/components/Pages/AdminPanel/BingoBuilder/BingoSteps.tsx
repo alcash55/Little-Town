@@ -3,20 +3,21 @@ import GamesIcon from '@mui/icons-material/Games';
 import PeopleIcon from '@mui/icons-material/People';
 import { Box, FormControl, InputLabel, MenuItem, Select, Stack, TextField } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { Dispatch } from 'react';
 
 interface BingoStepsProps {
   bingoName: string;
-  setBingoName: any;
+  setBingoName: Dispatch<React.SetStateAction<string>>;
   startDate: string;
-  setStartDate: any;
+  setStartDate: Dispatch<React.SetStateAction<string>>;
   endDate: string;
-  setEndDate: any;
+  setEndDate: Dispatch<React.SetStateAction<string>>;
   boardSize: number;
-  setBoardSize: any;
+  setBoardSize: Dispatch<React.SetStateAction<number>>;
   numberOfTeams: number;
-  setNumberOfTeams: any;
+  setNumberOfTeams: Dispatch<React.SetStateAction<number>>;
   teamNames: string[];
-  setTeamNames: any;
+  setTeamNames: Dispatch<React.SetStateAction<string[]>>;
 }
 
 export const BingoSteps = ({
@@ -49,10 +50,12 @@ export const BingoSteps = ({
               variant="outlined"
               value={bingoName}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                setBingoName(e.target.value);
+                const newName = e.target.value;
+                console.log(newName);
+                setBingoName(newName);
               }}
               fullWidth
-              required={true}
+              required
             />
           ),
         },
