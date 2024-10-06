@@ -36,6 +36,15 @@ export const BingoBuilderForm = (props: BingoBuilderFormProps) => {
   const theme = useTheme();
   const largeMobile = useMediaQuery(theme.breakpoints.down(425));
   const steps = BingoSteps(props);
+  const isValidated =
+    props.bingoName &&
+    props.startDate &&
+    props.endDate &&
+    props.boardSize &&
+    props.numberOfTeams &&
+    props.teamNames
+      ? true
+      : false;
   return (
     <Stepper activeStep={props.activeStep} orientation="vertical">
       {steps.map((step, idx) => (
@@ -53,7 +62,7 @@ export const BingoBuilderForm = (props: BingoBuilderFormProps) => {
             ))}
             <Stack spacing={1} direction={'row'} justifyContent={'space-evenly'} p={1}>
               {props.activeStep === steps.length - 1 ? (
-                <Button variant="contained" onClick={props.handleSubmit}>
+                <Button variant="contained" onClick={props.handleSubmit} disabled={!isValidated}>
                   Create Bingo
                 </Button>
               ) : (
@@ -66,10 +75,14 @@ export const BingoBuilderForm = (props: BingoBuilderFormProps) => {
                 <></>
               ) : (
                 <Button
-                  variant="contained"
+                  variant="outlined"
                   onClick={props.handleFormBack}
                   disabled={props.activeStep === 0}
-                  sx={{ ml: 2 }}
+                  sx={{
+                    color: 'white',
+                    borderColor: 'white',
+                    ml: 2,
+                  }}
                 >
                   Back
                 </Button>
