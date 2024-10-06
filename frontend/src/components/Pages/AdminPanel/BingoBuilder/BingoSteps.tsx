@@ -46,7 +46,9 @@ export const BingoSteps = ({
             <TextField
               id="bingo-name"
               label="Bingo Name"
+              helperText="Bingo Name"
               placeholder={`${new Date().getFullYear()} Little Town Bingo`}
+              defaultValue={`${new Date().getFullYear()} Little Town Bingo`}
               variant="outlined"
               value={bingoName}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,6 +58,7 @@ export const BingoSteps = ({
               }}
               fullWidth
               required
+              color="secondary"
             />
           ),
         },
@@ -139,6 +142,7 @@ export const BingoSteps = ({
                 value={numberOfTeams}
                 onChange={(e: any) => setNumberOfTeams(e.target.value)}
                 label="Team Size"
+                color="secondary"
               >
                 <MenuItem value={3}>3</MenuItem>
                 <MenuItem value={4}>4</MenuItem>
@@ -170,6 +174,7 @@ export const BingoSteps = ({
                     setTeamNames(newTeamNames);
                   }}
                   variant="outlined"
+                  color="secondary"
                   sx={{ width: '50%' }}
                 />
               ))}
