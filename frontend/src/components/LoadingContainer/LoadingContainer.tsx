@@ -1,8 +1,7 @@
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 import { Box } from '@mui/material';
 import LittleTownAnimation from '../../assets/Images/LittleTownAnimation.gif';
 import { darkTheme } from '../../layout/Theme';
-import React from 'react';
 
 interface Props {
   loading: boolean;
