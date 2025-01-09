@@ -37,11 +37,11 @@ export const BingoBuilderForm = (props: BingoBuilderFormProps) => {
   const largeMobile = useMediaQuery(theme.breakpoints.down(425));
   const steps = BingoSteps(props);
   const isValidated =
-    props.bingoName &&
+    props.bingoName !== '' &&
     props.startDate &&
     props.endDate &&
-    props.boardSize &&
-    props.numberOfTeams &&
+    (props.boardSize == 16 || props.boardSize == 35) &&
+    props.numberOfTeams >= 2 &&
     props.teamNames
       ? true
       : false;
@@ -60,6 +60,7 @@ export const BingoBuilderForm = (props: BingoBuilderFormProps) => {
                 {question.stepComponent}
               </Stack>
             ))}
+
             <Stack spacing={1} direction={'row'} justifyContent={'space-evenly'} p={1}>
               {props.activeStep === steps.length - 1 ? (
                 <Button variant="contained" onClick={props.handleSubmit} disabled={!isValidated}>
