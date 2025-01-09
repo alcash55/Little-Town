@@ -3,7 +3,7 @@ import GamesIcon from '@mui/icons-material/Games';
 import PeopleIcon from '@mui/icons-material/People';
 import { Box, FormControl, InputLabel, MenuItem, Select, Stack, TextField } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { Dispatch } from 'react';
+import { Dispatch, useRef } from 'react';
 
 interface BingoStepsProps {
   bingoName: string;
@@ -46,19 +46,16 @@ export const BingoSteps = ({
             <TextField
               id="bingo-name"
               label="Bingo Name"
-              helperText="Bingo Name"
               placeholder={`${new Date().getFullYear()} Little Town Bingo`}
-              defaultValue={`${new Date().getFullYear()} Little Town Bingo`}
               variant="outlined"
               value={bingoName}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const newName = e.target.value;
-                console.log(newName);
-                setBingoName(newName);
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                setBingoName(event.target.value);
               }}
               fullWidth
               required
               color="secondary"
+              autoFocus
             />
           ),
         },
@@ -116,7 +113,7 @@ export const BingoSteps = ({
               sx={{ m: 1, minWidth: 120, width: 'auto' }}
               required={true}
             >
-              <InputLabel id="board-size-label-label">Age</InputLabel>
+              <InputLabel id="board-size-label-label">Board size</InputLabel>
               <Select
                 labelId="board-size-label"
                 id="board-size"
@@ -162,13 +159,13 @@ export const BingoSteps = ({
           description: "Enter each team's name.",
           stepComponent: (
             <Stack spacing={1} direction={'row'} justifyContent={'space-evenly'} width={'100%'}>
-              {Array.from({ length: numberOfTeams }, (_, index) => (
+              {teamNames.map((name, index) => (
                 <TextField
                   key={index}
                   label={`Team ${index + 1}`}
                   value={teamNames[index]}
                   required={true}
-                  onChange={(e) => {
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     const newTeamNames = [...teamNames];
                     newTeamNames[index] = e.target.value;
                     setTeamNames(newTeamNames);
