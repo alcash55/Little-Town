@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { format, addDays } from 'date-fns';
+// import { format, addDays } from 'date-fns';
 
 export const useAdminPanel = () => {
   const dateFormat = 'MM/dd/yyyy/HH';
-  const today = format(new Date(), dateFormat);
-  const tomorrow = format(addDays(new Date(), 1), dateFormat);
+  // const today = format(new Date(), dateFormat);
+  // const tomorrow = format(addDays(new Date(), 1), dateFormat);
 
   const [bingoName, setBingoName] = useState<string>('');
-  const [startDate, setStartDate] = useState<string>(today);
-  const [endDate, setEndDate] = useState<string>(tomorrow);
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
   const [boardSize, setBoardSize] = useState<number>(16);
   const [numberOfTeams, setNumberOfTeams] = useState<number>(3);
   const [teamNames, setTeamNames] = useState<string[]>(Array(numberOfTeams).fill(''));

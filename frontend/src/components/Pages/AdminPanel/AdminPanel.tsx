@@ -37,7 +37,7 @@ const AdminPanel = () => {
         aria-labelledby={`admin-panel-tab-${index}`}
         {...other}
       >
-        {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+        {value === index && <Box sx={{ px: 3, py: 1.5 }}>{children}</Box>}
       </div>
     );
   };
@@ -66,10 +66,13 @@ const AdminPanel = () => {
     handleFormNext,
     handleFormBack,
     handleSubmit,
-    validateForm,
     tab,
     setActiveTab,
   } = useAdminPanel();
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(event, newValue);
+  };
 
   return (
     <Stack
@@ -83,7 +86,7 @@ const AdminPanel = () => {
       <Stack spacing={2} alignItems={'center'} width={'100%'} height={'100%'}>
         <Tabs
           value={tab}
-          onChange={setActiveTab}
+          onChange={handleTabChange}
           aria-label=""
           variant={isLargeMobile ? 'scrollable' : 'fullWidth'}
           scrollButtons={isLargeMobile}
@@ -93,13 +96,13 @@ const AdminPanel = () => {
             bgcolor: 'black',
             opacity: 0.5,
             '& .MuiTab-root': {
-              color: 'grey', // Text color for tabs
+              color: 'grey',
               '&.Mui-selected': {
-                color: '#2A9D8F', // Text color for selected tab
+                color: '#2A9D8F',
               },
             },
             '& .MuiTabs-indicator': {
-              backgroundColor: '#2A9D8F', // Indicator color
+              backgroundColor: '#2A9D8F',
             },
             '& .MuiTabs-scrollButtons': {
               color: '#2A9D8F',
@@ -117,7 +120,6 @@ const AdminPanel = () => {
               label={isTablet ? '' : tab.lable}
               value={tab.value}
               {...a11yProps(idx)}
-              sx={{}}
             />
           ))}
         </Tabs>
@@ -128,15 +130,28 @@ const AdminPanel = () => {
 
         <Box sx={{ width: '100%', height: '100%' }}>
           <CustomTabPanel index={1} value={tab}>
-            Bingo Overview
+            <Typography variant="h5" component={'h2'} textAlign={'center'}>
+              Bingo Overview
+            </Typography>
           </CustomTabPanel>
+
           <CustomTabPanel index={2} value={tab}>
-            Screenshot Submissions
+            <Typography variant="h5" component={'h2'} textAlign={'center'}>
+              Screenshot Submissions
+            </Typography>
           </CustomTabPanel>
+
           <CustomTabPanel index={3} value={tab}>
+            <Typography variant="h5" component={'h2'} textAlign={'center'}>
+              Board Builder
+            </Typography>
             <BoardBuilder boardSize={boardSize} />
           </CustomTabPanel>
+
           <CustomTabPanel index={4} value={tab}>
+            <Typography variant="h5" component={'h2'} textAlign={'center'}>
+              Bingo Builder
+            </Typography>
             <BingoBuilderForm
               activeStep={activeStep}
               bingoName={bingoName}
@@ -154,12 +169,13 @@ const AdminPanel = () => {
               handleFormNext={handleFormNext}
               handleFormBack={handleFormBack}
               handleSubmit={handleSubmit}
-              validateForm={validateForm}
             />
           </CustomTabPanel>
 
           <CustomTabPanel index={5} value={tab}>
-            Team Drafter
+            <Typography variant="h5" component={'h2'} textAlign={'center'}>
+              Team Drafter
+            </Typography>
           </CustomTabPanel>
         </Box>
       </Stack>
