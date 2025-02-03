@@ -11,7 +11,7 @@ import {
 import Discord from '../../../../assets/Images/Discord';
 import BoardGame from '../../../../assets/Images/BoardGame';
 import { Box, Button, Divider, Drawer, IconButton, Toolbar, Typography } from '@mui/material';
-import ltVillage from '../../../../assets/Images/little-town-village.png';
+// import ltVillage from '../../../../assets/Images/little-town-village.png';
 import { Link } from 'react-router-dom';
 import { SidebarItem } from './useSidebar';
 import { darkTheme } from '../../../../layout/Theme';

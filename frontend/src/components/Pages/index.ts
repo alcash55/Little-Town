@@ -8,4 +8,9 @@ export const Pages = {
   BingoRules: lazy(() => import('./BingoRules')),
   BingoScores: lazy(() => import('./BingoScores')),
   AdminPanel: lazy(() => import('./AdminPanel')),
+  BingoBuilder: lazy(()=> import('./AdminPanel'))
+  TeamDrafter: lazy(()=> import('./AdminPanel'))
+  BoardBuilder: lazy(()=> import('./AdminPanel'))
+  // ScreenshotSubmissions: lazy(()=> import('./AdminPanel'))
+
 };

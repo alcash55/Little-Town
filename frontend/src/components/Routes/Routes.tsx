@@ -18,6 +18,10 @@ export const Routes = createBrowserRouter(
       <Route path="BingoScores" element={<Pages.BingoScores />} />
       <Route path="BingoRules" element={<Pages.BingoRules />} />
       <Route path="AdminPanel" element={<Pages.AdminPanel />} />
+      <Route path="AdminPanel/BingoBuilder" element={<Pages./>} />
+      <Route path="Admin/Team Drafter" element={<Pages./>} />
+      <Route path="Admin/BoardBuilder" element={<Pages./>} />
+      <Route path="Admin/ScreenshotSubmissions" element={<Pages./>} />
       <Route path="*" element={<Pages.Error />} />
     </Route>,
   ),
