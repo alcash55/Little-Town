@@ -15,11 +15,7 @@ import {
 } from '@mui/material';
 import { useBoardBuilder } from './useBoardBuilder';
 
-interface BoardBuilderProps {
-  boardSize: number;
-}
-
-const BoardBuilder = (props: BoardBuilderProps) => {
+const BoardBuilder = () => {
   const {
     tilesTypeOptions,
     tileType,
