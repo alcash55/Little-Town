@@ -51,23 +51,6 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
     },
   };
 
-  const buttonAnimationStyles = {
-    '&:hover': {
-      bgcolor: '#163a36',
-      '& .MuiListItemIcon-root .MuiListItem-button': {
-        '@keyframes shake': {
-          '0%': { transform: 'rotate(0deg)' },
-          '30%': { transform: 'rotate(0deg)' },
-          '50%': { transform: 'rotate(5deg)' },
-          '95%': { transform: 'rotate(-5deg)' },
-          '100%': { transform: 'rotate(0deg)' },
-        },
-        animation: 'shake 0.82s cubic-bezier(.36,.07,.19,.97) both',
-        transformOrigin: '0 0',
-      },
-    },
-  };
-
   /**
    * Title and X button for the sidebar
    */
@@ -109,10 +92,10 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
               component={Link}
               to={`${child.href}`}
               color="inherit"
-              sx={{ ...buttonStyles, ...buttonAnimationStyles }}
+              sx={{ ...buttonStyles }}
             >
-              <ListItemText>{child.title}</ListItemText>
               <ListItemIcon sx={{ color: 'white' }}>{child.icon}</ListItemIcon>
+              <ListItemText>{child.title}</ListItemText>
             </ListItemButton>
             <Divider sx={{ color: 'white' }} />
           </>
@@ -147,10 +130,23 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
                   <ListItemButton
                     onClick={() => setOpenChildren(!openChilodren)}
                     color="inherit"
-                    sx={buttonStyles}
+                    sx={{ ...buttonStyles }}
                   >
+                    <ListItemIcon
+                      sx={{
+                        fill: 'white',
+                        color: 'white',
+                      }}
+                    >
+                      {item.icon}
+                    </ListItemIcon>
                     <ListItemText primary={item.title} />
-                    <ListItemIcon sx={{ fill: 'white', color: 'white' }}>
+                    <ListItemIcon
+                      sx={{
+                        fill: 'white',
+                        color: 'white',
+                      }}
+                    >
                       {openChilodren ? <ExpandLess /> : <ExpandMore />}
                     </ListItemIcon>
                   </ListItemButton>
@@ -183,10 +179,10 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
                     to={`${item.href}`}
                     target={item.href.includes('discord') ? '_blank' : ''}
                     color="inherit"
-                    sx={buttonStyles}
+                    sx={{ ...buttonStyles }}
                   >
-                    <ListItemText primary={item.title} />
                     <ListItemIcon sx={{ fill: 'white', color: 'white' }}>{item.icon}</ListItemIcon>
+                    <ListItemText primary={item.title} />
                   </ListItemButton>
                   <Divider sx={{ color: 'white' }} />
                 </>
