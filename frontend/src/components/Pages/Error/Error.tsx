@@ -11,7 +11,7 @@ const Error = () => {
       spacing={5}
       sx={{ px: 2 }}
     >
-      <Typography variant="h1" sx={{ textAlign: 'center' }}>
+      <Typography variant="h1" sx={{ textAlign: 'center', lineHeight: 1.4 }}>
         404 - Page Not Found
       </Typography>
       <Button size="large" variant="contained" href="/">
