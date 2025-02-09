@@ -1,3 +1,2 @@
-export { default } from './AdminPanel';
-
-// export { default as ScreenShotSubmissions } from './';
+// export { default as BingoBuilder } from './BingoBuilder/BingoBuilder';
+export { default as BoardBuilder } from './BoardBuilder/BoardBuilder';

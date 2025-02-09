@@ -65,17 +65,17 @@ export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
             },
             {
               title: 'Team Drafter',
-              href: '/AdminPanel/BingoRules',
+              href: '/AdminPanel/TeamDrafter',
               icon: <GroupAdd />,
             },
             {
               title: 'Board Builder',
-              href: '/AdminPanel/BingoBoard',
+              href: '/AdminPanel/BoardBuilder',
               icon: <DashboardCustomize />,
             },
             {
               title: 'Screenshot Submissions',
-              href: '/AdminPanel/BingoScores',
+              href: '/AdminPanel/ScreenshotSubmissions',
               icon: <AddAPhoto />,
             },
           ],

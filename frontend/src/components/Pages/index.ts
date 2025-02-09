@@ -7,10 +7,9 @@ export const Pages = {
   BingoBoard: lazy(() => import('./BingoBoard')),
   BingoRules: lazy(() => import('./BingoRules')),
   BingoScores: lazy(() => import('./BingoScores')),
-  AdminPanel: lazy(() => import('./AdminPanel')),
-  BingoBuilder: lazy(()=> import('./AdminPanel'))
-  TeamDrafter: lazy(()=> import('./AdminPanel'))
-  BoardBuilder: lazy(()=> import('./AdminPanel'))
+  // AdminPanel: lazy(() => import('./AdminPanel')),
+  // BingoBuilder: lazy(() => import('./AdminPanel/BingoBuilder/BingoBuilder')),
+  // TeamDrafter: lazy(()=> import('./AdminPanel'))
+  BoardBuilder: lazy(() => import('./AdminPanel/BoardBuilder/BoardBuilder')),
   // ScreenshotSubmissions: lazy(()=> import('./AdminPanel'))
-
 };
