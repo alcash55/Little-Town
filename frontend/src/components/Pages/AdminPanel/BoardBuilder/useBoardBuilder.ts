@@ -1,11 +1,25 @@
 import { useState } from 'react';
 
-type Tile = {
-  type: 'Kill Count' | 'Experience' | 'Drops';
-  task: string;
-  points: number;
-  objective?: string | number;
-};
+type Tile =
+  | {
+      type: 'Kill Count';
+      task: string;
+      points: number;
+      killCount: number;
+    }
+  | {
+      type: 'Experience';
+      task: string;
+      points: number;
+      experience: number;
+    }
+  | {
+      type: 'Drops';
+      task: string;
+      points: number;
+      drops: string;
+      dropsAmount: number;
+    };
 
 export const useBoardBuilder = () => {
   const tilesTypeOptions = [
@@ -21,6 +35,7 @@ export const useBoardBuilder = () => {
   const [tileKillCount, setTileKillCount] = useState<number | undefined>();
   const [tileExperience, setTileExperience] = useState<number | undefined>();
   const [tileDrops, setTileDrops] = useState<string | undefined>();
+  const [tileDropsAmount, setTileDropsAmount] = useState<number | undefined>();
 
   const [board, setBoard] = useState<Tile[]>([]);
 
@@ -29,37 +44,63 @@ export const useBoardBuilder = () => {
    * and updates the board state. Then resets the tile states
    */
   const addTile = () => {
-    const newBoard = [...board];
     if (!tileTask || !tilePoints) {
-      console.log('no tile');
+      console.log('Missing task or points');
       return;
     }
 
-    let objective: string | number | undefined;
+    let newTile: Tile | null = null;
+
     if (tileType.name === 'Kill Count') {
-      objective = tileKillCount;
+      if (tileKillCount === undefined) {
+        console.log('Missing kill count');
+        return;
+      }
+
+      newTile = {
+        type: 'Kill Count',
+        task: tileTask,
+        points: tilePoints,
+        killCount: tileKillCount,
+      };
     } else if (tileType.name === 'Experience') {
-      objective = tileExperience;
+      if (tileExperience === undefined) {
+        console.log('Missing experience amount');
+        return;
+      }
+
+      newTile = {
+        type: 'Experience',
+        task: tileTask,
+        points: tilePoints,
+        experience: tileExperience,
+      };
     } else if (tileType.name === 'Drops') {
-      objective = tileDrops;
+      if (!tileDrops || tileDropsAmount === undefined) {
+        console.log('Missing drop name or amount');
+        return;
+      }
+
+      newTile = {
+        type: 'Drops',
+        task: tileTask,
+        points: tilePoints,
+        drops: tileDrops,
+        dropsAmount: tileDropsAmount,
+      };
     }
 
-    newBoard.push({
-      type: tileType.name as 'Kill Count' | 'Experience' | 'Drops',
-      task: tileTask,
-      points: tilePoints,
-      objective,
-    });
+    if (newTile) {
+      setBoard((prev) => [...prev, newTile]);
+    }
 
-    setBoard(newBoard);
-
-    // reset tile form fields
+    // Reset tile form fields
     setTileTask('');
     setTilePoints(undefined);
-
     setTileKillCount(undefined);
     setTileExperience(undefined);
     setTileDrops(undefined);
+    setTileDropsAmount(undefined);
     setTileType(tilesTypeOptions[0]);
   };
 
@@ -96,5 +137,7 @@ export const useBoardBuilder = () => {
     setTileExperience,
     tileDrops,
     setTileDrops,
+    tileDropsAmount,
+    setTileDropsAmount,
   };
 };

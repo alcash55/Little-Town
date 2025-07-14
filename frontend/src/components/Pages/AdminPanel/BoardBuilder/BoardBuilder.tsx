@@ -37,6 +37,8 @@ const BoardBuilder = () => {
     setTileExperience,
     tileDrops,
     setTileDrops,
+    tileDropsAmount,
+    setTileDropsAmount,
   } = useBoardBuilder();
 
   return (
@@ -88,7 +90,11 @@ const BoardBuilder = () => {
         <TextField
           id="tile-task"
           label={
-            tileType.value === 1 ? 'Boss/monster' : tileType.value === 2 ? 'Skill' : 'Item name'
+            tileType.value === 1
+              ? 'Boss/monster or Mini Game'
+              : tileType.value === 2
+              ? 'Skill'
+              : 'Item name'
           }
           variant="outlined"
           fullWidth
@@ -176,26 +182,49 @@ const BoardBuilder = () => {
             />
           ) : (
             // Drops
-            <TextField
-              id="drops"
-              label="What drop(s)"
-              type="text"
-              required={true}
-              value={tileDrops ?? ''}
-              onChange={(e) => {
-                setTileDrops(e.target.value);
-              }}
-              fullWidth
-              sx={{
-                borderColor: 'black',
-                color: 'black',
-                '& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline .MuiInputLabel-outlined':
-                  {
-                    borderColor: 'black',
-                    color: 'black',
-                  },
-              }}
-            />
+            <Stack spacing={2} sx={{ width: '100%' }}>
+              <TextField
+                id="drops"
+                label="What drop(s)?"
+                type="text"
+                required={true}
+                value={tileDrops ?? ''}
+                onChange={(e) => {
+                  setTileDrops(e.target.value);
+                }}
+                fullWidth
+                sx={{
+                  borderColor: 'black',
+                  color: 'black',
+                  '& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline .MuiInputLabel-outlined':
+                    {
+                      borderColor: 'black',
+                      color: 'black',
+                    },
+                }}
+              />
+
+              <TextField
+                id="drops"
+                label="How many drops?"
+                type="text"
+                required={true}
+                value={tileDropsAmount ?? ''}
+                onChange={(e) => {
+                  setTileDropsAmount(Number(e.target.value));
+                }}
+                fullWidth
+                sx={{
+                  borderColor: 'black',
+                  color: 'black',
+                  '& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline .MuiInputLabel-outlined':
+                    {
+                      borderColor: 'black',
+                      color: 'black',
+                    },
+                }}
+              />
+            </Stack>
           )}
         </Stack>
 
@@ -247,8 +276,6 @@ const BoardBuilder = () => {
         }}
       >
         {board.map((tile) => {
-          const unit =
-            tile.type === 'Kill Count' ? 'kc' : tile.type === 'Experience' ? 'xp' : 'drops';
           return (
             <Card
               key={tile.task}
@@ -267,11 +294,16 @@ const BoardBuilder = () => {
                 }
               />
               <CardContent>
-                <Stack>
+                <Stack spacing={1}>
                   <Typography>Type: {tile.type}</Typography>
                   <Typography>Points: {tile.points}</Typography>
                   <Typography>
-                    Objective: {tile.objective} {unit}
+                    Objective:{' '}
+                    {tile.type === 'Kill Count'
+                      ? `Kill ${tile.killCount}`
+                      : tile.type === 'Experience'
+                      ? `Gain ${tile.experience} xp`
+                      : `Get ${tile.dropsAmount} ${tile.drops}s`}
                   </Typography>
                 </Stack>
               </CardContent>
