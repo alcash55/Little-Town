@@ -9,8 +9,11 @@ const Error = () => {
       justifyContent={'center'}
       alignItems={'center'}
       spacing={5}
+      sx={{ px: 2 }}
     >
-      <Typography variant="h1">404 - Page Not Found</Typography>
+      <Typography variant="h1" sx={{ textAlign: 'center', lineHeight: 1.4 }}>
+        404 - Page Not Found
+      </Typography>
       <Button size="large" variant="contained" href="/">
         Go Home
       </Button>

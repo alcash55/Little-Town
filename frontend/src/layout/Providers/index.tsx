@@ -8,13 +8,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 
 export function Providers() {
   return (
-    <Suspense
-      fallback={
-        <LoadingContainer loading={true} width={250} height={250}>
-          <></>
-        </LoadingContainer>
-      }
-    >
+    <Suspense fallback={<LoadingContainer loading={true} width={250} height={250} />}>
       <LocalizationProvider dateAdapter={AdapterDateFns}>
         <ThemeProvider>
           <SidebarProvider>

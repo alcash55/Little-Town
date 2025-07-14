@@ -1,17 +1,18 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Close, ExpandLess, ExpandMore } from '@mui/icons-material';
 import {
-  Close,
-  Home,
-  Looks,
-  BarChart,
-  EmojiEvents,
-  Gavel,
-  AdminPanelSettings,
-} from '@mui/icons-material';
-import Discord from '../../../../assets/Images/Discord';
-import BoardGame from '../../../../assets/Images/BoardGame';
-import { Box, Button, Divider, Drawer, IconButton, Toolbar, Typography } from '@mui/material';
-import ltVillage from '../../../../assets/Images/little-town-village.png';
+  Box,
+  Collapse,
+  Divider,
+  Drawer,
+  IconButton,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Toolbar,
+  Typography,
+} from '@mui/material';
 import { Link } from 'react-router-dom';
 import { SidebarItem } from './useSidebar';
 import { darkTheme } from '../../../../layout/Theme';
@@ -27,6 +28,11 @@ interface Props {
 
 const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: Props) => {
   const [drawerWidth, setDrawerWidth] = useState(width);
+  /**
+   * expand and collapse children
+   */
+  const [openChilodren, setOpenChildren] = useState(true);
+
   const closeSideBar = () => {
     setOpenSidebar(false);
   };
@@ -35,6 +41,19 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
     setDrawerWidth(width);
   }, [window.innerWidth]);
 
+  const buttonStyles = {
+    width: '100%',
+    color: 'white',
+    bgcolor: 'inherit',
+    borderRadius: '5px',
+    '&:hover': {
+      bgcolor: '#163a36',
+    },
+  };
+
+  /**
+   * Title and X button for the sidebar
+   */
   const SideBarTopItem = () => {
     return (
       <>
@@ -60,86 +79,123 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
     );
   };
 
+  /**
+   * Sublist of children for each parent item in the sidebar
+   */
+  const SideBarChildren = (children: SidebarItem[]) => (
+    <>
+      {children.map((child, idx) => {
+        return (
+          <React.Fragment key={idx}>
+            <ListItemButton
+              component={Link}
+              to={`${child.href}`}
+              color="inherit"
+              sx={{ ...buttonStyles }}
+            >
+              <ListItemIcon sx={{ color: 'white' }}>{child.icon}</ListItemIcon>
+              <ListItemText>{child.title}</ListItemText>
+            </ListItemButton>
+            <Divider sx={{ color: 'white' }} />
+          </React.Fragment>
+        );
+      })}
+    </>
+  );
+
+  /**
+   * List of all the items in the sidebar
+   */
   const SideBarItems = () => {
     return (
-      <Box
-        sx={{
-          width: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          py: 2,
-        }}
-      >
+      <>
         {sidebarItems.map((item: SidebarItem) => {
-          let IconComponent;
-
-          switch (item.icon) {
-            case 'BarChart':
-              IconComponent = BarChart; // Team Data Page
-              break;
-            case 'Home':
-              IconComponent = Home;
-              break;
-            case 'Discord':
-              IconComponent = Discord;
-              break;
-            case 'BoardGame':
-              IconComponent = BoardGame; // Bingo Board Page
-              break;
-            case 'EmojiEvents':
-              IconComponent = EmojiEvents; // Scores Page
-              break;
-            case 'Gavel':
-              IconComponent = Gavel; // Rules Pages
-              break;
-            case 'AdminPanelSettings':
-              IconComponent = AdminPanelSettings; // Admin Panel Page
-              break;
-            default:
-              IconComponent = Looks; // Set a default icon component
-          }
           return (
-            <Button
-              startIcon={<IconComponent sx={{ fill: item.icon === 'BoardGame' ? 'white' : '' }} />} // Render the icon component
-              component={Link}
-              to={`${item.href}`}
-              target={item.href.includes('discord') ? '_blank' : ''}
-              color="inherit"
+            <List
+              component={'nav'}
               sx={{
-                my: 1,
                 width: '100%',
                 display: 'flex',
+                flexDirection: 'column',
                 justifyContent: 'center',
-                color: 'white',
-                '&:hover': {
-                  '& .MuiButton-startIcon': {
-                    '@keyframes shake': {
-                      '0%': { transform: 'rotate(0deg)' },
-                      '30%': { transform: 'rotate(0deg)' },
-                      '50%': { transform: 'rotate(5deg)' },
-                      '95%': { transform: 'rotate(-5deg)' },
-                      '100%': { transform: 'rotate(0deg)' },
-                    },
-                    animation: 'shake 0.82s cubic-bezier(.36,.07,.19,.97) both',
-                    transformOrigin: '0 0',
-                  },
-                  bgcolor: '#163a36',
-                },
+                alignItems: 'center',
+                p: 0,
               }}
               key={item.title}
             >
-              <Typography>{item.title}</Typography>
-            </Button>
+              {/* If the item has children, render the children list */}
+              {item.children && item.children.length ? (
+                <>
+                  <ListItemButton
+                    onClick={() => setOpenChildren(!openChilodren)}
+                    color="inherit"
+                    sx={{ ...buttonStyles }}
+                  >
+                    <ListItemIcon
+                      sx={{
+                        fill: 'white',
+                        color: 'white',
+                      }}
+                    >
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText primary={item.title} />
+                    <ListItemIcon
+                      sx={{
+                        fill: 'white',
+                        color: 'white',
+                      }}
+                    >
+                      {openChilodren ? <ExpandLess /> : <ExpandMore />}
+                    </ListItemIcon>
+                  </ListItemButton>
+                  <Divider sx={{ color: 'white' }} />
+                  <Collapse
+                    in={openChilodren}
+                    timeout="auto"
+                    unmountOnExit
+                    sx={{ width: '100%', ml: 5 }}
+                  >
+                    <List
+                      component="div"
+                      sx={{
+                        width: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        p: 0,
+                      }}
+                    >
+                      {SideBarChildren(item.children)}
+                    </List>
+                  </Collapse>
+                </>
+              ) : (
+                <>
+                  <ListItemButton
+                    component={Link}
+                    to={`${item.href}`}
+                    target={item.href.includes('discord') ? '_blank' : ''}
+                    color="inherit"
+                    sx={{ ...buttonStyles }}
+                  >
+                    <ListItemIcon sx={{ fill: 'white', color: 'white' }}>{item.icon}</ListItemIcon>
+                    <ListItemText primary={item.title} />
+                  </ListItemButton>
+                  <Divider sx={{ color: 'white' }} />
+                </>
+              )}
+            </List>
           );
         })}
-      </Box>
+      </>
     );
   };
 
   return (
     <Drawer
+      id="sidebar"
       anchor={'left'}
       open={openSidebar}
       onClose={closeSideBar}
@@ -152,7 +208,7 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
         },
       }}
     >
-      <Box sx={{ width: '100%', height: '100%', px: 1 }}>
+      <Box sx={{ width: '100%', height: '100%' }}>
         <SideBarTopItem />
         <LoadingContainer loading={loading} width={100} height={100}>
           <SideBarItems />
