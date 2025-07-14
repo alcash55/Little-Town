@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Close, ExpandLess, ExpandMore } from '@mui/icons-material';
 import {
   Box,
@@ -86,9 +86,8 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
     <>
       {children.map((child, idx) => {
         return (
-          <>
+          <React.Fragment key={idx}>
             <ListItemButton
-              key={idx}
               component={Link}
               to={`${child.href}`}
               color="inherit"
@@ -98,7 +97,7 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
               <ListItemText>{child.title}</ListItemText>
             </ListItemButton>
             <Divider sx={{ color: 'white' }} />
-          </>
+          </React.Fragment>
         );
       })}
     </>

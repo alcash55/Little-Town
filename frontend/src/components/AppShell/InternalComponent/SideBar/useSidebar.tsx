@@ -59,8 +59,8 @@ export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
           icon: <AdminPanelSettings />,
           children: [
             {
-              title: 'Bingo Builder',
-              href: '/AdminPanel/BingoBuilder',
+              title: 'Bingo Details',
+              href: '/AdminPanel/BingoDetails',
               icon: <Gamepad />,
             },
             {

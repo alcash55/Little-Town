@@ -50,11 +50,9 @@ const BoardBuilder = () => {
       alignItems={'center'}
       sx={{ bgcolor: darkTheme.palette.primary.main, p: 5 }}
     >
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
-        <Typography variant="h1" sx={{ fontSize: 42, textAlign: 'center' }}>
-          Board Builder
-        </Typography>
-      </Box>
+      <Typography variant="h1" sx={{ fontSize: 42, textAlign: 'center' }}>
+        Board Builder
+      </Typography>
 
       <Stack
         spacing={3}
