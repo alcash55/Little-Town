@@ -1,15 +1,28 @@
-import type { PropsWithChildren } from 'react';
+import {
+  Home,
+  BarChart,
+  EmojiEvents,
+  Gavel,
+  AdminPanelSettings,
+  AddAPhoto,
+  Gamepad,
+  DashboardCustomize,
+  GroupAdd,
+} from '@mui/icons-material';
+import type { PropsWithChildren, ReactNode } from 'react';
 import { createContext, useState, useEffect, useContext, useMemo } from 'react';
+import BoardGame from '../../../../assets/Images/BoardGame';
+import Discord from '../../../../assets/Images/Discord';
 
 export interface SidebarItem {
   title: string;
   href: string;
-  icon: string;
-  children?: any[];
+  icon: ReactNode;
+  children?: SidebarItem[];
 }
 
 export interface Sidebar {
-  icon: string;
+  icon: ReactNode;
   id: number;
   title: string;
   url: string;
@@ -38,38 +51,60 @@ export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
         {
           title: 'Home',
           href: '/',
-          icon: 'Home',
+          icon: <Home />,
         },
         {
           title: 'Admin Panel',
           href: '/AdminPanel',
-          icon: 'AdminPanelSettings',
+          icon: <AdminPanelSettings />,
+          children: [
+            {
+              title: 'Bingo Details',
+              href: '/AdminPanel/BingoDetails',
+              icon: <Gamepad />,
+            },
+            {
+              title: 'Team Drafter',
+              href: '/AdminPanel/TeamDrafter',
+              icon: <GroupAdd />,
+            },
+            {
+              title: 'Board Builder',
+              href: '/AdminPanel/BoardBuilder',
+              icon: <DashboardCustomize />,
+            },
+            {
+              title: 'Screenshot Submissions',
+              href: '/AdminPanel/ScreenshotSubmission',
+              icon: <AddAPhoto />,
+            },
+          ],
         },
         {
           title: 'Bingo Rules',
           href: '/BingoRules',
-          icon: 'Gavel',
+          icon: <Gavel />,
         },
         {
           title: 'Bingo Board',
           href: '/BingoBoard',
-          icon: 'BoardGame',
+          icon: <BoardGame />,
         },
         {
           title: 'Team Data',
           href: '/TeamData',
-          icon: 'BarChart',
+          icon: <BarChart />,
         },
 
         {
           title: 'Bingo Scores',
           href: '/BingoScores',
-          icon: 'EmojiEvents',
+          icon: <EmojiEvents />,
         },
         {
           title: 'Discord',
           href: 'https://discord.com/invite/NqzwU3TyUT',
-          icon: 'Discord',
+          icon: <Discord />,
         },
         // Sidebaritems can be added here
       ];
