@@ -5,7 +5,7 @@ import { darkTheme } from '../../layout/Theme';
 
 interface Props {
   loading: boolean;
-  children: ReactNode;
+  children?: ReactNode;
   [key: string]: any;
   width: number;
   height: number;
