@@ -19,10 +19,8 @@ export const Routes = createBrowserRouter(
       <Route path="BingoRules" element={<Pages.BingoRules />} />
       <Route path="AdminPanel/BingoDetails" element={<Pages.BingoDetails />} />
       <Route path="AdminPanel/BoardBuilder" element={<Pages.BoardBuilder />} />
-      {/* 
-      <Route path="Admin/Team Drafter" element={<Pages./>} />
-      <Route path="Admin/BoardBuilder" element={<Pages./>} />
-      <Route path="Admin/ScreenshotSubmissions" element={<Pages./>} /> */}
+      <Route path="AdminPanel/TeamDrafter" element={<Pages.TeamDrafter />} />
+      <Route path="AdminPanel/ScreenshotSubmission" element={<Pages.ScreenshotSubmission />} />
       <Route path="*" element={<Pages.Error />} />
     </Route>,
   ),

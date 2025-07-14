@@ -75,7 +75,7 @@ export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
             },
             {
               title: 'Screenshot Submissions',
-              href: '/AdminPanel/ScreenshotSubmissions',
+              href: '/AdminPanel/ScreenshotSubmission',
               icon: <AddAPhoto />,
             },
           ],
