@@ -7,7 +7,6 @@ import {
   Button,
   IconButton,
   Slide,
-  keyframes,
 } from '@mui/material';
 import { BarChart, EmojiEvents, Gavel } from '@mui/icons-material';
 import BoardGame from '../../../assets/Images/BoardGame';
@@ -42,7 +41,7 @@ const Home = () => {
       >
         {gangIcons.map((name, index) => (
           <img
-            aria-label={'Little Town Gang Logos'}
+            aria-label={`Little Town ${name.slice(19, name.length - 4)} logo`}
             key={index}
             width="25"
             height="auto"

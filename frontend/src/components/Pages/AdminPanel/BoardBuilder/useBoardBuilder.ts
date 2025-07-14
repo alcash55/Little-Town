@@ -1,23 +1,28 @@
 import { useState } from 'react';
 
-interface Tile {
-  type: string;
+type Tile = {
+  type: 'Kill Count' | 'Experience' | 'Drops';
   task: string;
   points: number;
-}
+  objective?: string | number;
+};
 
 export const useBoardBuilder = () => {
-  const [tileType, setTileType] = useState<string>('');
-  const [tileTask, setTileTask] = useState<string>('');
-  const [tilePoints, setTilePoints] = useState<number>(0);
-  const [tileWeight, setTileWeight] = useState<number>(0);
-  const [board, setBoard] = useState<Tile[]>([]);
-
   const tilesTypeOptions = [
     { name: 'Kill Count', value: 1 },
     { name: 'Experience', value: 2 },
     { name: 'Drops', value: 3 },
   ];
+
+  const [tileType, setTileType] = useState<(typeof tilesTypeOptions)[0]>(tilesTypeOptions[0]);
+  const [tileTask, setTileTask] = useState<string>('');
+  const [tilePoints, setTilePoints] = useState<number | undefined>();
+
+  const [tileKillCount, setTileKillCount] = useState<number | undefined>();
+  const [tileExperience, setTileExperience] = useState<number | undefined>();
+  const [tileDrops, setTileDrops] = useState<string | undefined>();
+
+  const [board, setBoard] = useState<Tile[]>([]);
 
   /**
    * Adds a tile to the board, adds tiles points with weight
@@ -25,16 +30,53 @@ export const useBoardBuilder = () => {
    */
   const addTile = () => {
     const newBoard = [...board];
-    newBoard.push({ type: tileType, task: tileTask, points: tilePoints + tileWeight });
+    if (!tileTask || !tilePoints) {
+      console.log('no tile');
+      return;
+    }
+
+    let objective: string | number | undefined;
+    if (tileType.name === 'Kill Count') {
+      objective = tileKillCount;
+    } else if (tileType.name === 'Experience') {
+      objective = tileExperience;
+    } else if (tileType.name === 'Drops') {
+      objective = tileDrops;
+    }
+
+    newBoard.push({
+      type: tileType.name as 'Kill Count' | 'Experience' | 'Drops',
+      task: tileTask,
+      points: tilePoints,
+      objective,
+    });
+
     setBoard(newBoard);
 
-    setTileType('');
+    // reset tile form fields
     setTileTask('');
-    setTilePoints(0);
-    setTileWeight(0);
+    setTilePoints(undefined);
+
+    setTileKillCount(undefined);
+    setTileExperience(undefined);
+    setTileDrops(undefined);
+    setTileType(tilesTypeOptions[0]);
   };
 
-  const submitBoard = () => {};
+  /**
+   * Tile to remove from the board
+   * @param tileToRemove
+   */
+  const removeTile = (tileToRemove: Tile) => {
+    const newBoard = board.filter((tile) => tile.task !== tileToRemove.task);
+    setBoard(newBoard);
+  };
+
+  const submitBoard = () => {
+    //add verification
+    // send request to backend
+    console.log('board: ', board);
+  };
 
   return {
     tilesTypeOptions,
@@ -44,9 +86,15 @@ export const useBoardBuilder = () => {
     setTileTask,
     tilePoints,
     setTilePoints,
-    tileWeight,
-    setTileWeight,
     addTile,
     board,
+    removeTile,
+    submitBoard,
+    tileKillCount,
+    setTileKillCount,
+    tileExperience,
+    setTileExperience,
+    tileDrops,
+    setTileDrops,
   };
 };
