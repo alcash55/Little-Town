@@ -48,7 +48,7 @@ export const useBoardBuilder = () => {
       console.log('Missing task or points');
       return;
     }
-
+    
     let newTile: Tile | undefined;
 
     if (tileType.name === 'Kill Count') {
