@@ -49,7 +49,6 @@ export const useBoardBuilder = () => {
       return;
     }
 
-    // No need for `Tile | null`, just initialize `newTile` as undefined
     let newTile: Tile | undefined;
 
     if (tileType.name === 'Kill Count') {
