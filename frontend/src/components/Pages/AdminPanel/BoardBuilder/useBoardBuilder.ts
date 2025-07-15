@@ -40,7 +40,7 @@ export const useBoardBuilder = () => {
   const [board, setBoard] = useState<Tile[]>([]);
 
   /**
-   * Adds a tile to the board, adds tiles points with weight
+   * Adds a tile to the board, adds tile points with weight
    * and updates the board state. Then resets the tile states
    */
   const addTile = () => {
@@ -49,7 +49,8 @@ export const useBoardBuilder = () => {
       return;
     }
 
-    let newTile: Tile | null = null;
+    // No need for `Tile | null`, just initialize `newTile` as undefined
+    let newTile: Tile | undefined;
 
     if (tileType.name === 'Kill Count') {
       if (tileKillCount === undefined) {
@@ -90,6 +91,7 @@ export const useBoardBuilder = () => {
       };
     }
 
+    // Add the tile to the board only if `newTile` is defined
     if (newTile) {
       setBoard((prev) => [...prev, newTile]);
     }
@@ -104,7 +106,7 @@ export const useBoardBuilder = () => {
     setTileType(tilesTypeOptions[0]);
   };
 
-  /**
+  /**-
    * Tile to remove from the board
    * @param tileToRemove
    */
