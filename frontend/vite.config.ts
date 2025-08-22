@@ -10,5 +10,18 @@ export default defineConfig({
   server: {
     port: 3000,
     open: '/',
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        secure: false,
+      },
+      // Legacy route support for current client calls
+      '/hiscores': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
 });
