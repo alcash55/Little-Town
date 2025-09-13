@@ -12,4 +12,3 @@ This site is used to track the progress of OSRS (Old School Runescape) [Bingo Co
 ## Contributors
 
 - Alcash55
-- jepsenzd
