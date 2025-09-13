@@ -8,6 +8,7 @@ export const useBingoDetails = () => {
   const [numberOfTeams, setNumberOfTeams] = useState(3);
   const [teamNames, setTeamNames] = useState(['', '', '', '']);
 
+
   return {
     bingoName,
     setBingoName,

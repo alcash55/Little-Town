@@ -17,3 +17,24 @@ img {
 section {
  background-color: #424242;
 }
+
+/* target the scrollbar track */
+::-webkit-scrollbar {
+  width: 10px; /* width of the scrollbar */
+}
+
+/* handle of the scrollbar */
+::-webkit-scrollbar-thumb {
+  background-color: #888; /* color of the scrollbar handle */
+  border-radius: 5px; /* roundness of the scrollbar handle */
+}
+
+/* scrollbar track */
+::-webkit-scrollbar-track {
+  background: #333; /* color of the scrollbar track */
+}
+
+/* scrollbar corner */
+::-webkit-scrollbar-corner {
+  background: #000; /* color of the scrollbar corner */
+}

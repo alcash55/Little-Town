@@ -2,6 +2,9 @@ import { Stack, Typography } from '@mui/material';
 import { darkTheme } from '../../../../layout/Theme';
 import { useTeamDrafter } from './useTeamDrafter';
 
+/**
+ * @see https://master--5fc05e08a4a65d0021ae0bf2.chromatic.com/?path=/docs/presets-sortable-multiple-containers--basic-setup
+ */
 const TeamDrafter = () => {
   //   const {} = useTeamDrafter();
   return (
