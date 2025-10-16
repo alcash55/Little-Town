@@ -100,7 +100,7 @@ const BingoRules = () => {
           pt: '1rem',
         }}
       >
-        <img src={daRules} alt="bingo rules" width="15%" height="auto" />
+        <img src={daRules} alt="bingo rules" width="20%" height="auto" />
       </Box>
 
       <Stack spacing={4}>
@@ -243,13 +243,15 @@ const BingoRules = () => {
           <List sx={{ listStyleType: 'disc', pl: 4 }}>
             <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
               <ListItemText
-                primary="In the result of a tie on collection log points, a second tie-breaker will be based on
-                quantity of Collection Log categories completed."
+                // primary="In the result of a tie on collection log points, a second tie-breaker will be based on
+                // quantity of Collection Log categories completed."
+                primary="In the result of a tie their will be a predetermined tie breaker that the admins have decided and commuinicated at the start of the bingo."
               />
             </ListItem>
           </List>
         </Stack>
       </Stack>
+      {backendTest()}
     </Stack>
   );
 };
