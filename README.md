@@ -3,7 +3,7 @@
 ## Dependencies
 
 Frontend: React, MUI, Vite, Typescript
-Backend: Google Cloud Functions, Bun, Typescript, Supabase
+Backend: Express, Bun, Typescript
 
 ## About
 
