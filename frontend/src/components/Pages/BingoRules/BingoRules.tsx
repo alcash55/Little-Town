@@ -208,8 +208,8 @@ const BingoRules = () => {
                 <ListItemText
                   primary={
                     <>
-                      Provide a screenshot of yourself at the Blast Mine to ensure no stacked ores
-                      for large XP drops. Example:{' '}
+                      ` Provide a screenshot of yourself at the Blast Mine to ensure no stacked ores
+                      for large XP drops. Example:`{' '}
                       <Link
                         href="https://imgur.com/7PiSDtp"
                         underline="hover"
@@ -242,11 +242,7 @@ const BingoRules = () => {
           </Typography>
           <List sx={{ listStyleType: 'disc', pl: 4 }}>
             <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-              <ListItemText
-                // primary="In the result of a tie on collection log points, a second tie-breaker will be based on
-                // quantity of Collection Log categories completed."
-                primary="In the result of a tie their will be a predetermined tie breaker that the admins have decided and commuinicated at the start of the bingo."
-              />
+              <ListItemText primary="In the result of a tie their will be a predetermined tie breaker that the admins have decided and commuinicated at the start of the bingo." />
             </ListItem>
           </List>
         </Stack>
