@@ -2,6 +2,8 @@ import { Stack, Button, Typography, Link, List, ListItem, ListItemText, Box } fr
 import daRules from '../../../assets/Images/daRules.png';
 import blastFurnace from '../../../assets/Images/blastFurnace.png';
 import clanEventsSettings from '../../../assets/Images/clanEventsSettings.png';
+import untradeableLootNotifications from '../../../assets/Images/untradeableLootNotifications.png';
+import lootDropNotifications from '../../../assets/Images/lootDropNotifications.png';
 
 const BingoRules = () => {
   const handleClick = async () => {
@@ -118,7 +120,6 @@ const BingoRules = () => {
               />
             </ListItem>
           </List>
-          <Typography variant="body1"></Typography>
         </Stack>
         <Stack spacing={2}>
           <Typography variant="h1" fontSize={48}>
@@ -145,7 +146,7 @@ const BingoRules = () => {
                         display: 'flex',
                         justifyContent: 'center',
                         alignItems: 'center',
-                        pt: 2,
+                        py: 2,
                       }}
                     >
                       <img
@@ -160,7 +161,34 @@ const BingoRules = () => {
               />
             </ListItem>
             <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-              <ListItemText primary={<>OSRS settings for drop amount</>} />
+              <ListItemText
+                primary={
+                  <>
+                    Make sure these settings are checked to ensure drops show up in the chat for
+                    screenshots:{' '}
+                    <Stack
+                      spacing={2}
+                      justifyContent={'center'}
+                      width={'100%'}
+                      alignItems={'center'}
+                      sx={{ py: 2 }}
+                    >
+                      <img
+                        src={untradeableLootNotifications}
+                        alt="untradable loot notifications setting"
+                        width="50%"
+                        height="10%"
+                      />
+                      <img
+                        src={lootDropNotifications}
+                        alt="loot drop notifications setting"
+                        width="50%"
+                        height="10%"
+                      />
+                    </Stack>
+                  </>
+                }
+              />
             </ListItem>
           </List>
         </Stack>
@@ -189,6 +217,12 @@ const BingoRules = () => {
                         <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
                           <ListItemText primary="Brimhaven Agility Arena tickets" />
                         </ListItem>
+                        <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
+                          <ListItemText primary="Lockboxes" />
+                        </ListItem>
+                        <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
+                          <ListItemText primary="Keys" />
+                        </ListItem>
                       </List>
                     </>
                   }
@@ -214,12 +248,12 @@ const BingoRules = () => {
                       for large XP drops. Example:{' '}
                       <Box
                         sx={{
-                          // width: '80%' /* desired width */,
                           width: '100%',
                           height: 'auto',
                           display: 'flex',
                           justifyContent: 'center',
                           alignItems: 'center',
+                          py: 2,
                         }}
                       >
                         <img
