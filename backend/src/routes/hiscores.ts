@@ -2,8 +2,8 @@ import { Router, Request, Response } from "express";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { protect } from "../middleware/auth.js";
 import { hiscores } from "../hiscores.js";
-import { scrapeOsrsSkills } from "../utils/scrapeOsrsSkills.js";
-import { activities as activitiesList } from "../utils/responseList.js";
+import scrapeOsrsSkills from "../utils/scrapeOsrsSkills.js";
+import scrapeOsrsActivities from "../utils/scrapeOsrsActivities.js";
 import { ApiResponse, HiscoreData } from "../types/index.js";
 
 const router = Router();
@@ -76,7 +76,10 @@ router.get(
   "/activities/list",
   asyncHandler(async (req: Request, res: Response) => {
     try {
-      const list = Array.isArray(activitiesList) ? activitiesList : [];
+      const activities = await scrapeOsrsActivities();
+      const list = Array.isArray(activities)
+        ? activities?.trim().split("\n")
+        : [];
 
       const response: ApiResponse<string[]> = {
         success: true,
