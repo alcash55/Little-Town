@@ -1,5 +1,6 @@
 import { Stack, Button, Typography, Link, List, ListItem, ListItemText, Box } from '@mui/material';
 import daRules from '../../../assets/Images/daRules.png';
+import blastFurnace from '../../../assets/Images/blastFurnace.png';
 import clanEventsSettings from '../../../assets/Images/clanEventsSettings.png';
 
 const BingoRules = () => {
@@ -97,10 +98,10 @@ const BingoRules = () => {
           display: 'flex',
           justifyContent: 'center',
           bgcolor: '#424242',
-          pt: '1rem',
+          pt: '.5rem',
         }}
       >
-        <img src={daRules} alt="bingo rules" width="20%" height="auto" />
+        <img src={daRules} alt="bingo rules" width="15%" height="auto" />
       </Box>
 
       <Stack spacing={4}>
@@ -206,19 +207,30 @@ const BingoRules = () => {
               </ListItem>
               <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
                 <ListItemText
+                  sx={{}}
                   primary={
                     <>
-                      ` Provide a screenshot of yourself at the Blast Mine to ensure no stacked ores
-                      for large XP drops. Example:`{' '}
-                      <Link
-                        href="https://imgur.com/7PiSDtp"
-                        underline="hover"
-                        target="_blank"
-                        rel="noreferrer"
-                        color="green"
+                      Provide a screenshot of yourself at the Blast Mine to ensure no stacked ores
+                      for large XP drops. Example:{' '}
+                      <Box
+                        sx={{
+                          // width: '80%' /* desired width */,
+                          width: '100%',
+                          height: 'auto',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                        }}
                       >
-                        https://imgur.com/7PiSDtp
-                      </Link>
+                        <img
+                          src={blastFurnace}
+                          alt="Blast Mine"
+                          width="auto"
+                          height="20%"
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => window.open('https://imgur.com/7PiSDtp', '_blank')}
+                        />
+                      </Box>
                     </>
                   }
                 />
@@ -226,7 +238,7 @@ const BingoRules = () => {
               <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
                 <ListItemText
                   primary={
-                    ' You CANNOT stack KC or XP for a Boss or Skill before the event begins. Thismeans no accumulating XP or KC for a 6-hour log and then logging out after thebingo starts.'
+                    ' You CANNOT stack KC or XP for a Boss or Skill before the event begins. This means no accumulating XP or KC for a 6-hour log and then logging out after the bingo starts.'
                   }
                 />
               </ListItem>
