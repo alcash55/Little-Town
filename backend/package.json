@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "concurrently \"tsc -w\" \"nodemon --watch dist --exec node dist/index.js\"",
+    "dev": "concurrently \"tsc -w\" \"nodemon --watch dist --ext js,json --exec node ./dist/index.js\"",
     "gcp-build": "npm run build"
   },
   "engines": {
