@@ -5,7 +5,7 @@ import puppeteer from "puppeteer";
  * This is intended for documentation/demo purposes, not production data.
  * @returns The contents of the <pre> tag containing the OSRS Hiscores Lite example, or null if not found.
  */
-export async function scrapeOsrsSkills(): Promise<string | null> {
+export default async function scrapeOsrsSkills(): Promise<string | null> {
   const browser = await puppeteer.launch({
     headless: true,
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
@@ -37,6 +37,6 @@ export async function scrapeOsrsSkills(): Promise<string | null> {
   });
 
   await browser.close();
-  console.log("Scraped OSRS Hiscores Lite example:", data);
+  console.log("Scraped OSRS skills:", data);
   return data;
 }

@@ -5,7 +5,7 @@ import puppeteer from "puppeteer";
  * This is intended for documentation/demo purposes, not production data.
  * @returns The contents of the <pre> tag containing the OSRS Activities example, or null if not found.
  */
-export async function scrapeOsrsActivities(): Promise<string | null> {
+export default async function scrapeOsrsActivities(): Promise<string | null> {
   const browser = await puppeteer.launch({
     headless: true,
     args: ["--no-sandbox", "--disable-setuid-sandbox"],

@@ -6,10 +6,18 @@ export interface ApiResponse<T = any> {
 }
 
 export interface HiscoreData {
-  [key: string]: {
-    level: number | "unranked";
-    experience: number;
-  };
+  name: string;
+  skills: [
+    {
+      id: number;
+      name: string;
+      rank: number;
+      level: number;
+      xp: number;
+    }
+  ];
+  activities: Array<{ id: number; name: string; rank: number; kc: number }>;
+  updatedAt: Date;
 }
 
 export interface BingoConfig {

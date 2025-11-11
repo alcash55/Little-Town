@@ -7,7 +7,7 @@ import authRoutes from "./routes/auth.js";
 import hiscoresRoutes from "./routes/hiscores.js";
 import adminRoutes from "./routes/admin.js";
 import { hiscores } from "./hiscores.js";
-import { skills as skillsList } from "./utils/responseList.js";
+import scrapeOsrsSkills from "./utils/scrapeOsrsSkills.js";
 
 const app = express();
 
@@ -49,9 +49,10 @@ app.use("/api/hiscores", hiscoresRoutes);
 app.use("/api/admin", adminRoutes);
 
 // Legacy route support (for backward compatibility)
-app.get("/api/skills", (req, res) => {
+app.get("/api/skills", async (req, res) => {
   try {
-    const list = Array.isArray(skillsList) ? skillsList : [];
+    const skills = await scrapeOsrsSkills();
+    const list = Array.isArray(skills) ? skills : [];
     return res.status(200).json({ success: true, data: list });
   } catch (error) {
     console.error("/api/skills error:", error);
@@ -109,6 +110,5 @@ if (process.env.NODE_ENV !== "production") {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Health check: http://localhost:${PORT}/health`);
-    console.log(`API docs: http://localhost:${PORT}/api`);
   });
 }
