@@ -128,7 +128,6 @@ const BingoRules = () => {
           <List sx={{ listStyleType: 'disc', pl: 4 }}>
             <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
               <ListItemText
-                component="div"
                 primary={
                   <>
                     The event password will be shared at the start, use this password in the{' '}
@@ -163,7 +162,6 @@ const BingoRules = () => {
             </ListItem>
             <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
               <ListItemText
-                component="div"
                 primary={
                   <>
                     Make sure these settings are checked to ensure drops show up in the chat for
