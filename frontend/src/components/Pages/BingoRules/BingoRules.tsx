@@ -24,14 +24,14 @@ const BingoRules = () => {
     try {
       const response = await fetch('http://localhost:8081/api/skills', {
         method: 'GET',
-        // headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
       });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.text(); // Or use response.json() if you expect JSON
+      const data = await response.text();
       console.log(data);
     } catch (error) {
       console.error('Fetch error:', error);
@@ -106,7 +106,7 @@ const BingoRules = () => {
         <img src={daRules} alt="bingo rules" width="15%" height="auto" />
       </Box>
 
-      <Stack spacing={4}>
+      <Stack spacing={4} width={'100%'}>
         <Stack spacing={2}>
           <Typography variant="h1" fontSize={48}>
             Objective
@@ -260,7 +260,7 @@ const BingoRules = () => {
                         alt="Blast Mine"
                         width="auto"
                         height="20%"
-                        style={{ cursor: 'pointer' }}
+                        style={{ cursor: 'pointer', minWidth: '20%' }}
                         onClick={() => window.open('https://imgur.com/7PiSDtp', '_blank')}
                       />
                     </Box>

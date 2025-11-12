@@ -10,6 +10,10 @@ export default defineConfig({
   server: {
     port: 3000,
     open: '/',
+    watch: {
+      usePolling: true,
+      interval: 1000,
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:8081',
