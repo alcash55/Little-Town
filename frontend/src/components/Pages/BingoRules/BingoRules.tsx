@@ -128,6 +128,7 @@ const BingoRules = () => {
           <List sx={{ listStyleType: 'disc', pl: 4 }}>
             <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
               <ListItemText
+                component="div"
                 primary={
                   <>
                     The event password will be shared at the start, use this password in the{' '}
@@ -162,6 +163,7 @@ const BingoRules = () => {
             </ListItem>
             <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
               <ListItemText
+                component="div"
                 primary={
                   <>
                     Make sure these settings are checked to ensure drops show up in the chat for
@@ -197,90 +199,88 @@ const BingoRules = () => {
           <Typography variant="h1" fontSize={48}>
             Screenshots
           </Typography>
-          <Typography variant="body1">
-            <List sx={{ listStyleType: 'disc', pl: 4 }}>
-              <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-                <ListItemText
-                  primary={
-                    <>
-                      Stacking methods are not allowed, including but not limited to:
-                      <List sx={{ listStyleType: 'circle', pl: 4 }}>
-                        <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-                          <ListItemText primary="Dark Essence Blocks" />
-                        </ListItem>
-                        <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-                          <ListItemText primary="Blast Mine" />
-                        </ListItem>
-                        <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-                          <ListItemText primary="Clue Caskets" />
-                        </ListItem>
-                        <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-                          <ListItemText primary="Brimhaven Agility Arena tickets" />
-                        </ListItem>
-                        <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-                          <ListItemText primary="Lockboxes" />
-                        </ListItem>
-                        <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-                          <ListItemText primary="Keys" />
-                        </ListItem>
-                      </List>
-                    </>
-                  }
-                />
-              </ListItem>
-              <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-                <ListItemText
-                  primary={
-                    <>
-                      You must provide screenshots of your open bank, searching for the words
-                      "block" and "agility." If you have any of these items in your bank, you must
-                      end the event with the same quantity. Example:
-                    </>
-                  }
-                />
-              </ListItem>
-              <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-                <ListItemText
-                  sx={{}}
-                  primary={
-                    <>
-                      Provide a screenshot of yourself at the Blast Mine to ensure no stacked ores
-                      for large XP drops. Example:{' '}
-                      <Box
-                        sx={{
-                          width: '100%',
-                          height: 'auto',
-                          display: 'flex',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          py: 2,
-                        }}
-                      >
-                        <img
-                          src={blastFurnace}
-                          alt="Blast Mine"
-                          width="auto"
-                          height="20%"
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => window.open('https://imgur.com/7PiSDtp', '_blank')}
-                        />
-                      </Box>
-                    </>
-                  }
-                />
-              </ListItem>
-              <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-                <ListItemText
-                  primary={
-                    ' You CANNOT stack KC or XP for a Boss or Skill before the event begins. This means no accumulating XP or KC for a 6-hour log and then logging out after the bingo starts.'
-                  }
-                />
-              </ListItem>
-              <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-                <ListItemText primary=" Please log out before the event starts to ensure fairness. If you don't, your XP and KC will be manually removed." />
-              </ListItem>
-            </List>
-          </Typography>
+          <List sx={{ listStyleType: 'disc', pl: 4 }}>
+            <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
+              <ListItemText
+                primary={
+                  <>
+                    Stacking methods are not allowed, including but not limited to:
+                    <List sx={{ listStyleType: 'circle', pl: 4 }}>
+                      <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
+                        <ListItemText primary="Dark Essence Blocks" />
+                      </ListItem>
+                      <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
+                        <ListItemText primary="Blast Mine" />
+                      </ListItem>
+                      <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
+                        <ListItemText primary="Clue Caskets" />
+                      </ListItem>
+                      <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
+                        <ListItemText primary="Brimhaven Agility Arena tickets" />
+                      </ListItem>
+                      <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
+                        <ListItemText primary="Lockboxes" />
+                      </ListItem>
+                      <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
+                        <ListItemText primary="Keys" />
+                      </ListItem>
+                    </List>
+                  </>
+                }
+              />
+            </ListItem>
+            <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
+              <ListItemText
+                primary={
+                  <>
+                    You must provide screenshots of your open bank, searching for the words "block"
+                    and "agility." If you have any of these items in your bank, you must end the
+                    event with the same quantity. Example:
+                  </>
+                }
+              />
+            </ListItem>
+            <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
+              <ListItemText
+                sx={{}}
+                primary={
+                  <>
+                    Provide a screenshot of yourself at the Blast Mine to ensure no stacked ores for
+                    large XP drops. Example:{' '}
+                    <Box
+                      sx={{
+                        width: '100%',
+                        height: 'auto',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        py: 2,
+                      }}
+                    >
+                      <img
+                        src={blastFurnace}
+                        alt="Blast Mine"
+                        width="auto"
+                        height="20%"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => window.open('https://imgur.com/7PiSDtp', '_blank')}
+                      />
+                    </Box>
+                  </>
+                }
+              />
+            </ListItem>
+            <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
+              <ListItemText
+                primary={
+                  ' You CANNOT stack KC or XP for a Boss or Skill before the event begins. This means no accumulating XP or KC for a 6-hour log and then logging out after the bingo starts.'
+                }
+              />
+            </ListItem>
+            <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
+              <ListItemText primary=" Please log out before the event starts to ensure fairness. If you don't, your XP and KC will be manually removed." />
+            </ListItem>
+          </List>
         </Stack>
         <Stack spacing={1}>
           <Typography variant="h1" fontSize={48}>
