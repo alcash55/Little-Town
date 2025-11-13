@@ -6,11 +6,16 @@ import untradeableLootNotifications from '../../../assets/Images/untradeableLoot
 import lootDropNotifications from '../../../assets/Images/lootDropNotifications.png';
 
 const BingoRules = () => {
+  const token = localStorage.getItem('authToken');
   const handleClick = async () => {
     console.log('clicked');
-    await fetch('http://localhost:8081/hiscores?player=Lucky Buck2', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+    const playerName = encodeURIComponent('Lucky Buck2');
+    await fetch(`http://localhost:8081/api/hiscores/${playerName}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
     })
       .then(async (response) => {
         const data = await response.text();
@@ -20,21 +25,24 @@ const BingoRules = () => {
   };
 
   const handleClickSkills = async () => {
-    console.log('clicked');
+    console.log('[Frontend] Skills button clicked');
     try {
-      const response = await fetch('http://localhost:8081/api/skills', {
+      const response = await fetch('http://localhost:8081/api/hiscores/skills/list', {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
       });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.text();
-      console.log(data);
+      const data = await response.json();
+      console.log('[Frontend] Response data:', data);
     } catch (error) {
-      console.error('Fetch error:', error);
+      console.error('[Frontend] Fetch error:', error);
     }
   };
 
@@ -43,7 +51,10 @@ const BingoRules = () => {
     try {
       const response = await fetch('http://localhost:8081/api/hiscores/activities/list', {
         method: 'GET',
-        // headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
       });
 
       if (!response.ok) {
@@ -59,23 +70,25 @@ const BingoRules = () => {
 
   const backendTest = () => {
     const requests = [
-      { handleClick, name: 'hiscores' },
-      { handleClickSkills, name: 'skills' },
-      { handleClickActivities, name: 'activities' },
+      { function: handleClick, name: 'hiscores' },
+      { function: handleClickSkills, name: 'skills' },
+      { function: handleClickActivities, name: 'activities' },
     ];
 
     return (
       <>
-        {requests.map((request, index) => (
-          <Button
-            key={index}
-            variant="outlined"
-            onClick={request.handleClick}
-            sx={{ color: 'white' }}
-          >
-            {request.name.toUpperCase()}
-          </Button>
-        ))}
+        {requests.map((request, index) => {
+          return (
+            <Button
+              key={index}
+              variant="outlined"
+              onClick={request.function}
+              sx={{ color: 'white' }}
+            >
+              {request.name.toUpperCase()}
+            </Button>
+          );
+        })}
       </>
     );
   };

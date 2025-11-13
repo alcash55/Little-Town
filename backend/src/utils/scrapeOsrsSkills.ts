@@ -1,42 +1,80 @@
 import puppeteer from "puppeteer";
 
-/**
- * Scrapes the OSRS Hiscores Lite example payload from the RuneScape Wiki page.
- * This is intended for documentation/demo purposes, not production data.
- * @returns The contents of the <pre> tag containing the OSRS Hiscores Lite example, or null if not found.
- */
-export default async function scrapeOsrsSkills(): Promise<string | null> {
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  });
-  const page = await browser.newPage();
+export default async function scrapeOsrsSkills(): Promise<string[]> {
+  const getData = async () => {
+    const url =
+      "https://runescape.wiki/w/Application_programming_interface#Hiscores_Lite_2";
 
-  const url =
-    "https://runescape.wiki/w/Application_programming_interface#Hiscores_Lite_2";
-  await page.goto(url, { waitUntil: "domcontentloaded" });
+    try {
+      const browser = await puppeteer.launch({
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
 
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+      const page = await browser.newPage();
+      await page.goto(url, { waitUntil: "domcontentloaded" });
 
-  const data = await page.evaluate(() => {
-    const headers = Array.from(document.querySelectorAll("h3, h4"));
+      // Scroll to ensure all content loads
+      await page.evaluate(async () => {
+        await new Promise<void>((resolve) => {
+          let totalHeight = 0;
+          const distance = 500;
+          const timer = setInterval(() => {
+            const scrollHeight = document.body.scrollHeight;
+            window.scrollBy(0, distance);
+            totalHeight += distance;
+            if (totalHeight >= scrollHeight) {
+              clearInterval(timer);
+              resolve();
+            }
+          }, 200);
+        });
+      });
 
-    const osrsHeader = headers.find((el) =>
-      el.textContent?.toLowerCase().includes("old school runescape")
-    );
+      // Wait for any <p> or <pre> to exist
+      await page.waitForSelector("p", { timeout: 20000 });
 
-    if (!osrsHeader) return null;
+      const data = await page.evaluate(() => {
+        const paragraphs = Array.from(document.querySelectorAll("p"));
+        const targetP = paragraphs.find((p) =>
+          p.textContent
+            ?.trim()
+            .toLowerCase()
+            .includes("the skills in order are")
+        );
 
-    let nextElem = osrsHeader.nextElementSibling as Element | null;
-    while (nextElem && nextElem.tagName.toLowerCase() !== "pre") {
-      nextElem = nextElem.nextElementSibling as Element | null;
+        if (!targetP) throw new Error(`Cannot find <p> element`);
+
+        // Walk forward until we find the next <pre>
+        let nextElem = targetP.nextElementSibling as Element | null;
+        while (nextElem && nextElem.tagName.toLowerCase() !== "pre") {
+          nextElem = nextElem.nextElementSibling as Element | null;
+        }
+
+        return nextElem?.textContent?.trim();
+      });
+
+      await browser.close();
+
+      if (!data) {
+        throw new Error("Unable to get OSRS skills list");
+      }
+
+      return data;
+    } catch (e) {
+      console.error("Scrape failed: ", e);
+      throw new Error(`Error: ${e}`);
     }
+  };
 
-    return (nextElem as HTMLElement | null)?.textContent || null;
-  });
+  const formatData = (skills: string): string[] => {
+    return skills.split("\n");
+  };
 
-  await browser.close();
-  console.log("Scraped OSRS skills:", data);
-  return data;
+  const unformatedSkills = await getData();
+  const formatSkills = formatData(unformatedSkills);
+
+  console.log(formatSkills);
+
+  return formatSkills;
 }
