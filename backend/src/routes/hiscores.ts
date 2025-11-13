@@ -74,7 +74,10 @@ router.get(
       const activities = await scrapeWiki("activities");
 
       if (!activities) {
-        throw new Error(`No activites found`);
+        return res.status(400).json({
+          success: false,
+          error: "No activities returned",
+        });
       }
 
       res.status(200).json(activities);
