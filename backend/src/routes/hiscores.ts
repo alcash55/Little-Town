@@ -17,7 +17,6 @@ router.get(
 
     if (!player || typeof player !== "string") {
       return res.status(400).json({
-        success: false,
         error: "Player name is required",
       });
     }
@@ -31,13 +30,8 @@ router.get(
           error: "Player not found or no data available",
         });
       }
-
-      const response: ApiResponse<HiscoreData> = {
-        success: true,
-        data,
-      };
-
-      res.status(200).json(response);
+      console.log(data);
+      res.status(200).json(data);
     } catch (error) {
       console.error("Error fetching hiscores:", error);
       res.status(500).json({
@@ -55,12 +49,14 @@ router.get(
     try {
       const skills = await scrapeOsrsSkills();
 
-      const response: ApiResponse<string | null> = {
-        success: true,
-        data: skills,
-      };
+      if (!skills) {
+        return res.status(500).json({
+          success: false,
+          error: "No skills returned",
+        });
+      }
 
-      res.status(200).json(response);
+      res.status(200).json(skills);
     } catch (error) {
       console.error("Error fetching skills data:", error);
       res.status(500).json({
@@ -77,9 +73,10 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     try {
       const activities = await scrapeOsrsActivities();
-      const list = Array.isArray(activities)
-        ? activities?.trim().split("\n")
-        : [];
+      const list =
+        activities && typeof activities === "string"
+          ? activities.trim().split("\n")
+          : [];
 
       const response: ApiResponse<string[]> = {
         success: true,
