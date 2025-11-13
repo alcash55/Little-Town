@@ -47,7 +47,7 @@ const BingoRules = () => {
   };
 
   const handleClickActivities = async () => {
-    console.log('clicked');
+    console.log('[Frontend] Activties button clicked');
     try {
       const response = await fetch('http://localhost:8081/api/hiscores/activities/list', {
         method: 'GET',
@@ -61,7 +61,7 @@ const BingoRules = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.text(); // Or use response.json() if you expect JSON
+      const data = await response.json();
       console.log(data);
     } catch (error) {
       console.error('Fetch error:', error);
