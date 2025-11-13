@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
@@ -6,8 +6,6 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import authRoutes from "./routes/auth.js";
 import hiscoresRoutes from "./routes/hiscores.js";
 import adminRoutes from "./routes/admin.js";
-import { hiscores } from "./hiscores.js";
-import scrapeOsrsSkills from "./utils/scrapeOsrsSkills.js";
 
 const app = express();
 
@@ -39,7 +37,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Health check endpoint
-app.get("/health", (req, res) => {
+app.get("/health", (res: Response) => {
   res.status(200).json({ status: "OK", timestamp: new Date().toISOString() });
 });
 
@@ -48,50 +46,14 @@ app.use("/api/auth", authRoutes);
 app.use("/api/hiscores", hiscoresRoutes);
 app.use("/api/admin", adminRoutes);
 
-// Legacy route support (for backward compatibility)
-app.get("/api/skills", async (req, res) => {
-  try {
-    const skills = await scrapeOsrsSkills();
-    const list = Array.isArray(skills) ? skills : [];
-    return res.status(200).json({ success: true, data: list });
-  } catch (error) {
-    console.error("/api/skills error:", error);
-    // Fail-soft in dev: return empty list instead of 500
-    return res.status(200).json({ success: true, data: [] });
-  }
-});
-
-app.get("/api/activities", (req, res) => {
+app.get("/api/activities", (res: Response) => {
   res
     .status(200)
     .json({ success: true, data: "Hello from Little Town Functions!" });
 });
 
-// Legacy hiscores route (unauthenticated, for backward compatibility)
-app.put("/hiscores", async (req, res) => {
-  try {
-    const player = (req.query.player as string) || "";
-    if (!player) {
-      return res
-        .status(400)
-        .json({ success: false, error: "Player name is required" });
-    }
-    const data = await hiscores(player);
-    if (!data) {
-      return res.status(404).json({
-        success: false,
-        error: "Player not found or no data available",
-      });
-    }
-    res.status(200).json({ success: true, data });
-  } catch (error) {
-    console.error("Legacy hiscores error:", error);
-    res.status(500).json({ success: false, error: "Failed to fetch hiscores" });
-  }
-});
-
 // 404 handler
-app.use("*", (req, res) => {
+app.use("*", (req: Request, res: Response) => {
   res.status(404).json({
     success: false,
     error: `Route ${req.originalUrl} not found`,

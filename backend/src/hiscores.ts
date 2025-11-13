@@ -68,13 +68,6 @@ export async function hiscores(rsn: string): Promise<HiscoreData> {
       }
     );
 
-    console.log("Formatted hiscore data:", {
-      name: unformatedHiscoreData.name,
-      skills: unformatedHiscoreData.skills,
-      activities: formattedActivities,
-      updatedAt: new Date(),
-    });
-
     return {
       name: unformatedHiscoreData.name,
       skills: unformatedHiscoreData.skills,
