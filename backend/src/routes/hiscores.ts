@@ -2,8 +2,7 @@ import { Router, Request, Response } from "express";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { protect } from "../middleware/auth.js";
 import { hiscores } from "../hiscores.js";
-import scrapeOsrsSkills from "../utils/scrapeOsrsSkills.js";
-import scrapeOsrsActivities from "../utils/scrapeOsrsActivities.js";
+import scrapeWiki from "../utils/scrapeWiki.js";
 import { ApiResponse, HiscoreData } from "../types/index.js";
 
 const router = Router();
@@ -47,7 +46,7 @@ router.get(
   "/skills/list",
   asyncHandler(async (req: Request, res: Response) => {
     try {
-      const skills = await scrapeOsrsSkills();
+      const skills = await scrapeWiki("skills");
 
       if (!skills) {
         return res.status(500).json({
@@ -72,25 +71,15 @@ router.get(
   "/activities/list",
   asyncHandler(async (req: Request, res: Response) => {
     try {
-      const activities = await scrapeOsrsActivities();
-      const list =
-        activities && typeof activities === "string"
-          ? activities.trim().split("\n")
-          : [];
+      const activities = await scrapeWiki("activities");
 
-      const response: ApiResponse<string[]> = {
-        success: true,
-        data: list,
-      };
+      if (!activities) {
+        throw new Error(`No activites found`);
+      }
 
-      res.status(200).json(response);
+      res.status(200).json(activities);
     } catch (error) {
       console.error("Error fetching activities data:", error);
-      // Fail-soft in dev: return empty list instead of 500
-      res.status(200).json({
-        success: true,
-        data: [],
-      });
     }
   })
 );
