@@ -1,5 +1,9 @@
 import puppeteer, { Browser, Page } from "puppeteer";
 
+// Eventually it may be better to get the data from here
+// @see https://github.dev/runelite/runelite/tree/master/runelite-client/src/main/java/net/runelite/client/util
+// @see https://github.dev/runelite/runelite/tree/master/runelite-client/src/main/java/net/runelite/client/util
+
 const WIKI_URL =
   "https://runescape.wiki/w/Application_programming_interface#Hiscores_Lite_2";
 const ANCHOR_SELECTOR = "a#Hiscores_Lite_2";
@@ -38,8 +42,6 @@ export default async function scrapeWiki(
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
     const page = await browser.newPage();
-
-    // Removed page.on('console', ...) as debugging logs are no longer needed
 
     await page.goto(WIKI_URL, { waitUntil: "domcontentloaded" });
     await page.waitForSelector(ANCHOR_SELECTOR, { timeout: PAGE_TIMEOUT_MS });
