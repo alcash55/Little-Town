@@ -25,8 +25,3 @@ export const Routes = createBrowserRouter(
     </Route>,
   ),
 );
-
-
-901
-256
-3484
