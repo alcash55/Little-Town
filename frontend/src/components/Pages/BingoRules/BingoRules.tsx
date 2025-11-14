@@ -68,7 +68,7 @@ const BingoRules = () => {
           pt: '.5rem',
         }}
       >
-        <img src={daRules} alt="bingo rules" width="15%" height="auto" />
+        <img src={daRules} alt="bingo rules" width="10%" height="auto" />
       </Box>
 
       <Stack spacing={4} width={'100%'}>
