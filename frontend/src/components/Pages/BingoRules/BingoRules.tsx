@@ -24,56 +24,8 @@ const BingoRules = () => {
       .catch((e) => console.log(e));
   };
 
-  const handleClickSkills = async () => {
-    console.log('[Frontend] Skills button clicked');
-    try {
-      const response = await fetch('http://localhost:8081/api/hiscores/skills/list', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('[Frontend] Response data:', data);
-    } catch (error) {
-      console.error('[Frontend] Fetch error:', error);
-    }
-  };
-
-  const handleClickActivities = async () => {
-    console.log('[Frontend] Activties button clicked');
-    try {
-      const response = await fetch('http://localhost:8081/api/hiscores/activities/list', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log(data);
-    } catch (error) {
-      console.error('Fetch error:', error);
-    }
-  };
-
   const backendTest = () => {
-    const requests = [
-      { function: handleClick, name: 'hiscores' },
-      { function: handleClickSkills, name: 'skills' },
-      { function: handleClickActivities, name: 'activities' },
-    ];
+    const requests = [{ function: handleClick, name: 'hiscores' }];
 
     return (
       <>

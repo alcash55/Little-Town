@@ -13,6 +13,8 @@ import {
   Stack,
   TextField,
   Typography,
+  Autocomplete,
+  CircularProgress,
 } from '@mui/material';
 import { useBoardBuilder } from './useBoardBuilder';
 import { darkTheme } from '../../../../layout/Theme';
@@ -39,7 +41,34 @@ const BoardBuilder = () => {
     setTileDrops,
     tileDropsAmount,
     setTileDropsAmount,
+    activities,
+    skills,
+    items,
+    options,
+    setOptions,
+    loading,
   } = useBoardBuilder();
+
+  const inputSx = {
+    '& .MuiOutlinedInput-root': {
+      color: 'black', // text color
+      '& fieldset': {
+        borderColor: 'black', // default border
+      },
+      '&:hover fieldset': {
+        borderColor: '#2A9D8F', // hover border
+      },
+      '&.Mui-focused fieldset': {
+        borderColor: '#2A9D8F', // focused border
+      },
+    },
+    '& .MuiInputLabel-root': {
+      color: 'black', // label color
+      '&.Mui-focused': {
+        color: '#2A9D8F', // focused label color
+      },
+    },
+  };
 
   return (
     <Stack
@@ -85,33 +114,40 @@ const BoardBuilder = () => {
           </Select>
         </FormControl>
 
-        <TextField
+        {/* Select option */}
+        <Autocomplete
           id="tile-task"
-          label={
-            tileType.value === 1
-              ? 'Boss/monster or Mini Game'
-              : tileType.value === 2
-              ? 'Skill'
-              : 'Item name'
-          }
-          variant="outlined"
-          fullWidth
-          required={true}
-          InputLabelProps={{ sx: { color: 'black' } }}
-          value={tileTask ?? ''}
-          onChange={(e) => {
-            setTileTask(e.target.value);
-          }}
-          sx={{
-            borderColor: 'black',
-            color: 'black',
-            '& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline .MuiInputLabel-outlined': {
-              borderColor: 'black',
-              color: 'black',
-            },
-          }}
+          freeSolo
+          inputValue={tileTask}
+          onInputChange={(_, value) => setTileTask(value)}
+          options={tileType.value === 1 ? activities : tileType.value === 2 ? skills : items}
+          sx={{ width: '100%' }}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label={
+                tileType.value === 1
+                  ? 'Boss/monster or Mini Game'
+                  : tileType.value === 2
+                  ? 'Skill'
+                  : 'Item name'
+              }
+              InputLabelProps={{ sx: { color: 'black' } }}
+              InputProps={{
+                ...params.InputProps,
+                endAdornment: (
+                  <>
+                    {loading ? <CircularProgress sx={{ color: '#2A9D8F' }} size={30} /> : null}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
+              }}
+              sx={inputSx}
+            />
+          )}
         />
 
+        {/* tile points */}
         <TextField
           id="tile-points"
           label="Tile Points"
@@ -123,14 +159,7 @@ const BoardBuilder = () => {
           onChange={(e) => {
             setTilePoints(Number(e.target.value));
           }}
-          sx={{
-            borderColor: 'black',
-            color: 'black',
-            '& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline .MuiInputLabel-outlined': {
-              borderColor: 'black',
-              color: 'black',
-            },
-          }}
+          sx={inputSx}
         />
 
         <Stack spacing={2} sx={{ width: '100%' }}>
@@ -146,21 +175,13 @@ const BoardBuilder = () => {
                 setTileKillCount(Number(e.target.value));
               }}
               fullWidth
-              sx={{
-                borderColor: 'black',
-                color: 'black',
-                '& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline .MuiInputLabel-outlined':
-                  {
-                    borderColor: 'black',
-                    color: 'black',
-                  },
-              }}
+              sx={inputSx}
             />
           ) : tileType.name === 'Experience' ? (
             // XP
             <TextField
               id="xp"
-              label="Number of experience"
+              label="Total experience"
               type="number"
               required={true}
               value={tileExperience ?? ''}
@@ -168,15 +189,7 @@ const BoardBuilder = () => {
                 setTileExperience(Number(e.target.value));
               }}
               fullWidth
-              sx={{
-                borderColor: 'black',
-                color: 'black',
-                '& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline .MuiInputLabel-outlined':
-                  {
-                    borderColor: 'black',
-                    color: 'black',
-                  },
-              }}
+              sx={inputSx}
             />
           ) : (
             // Drops
@@ -191,17 +204,10 @@ const BoardBuilder = () => {
                   setTileDrops(e.target.value);
                 }}
                 fullWidth
-                sx={{
-                  borderColor: 'black',
-                  color: 'black',
-                  '& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline .MuiInputLabel-outlined':
-                    {
-                      borderColor: 'black',
-                      color: 'black',
-                    },
-                }}
+                sx={inputSx}
               />
 
+              {/* number of drops */}
               <TextField
                 id="drops"
                 label="How many drops?"
@@ -212,20 +218,11 @@ const BoardBuilder = () => {
                   setTileDropsAmount(Number(e.target.value));
                 }}
                 fullWidth
-                sx={{
-                  borderColor: 'black',
-                  color: 'black',
-                  '& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline .MuiInputLabel-outlined':
-                    {
-                      borderColor: 'black',
-                      color: 'black',
-                    },
-                }}
+                sx={inputSx}
               />
             </Stack>
           )}
         </Stack>
-
         <Box
           sx={{
             display: 'flex',
