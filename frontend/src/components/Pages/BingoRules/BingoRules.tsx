@@ -1,6 +1,6 @@
 import { Stack, Button, Typography, Link, List, ListItem, ListItemText, Box } from '@mui/material';
 import daRules from '../../../assets/Images/daRules.png';
-import blastFurnace from '../../../assets/Images/blastFurnace.png';
+import blastfurnace from '../../../assets/Images/blastfurnace.png';
 import clanEventsSettings from '../../../assets/Images/clanEventsSettings.png';
 import untradeableLootNotifications from '../../../assets/Images/untradeableLootNotifications.png';
 import lootDropNotifications from '../../../assets/Images/lootDropNotifications.png';
@@ -221,7 +221,7 @@ const BingoRules = () => {
                       }}
                     >
                       <img
-                        src={blastFurnace}
+                        src={blastfurnace}
                         alt="Blast Mine"
                         width="auto"
                         height="20%"
