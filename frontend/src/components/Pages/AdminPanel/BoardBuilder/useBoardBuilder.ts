@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { getActivities } from '../../../../utils/getActivities';
+import { getSkills } from '../../../../utils/getSkills';
 
 type Tile =
   | {
@@ -37,11 +39,45 @@ export const useBoardBuilder = () => {
   const [tileDrops, setTileDrops] = useState<string | undefined>();
   const [tileDropsAmount, setTileDropsAmount] = useState<number | undefined>();
 
-  // const [newTile, setNewTile] = useState<Tile | undefined>();
+  const [activities, setActivities] = useState<string[]>([]);
+  const [skills, setSkills] = useState<string[]>([]);
+  const [items, setItems] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [options, setOptions] = useState<string[]>([]);
+
   const [board, setBoard] = useState<Tile[]>([]);
 
+  useEffect(() => {
+    if (!activities.length && !skills.length && !items.length) {
+      getActivities().then(setActivities);
+      getSkills().then(setSkills);
+      getItemMappings().then(setItems);
+
+      setLoading(false);
+    }
+  }, []);
+
   console.log('board: ', board);
-  // console.log('newTile: ', newTile);
+
+  const getItemMappings = async (): Promise<string[]> => {
+    const url = 'https://prices.runescape.wiki/api/v1/osrs/mapping';
+
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'https://littletown.gay/',
+      },
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to fetch items: ${res.status}`);
+    }
+
+    const data = await res.json();
+
+    const items: string[] = data.map((d: any) => d.name);
+
+    return items;
+  };
 
   /**
    * Adds a tile to the board, adds tile points with weight
@@ -153,5 +189,11 @@ export const useBoardBuilder = () => {
     setTileDrops,
     tileDropsAmount,
     setTileDropsAmount,
+    activities,
+    skills,
+    items,
+    options,
+    setOptions,
+    loading,
   };
 };
