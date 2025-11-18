@@ -10,130 +10,26 @@ const router = Router();
 router.use(protect);
 router.use(authorize("admin", "moderator"));
 
-// Create new bingo
+// Add new bingo
 router.post(
   "/bingo",
   asyncHandler(async (req: Request, res: Response) => {
-    const bingoData: BingoConfig = req.body;
-
-    // Basic validation
-    if (!bingoData.name || !bingoData.startDate || !bingoData.endDate) {
-      return res.status(400).json({
-        success: false,
-        error: "Name, start date, and end date are required",
-      });
-    }
-
-    // Validate dates
-    const startDate = new Date(bingoData.startDate);
-    const endDate = new Date(bingoData.endDate);
-
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-      return res.status(400).json({
-        success: false,
-        error: "Invalid date format",
-      });
-    }
-
-    if (startDate >= endDate) {
-      return res.status(400).json({
-        success: false,
-        error: "Start date must be before end date",
-      });
-    }
-
-    try {
-      const result = await createBingo(bingoData);
-
-      const response: ApiResponse<BingoConfig> = {
-        success: true,
-        data: {
-          ...bingoData,
-          id: Date.now().toString(), // Replace with real ID generation
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        message: "Bingo created successfully",
-      };
-
-      res.status(201).json(response);
-    } catch (error) {
-      console.error("Error creating bingo:", error);
-      res.status(500).json({
-        success: false,
-        error: "Failed to create bingo",
-      });
-    }
+    res.status(200);
   })
 );
 
-// Get all bingos (admin only)
+// Get the current bingo
 router.get(
   "/bingo",
   authorize("admin"),
   asyncHandler(async (req: Request, res: Response) => {
-    // TODO: Implement database query
-    const mockBingos: BingoConfig[] = [
-      {
-        id: "1",
-        name: "Sample Bingo",
-        description: "A sample bingo game",
-        startDate: new Date().toISOString(),
-        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        teams: ["Team A", "Team B"],
-        tasks: ["Task 1", "Task 2"],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ];
-
-    const response: ApiResponse<BingoConfig[]> = {
-      success: true,
-      data: mockBingos,
-    };
-
-    res.status(200).json(response);
+    res.status(200);
   })
 );
 
-// Get specific bingo
-router.get(
-  "/bingo/:id",
-  asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
-
-    if (!id) {
-      return res.status(400).json({
-        success: false,
-        error: "Bingo ID is required",
-      });
-    }
-
-    // TODO: Implement database query
-    const mockBingo: BingoConfig = {
-      id,
-      name: "Sample Bingo",
-      description: "A sample bingo game",
-      startDate: new Date().toISOString(),
-      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      teams: ["Team A", "Team B"],
-      tasks: ["Task 1", "Task 2"],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    const response: ApiResponse<BingoConfig> = {
-      success: true,
-      data: mockBingo,
-    };
-
-    res.status(200).json(response);
-  })
-);
-
-// Update bingo
+// Update the current bingo
 router.put(
-  "/bingo/:id",
+  "/bingo",
   asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const updateData: Partial<BingoConfig> = req.body;
@@ -168,27 +64,57 @@ router.put(
   })
 );
 
-// Delete bingo (admin only)
-router.delete(
-  "/bingo/:id",
+// Add bingo details
+router.post(
+  "/bingo/details",
   authorize("admin"),
   asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
+    res.status(200);
+  })
+);
 
-    if (!id) {
-      return res.status(400).json({
-        success: false,
-        error: "Bingo ID is required",
-      });
-    }
+// Update bingo details
+router.post(
+  "/bingo/details",
+  authorize("admin"),
+  asyncHandler(async (req: Request, res: Response) => {
+    res.status(200);
+  })
+);
 
-    // TODO: Implement database deletion
-    const response: ApiResponse = {
-      success: true,
-      message: "Bingo deleted successfully",
-    };
+// get the bingo details
+router.get(
+  "/bingo/details",
+  authorize("admin"),
+  asyncHandler(async (req: Request, res: Response) => {
+    res.status(200);
+  })
+);
 
-    res.status(200).json(response);
+// add the bingo board
+router.post(
+  "/bingo/board",
+  authorize("admin"),
+  asyncHandler(async (req: Request, res: Response) => {
+    res.status(200);
+  })
+);
+
+// update the bingo board
+router.put(
+  "/bingo/board",
+  authorize("admin"),
+  asyncHandler(async (req: Request, res: Response) => {
+    res.status(200);
+  })
+);
+
+// get the bingo board
+router.get(
+  "/bingo/board",
+  authorize("admin"),
+  asyncHandler(async (req: Request, res: Response) => {
+    res.status(200);
   })
 );
 

@@ -1,5 +1,6 @@
 import {
   Box,
+  Button,
   FormControl,
   InputLabel,
   MenuItem,
@@ -26,7 +27,22 @@ const BingoDetails = () => {
     setNumberOfTeams,
     teamNames,
     setTeamNames,
+    planBingo,
+    clearBingo,
   } = useBingoDetails();
+
+  const inputSx = {
+    '& .MuiOutlinedInput-root': {
+      color: 'black',
+      '& fieldset': { borderColor: 'black' },
+      '&:hover fieldset': { borderColor: '#2A9D8F' },
+      '&.Mui-focused fieldset': { borderColor: '#2A9D8F' },
+    },
+    '& .MuiInputLabel-root': {
+      color: 'black',
+      '&.Mui-focused': { color: '#2A9D8F' },
+    },
+  };
 
   return (
     <Stack
@@ -59,6 +75,7 @@ const BingoDetails = () => {
           fullWidth
           required={true}
           autoFocus
+          sx={inputSx}
         />
 
         <Box sx={{ display: 'flex', justifyContent: 'start', alignItems: 'center', gap: 3 }}>
@@ -77,6 +94,7 @@ const BingoDetails = () => {
                 required: true,
               },
             }}
+            sx={inputSx}
           />
           <DateTimePicker
             label="End"
@@ -92,9 +110,11 @@ const BingoDetails = () => {
                 required: true,
               },
             }}
+            sx={inputSx}
           />
         </Box>
 
+        {/* board size */}
         <FormControl variant="standard" sx={{ m: 1, width: '100%' }} required={true}>
           <InputLabel id="board-size-label-label">Board Size</InputLabel>
           <Select
@@ -109,15 +129,17 @@ const BingoDetails = () => {
           </Select>
         </FormControl>
 
+        {/* # of teams */}
         <FormControl variant="standard" sx={{ m: 1, width: '100%' }} required={true}>
           <InputLabel id="team-size-select-label">Number of teams playing</InputLabel>
           <Select
-            labelId="team-size-label"
+            labelId="team-size-select-label"
             id="team-size"
             value={numberOfTeams}
             onChange={(e: any) => setNumberOfTeams(e.target.value)}
             label="Team Size"
           >
+            <MenuItem value={2}>2</MenuItem>
             <MenuItem value={3}>3</MenuItem>
             <MenuItem value={4}>4</MenuItem>
             <MenuItem value={5}>5</MenuItem>
@@ -125,17 +147,64 @@ const BingoDetails = () => {
         </FormControl>
 
         <Stack spacing={2} width={'100%'}>
-          {teamNames.map((name, index) => (
-            <TextField
-              key={`team-${index}`}
-              id={`team-${index}`}
-              label={`Team ${index + 1}`}
-              value={name}
-              // onChange={(e: React.ChangeEvent<HTMLInputElement>) => }
-              variant="outlined"
-              fullWidth
-            />
-          ))}
+          {numberOfTeams != null ? (
+            <>
+              {Array.from({ length: numberOfTeams }).map((_, index) => {
+                return (
+                  <TextField
+                    key={`team-${index}`}
+                    id={`team-${index}`}
+                    label={`Team ${index + 1}`}
+                    value={teamNames[index] || ''}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      const newTeamNames = [...teamNames];
+                      newTeamNames[index] = e.target.value;
+                      setTeamNames(newTeamNames);
+                    }}
+                    variant="outlined"
+                    fullWidth
+                    sx={inputSx}
+                  />
+                );
+              })}
+            </>
+          ) : null}
+        </Stack>
+        <Stack spacing={2} direction={'row'} width={'100%'}>
+          <Button
+            disabled={
+              !(
+                teamNames.length > 0 &&
+                numberOfTeams >= 2 &&
+                numberOfTeams <= 5 &&
+                endDate !== '' &&
+                startDate !== '' &&
+                bingoName !== '' &&
+                (boardSize === 16 || boardSize === 35)
+              )
+            }
+            variant="outlined"
+            onClick={() =>
+              planBingo({
+                name: bingoName,
+                start: startDate,
+                end: endDate,
+                size: boardSize,
+                numberOfTeams: numberOfTeams,
+                teams: teamNames,
+              })
+            }
+            color="success"
+            sx={{ width: '50%' }}
+          >
+            Add Bingo Detail
+          </Button>
+
+          {teamNames.length || endDate || startDate || bingoName ? (
+            <Button variant="outlined" onClick={clearBingo} color="error" sx={{ width: '50%' }}>
+              Clear
+            </Button>
+          ) : null}
         </Stack>
       </Stack>
     </Stack>

@@ -19,11 +19,13 @@ type Tile =
       type: 'Drops';
       task: string;
       points: number;
-      drops: string;
       dropsAmount: number;
     };
 
 export const useBoardBuilder = () => {
+  const BASEURL = import.meta.env.VITE_BASEURL ?? 'http://localhost:3000';
+  const token = localStorage.getItem('authToken');
+
   const tilesTypeOptions = [
     { name: 'Kill Count', value: 1 },
     { name: 'Experience', value: 2 },
@@ -36,7 +38,6 @@ export const useBoardBuilder = () => {
 
   const [tileKillCount, setTileKillCount] = useState<number | undefined>();
   const [tileExperience, setTileExperience] = useState<number | undefined>();
-  const [tileDrops, setTileDrops] = useState<string | undefined>();
   const [tileDropsAmount, setTileDropsAmount] = useState<number | undefined>();
 
   const [activities, setActivities] = useState<string[]>([]);
@@ -47,18 +48,33 @@ export const useBoardBuilder = () => {
 
   const [board, setBoard] = useState<Tile[]>([]);
 
+  // If there is a pre-existing board, load it & fetch skills, activities, and items
   useEffect(() => {
-    if (!activities.length && !skills.length && !items.length) {
-      getActivities().then(setActivities);
-      getSkills().then(setSkills);
-      getItemMappings().then(setItems);
-
-      setLoading(false);
+    // Load saved board
+    const saved = localStorage.getItem('bingoBoard');
+    if (saved) {
+      try {
+        console.log('loading board', JSON.parse(saved));
+        setBoard(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to parse board:', e);
+        setBoard([]);
+      }
     }
+
+    Promise.all([getActivities(), getSkills(), getItemMappings()])
+      .then(([acts, skls, itm]) => {
+        setActivities(acts);
+        setSkills(skls);
+        setItems(itm);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  console.log('board: ', board);
-
+  /**
+   * Fetch all items from OSRS API
+   * @returns Promise<string[]>
+   */
   const getItemMappings = async (): Promise<string[]> => {
     const url = 'https://prices.runescape.wiki/api/v1/osrs/mapping';
 
@@ -80,78 +96,86 @@ export const useBoardBuilder = () => {
   };
 
   /**
-   * Adds a tile to the board, adds tile points with weight
-   * and updates the board state. Then resets the tile states
+   * Add a tile to the bingo board
+   * @returns void
    */
   const addTile = () => {
-    let tileToAdd: Tile;
-
-    if (tileTask && tilePoints !== undefined) {
-      if (tileType.name === tilesTypeOptions[0].name) {
-        if (tileKillCount !== undefined) {
-          tileToAdd = {
-            type: 'Kill Count',
-            task: tileTask,
-            points: tilePoints,
-            killCount: tileKillCount,
-          };
-
-          setBoard((prev) => [...prev, tileToAdd]);
-        } else {
-          console.log('Missing kill count');
-          return;
-        }
-      }
-
-      if (tileType.name === tilesTypeOptions[1].name) {
-        if (tileExperience !== undefined) {
-          tileToAdd = {
-            type: 'Experience',
-            task: tileTask,
-            points: tilePoints,
-            experience: tileExperience,
-          };
-
-          setBoard((prev) => [...prev, tileToAdd]);
-        } else {
-          console.log('Missing experience amount');
-          return;
-        }
-      }
-
-      if (tileType.name === tilesTypeOptions[2].name) {
-        if (tileDrops && tileDropsAmount !== undefined) {
-          tileToAdd = {
-            type: 'Drops',
-            task: tileTask,
-            points: tilePoints,
-            drops: tileDrops,
-            dropsAmount: tileDropsAmount,
-          };
-
-          setBoard((prev) => [...prev, tileToAdd]);
-        } else {
-          console.log('Missing drop name or amount');
-          return;
-        }
-      }
-    } else {
-      console.log('Missing task or points');
+    if (!tileTask || tilePoints === undefined) {
+      console.error('Missing task or points');
       return;
     }
 
-    // if (tileToAdd && tileToAdd !== null) {
-    //   setBoard((prev) => [...prev, tileToAdd]);
-    // }
+    let tileToAdd: Tile | null = null;
 
-    // Reset tile form fields
+    // Kill Count tile
+    if (tileType.name === tilesTypeOptions[0].name) {
+      if (tileKillCount === undefined) {
+        console.error('Missing kill count');
+        return;
+      }
+
+      tileToAdd = {
+        type: 'Kill Count',
+        task: tileTask,
+        points: tilePoints,
+        killCount: tileKillCount,
+      };
+    }
+
+    // Experience tile
+    else if (tileType.name === tilesTypeOptions[1].name) {
+      if (tileExperience === undefined) {
+        console.error('Missing experience amount');
+        return;
+      }
+
+      tileToAdd = {
+        type: 'Experience',
+        task: tileTask,
+        points: tilePoints,
+        experience: tileExperience,
+      };
+    }
+
+    // Drops tile
+    else {
+      if (tileDropsAmount === undefined) {
+        console.error('Missing drop info');
+        return;
+      }
+
+      tileToAdd = {
+        type: 'Drops',
+        task: tileTask,
+        points: tilePoints,
+        dropsAmount: tileDropsAmount,
+      };
+    }
+
+    // Add to board + save
+    setBoard((prev) => {
+      const updated = [...prev, tileToAdd!];
+      console.log('updating board in local storage');
+      localStorage.setItem('bingoBoard', JSON.stringify(updated));
+      return updated;
+    });
+
+    // Reset tile for next tile to be added
+    clear();
+  };
+
+  /**
+   * Reset the bingo board
+   */
+  const clear = () => {
     setTileTask('');
     setTilePoints(undefined);
     setTileKillCount(undefined);
     setTileExperience(undefined);
-    setTileDrops(undefined);
     setTileDropsAmount(undefined);
     setTileType(tilesTypeOptions[0]);
+
+    localStorage.setItem('bingoBoard', '');
   };
 
   /**-
@@ -160,13 +184,32 @@ export const useBoardBuilder = () => {
    */
   const removeTile = (tileToRemove: Tile) => {
     const newBoard = board.filter((tile) => tile.task !== tileToRemove.task);
+    localStorage.setItem('bingoBoard', JSON.stringify(newBoard));
     setBoard(newBoard);
   };
 
-  const submitBoard = () => {
-    //add verification
-    // send request to backend
-    console.log('board: ', board);
+  // TODO add verification of the board based on tbe bingo details
+  const submitBoard = async () => {
+    try {
+      const response = await fetch(`${BASEURL}/api/admin/bingo/board`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify(board),
+      });
+
+      if (response.ok) {
+        console.log('bingo board successfully created');
+        // board is created, reset the form
+        clear();
+      } else {
+        throw new Error(`Failed to create bingo board: ${response.statusText}`);
+      }
+    } catch (e) {
+      console.error(`Unable to create board: ${e}`);
+    }
   };
 
   return {
@@ -179,14 +222,13 @@ export const useBoardBuilder = () => {
     setTilePoints,
     addTile,
     board,
+    clear,
     removeTile,
     submitBoard,
     tileKillCount,
     setTileKillCount,
     tileExperience,
     setTileExperience,
-    tileDrops,
-    setTileDrops,
     tileDropsAmount,
     setTileDropsAmount,
     activities,
