@@ -21,7 +21,7 @@ import { useBoardBuilder } from './useBoardBuilder';
 import { darkTheme } from '../../../../layout/Theme';
 import { Close } from '@mui/icons-material';
 
-const NAV_HEIGHT = 30; // adjust this if your header bar is taller/shorter
+const NAV_HEIGHT = 30;
 
 const BoardBuilder = () => {
   const {
