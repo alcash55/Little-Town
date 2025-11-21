@@ -26,15 +26,18 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Card, CardContent, Chip, Stack, Typography, Box, colors } from '@mui/material';
+import { Card, CardContent, Chip, Stack, Typography, Box, colors, Button } from '@mui/material';
 import { MeasuringStrategy as _MeasuringStrategy, UniqueIdentifier } from '@dnd-kit/core';
 import { darkTheme } from '../../../../layout/Theme';
 import Grid from '@mui/material/Unstable_Grid2';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import { useTeamDrafter } from './useTeamDrafter';
 
 type Items = Record<UniqueIdentifier, UniqueIdentifier[]>;
 
-export default function TeamDrafterMultiple() {
+export default function TeamDrafter() {
+  const { submitDraft } = useTeamDrafter();
+
   // initial items: pool + teams
   const [items, setItems] = useState<Items>(() => ({
     pool: ['Player 1', 'Player 2', 'Player 3', 'Player 4', 'Player 5', 'Player 6', 'Player 7'],
@@ -326,6 +329,11 @@ export default function TeamDrafterMultiple() {
     return <Chip label={String(id)} sx={{ p: 1 }} />;
   }
 
+  const anyTeamHasPlayers = Object.keys(items).some((key) => {
+    // Check if the key is not "pool" and the corresponding array has elements
+    return key !== 'pool' && items[key].some((player) => player !== '');
+  });
+
   return (
     <Stack
       spacing={3}
@@ -333,14 +341,17 @@ export default function TeamDrafterMultiple() {
       width="100%"
       justifyContent="flex-start"
       alignItems="stretch"
-      sx={{ bgcolor: darkTheme.palette.primary.main, p: 5 }}
+      sx={{
+        bgcolor: darkTheme.palette.primary.main,
+        p: { xs: 2, sm: 3, md: 5 },
+      }}
     >
-      <Typography variant="h1" sx={{ fontSize: 42, textAlign: 'center' }}>
+      <Typography variant="h1" sx={{ fontSize: { xs: 28, sm: 36, md: 42 }, textAlign: 'center' }}>
         Team Drafter
       </Typography>
 
-      <Typography variant="body1">
-        To draft players onto a team, drag player in the pool and drop them to the desired team
+      <Typography variant="body1" sx={{ textAlign: { xs: 'center', md: 'left' } }}>
+        To draft players onto a team, drag a player in the pool and drop them on the desired team.
       </Typography>
 
       <DndContext
@@ -352,19 +363,27 @@ export default function TeamDrafterMultiple() {
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
-        {/* --- MAIN LAYOUT: POOL LEFT, TEAMS RIGHT --- */}
+        {/* MAIN LAYOUT */}
         <Box
           sx={{
             display: 'flex',
-            flexDirection: 'row',
-            height: '100%',
+            flexDirection: { xs: 'column', md: 'row' },
             width: '100%',
+            height: '100%',
             gap: 2,
+            minWidth: 0,
           }}
         >
-          {/* Pool column */}
+          {/* POOL */}
           <Box
-            sx={{ width: '25%', height: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}
+            sx={{
+              width: { xs: '100%', sm: '100%', md: '35%', lg: '25%' },
+              minWidth: 0,
+              height: { xs: 'auto', md: '100%' },
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+            }}
           >
             <DroppableContainer id="pool" label="Pool">
               {(items['pool'] || []).map((itemId) => (
@@ -373,26 +392,35 @@ export default function TeamDrafterMultiple() {
             </DroppableContainer>
           </Box>
 
-          {/* Teams grid */}
+          {/* TEAMS */}
           <Grid
             container
             spacing={2}
+            width={{
+              xs: '100%',
+              sm: '100%',
+              md: '65%',
+              lg: '75%',
+            }}
             sx={{
               flex: 1,
-              height: '100%',
               alignContent: 'flex-start',
+              overflowY: 'auto',
+              pb: 2,
+              minWidth: 0,
+              m: 0,
             }}
           >
             {containers.slice(1).map((containerId: UniqueIdentifier) => (
               <Grid
                 key={containerId}
                 xs={12}
-                sm={6}
-                md={4}
-                lg={3}
+                md={6}
+                lg={4}
                 display="flex"
                 justifyContent="center"
                 alignItems="flex-start"
+                sx={{ minWidth: 0, width: '100%', m: 0 }}
               >
                 <DroppableContainer id={containerId} label={String(containerId)}>
                   {(items[containerId] || []).map((itemId) => (
@@ -406,6 +434,28 @@ export default function TeamDrafterMultiple() {
 
         <DragOverlay>{renderDragOverlay(activeId)}</DragOverlay>
       </DndContext>
+
+      <Box
+        sx={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 3,
+        }}
+      >
+        {items.pool.length === 0 ? (
+          <Button variant="contained" color={'success'} sx={{ width: '25%' }} onClick={submitDraft}>
+            Submit Teams
+          </Button>
+        ) : null}
+
+        {anyTeamHasPlayers ? (
+          <Button variant="contained" color="error" sx={{ width: '25%' }}>
+            Reset Teams
+          </Button>
+        ) : null}
+      </Box>
     </Stack>
   );
 }
