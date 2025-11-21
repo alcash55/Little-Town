@@ -10,7 +10,6 @@ const router = Router();
 // Get hiscores for a specific player
 router.get(
   "/:player",
-  protect,
   asyncHandler(async (req: Request, res: Response) => {
     const { player } = req.params;
 

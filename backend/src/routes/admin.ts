@@ -112,7 +112,6 @@ router.put(
 // get the bingo board
 router.get(
   "/bingo/board",
-  authorize("admin"),
   asyncHandler(async (req: Request, res: Response) => {
     res.status(200);
   })
