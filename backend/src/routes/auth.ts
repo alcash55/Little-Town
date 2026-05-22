@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import { getJwtSecret } from "../lib/jwt.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { protect } from "../middleware/auth.js";
 import {
@@ -8,28 +9,9 @@ import {
   LoginResponse,
   User,
 } from "../types/index.js";
+import { loginUser } from "../db/users.js";
 
 const router = Router();
-
-// Mock user database - replace with real database
-const mockUsers: User[] = [
-  {
-    id: "1",
-    username: "admin",
-    email: "admin@littletown.com",
-    role: "admin",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    username: "user",
-    email: "user@littletown.com",
-    role: "user",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
 
 // Login route
 router.post(
@@ -45,11 +27,9 @@ router.post(
       });
     }
 
-    // Find user (in real app, hash password and compare)
-    const user = mockUsers.find((u) => u.username === username);
+    const user = await loginUser(username, password);
 
-    if (!user || password !== "password") {
-      // Replace with proper password hashing
+    if (!user) {
       return res.status(401).json({
         success: false,
         error: "Invalid credentials",
@@ -59,8 +39,8 @@ router.post(
     // Generate JWT token
     const token = jwt.sign(
       { id: user.id, username: user.username, role: user.role },
-      process.env.JWT_SECRET || "fallback-secret",
-      { expiresIn: "24h" }
+      getJwtSecret(),
+      { expiresIn: "24h" },
     );
 
     const response: ApiResponse<LoginResponse> = {
@@ -73,7 +53,7 @@ router.post(
     };
 
     res.status(200).json(response);
-  })
+  }),
 );
 
 // Get current user
@@ -87,7 +67,7 @@ router.get(
     };
 
     res.status(200).json(response);
-  })
+  }),
 );
 
 // Logout route (client-side token removal)
@@ -101,7 +81,7 @@ router.post(
     };
 
     res.status(200).json(response);
-  })
+  }),
 );
 
 export default router;

@@ -1,8 +1,8 @@
 import { Router, Request, Response } from "express";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { protect } from "../middleware/auth.js";
-import { hiscores } from "../hiscores.js";
-import scrapeWiki from "../utils/scrapeWiki.js";
+import { hiscores } from "../services/hiscores.js";
+import scrapeWiki from "../services/scrapeWiki.js";
 import { ApiResponse, HiscoreData } from "../types/index.js";
 
 const router = Router();
@@ -37,7 +37,7 @@ router.get(
         error: "Failed to fetch hiscores",
       });
     }
-  })
+  }),
 );
 
 // Get available skills data
@@ -62,7 +62,7 @@ router.get(
         error: "Failed to fetch skills data",
       });
     }
-  })
+  }),
 );
 
 // Get available activities data
@@ -83,7 +83,7 @@ router.get(
     } catch (error) {
       console.error("Error fetching activities data:", error);
     }
-  })
+  }),
 );
 
 // Update hiscores (PUT method for historical reasons)
@@ -124,7 +124,7 @@ router.put(
         error: "Failed to update hiscores",
       });
     }
-  })
+  }),
 );
 
 export default router;

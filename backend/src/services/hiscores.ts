@@ -1,4 +1,4 @@
-import { HiscoreData } from "./types/index.js";
+import { HiscoreData } from "../types/index.js";
 
 /**
  * @see https://runescape.wiki/w/Application_programming_interface#Hiscores_Lite_2
@@ -14,7 +14,7 @@ export async function hiscores(rsn: string): Promise<HiscoreData> {
         rank: number;
         level: number;
         xp: number;
-      }
+      },
     ];
     activities: [{ id: number; name: "string"; rank: number; score: number }];
   }> {
@@ -26,7 +26,7 @@ export async function hiscores(rsn: string): Promise<HiscoreData> {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -48,7 +48,7 @@ export async function hiscores(rsn: string): Promise<HiscoreData> {
   async function formatHiscoresOptions(unformatedHiscoreData: {
     name: string;
     skills: [
-      { id: number; name: "string"; rank: number; level: number; xp: number }
+      { id: number; name: "string"; rank: number; level: number; xp: number },
     ];
     activities: [{ id: number; name: "string"; rank: number; score: number }];
   }): Promise<HiscoreData> {
@@ -65,7 +65,7 @@ export async function hiscores(rsn: string): Promise<HiscoreData> {
           rank,
           kc: score,
         };
-      }
+      },
     );
 
     return {
@@ -79,7 +79,7 @@ export async function hiscores(rsn: string): Promise<HiscoreData> {
   try {
     const unformatedHiscoreData = await getHiscoreData(rsn);
     const formattedHiscoreData = await formatHiscoresOptions(
-      unformatedHiscoreData
+      unformatedHiscoreData,
     );
 
     return formattedHiscoreData;
