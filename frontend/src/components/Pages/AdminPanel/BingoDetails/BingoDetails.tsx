@@ -86,7 +86,7 @@ const BingoDetails = () => {
             disablePast
             value={new Date(startDate)}
             onChange={(newDate) => {
-              setStartDate(String(newDate));
+              setStartDate(newDate ? newDate.toISOString() : '');
               console.log(startDate);
             }}
             slotProps={{
@@ -102,7 +102,7 @@ const BingoDetails = () => {
             showDaysOutsideCurrentMonth
             value={new Date(endDate)}
             onChange={(newDate) => {
-              setEndDate(String(newDate));
+              setEndDate(newDate ? newDate.toISOString() : '');
               console.log(endDate);
             }}
             slotProps={{

@@ -1,8 +1,15 @@
 import { Router, Request, Response } from "express";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { protect, authorize } from "../middleware/auth.js";
-import { createBingo } from "../createBingo.js";
 import { ApiResponse, BingoConfig } from "../types/index.js";
+import {
+  getActiveBingo,
+  getActiveBingoBoard,
+  listBingos,
+  saveActiveBingoBoard,
+  saveBingoDetails,
+  updateBingo,
+} from "../db/bingos.js";
 
 const router = Router();
 
@@ -14,8 +21,31 @@ router.use(authorize("admin", "moderator"));
 router.post(
   "/bingo",
   asyncHandler(async (req: Request, res: Response) => {
-    res.status(200);
-  })
+    const { name, description, startDate, endDate, teams, tasks } =
+      req.body as Partial<BingoConfig>;
+
+    if (!name) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Bingo name is required" });
+    }
+
+    const bingo = await saveBingoDetails({
+      name,
+      start: startDate,
+      end: endDate,
+      teams,
+      createdBy: req.user?.id,
+    });
+
+    const response: ApiResponse<BingoConfig> = {
+      success: true,
+      data: { ...bingo, description, tasks: tasks ?? bingo.tasks },
+      message: "Bingo created successfully",
+    };
+
+    res.status(201).json(response);
+  }),
 );
 
 // Get the current bingo
@@ -23,63 +53,96 @@ router.get(
   "/bingo",
   authorize("admin"),
   asyncHandler(async (req: Request, res: Response) => {
-    res.status(200);
-  })
+    const response: ApiResponse<BingoConfig[]> = {
+      success: true,
+      data: await listBingos(),
+    };
+
+    res.status(200).json(response);
+  }),
 );
 
 // Update the current bingo
 router.put(
-  "/bingo",
+  "/bingo/:id?",
   asyncHandler(async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const updateData: Partial<BingoConfig> = req.body;
+    const rawId = req.params.id ?? req.body?.id;
+    const id = Array.isArray(rawId) ? rawId[0] : rawId;
 
     if (!id) {
-      return res.status(400).json({
-        success: false,
-        error: "Bingo ID is required",
-      });
+      return res
+        .status(400)
+        .json({ success: false, error: "Bingo ID is required" });
     }
 
-    // TODO: Implement database update
+    const { name, description, status, startDate, endDate, boardSize, teams } =
+      req.body as Partial<BingoConfig>;
+
     const response: ApiResponse<BingoConfig> = {
       success: true,
-      data: {
-        id,
-        name: updateData.name || "Updated Bingo",
-        description: updateData.description,
-        startDate: updateData.startDate || new Date().toISOString(),
-        endDate:
-          updateData.endDate ||
-          new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        teams: updateData.teams || [],
-        tasks: updateData.tasks || [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
+      data: await updateBingo(id, {
+        name,
+        description,
+        status,
+        start: startDate,
+        end: endDate,
+        size: boardSize,
+        teams,
+      }),
       message: "Bingo updated successfully",
     };
 
     res.status(200).json(response);
-  })
+  }),
 );
-
 // Add bingo details
 router.post(
   "/bingo/details",
   authorize("admin"),
   asyncHandler(async (req: Request, res: Response) => {
-    res.status(200);
-  })
+    const { name, start, end, size, teams } = req.body as {
+      name?: string;
+      start?: string;
+      end?: string;
+      size?: number;
+      teams?: string[];
+    };
+
+    if (!name) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Bingo name is required" });
+    }
+
+    const response: ApiResponse<BingoConfig> = {
+      success: true,
+      data: await saveBingoDetails({
+        name,
+        start,
+        end,
+        size,
+        teams,
+        createdBy: req.user?.id,
+      }),
+      message: "Bingo details saved successfully",
+    };
+
+    res.status(201).json(response);
+  }),
 );
 
 // Update bingo details
-router.post(
+router.put(
   "/bingo/details",
   authorize("admin"),
   asyncHandler(async (req: Request, res: Response) => {
-    res.status(200);
-  })
+    res
+      .status(405)
+      .json({
+        success: false,
+        error: "Use POST /api/admin/bingo/details to create new details.",
+      });
+  }),
 );
 
 // get the bingo details
@@ -87,8 +150,13 @@ router.get(
   "/bingo/details",
   authorize("admin"),
   asyncHandler(async (req: Request, res: Response) => {
-    res.status(200);
-  })
+    const response: ApiResponse<BingoConfig | null> = {
+      success: true,
+      data: await getActiveBingo(),
+    };
+
+    res.status(200).json(response);
+  }),
 );
 
 // add the bingo board
@@ -96,8 +164,20 @@ router.post(
   "/bingo/board",
   authorize("admin"),
   asyncHandler(async (req: Request, res: Response) => {
-    res.status(200);
-  })
+    if (!Array.isArray(req.body)) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Board must be an array of tiles" });
+    }
+
+    const response: ApiResponse = {
+      success: true,
+      data: await saveActiveBingoBoard(req.body),
+      message: "Bingo board saved successfully",
+    };
+
+    res.status(201).json(response);
+  }),
 );
 
 // update the bingo board
@@ -105,16 +185,33 @@ router.put(
   "/bingo/board",
   authorize("admin"),
   asyncHandler(async (req: Request, res: Response) => {
-    res.status(200);
-  })
+    if (!Array.isArray(req.body)) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Board must be an array of tiles" });
+    }
+
+    const response: ApiResponse = {
+      success: true,
+      data: await saveActiveBingoBoard(req.body),
+      message: "Bingo board updated successfully",
+    };
+
+    res.status(200).json(response);
+  }),
 );
 
 // get the bingo board
 router.get(
   "/bingo/board",
   asyncHandler(async (req: Request, res: Response) => {
-    res.status(200);
-  })
+    const response: ApiResponse = {
+      success: true,
+      data: await getActiveBingoBoard(),
+    };
+
+    res.status(200).json(response);
+  }),
 );
 
 export default router;

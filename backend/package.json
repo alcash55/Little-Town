@@ -7,24 +7,41 @@
   "scripts": {
     "dev": "nodemon",
     "build": "tsc",
-    "start": "bun dist/index.js",
-    "test": "bun test"
+    "start": "node dist/index.js",
+    "test": "node --test",
+    "local": "bash scripts/dev-local.sh",
+    "local:reset": "bash scripts/dev-local.sh --reset",
+    "db:start": "npx supabase start",
+    "db:stop": "npx supabase stop",
+    "db:status": "npx supabase status",
+    "db:reset": "npx supabase db reset",
+    "db:push": "npx supabase db push"
   },
   "nodemonConfig": {
-    "watch": ["src"],
+    "watch": [
+      "src"
+    ],
     "ext": "ts",
-    "exec": "bun run build && bun run start",
+    "exec": "npm run build && npm run start",
     "legacyWatch": true
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "nodemon": "^3.1.11",
     "typescript": "^5.2.2"
   },
   "dependencies": {
-    "express": "^4.18.2",
+    "@supabase/supabase-js": "^2.105.4",
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
-    "helmet": "^7.1.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.18.2",
     "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "install": "^0.13.0",
     "jsonwebtoken": "^9.0.2",
     "puppeteer": "^24.13.0"
   }

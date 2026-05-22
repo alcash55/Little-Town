@@ -20,14 +20,20 @@ export interface HiscoreData {
   updatedAt: Date;
 }
 
+export type BingoStatus = "draft" | "active" | "complete" | "archived";
+
 export interface BingoConfig {
   id?: string;
   name: string;
   description?: string;
+  status?: BingoStatus;
   startDate: string;
   endDate: string;
+  boardSize: number;
+  numberOfTeams?: number;
   teams: string[];
   tasks: string[];
+  createdBy?: string;
   createdAt?: string;
   updatedAt?: string;
 }
