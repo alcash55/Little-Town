@@ -1,5 +1,5 @@
 export const useTeamDrafter = () => {
-  const BASEURL = import.meta.env.VITE_BASEURL ?? 'http://localhost:3000';
+  const BASEURL = import.meta.env.VITE_BASEURL ?? 'http://localhost:8081';
   const token = localStorage.getItem('authToken');
 
   /**

@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
+.env.local.generated
 .env
 
 # Editor directories and files
@@ -25,5 +26,4 @@ dist-ssr
 *.sw?
 
 credentials.json
-
 

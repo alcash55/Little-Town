@@ -10,8 +10,7 @@ type Bingo = {
 };
 
 export const useBingoDetails = () => {
-  const BASEURL = import.meta.env.VITE_BASEURL ?? 'http://localhost:3000';
-  const token = localStorage.getItem('authToken');
+  const BASEURL = import.meta.env.VITE_BASEURL || 'http://localhost:8081';
 
   const [bingoName, setBingoName] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -25,6 +24,7 @@ export const useBingoDetails = () => {
    * @param details
    */
   const planBingo = async (details: Bingo) => {
+    const token = localStorage.getItem('authToken');
     try {
       const response = await fetch(`${BASEURL}/api/admin/bingo/details`, {
         method: 'POST',

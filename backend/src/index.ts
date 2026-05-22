@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express, { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -9,6 +10,9 @@ import adminRoutes from "./routes/admin.js";
 
 const app = express();
 
+if (process.env.NODE_ENV === "production" && !process.env.FRONTEND_URL) {
+  throw new Error("FRONTEND_URL must be set in production");
+}
 // Security middleware
 app.use(helmet());
 
@@ -19,7 +23,7 @@ app.use(
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  })
+  }),
 );
 
 // Rate limiting
@@ -37,7 +41,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Health check endpoint
-app.get("/health", (res: Response) => {
+app.get("/health", (_req: Request, res: Response) => {
   res.status(200).json({ status: "OK", timestamp: new Date().toISOString() });
 });
 
@@ -45,12 +49,6 @@ app.get("/health", (res: Response) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/hiscores", hiscoresRoutes);
 app.use("/api/admin", adminRoutes);
-
-app.get("/api/activities", (res: Response) => {
-  res
-    .status(200)
-    .json({ success: true, data: "Hello from Little Town Functions!" });
-});
 
 // 404 handler
 app.use("*", (req: Request, res: Response) => {
@@ -62,9 +60,6 @@ app.use("*", (req: Request, res: Response) => {
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
-
-// For Google Cloud Functions compatibility
-export const LittleTownFunctions = app;
 
 // For local development
 if (process.env.NODE_ENV !== "production") {

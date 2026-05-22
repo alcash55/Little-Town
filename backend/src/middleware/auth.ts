@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { getJwtSecret } from "./../../src/lib/jwt.js";
 import { AppError } from "./errorHandler.js";
 import { User } from "../types/index.js";
+import { findUserById } from "../db/users.js";
 
 // Extend Express Request interface to include user
 declare global {
@@ -34,18 +36,16 @@ export const protect = async (
     // Verify token
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || "fallback-secret"
+      getJwtSecret()
     ) as any;
 
-    // TODO: Fetch user from database and attach to req.user
-    // For now, create a mock user
-    req.user = {
-      id: decoded.id,
-      username: decoded.username,
-      role: decoded.role || "user",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    const user = await findUserById(decoded.id);
+
+    if (!user) {
+      return next(new AppError("Not authorized to access this route", 401));
+    }
+
+    req.user = user;
 
     next();
   } catch (error) {
