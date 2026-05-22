@@ -8,7 +8,9 @@ import {
   IconButton,
   Slide,
 } from '@mui/material';
-import { BarChart, EmojiEvents, Gavel } from '@mui/icons-material';
+import BarChart from '@mui/icons-material/BarChart';
+import EmojiEvents from '@mui/icons-material/EmojiEvents';
+import Gavel from '@mui/icons-material/Gavel';
 import BoardGame from '../../../assets/Images/BoardGame';
 import { Link } from 'react-router-dom';
 import cat from '../../../assets/Images/cat.svg';
