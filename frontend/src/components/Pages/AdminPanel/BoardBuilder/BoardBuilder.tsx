@@ -19,7 +19,7 @@ import {
 import Grid from '@mui/material/Unstable_Grid2';
 import { useBoardBuilder } from './useBoardBuilder';
 import { darkTheme } from '../../../../layout/Theme';
-import { Close } from '@mui/icons-material';
+import Close from '@mui/icons-material/Close';
 
 const NAV_HEIGHT = 30;
 
@@ -124,8 +124,8 @@ const BoardBuilder = () => {
                 tileType.value === 1
                   ? 'Boss/monster or Mini Game'
                   : tileType.value === 2
-                  ? 'Skill'
-                  : 'Item name'
+                    ? 'Skill'
+                    : 'Item name'
               }
               InputLabelProps={{ sx: { color: 'black' } }}
               InputProps={{
@@ -267,8 +267,8 @@ const BoardBuilder = () => {
                       {tile.type === 'Kill Count'
                         ? `Kill ${tile.killCount}`
                         : tile.type === 'Experience'
-                        ? `Gain ${tile.experience} xp`
-                        : `Get ${tile.dropsAmount} ${tile.task}s`}
+                          ? `Gain ${tile.experience} xp`
+                          : `Get ${tile.dropsAmount} ${tile.task}s`}
                     </Typography>
                   </Stack>
                 </CardContent>
