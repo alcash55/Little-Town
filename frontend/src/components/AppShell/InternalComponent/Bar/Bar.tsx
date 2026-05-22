@@ -4,12 +4,16 @@ import {
   IconButton,
   Toolbar,
   Typography,
-  Avatar,
-  Button,
   Menu,
   MenuItem,
 } from '@mui/material';
-import { Menu as MenuIcon, Login, Logout, Person } from '@mui/icons-material';
+import MenuIcon from '@mui/icons-material/Menu';
+import Login from '@mui/icons-material/Login';
+import Logout from '@mui/icons-material/Logout';
+import Person from '@mui/icons-material/Person';
+
+
+
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { darkTheme } from '../../../../layout/Theme';

@@ -1,14 +1,12 @@
-import {
-  Home,
-  BarChart,
-  EmojiEvents,
-  Gavel,
-  AdminPanelSettings,
-  AddAPhoto,
-  Gamepad,
-  DashboardCustomize,
-  GroupAdd,
-} from '@mui/icons-material';
+import Home from '@mui/icons-material/Home';
+import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings';
+import Gamepad from '@mui/icons-material/Gamepad';
+import GroupAdd from '@mui/icons-material/GroupAdd';
+import DashboardCustomize from '@mui/icons-material/DashboardCustomize';
+import AddAPhoto from '@mui/icons-material/AddAPhoto';
+import Gavel from '@mui/icons-material/Gavel';
+import BarChart from '@mui/icons-material/BarChart';
+import EmojiEvents from '@mui/icons-material/EmojiEvents';
 import type { PropsWithChildren, ReactNode } from 'react';
 import { createContext, useState, useEffect, useContext, useMemo } from 'react';
 import BoardGame from '../../../../assets/Images/BoardGame';
