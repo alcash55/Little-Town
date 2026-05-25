@@ -1,10 +1,7 @@
-import { Stack, Typography } from '@mui/material'
-import { darkTheme } from '../../../layout/Theme';
+import { Stack, Typography } from "@mui/material";
+import { darkTheme } from "../../../../layout/Theme";
 
-/**
- * Resource page that shows tips and info for OSRS bossing and others
- */
-const Resources = () => {
+const BingoOverview = () => {
     return (
         <Stack
             spacing={5}
@@ -23,10 +20,10 @@ const Resources = () => {
                     textAlign: 'center',
                 }}
             >
-                Resources
+                Bingo Overview
             </Typography>
         </Stack>
     )
 }
 
-export default Resources;
+export default BingoOverview;

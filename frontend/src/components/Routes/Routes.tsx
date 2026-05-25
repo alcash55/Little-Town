@@ -29,6 +29,7 @@ export const Routes = createBrowserRouter(
       <Route path="AdminPanel/BoardBuilder" element={<ProtectedRoute allowedRoles={['admin']}><Pages.BoardBuilder /></ProtectedRoute>} />
       <Route path="AdminPanel/TeamDrafter" element={<ProtectedRoute allowedRoles={['admin']}><Pages.TeamDrafter /></ProtectedRoute>} />
       <Route path="AdminPanel/ScreenshotSubmission" element={<ProtectedRoute allowedRoles={['admin']}><Pages.ScreenshotSubmission /></ProtectedRoute>} />
+      <Route path="AdminPanel/BingoOverview" element={<ProtectedRoute allowedRoles={['admin']}><Pages.BingoOverview /></ProtectedRoute>} />
 
       <Route path="*" element={<Pages.Error />} />
     </Route>,
