@@ -91,7 +91,7 @@ fi
 
 export NODE_ENV="${NODE_ENV:-development}"
 export PORT="${PORT:-8081}"
-export FRONTEND_URL="${FRONTEND_URL:-http://localhost:8081}"
+export FRONTEND_URL="${FRONTEND_URL:-http://localhost:3000}"
 export SUPABASE_URL="$API_URL"
 export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
 

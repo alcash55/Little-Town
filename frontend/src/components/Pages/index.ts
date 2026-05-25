@@ -13,4 +13,6 @@ export const Pages = {
   ScreenshotSubmission: lazy(
     () => import('./AdminPanel/ScreenshotSubmission/ScreenshotSubmission'),
   ),
+  Unauthorized: lazy(() => import('./Unauthorized/Unauthorized')),
+  Resources: lazy(() => import('./Resources/Resources')),
 };

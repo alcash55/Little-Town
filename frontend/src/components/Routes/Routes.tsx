@@ -1,5 +1,6 @@
 import { Providers } from '../../layout/Providers';
 import { Pages } from '../Pages';
+import { ProtectedRoute } from './ProtectedRoute';
 import { createBrowserRouter, Route, createRoutesFromElements } from 'react-router-dom';
 
 /**
@@ -12,15 +13,23 @@ import { createBrowserRouter, Route, createRoutesFromElements } from 'react-rout
 export const Routes = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<Providers />}>
+      {/* Public routes */}
       <Route index element={<Pages.Home />} />
-      <Route path="TeamData" element={<Pages.TeamData />} />
-      <Route path="BingoBoard" element={<Pages.BingoBoard />} />
-      <Route path="BingoScores" element={<Pages.BingoScores />} />
-      <Route path="BingoRules" element={<Pages.BingoRules />} />
-      <Route path="AdminPanel/BingoDetails" element={<Pages.BingoDetails />} />
-      <Route path="AdminPanel/BoardBuilder" element={<Pages.BoardBuilder />} />
-      <Route path="AdminPanel/TeamDrafter" element={<Pages.TeamDrafter />} />
-      <Route path="AdminPanel/ScreenshotSubmission" element={<Pages.ScreenshotSubmission />} />
+      <Route path="unauthorized" element={<Pages.Unauthorized />} />
+      <Route path="Resources" element={<Pages.Resources />} />
+
+      {/* Player routes */}
+      <Route path="BingoRules" element={<ProtectedRoute allowedRoles={['user', 'admin', 'moderator']}><Pages.BingoRules /></ProtectedRoute>} />
+      <Route path="BingoBoard" element={<ProtectedRoute allowedRoles={['user', 'admin', 'moderator']}><Pages.BingoBoard /></ProtectedRoute>} />
+      <Route path="TeamData" element={<ProtectedRoute allowedRoles={['user', 'admin', 'moderator']}><Pages.TeamData /></ProtectedRoute>} />
+      <Route path="BingoScores" element={<ProtectedRoute allowedRoles={['user', 'admin', 'moderator']}><Pages.BingoScores /></ProtectedRoute>} />
+
+      {/* Admin routes */}
+      <Route path="AdminPanel/BingoDetails" element={<ProtectedRoute allowedRoles={['admin']}><Pages.BingoDetails /></ProtectedRoute>} />
+      <Route path="AdminPanel/BoardBuilder" element={<ProtectedRoute allowedRoles={['admin']}><Pages.BoardBuilder /></ProtectedRoute>} />
+      <Route path="AdminPanel/TeamDrafter" element={<ProtectedRoute allowedRoles={['admin']}><Pages.TeamDrafter /></ProtectedRoute>} />
+      <Route path="AdminPanel/ScreenshotSubmission" element={<ProtectedRoute allowedRoles={['admin']}><Pages.ScreenshotSubmission /></ProtectedRoute>} />
+
       <Route path="*" element={<Pages.Error />} />
     </Route>,
   ),

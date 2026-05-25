@@ -7,10 +7,12 @@ import AddAPhoto from '@mui/icons-material/AddAPhoto';
 import Gavel from '@mui/icons-material/Gavel';
 import BarChart from '@mui/icons-material/BarChart';
 import EmojiEvents from '@mui/icons-material/EmojiEvents';
+import DriveFileMove from '@mui/icons-material/DriveFileMove';
 import type { PropsWithChildren, ReactNode } from 'react';
 import { createContext, useState, useEffect, useContext, useMemo } from 'react';
 import BoardGame from '../../../../assets/Images/BoardGame';
 import Discord from '../../../../assets/Images/Discord';
+import { useLoginModal } from '../../../LoginModal/useLoginModal';
 
 export interface SidebarItem {
   title: string;
@@ -38,78 +40,100 @@ const initialContext = {
 
 export const SidebarContext = createContext<LTSidebarContext>(initialContext);
 
+const allSidebarItems: SidebarItem[] = [
+  {
+    title: 'Home',
+    href: '/',
+    icon: <Home />,
+    roles: ['public', 'user', 'admin', 'moderator'],
+  },
+  {
+    title: 'Admin Panel',
+    href: '/AdminPanel',
+    icon: <AdminPanelSettings />,
+    roles: ['admin'],
+    children: [
+      {
+        title: 'Bingo Details',
+        href: '/AdminPanel/BingoDetails',
+        icon: <Gamepad />,
+      },
+      {
+        title: 'Team Drafter',
+        href: '/AdminPanel/TeamDrafter',
+        icon: <GroupAdd />,
+      },
+      {
+        title: 'Board Builder',
+        href: '/AdminPanel/BoardBuilder',
+        icon: <DashboardCustomize />,
+      },
+      {
+        title: 'Screenshot Submissions',
+        href: '/AdminPanel/ScreenshotSubmission',
+        icon: <AddAPhoto />,
+      },
+    ],
+  },
+  {
+    title: 'Bingo Rules',
+    href: '/BingoRules',
+    icon: <Gavel />,
+    roles: ['user', 'admin', 'moderator'],
+  },
+  {
+    title: 'Bingo Board',
+    href: '/BingoBoard',
+    icon: <BoardGame />,
+    roles: ['user', 'admin', 'moderator'],
+  },
+  {
+    title: 'Team Data',
+    href: '/TeamData',
+    icon: <BarChart />,
+    roles: ['user', 'admin', 'moderator'],
+  },
+  {
+    title: 'Bingo Scores',
+    href: '/BingoScores',
+    icon: <EmojiEvents />,
+    roles: ['user', 'admin', 'moderator'],
+  },
+  {
+    title: 'Resources',
+    href: '/Resources',
+    icon: <DriveFileMove />,
+    roles: ['public', 'user', 'admin', 'moderator'],
+
+  },
+  {
+    title: 'Discord',
+    href: 'https://discord.com/invite/NqzwU3TyUT',
+    icon: <Discord />,
+    roles: ['public', 'user', 'admin', 'moderator'],
+  },
+] as any[];
+
 export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [sidebar, setSidebar] = useState<SidebarItem[]>([]);
+  const { user } = useLoginModal();
 
   useEffect(() => {
     setLoading(true);
-    setTimeout(() => {
-      const newSidebar = [
-        {
-          title: 'Home',
-          href: '/',
-          icon: <Home />,
-        },
-        {
-          title: 'Admin Panel',
-          href: '/AdminPanel',
-          icon: <AdminPanelSettings />,
-          children: [
-            {
-              title: 'Bingo Details',
-              href: '/AdminPanel/BingoDetails',
-              icon: <Gamepad />,
-            },
-            {
-              title: 'Team Drafter',
-              href: '/AdminPanel/TeamDrafter',
-              icon: <GroupAdd />,
-            },
-            {
-              title: 'Board Builder',
-              href: '/AdminPanel/BoardBuilder',
-              icon: <DashboardCustomize />,
-            },
-            {
-              title: 'Screenshot Submissions',
-              href: '/AdminPanel/ScreenshotSubmission',
-              icon: <AddAPhoto />,
-            },
-          ],
-        },
-        {
-          title: 'Bingo Rules',
-          href: '/BingoRules',
-          icon: <Gavel />,
-        },
-        {
-          title: 'Bingo Board',
-          href: '/BingoBoard',
-          icon: <BoardGame />,
-        },
-        {
-          title: 'Team Data',
-          href: '/TeamData',
-          icon: <BarChart />,
-        },
-
-        {
-          title: 'Bingo Scores',
-          href: '/BingoScores',
-          icon: <EmojiEvents />,
-        },
-        {
-          title: 'Discord',
-          href: 'https://discord.com/invite/NqzwU3TyUT',
-          icon: <Discord />,
-        },
-        // Sidebaritems can be added here
-      ];
-      setSidebar(newSidebar);
+    // In local dev (bun dev), show all sidebar items regardless of role
+    if (import.meta.env.DEV) {
+      setSidebar(allSidebarItems);
       setLoading(false);
-    }, 1000);
-  }, []);
+      return;
+    }
+    const userRole = user?.role ?? 'public';
+    const filtered = allSidebarItems.filter((item: any) =>
+      item.roles?.includes(userRole),
+    );
+    setSidebar(filtered);
+    setLoading(false);
+  }, [user]);
 
   return (
     <SidebarContext.Provider
