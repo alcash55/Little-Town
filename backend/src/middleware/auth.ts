@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { getJwtSecret } from "./../../src/lib/jwt.js";
+import { getJwtSecret } from "../lib/jwt.js";
 import { AppError } from "./errorHandler.js";
 import { User } from "../types/index.js";
 import { findUserById } from "../db/users.js";
