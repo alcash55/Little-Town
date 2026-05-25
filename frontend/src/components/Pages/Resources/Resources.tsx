@@ -1,5 +1,5 @@
 import { Stack, Typography } from '@mui/material'
-import { darkTheme } from '../../../layout/Theme/theme';
+import { darkTheme } from '../../../layout/Theme';
 
 /**
  * Resource page that shows tips and info for OSRS bossing and others
