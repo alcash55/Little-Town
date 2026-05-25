@@ -22,11 +22,29 @@ import redHat from '../../../assets/Images/redHat.svg';
 import foot from '../../../assets/Images/foot.svg';
 import astral from '../../../assets/Images/astral.svg';
 import blackHeart from '../../../assets/Images/blackHeart.svg';
+import { useLoginModal } from '../../LoginModal/useLoginModal';
+
+type Role = 'user' | 'admin' | 'moderator';
+
+const playerButtons = [
+  { label: 'Bingo Rules', to: '/BingoRules', icon: <Gavel />, roles: ['user', 'admin', 'moderator'] as Role[] },
+  { label: 'Bingo Board', to: '/BingoBoard', icon: <BoardGame />, roles: ['user', 'admin', 'moderator'] as Role[] },
+  { label: 'Team Data', to: '/TeamData', icon: <BarChart />, roles: ['user', 'admin', 'moderator'] as Role[] },
+  { label: 'Bingo Scores', to: '/BingoScores', icon: <EmojiEvents />, roles: ['user', 'admin', 'moderator'] as Role[] },
+];
 
 const Home = () => {
   const theme = useTheme();
   const isTablet = useMediaQuery(theme.breakpoints.down(630));
+  const { user } = useLoginModal();
   const gangIcons = [cat, cum, fish, skull, ketchup, redHat, foot, astral, blackHeart];
+
+  /**
+   * Only show pages the user has permissions to see
+   */
+  const visibleButtons = import.meta.env.DEV
+    ? playerButtons
+    : playerButtons.filter((btn) => user?.role && btn.roles.includes(user.role));
 
   /**
    * @see https://oldschool.runescape.wiki/w/Category:Clan_rank_icons?filefrom=Clan+icon+-+Runecrafter.png#mw-category-media
@@ -58,33 +76,19 @@ const Home = () => {
     <>
       {isTablet ? (
         <>
-          <IconButton component={Link} to="BingoRules">
-            <Gavel />
-          </IconButton>
-          <IconButton component={Link} to="BingoBoard">
-            <BoardGame />
-          </IconButton>
-          <IconButton component={Link} to="TeamData">
-            <BarChart />
-          </IconButton>
-          <IconButton component={Link} to="BingoScores">
-            <EmojiEvents />
-          </IconButton>
+          {visibleButtons.map((btn) => (
+            <IconButton key={btn.to} component={Link} to={btn.to}>
+              {btn.icon}
+            </IconButton>
+          ))}
         </>
       ) : (
         <>
-          <Button variant="contained" to="/BingoRules" component={Link}>
-            Bingo Rules
-          </Button>
-          <Button variant="contained" to="/BingoBoard" component={Link}>
-            Bingo Board
-          </Button>
-          <Button variant="contained" to="/TeamData" component={Link}>
-            Team Data
-          </Button>
-          <Button variant="contained" to="/BingoScores" component={Link}>
-            Bingo Scores
-          </Button>
+          {visibleButtons.map((btn) => (
+            <Button key={btn.to} variant="contained" to={btn.to} component={Link}>
+              {btn.label}
+            </Button>
+          ))}
         </>
       )}
     </>

@@ -33,15 +33,29 @@ const BingoDetails = () => {
 
   const inputSx = {
     '& .MuiOutlinedInput-root': {
-      color: 'black',
-      '& fieldset': { borderColor: 'black' },
-      '&:hover fieldset': { borderColor: '#2A9D8F' },
-      '&.Mui-focused fieldset': { borderColor: '#2A9D8F' },
+      color: darkTheme.palette.text.primary,
+      backgroundColor: 'transparent',
+      '& .MuiOutlinedInput-notchedOutline': { borderColor: 'black' },
+      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#2A9D8F' },
+      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#2A9D8F' },
+      '& input': { backgroundColor: 'transparent' },
     },
     '& .MuiInputLabel-root': {
-      color: 'black',
+      color: darkTheme.palette.text.secondary,
       '&.Mui-focused': { color: '#2A9D8F' },
     },
+  };
+
+  const selectFormControlSx = {
+    '& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline': { borderColor: 'black' },
+    '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#2A9D8F' },
+    '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#2A9D8F' },
+    '& .MuiSelect-select': { color: darkTheme.palette.text.primary },
+    '& .MuiInputLabel-root': {
+      color: darkTheme.palette.text.secondary,
+      '&.Mui-focused': { color: '#2A9D8F' },
+    },
+    '& .MuiSvgIcon-root': { color: darkTheme.palette.text.secondary },
   };
 
   return (
@@ -84,14 +98,14 @@ const BingoDetails = () => {
             views={['day', 'month', 'hours']}
             showDaysOutsideCurrentMonth
             disablePast
-            value={new Date(startDate)}
+            value={startDate ? new Date(startDate) : null}
             onChange={(newDate) => {
               setStartDate(newDate ? newDate.toISOString() : '');
-              console.log(startDate);
             }}
             slotProps={{
               textField: {
                 required: true,
+                error: false,
               },
             }}
             sx={inputSx}
@@ -100,14 +114,14 @@ const BingoDetails = () => {
             label="End"
             views={['day', 'month', 'hours']}
             showDaysOutsideCurrentMonth
-            value={new Date(endDate)}
+            value={endDate ? new Date(endDate) : null}
             onChange={(newDate) => {
               setEndDate(newDate ? newDate.toISOString() : '');
-              console.log(endDate);
             }}
             slotProps={{
               textField: {
                 required: true,
+                error: false,
               },
             }}
             sx={inputSx}
@@ -115,8 +129,8 @@ const BingoDetails = () => {
         </Box>
 
         {/* board size */}
-        <FormControl variant="standard" sx={{ m: 1, width: '100%' }} required={true}>
-          <InputLabel id="board-size-label-label">Board Size</InputLabel>
+        <FormControl variant="outlined" sx={{ m: 1, width: '100%', ...selectFormControlSx }} required={true}>
+          <InputLabel id="board-size-label">Board Size</InputLabel>
           <Select
             labelId="board-size-label"
             id="board-size"
@@ -130,14 +144,14 @@ const BingoDetails = () => {
         </FormControl>
 
         {/* # of teams */}
-        <FormControl variant="standard" sx={{ m: 1, width: '100%' }} required={true}>
+        <FormControl variant="outlined" sx={{ m: 1, width: '100%', ...selectFormControlSx }} required={true}>
           <InputLabel id="team-size-select-label">Number of teams playing</InputLabel>
           <Select
             labelId="team-size-select-label"
             id="team-size"
             value={numberOfTeams}
             onChange={(e: any) => setNumberOfTeams(e.target.value)}
-            label="Team Size"
+            label="Number of teams playing"
           >
             <MenuItem value={2}>2</MenuItem>
             <MenuItem value={3}>3</MenuItem>
