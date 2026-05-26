@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { protect } from "../middleware/auth.js";
 import { hiscores } from "../services/hiscores.js";
-import scrapeWiki from "../services/scrapeWiki.js";
+import { getStaticData } from "../db/staticData.js";
 import { ApiResponse, HiscoreData } from "../types/index.js";
 
 const router = Router();
@@ -11,16 +11,11 @@ const router = Router();
 router.get(
   "/skills/list",
   asyncHandler(async (req: Request, res: Response) => {
-    try {
-      const skills = await scrapeWiki("skills");
-      if (!skills) {
-        return res.status(500).json({ success: false, error: "No skills returned" });
-      }
-      res.status(200).json(skills);
-    } catch (error) {
-      console.error("Error fetching skills data:", error);
-      res.status(500).json({ success: false, error: "Failed to fetch skills data" });
+    const skills = await getStaticData("skills");
+    if (!skills.length) {
+      return res.status(503).json({ success: false, error: "Skills data not yet available, try again shortly" });
     }
+    res.status(200).json(skills);
   }),
 );
 
@@ -28,16 +23,11 @@ router.get(
 router.get(
   "/activities/list",
   asyncHandler(async (req: Request, res: Response) => {
-    try {
-      const activities = await scrapeWiki("activities");
-      if (!activities) {
-        return res.status(400).json({ success: false, error: "No activities returned" });
-      }
-      res.status(200).json(activities);
-    } catch (error) {
-      console.error("Error fetching activities data:", error);
-      res.status(500).json({ success: false, error: "Failed to fetch activities data" });
+    const activities = await getStaticData("activities");
+    if (!activities.length) {
+      return res.status(503).json({ success: false, error: "Activities data not yet available, try again shortly" });
     }
+    res.status(200).json(activities);
   }),
 );
 
