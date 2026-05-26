@@ -7,7 +7,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import authRoutes from "./routes/auth.js";
 import hiscoresRoutes from "./routes/hiscores.js";
 import adminRoutes from "./routes/admin.js";
-import { prewarmScrapeCache } from "./services/scrapeWiki.js";
+import { startStaticDataCron, stopStaticDataCron, refreshStaticData } from "./services/staticDataCron.js";
 
 const app = express();
 
@@ -68,6 +68,10 @@ if (process.env.NODE_ENV !== "production") {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Health check: http://localhost:${PORT}/health`);
-    prewarmScrapeCache();
+    startStaticDataCron();
   });
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => { stopStaticDataCron(); process.exit(0); });
+  process.on('SIGINT', () => { stopStaticDataCron(); process.exit(0); });
 }

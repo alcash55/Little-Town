@@ -7,6 +7,7 @@ import { User } from "../types/index.js";
 interface UserRow {
   id: string;
   username: string;
+  nickname: string | null;
   email: string | null;
   password_hash: string;
   role: "user" | "admin" | "moderator";
@@ -18,6 +19,7 @@ function toUser(row: UserRow): User {
   return {
     id: row.id,
     username: row.username,
+    nickname: row.nickname ?? null,
     email: row.email ?? undefined,
     role: row.role,
     createdAt: row.created_at,
@@ -48,7 +50,7 @@ export async function findUserByUsername(
 ): Promise<(User & { passwordHash: string }) | null> {
   const { data, error } = await getDb()
     .from("users")
-    .select("id, username, email, password_hash, role, created_at, updated_at")
+    .select("id, username, nickname, email, password_hash, role, created_at, updated_at")
     .eq("username", username)
     .single();
 
@@ -72,7 +74,7 @@ export async function loginUser(
 export async function findUserById(id: string): Promise<User | null> {
   const { data, error } = await getDb()
     .from("users")
-    .select("id, username, email, password_hash, role, created_at, updated_at")
+    .select("id, username, nickname, email, password_hash, role, created_at, updated_at")
     .eq("id", id)
     .single();
 

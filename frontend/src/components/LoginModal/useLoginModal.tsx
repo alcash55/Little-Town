@@ -17,6 +17,7 @@ type LoginModalContextValue = {
 interface User {
   id: string;
   username: string;
+  nickname?: string | null;
   email?: string;
   role: 'user' | 'admin' | 'moderator';
   createdAt: string;

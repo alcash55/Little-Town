@@ -1,0 +1,3 @@
+ALTER TABLE bingo_player_snapshots RENAME TO bingo_player_hiscores;
+
+ALTER INDEX bingo_snapshots_player_idx RENAME TO bingo_player_hiscores_player_idx;

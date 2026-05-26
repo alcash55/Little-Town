@@ -1,10 +1,7 @@
 /**
- * Fetches a URL and caches the JSON result in sessionStorage.
- * On subsequent calls within the same session, returns the cached value
- * immediately without hitting the network.
- *
- * @param key     - sessionStorage key to store the result under
- * @param fetcher - async function that returns the data to cache
+ * Fetches data and caches the result in sessionStorage for the tab session.
+ * On subsequent calls, returns the cached value immediately without hitting the network.
+ * The backend cron job handles data freshness for static data (skills, activities).
  */
 export const cachedFetch = async <T>(key: string, fetcher: () => Promise<T>): Promise<T> => {
   const cached = sessionStorage.getItem(key);
@@ -17,10 +14,11 @@ export const cachedFetch = async <T>(key: string, fetcher: () => Promise<T>): Pr
   }
 
   const data = await fetcher();
+
   try {
     sessionStorage.setItem(key, JSON.stringify(data));
   } catch (e) {
-    // sessionStorage quota exceeded (e.g. items list is large) — just skip caching
+    // sessionStorage quota exceeded (e.g. items list is large) — skip caching
     console.warn(`cachedFetch: could not cache "${key}":`, e);
   }
 

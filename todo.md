@@ -1,12 +1,18 @@
 - Host APIs through supabase or cloudflare
-- implement re-useable Layout component for all pages that include:
+- implement the re-useable Layout component for all pages that include:
   - Alert components for if pre-existing data that will be modified on submit
   - The responsive layout needed to show all content
   - Included themes
 - Create Admin page for sending links to new users
 - Create onboarding wizard for new users
+- Make the Bingo Builder have a drag and drop interface so that the admin can re-order the tiles within the grid
+- Start the bingo submission page, have it pull images from the bucket that is in supabase
+  - Create an API that uses the discord api that pulls messages from a text channel in the littletown discord and POSTs them to the storage bucket
+  - If an admin approves the screenshot is will react to the image with a thumbs up and then add the points to that teams board and related stats
+  - If an admin denies the screenshot it will react to the image with as thumbs down
 - Finish the resource page with info from the discord
 - Update the db for a user's hiscore data from osrs api
-- Update the cache for skills and activites to check once a day
 - Move input and select component styles to the theme
-- Have the user avatar pull the initials from the nickname row in the user table
+- Create an admin page that can manually trigger the re-running of cron jobs etc.
+    curl -X POST http://localhost:8081/api/admin/static-data/refresh \
+    -H "Authorization: Bearer <your_token>"
