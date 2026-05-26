@@ -1,4 +1,4 @@
-import { Stack, Button, Typography, Link, List, ListItem, ListItemText, Box } from '@mui/material';
+import { Stack, Typography, Link, List, ListItem, ListItemText, Box } from '@mui/material';
 import daRules from '../../../assets/Images/daRules.png';
 import blastfurnace from '../../../assets/Images/blastfurnace.png';
 import clanEventsSettings from '../../../assets/Images/clanEventsSettings.png';
@@ -6,45 +6,6 @@ import untradeableLootNotifications from '../../../assets/Images/untradeableLoot
 import lootDropNotifications from '../../../assets/Images/lootDropNotifications.png';
 
 const BingoRules = () => {
-  const token = localStorage.getItem('authToken');
-  const handleClick = async () => {
-    console.log('clicked');
-    const playerName = encodeURIComponent('Lucky Buck2');
-    await fetch(`http://localhost:8081/api/hiscores/${playerName}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-    })
-      .then(async (response) => {
-        const data = await response.text();
-        console.log(data);
-      })
-      .catch((e) => console.log(e));
-  };
-
-  const backendTest = () => {
-    const requests = [{ function: handleClick, name: 'hiscores' }];
-
-    return (
-      <>
-        {requests.map((request, index) => {
-          return (
-            <Button
-              key={index}
-              variant="outlined"
-              onClick={request.function}
-              sx={{ color: 'white' }}
-            >
-              {request.name.toUpperCase()}
-            </Button>
-          );
-        })}
-      </>
-    );
-  };
-
   return (
     <Stack
       component={'section'}
@@ -256,7 +217,6 @@ const BingoRules = () => {
           </List>
         </Stack>
       </Stack>
-      {backendTest()}
     </Stack>
   );
 };

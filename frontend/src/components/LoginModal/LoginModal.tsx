@@ -1,5 +1,6 @@
-import React from 'react';
+import { useState, FormEvent } from 'react';
 import {
+  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -15,14 +16,15 @@ interface Props {
   onClose: () => void;
   isSubmitting?: boolean;
   errorMessage?: string | null;
+  sessionExpired?: boolean;
   onSubmit?: (username: string, password: string) => void | Promise<void>;
 }
 
-const LoginModal = ({ open, onClose, isSubmitting = false, errorMessage, onSubmit }: Props) => {
-  const [username, setUsername] = React.useState('');
-  const [password, setPassword] = React.useState('');
+const LoginModal = ({ open, onClose, isSubmitting = false, errorMessage, sessionExpired, onSubmit }: Props) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (onSubmit) await onSubmit(username, password);
   };
@@ -55,6 +57,11 @@ const LoginModal = ({ open, onClose, isSubmitting = false, errorMessage, onSubmi
       </DialogTitle>
       <DialogContent>
         <Box component="form" onSubmit={handleSubmit} display="flex" flexDirection="column" gap={2}>
+          {sessionExpired && (
+            <Alert severity="warning" variant="outlined" sx={{ color: 'warning.light', borderColor: 'warning.light', '& .MuiAlert-icon': { color: 'warning.light' } }}>
+              Your session has expired. Please log in again.
+            </Alert>
+          )}
           <Typography variant="body1">Enter your credentials</Typography>
           <TextField
             label="Username"
