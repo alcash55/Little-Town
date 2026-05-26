@@ -1,7 +1,5 @@
 # [Little Town](https://littletown.gay)
 
-[Cloudflare deployment](https://1169b841.little-town.pages.dev/)
-
 A web app for tracking [OSRS Bingo Competitions](https://www.youtube.com/watch?v=MF6LjbPVFtA) — community events where teams race to complete tasks mapped across a bingo board in Old School RuneScape.
 
 ## What It Does
@@ -13,13 +11,13 @@ A web app for tracking [OSRS Bingo Competitions](https://www.youtube.com/watch?v
 
 ## Tech Stack
 
-|                | Technology                                                |
-| -------------- | --------------------------------------------------------- |
-| **Frontend**   | React, TypeScript, MUI, Vite, Bun                         |
-| **Backend**    | Node.js, Express, TypeScript                              |
-| **Database**   | Supabase (Postgres)                                       |
-| **Auth**       | JWT with role-based access control                        |
-| **Deployment** | GitHub Pages (frontend), Google Cloud Functions (backend) |
+|                | Technology                                |
+| -------------- | ----------------------------------------- |
+| **Frontend**   | React, TypeScript, MUI, Vite, Bun         |
+| **Backend**    | Node.js, Express, TypeScript              |
+| **Database**   | Supabase (Postgres)                       |
+| **Auth**       | JWT with role-based access control        |
+| **Deployment** | Cloudflare (frontend), Supabase (backend) |
 
 ## Repository Structure
 

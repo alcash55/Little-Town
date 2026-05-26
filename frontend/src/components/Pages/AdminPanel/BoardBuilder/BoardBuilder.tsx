@@ -69,6 +69,12 @@ const BoardBuilder = () => {
             </Alert>
           )}
 
+          {isExistingBoard && (
+            <Alert severity="warning" sx={{ width: '100%', maxWidth: 500 }}>
+              A bingo board already exists. Any changes made will modify the already existing bingo
+            </Alert>
+          )}
+
           {/* FORM SECTION */}
           <Stack spacing={3} justifyContent="center" alignItems="center" sx={{ maxWidth: 500, width: '100%' }}>
             <FormControl variant="outlined" sx={{ m: 1, minWidth: 120, width: '100%' }} required>
@@ -251,7 +257,7 @@ const BoardBuilder = () => {
             </Typography>
 
             {isBoardComplete && (
-              <Button variant="outlined" color="success" onClick={submitBoard} fullWidth>
+              <Button variant="outlined" color={isExistingBoard ? "info" : "success"} onClick={submitBoard} fullWidth>
                 {isExistingBoard ? 'Update Board' : 'Submit Board'}
               </Button>
             )}

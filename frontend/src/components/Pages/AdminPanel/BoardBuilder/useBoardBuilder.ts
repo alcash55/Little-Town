@@ -121,7 +121,7 @@ export const useBoardBuilder = () => {
         }
       }
 
-      // Fallback to localStorage
+      // Fallback to localStorage for unsaved board
       const saved = localStorage.getItem('bingoBoard');
       if (saved) {
         try {
