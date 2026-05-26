@@ -1,21 +1,30 @@
 import {
   AppBar,
+  Avatar,
   Box,
   IconButton,
-  Toolbar,
-  Typography,
   Menu,
   MenuItem,
+  Toolbar,
+  Typography,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import Login from '@mui/icons-material/Login';
 import Logout from '@mui/icons-material/Logout';
-import Person from '@mui/icons-material/Person';
 
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { darkTheme } from '../../../../layout/Theme';
 import { useLoginModal } from '../../../../components/LoginModal/useLoginModal';
+
+const getInitials = (nickname?: string | null, username?: string): string => {
+  const source = nickname?.trim() || username?.trim() || '?';
+  const words = source.split(/\s+/);
+  if (words.length >= 2) {
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+  return source.slice(0, 2).toUpperCase();
+};
 
 interface Props {
   openSidebar: boolean;
@@ -88,20 +97,27 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
           {user ? (
             <Box display="flex" alignItems="center" gap={1}>
               <Typography variant="body2" color="white" sx={{ mr: 1 }}>
-                {user.username}
+                {user.nickname ?? user.username}
               </Typography>
               <IconButton
                 size="large"
                 aria-label="User menu"
                 onClick={handleMenuOpen}
-                sx={{
-                  color: 'white',
-                  '&:hover': {
-                    bgcolor: '#163a36',
-                  },
-                }}
+                sx={{ p: 0.5, '&:hover': { bgcolor: '#163a36' } }}
               >
-                <Person />
+                <Avatar
+                  sx={{
+                    width: 34,
+                    height: 34,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    bgcolor: '#2A9D8F',
+                    color: 'white',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {getInitials(user.nickname, user.username)}
+                </Avatar>
               </IconButton>
               <Menu
                 anchorEl={anchorEl}
