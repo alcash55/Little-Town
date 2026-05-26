@@ -1,4 +1,5 @@
 import {
+  Alert,
   Box,
   Button,
   FormControl,
@@ -31,7 +32,11 @@ const BingoDetails = () => {
   } = useBingoDetails();
 
   return (
-    <Stack spacing={5} height="100%" width="100%" alignItems="center" sx={{ bgcolor: darkTheme.palette.primary.main, p: 5 }}>
+    <Stack spacing={3} width="100%" justifyContent="flex-start" alignItems="center" sx={{
+      bgcolor: darkTheme.palette.primary.main, p: 5, minHeight: '100vh',
+      boxSizing: 'border-box',
+      overflow: 'scroll',
+    }}>
       <Typography variant="h1" sx={{ fontSize: 42, textAlign: 'center' }}>
         Bingo Details
       </Typography>
@@ -41,14 +46,9 @@ const BingoDetails = () => {
       ) : (
         <>
           {isBingo && (
-            <Stack spacing={3} width="100%" justifyContent="center" alignItems="center">
-              <Typography variant="h2" sx={{ fontSize: 36, textAlign: 'center', color: 'red' }}>
-                !! Warning !!
-              </Typography>
-              <Typography variant="body1" sx={{ color: 'red' }}>
-                There is already an existing bingo, any changes made will modify the already existing bingo
-              </Typography>
-            </Stack>
+            <Alert severity="warning" sx={{ width: '100%', maxWidth: 500 }}>
+              Bingo details already exist, any changes made will modify the already existing bingo
+            </Alert>
           )}
 
           <Stack spacing={3} justifyContent="center" alignItems="center" sx={{ maxWidth: 500, width: '100%', pt: 0, mt: 0 }}>
@@ -121,7 +121,7 @@ const BingoDetails = () => {
             </Stack>
 
             <Stack spacing={2} direction="row" width="100%">
-              <Button variant="outlined" color="success" disabled={!isFormValid} onClick={handleSubmit} sx={{ width: '50%' }}>
+              <Button variant="outlined" color={isBingo ? "info" : "success"} disabled={!isFormValid} onClick={handleSubmit} sx={{ width: '50%' }}>
                 {isBingo ? 'Modify Bingo' : 'Add Bingo Detail'}
               </Button>
               {hasFormData && (
