@@ -1,13 +1,9 @@
-import puppeteer, { Browser, Page } from "puppeteer";
-
-// Eventually it may be better to get the data from here
-// @see https://github.dev/runelite/runelite/tree/master/runelite-client/src/main/java/net/runelite/client/util
-// @see https://github.dev/runelite/runelite/tree/master/runelite-client/src/main/java/net/runelite/client/util
+import puppeteer, { Browser } from "puppeteer";
 
 const WIKI_URL =
   "https://runescape.wiki/w/Application_programming_interface#Hiscores_Lite_2";
 const ANCHOR_SELECTOR = "a#Hiscores_Lite_2";
-const PAGE_TIMEOUT_MS = 20000; // 20 seconds
+const PAGE_TIMEOUT_MS = 20000;
 
 const SKILLS_CONTENT_KEYWORDS = ["overall\nattack", "overall", "constitution"];
 const ACTIVITIES_CONTENT_KEYWORDS = [
@@ -16,88 +12,53 @@ const ACTIVITIES_CONTENT_KEYWORDS = [
   "clue scrolls (all)",
 ];
 
-const SKILLS_WARNING_TEXT = "Unrecognized category (using skills as default)";
+// In-memory cache — persists for the lifetime of the server process
+const cache = new Map<string, string[]>();
 
-/**
- * Scrapes the RuneScape Wiki for a list of skills or activities.
- *
- * @param category The category to scrape ('skills' or 'activities').
- * @returns A promise that resolves to an array of strings (the list items).
- */
 export default async function scrapeWiki(
   category: "skills" | "activities"
 ): Promise<string[]> {
-  console.log(`[scrapeWiki] Called with category: ${category}`);
-
-  // Handle unrecognized categories by defaulting to 'skills'
   if (category !== "skills" && category !== "activities") {
-    console.warn(`[scrapeWiki] ${SKILLS_WARNING_TEXT}: ${category}`);
+    console.warn(`[scrapeWiki] Unrecognized category, defaulting to skills`);
     category = "skills";
   }
+
+  // Return cached result if available
+  if (cache.has(category)) {
+    console.log(`[scrapeWiki] Returning cached result for: ${category}`);
+    return cache.get(category)!;
+  }
+
+  console.log(`[scrapeWiki] Fetching fresh data for: ${category}`);
 
   let browser: Browser | undefined;
   try {
     browser = await puppeteer.launch({
-      headless: true, // true for production, false for debugging UI
+      headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
-    const page = await browser.newPage();
 
+    const page = await browser.newPage();
     await page.goto(WIKI_URL, { waitUntil: "domcontentloaded" });
     await page.waitForSelector(ANCHOR_SELECTOR, { timeout: PAGE_TIMEOUT_MS });
 
-    console.log(
-      `[scrapeWiki] Page loaded and anchor found. Extracting data for: ${category}`
-    );
-
     const extractedData = await page.evaluate(
-      (
-        evalCategory,
-        evalAnchorSelector,
-        evalSkillsContentKeywords,
-        evalActivitiesContentKeywords
-      ) => {
-        const hiscoresAnchor = document.querySelector(evalAnchorSelector);
-        if (!hiscoresAnchor) {
-          throw new Error(
-            `[PAGE_EVAL] Could not find the anchor: ${evalAnchorSelector}`
-          );
-        }
+      (evalCategory, evalAnchorSelector, evalSkillsKeywords, evalActivitiesKeywords) => {
+        const anchor = document.querySelector(evalAnchorSelector);
+        if (!anchor) throw new Error(`Could not find anchor: ${evalAnchorSelector}`);
 
-        const allPreElements = Array.from(document.querySelectorAll("pre"));
+        const allPre = Array.from(document.querySelectorAll("pre"));
+        const relevantPre = allPre.filter(
+          (pre) => anchor.compareDocumentPosition(pre) & Node.DOCUMENT_POSITION_FOLLOWING
+        );
 
-        // Filter <pre> elements that appear *after* the Hiscores Lite section anchor
-        const relevantPreElements = allPreElements.filter((pre) => {
-          return (
-            hiscoresAnchor.compareDocumentPosition(pre) &
-            Node.DOCUMENT_POSITION_FOLLOWING
-          );
-        });
+        const keywords = evalCategory === "skills" ? evalSkillsKeywords : evalActivitiesKeywords;
+        const found = relevantPre.find((pre) =>
+          keywords.some((kw) => (pre.textContent || "").toLowerCase().startsWith(kw))
+        );
 
-        let foundPreElement: HTMLPreElement | undefined;
-        let validationKeywords: string[];
-
-        if (evalCategory === "skills") {
-          validationKeywords = evalSkillsContentKeywords;
-        } else {
-          validationKeywords = evalActivitiesContentKeywords;
-        }
-
-        foundPreElement = relevantPreElements.find((pre) => {
-          const preText = pre.textContent || "";
-          // Check if the preText starts with any of the validation keywords
-          return validationKeywords.some((keyword) =>
-            preText.toLowerCase().startsWith(keyword)
-          );
-        });
-
-        if (!foundPreElement) {
-          throw new Error(
-            `[PAGE_EVAL] Could not find the correct <pre> element for category: '${evalCategory}'`
-          );
-        }
-
-        return foundPreElement.textContent?.trim();
+        if (!found) throw new Error(`Could not find <pre> for: ${evalCategory}`);
+        return found.textContent?.trim();
       },
       category,
       ANCHOR_SELECTOR,
@@ -105,36 +66,34 @@ export default async function scrapeWiki(
       ACTIVITIES_CONTENT_KEYWORDS
     );
 
-    if (!extractedData) {
-      throw new Error("Unable to get OSRS skills/activities list: Empty data.");
-    }
+    if (!extractedData) throw new Error("Empty data returned from wiki scrape.");
 
-    const formattedData = formatData(extractedData);
-    console.log(
-      `[scrapeWiki] Final result for category: ${category}`,
-      formattedData
-    );
-    return formattedData;
+    const result = extractedData
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    cache.set(category, result);
+    console.log(`[scrapeWiki] Cached ${result.length} items for: ${category}`);
+
+    return result;
   } catch (error: any) {
-    console.error(`[scrapeWiki] Scrape failed for: ${category}`, error);
-    throw new Error(
-      `Error during scrapeWiki for ${category}: ${error.message || error}`
-    );
+    console.error(`[scrapeWiki] Failed for: ${category}`, error);
+    throw new Error(`scrapeWiki error for ${category}: ${error.message || error}`);
   } finally {
-    if (browser) {
-      await browser.close();
-    }
+    if (browser) await browser.close();
   }
 }
 
 /**
- * Formats the raw scraped string data into an array of trimmed, non-empty strings.
- * @param data The raw string data from the <pre> tag.
- * @returns An array of formatted strings.
+ * Pre-warms the cache for both skills and activities at server startup.
+ * Errors are swallowed so they don't prevent the server from starting.
  */
-function formatData(data: string): string[] {
-  return data
-    .split("\n")
-    .map((s) => s.trim())
-    .filter(Boolean);
+export async function prewarmScrapeCache(): Promise<void> {
+  console.log("[scrapeWiki] Pre-warming cache...");
+  await Promise.allSettled([
+    scrapeWiki("skills"),
+    scrapeWiki("activities"),
+  ]);
+  console.log("[scrapeWiki] Cache pre-warm complete.");
 }

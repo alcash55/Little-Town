@@ -1,23 +1,11 @@
+import { fetchWithAuth } from './fetchWithAuth';
+import { cachedFetch } from './cachedFetch';
+
 const BASEURL = import.meta.env.VITE_BASEURL ?? 'http://localhost:8081';
-const token = localStorage.getItem('authToken');
 
-export const getActivities = async (): Promise<string[]> => {
-  try {
-    const response = await fetch(`${BASEURL}/api/hiscores/activities/list`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      return data;
-    } else {
-      throw new Error(`Failed to fetch activities: ${response.statusText}`);
-    }
-  } catch (e) {
-    throw new Error(`Unable to get activities: ${e}`);
-  }
-};
+export const getActivities = (): Promise<string[]> =>
+  cachedFetch('osrs:activities', async () => {
+    const response = await fetchWithAuth(`${BASEURL}/api/hiscores/activities/list`);
+    if (response.ok) return response.json();
+    throw new Error(`Failed to fetch activities: ${response.statusText}`);
+  });

@@ -126,6 +126,8 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
       setIsOpen(false);
       setSessionExpired(false);
 
+      console.log(`Welcome ${user}`)
+
       // Navigate back to the page they were on when their token expired
       if (returnTo) {
         navigate(returnTo);
