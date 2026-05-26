@@ -10,9 +10,10 @@ import {
   Typography,
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
-import CheckCircleOutline from '@mui/icons-material/CheckCircleOutline';
 import { darkTheme } from '../../../../layout/Theme';
 import { useBingoDetails } from './useBingoDetails';
+import { BingoUpdated } from '../../../BingoUpdated/BingoUpdated'
+
 
 const BingoDetails = () => {
   const {
@@ -36,18 +37,7 @@ const BingoDetails = () => {
       </Typography>
 
       {submitted ? (
-        <Stack spacing={3} alignItems="center" sx={{ flex: 1 }}>
-          <CheckCircleOutline sx={{ fontSize: 80, color: 'success.main' }} />
-          <Typography variant="h2" sx={{ fontSize: 28, textAlign: 'center', color: 'success.main' }}>
-            {isBingo ? 'Bingo Updated!' : 'Bingo Created!'}
-          </Typography>
-          <Typography variant="body1" sx={{ textAlign: 'center', color: darkTheme.palette.text.secondary }}>
-            {isBingo ? `"${bingoName}" has been updated successfully.` : `"${bingoName}" has been created successfully.`}
-          </Typography>
-          <Button variant="outlined" color="success" onClick={() => window.location.reload()}>
-            Make Changes
-          </Button>
-        </Stack>
+        <BingoUpdated isBingo={isBingo} itemUpdated={'Details'} />
       ) : (
         <>
           {isBingo && (

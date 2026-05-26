@@ -7,6 +7,40 @@ import { ApiResponse, HiscoreData } from "../types/index.js";
 
 const router = Router();
 
+// Get available skills — must be before /:player to avoid wildcard match
+router.get(
+  "/skills/list",
+  asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const skills = await scrapeWiki("skills");
+      if (!skills) {
+        return res.status(500).json({ success: false, error: "No skills returned" });
+      }
+      res.status(200).json(skills);
+    } catch (error) {
+      console.error("Error fetching skills data:", error);
+      res.status(500).json({ success: false, error: "Failed to fetch skills data" });
+    }
+  }),
+);
+
+// Get available activities — must be before /:player to avoid wildcard match
+router.get(
+  "/activities/list",
+  asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const activities = await scrapeWiki("activities");
+      if (!activities) {
+        return res.status(400).json({ success: false, error: "No activities returned" });
+      }
+      res.status(200).json(activities);
+    } catch (error) {
+      console.error("Error fetching activities data:", error);
+      res.status(500).json({ success: false, error: "Failed to fetch activities data" });
+    }
+  }),
+);
+
 // Get hiscores for a specific player
 router.get(
   "/:player",
@@ -36,52 +70,6 @@ router.get(
         success: false,
         error: "Failed to fetch hiscores",
       });
-    }
-  }),
-);
-
-// Get available skills data
-router.get(
-  "/skills/list",
-  asyncHandler(async (req: Request, res: Response) => {
-    try {
-      const skills = await scrapeWiki("skills");
-
-      if (!skills) {
-        return res.status(500).json({
-          success: false,
-          error: "No skills returned",
-        });
-      }
-
-      res.status(200).json(skills);
-    } catch (error) {
-      console.error("Error fetching skills data:", error);
-      res.status(500).json({
-        success: false,
-        error: "Failed to fetch skills data",
-      });
-    }
-  }),
-);
-
-// Get available activities data
-router.get(
-  "/activities/list",
-  asyncHandler(async (req: Request, res: Response) => {
-    try {
-      const activities = await scrapeWiki("activities");
-
-      if (!activities) {
-        return res.status(400).json({
-          success: false,
-          error: "No activities returned",
-        });
-      }
-
-      res.status(200).json(activities);
-    } catch (error) {
-      console.error("Error fetching activities data:", error);
     }
   }),
 );
