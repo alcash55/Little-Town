@@ -42,7 +42,7 @@ const BingoDetails = () => {
       </Typography>
 
       {submitted ? (
-        <BingoUpdated isBingo={isBingo} itemUpdated={'Details'} />
+        <BingoUpdated isUpdated={isBingo} itemUpdated={'Details'} />
       ) : (
         <>
           {isBingo && (
