@@ -60,7 +60,7 @@ const BoardBuilder = () => {
       </Typography>
 
       {submitted ? (
-        <BingoUpdated isBingo={isExistingBoard} itemUpdated={'Board'} />
+        <BingoUpdated isUpdated={isExistingBoard} itemUpdated={'Board'} />
       ) : (
         <>
           {submitError && (
