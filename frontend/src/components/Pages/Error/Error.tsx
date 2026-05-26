@@ -1,23 +1,13 @@
-import { Stack, Button, Typography } from '@mui/material';
+import { Button } from '@mui/material';
+import PageLayout from '../../../layout/PageLayout/PageLayout';
 
 const Error = () => {
   return (
-    <Stack
-      component={'section'}
-      width={'100%'}
-      height={'100%'}
-      justifyContent={'center'}
-      alignItems={'center'}
-      spacing={5}
-      sx={{ px: 2 }}
-    >
-      <Typography variant="h1" sx={{ textAlign: 'center', lineHeight: 1.4 }}>
-        404 - Page Not Found
-      </Typography>
+    <PageLayout title="404 - Page Not Found" align="center">
       <Button size="large" variant="contained" href="/">
         Go Home
       </Button>
-    </Stack>
+    </PageLayout>
   );
 };
 

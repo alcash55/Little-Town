@@ -1,6 +1,7 @@
-import { Box, Stack, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 import { VictoryChart, VictoryLine, VictoryLegend, VictoryAxis, Curve } from 'victory';
 import { useBingoScores } from './useBingoScores';
+import PageLayout from '../../../layout/PageLayout/PageLayout';
 
 interface DataPoint {
   x: Date;
@@ -35,70 +36,47 @@ const BingoScores = () => {
       { x: new Date(2023, 6, 27), y: 1500000 },
       { x: new Date(2023, 6, 28), y: 3000000 },
     ],
-    // Add more lines if needed
   ];
 
   useBingoScores();
 
   return (
-    <Stack
-      component={'section'}
-      width={'100%'}
-      height={'100%'}
-      justifyContent={'center'}
-      alignItems={'center'}
-      sx={{
-        p: 10,
-      }}
-    >
-      <Typography p={3} variant="h1">
-        Total Team XP
-      </Typography>
+    <PageLayout title="Total Team XP" maxWidth="full">
+      <Box sx={{ width: '100%', overflowX: 'auto' }}>
+        <VictoryChart>
+          {chartData.map((line, index) => (
+            <VictoryLine
+              key={index}
+              data={line}
+              dataComponent={<Curve tabIndex={0} />}
+              interpolation={'natural'}
+              style={{ data: { stroke: teamColors[index] } }}
+            />
+          ))}
 
-      <VictoryChart>
-        {chartData.map((line, index) => (
-          <VictoryLine
-            key={index}
-            data={line}
-            dataComponent={<Curve tabIndex={0} />}
-            interpolation={'natural'}
-            style={{ data: { stroke: teamColors[index] } }}
+          <VictoryAxis
+            tickValues={[0, 500000, 1000000, 1500000, 2000000, 2500000, 3000000]}
+            dependentAxis
+            style={{
+              tickLabels: { fontSize: 12, padding: 5, color: 'red' },
+              axis: { stroke: 'black' },
+            }}
           />
-        ))}
-
-        {/* X-Axis */}
-        {/* <VictoryAxis
-          tickFormat={(x) => new Date(x).toLocaleDateString()}
-          style={{
-            tickLabels: { fontSize: 12, padding: 5, color: 'red' },
-            grid: { stroke: 'black', axis: 'black' },
-            axis: { stroke: 'black' },
-          }}
-        /> */}
-
-        {/* Y-Axis */}
-        <VictoryAxis
-          tickValues={[0, 500000, 1000000, 1500000, 2000000, 2500000, 3000000]}
-          dependentAxis
-          style={{
-            tickLabels: { fontSize: 12, padding: 5, color: 'red' },
-            axis: { stroke: 'black' },
-          }}
-        />
-        <VictoryLegend
-          x={15}
-          y={10}
-          orientation="horizontal"
-          gutter={20}
-          style={{
-            border: { stroke: 'black' },
-            title: { fill: 'black' },
-            labels: { fill: 'black' },
-          }}
-          data={teamNames.map((name, index) => ({ name, symbol: { fill: teamColors[index] } }))}
-        />
-      </VictoryChart>
-    </Stack>
+          <VictoryLegend
+            x={15}
+            y={10}
+            orientation="horizontal"
+            gutter={20}
+            style={{
+              border: { stroke: 'black' },
+              title: { fill: 'black' },
+              labels: { fill: 'black' },
+            }}
+            data={teamNames.map((name, index) => ({ name, symbol: { fill: teamColors[index] } }))}
+          />
+        </VictoryChart>
+      </Box>
+    </PageLayout>
   );
 };
 

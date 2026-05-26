@@ -19,12 +19,18 @@ export const fetchWithAuth = async (
 
   const response = await fetch(url, { ...options, headers });
 
-  if (response.status === 401) {
-    window.dispatchEvent(
-      new CustomEvent('auth:expired', {
-        detail: { returnTo: window.location.pathname },
-      })
-    );
+  // Only treat 401 as a session expiry when we actually sent a stored token.
+  // Unauthenticated 401s (e.g. dev without login) must not open the expiry modal.
+  // In local dev, ProtectedRoute already bypasses auth — skip the modal entirely.
+  if (response.status === 401 && token) {
+    localStorage.removeItem('authToken');
+    if (!import.meta.env.DEV) {
+      window.dispatchEvent(
+        new CustomEvent('auth:expired', {
+          detail: { returnTo: window.location.pathname },
+        })
+      );
+    }
   }
 
   return response;

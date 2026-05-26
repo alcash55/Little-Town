@@ -3,30 +3,26 @@ import LockOutlined from '@mui/icons-material/LockOutlined';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { darkTheme } from '../../../layout/Theme';
 import { useLoginModal } from '../../LoginModal/useLoginModal';
+import PageLayout from '../../../layout/PageLayout/PageLayout';
 
 const Unauthorized = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { openLogin, user } = useLoginModal();
-  const reason = (location.state as any)?.reason;
+  const reason = (location.state as { reason?: string })?.reason;
+  const isForbidden = reason === 'forbidden';
 
   return (
-    <Stack
-      spacing={3}
-      height="100%"
-      width="100%"
-      justifyContent="center"
-      alignItems="center"
-      sx={{ bgcolor: darkTheme.palette.primary.main, p: 5 }}
+    <PageLayout
+      title={isForbidden ? 'Access Denied' : 'Login Required'}
+      align="center"
+      maxWidth={500}
     >
       <Box sx={{ color: darkTheme.palette.text.secondary, fontSize: 64 }}>
         <LockOutlined fontSize="inherit" />
       </Box>
-      <Typography variant="h4" sx={{ textAlign: 'center' }}>
-        {reason === 'forbidden' ? 'Access Denied' : 'Login Required'}
-      </Typography>
       <Typography variant="body1" sx={{ textAlign: 'center', color: darkTheme.palette.text.secondary }}>
-        {reason === 'forbidden'
+        {isForbidden
           ? "You don't have permission to view this page."
           : 'You need to log in to access this page.'}
       </Typography>
@@ -40,7 +36,7 @@ const Unauthorized = () => {
           Go Home
         </Button>
       </Stack>
-    </Stack>
+    </PageLayout>
   );
 };
 

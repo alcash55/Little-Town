@@ -1,6 +1,7 @@
-import { Stack, Typography } from '@mui/material';
+import { Typography } from '@mui/material';
 import { DataGrid, GridColDef, GridValueGetterParams } from '@mui/x-data-grid';
 import { darkTheme } from '../../../layout/Theme';
+import PageLayout from '../../../layout/PageLayout/PageLayout';
 
 const TeamData = () => {
   const columns: GridColDef[] = [
@@ -48,53 +49,22 @@ const TeamData = () => {
   ];
 
   return (
-    <Stack
-      spacing={5}
-      justifyContent="center"
-      p={2}
-      sx={{
-        width: '100%',
-        height: '100%',
-        bgcolor: darkTheme.palette.primary.main,
-      }}
-    >
-      <Typography
-        variant="h1"
-        sx={{
-          fontSize: 42,
-          textAlign: 'center',
-        }}
-      >
-        Team Data
-      </Typography>
-      <Typography
-        variant="body1"
-        sx={{
-          fontSize: 24,
-          textAlign: 'center',
-        }}
-      >
+    <PageLayout title="Team Data" maxWidth="full">
+      <Typography variant="body1" sx={{ fontSize: 24, textAlign: 'center', width: '100%' }}>
         The Scores may take sometime to update
       </Typography>
       <DataGrid
         rows={rows}
         columns={columns}
-        // initialState={{
-        //   pagination: {
-        //     paginationModel: {
-        //       pageSize: 10,
-        //     },
-        //   },
-        // }}
-        // pageSizeOptions={[9]}
         disableRowSelectionOnClick
         sx={{
           bgcolor: darkTheme.palette.primary.main,
           color: 'white',
           height: 250,
+          width: '100%',
         }}
       />
-    </Stack>
+    </PageLayout>
   );
 };
 
