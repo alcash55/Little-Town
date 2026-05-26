@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useMemo, useState, lazy, Suspense } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, lazy, Suspense } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LoadingContainer } from '../LoadingContainer/LoadingContainer';
 
 type LoginModalContextValue = {
@@ -40,6 +41,7 @@ type LoginModalProps = {
   onClose: () => void;
   isSubmitting?: boolean;
   errorMessage?: string | null;
+  sessionExpired?: boolean;
   onSubmit?: (username: string, password: string) => void | Promise<void>;
 };
 
@@ -56,15 +58,38 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [returnTo, setReturnTo] = useState<string | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
+  const navigate = useNavigate();
+
+  const BASE_URL = import.meta.env.VITE_BASEURL || "http://localhost:8081"
 
   const openLogin = useCallback(() => {
     ensureModalImported();
     setIsOpen(true);
   }, []);
 
+  // Listen for token expiry events dispatched by fetchWithAuth
+  useEffect(() => {
+    const handleExpired = (e: Event) => {
+      const path = (e as CustomEvent<{ returnTo: string }>).detail?.returnTo ?? null;
+      localStorage.removeItem('authToken');
+      setUser(null);
+      setReturnTo(path);
+      setSessionExpired(true);
+      ensureModalImported();
+      setIsOpen(true);
+      navigate('/');
+    };
+
+    window.addEventListener('auth:expired', handleExpired);
+    return () => window.removeEventListener('auth:expired', handleExpired);
+  }, [navigate]);
+
   const closeLogin = useCallback(() => {
     setIsOpen(false);
     setErrorMessage(null);
+    setSessionExpired(false);
   }, []);
 
   const prefetchLoginModal = useCallback(() => {
@@ -81,7 +106,7 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
     try {
       setIsSubmitting(true);
 
-      const response = await fetch('http://localhost:8081/api/auth/login', {
+      const response = await fetch(`${BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -99,8 +124,14 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
       localStorage.setItem('authToken', data.data.token);
       setUser(data.data.user);
       setIsOpen(false);
+      setSessionExpired(false);
 
-      // You might want to trigger a global auth state update here
+      // Navigate back to the page they were on when their token expired
+      if (returnTo) {
+        navigate(returnTo);
+        setReturnTo(null);
+      }
+
       window.dispatchEvent(new CustomEvent('auth:login', { detail: data.data }));
     } catch (e) {
       setErrorMessage(e instanceof Error ? e.message : 'Login failed. Please try again.');
@@ -154,6 +185,7 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
             onClose={closeLogin}
             isSubmitting={isSubmitting}
             errorMessage={errorMessage}
+            sessionExpired={sessionExpired}
             onSubmit={loginWithCredentials}
           />
         </Suspense>
