@@ -14,7 +14,7 @@ export const BingoUpdated = ({ isUpdated, itemUpdated }: BingoUpdatedProps) => {
             <CheckCircleOutline sx={{ fontSize: 80, color: 'success.main' }} />
             <Typography variant="h2" sx={{ fontSize: 28, textAlign: 'center', color: 'success.main' }}>
                 {isUpdated ? `${itemUpdated} Updated!` : `${itemUpdated} Created!`}
-            </Typography>$
+            </Typography>
             <Typography variant="body1" sx={{ textAlign: 'center', color: darkTheme.palette.text.secondary }}>
                 {isUpdated ? `${itemUpdated} has been updated successfully.` : `${itemUpdated} has been created successfully.`}
             </Typography>

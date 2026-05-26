@@ -1,25 +1,17 @@
-import { Stack, Typography, Link, List, ListItem, ListItemText, Box } from '@mui/material';
+import { Link, List, ListItem, ListItemText, Box, Stack, Typography } from '@mui/material';
 import daRules from '../../../assets/Images/daRules.png';
 import blastfurnace from '../../../assets/Images/blastfurnace.png';
 import clanEventsSettings from '../../../assets/Images/clanEventsSettings.png';
 import untradeableLootNotifications from '../../../assets/Images/untradeableLootNotifications.png';
 import lootDropNotifications from '../../../assets/Images/lootDropNotifications.png';
+import PageLayout from '../../../layout/PageLayout/PageLayout';
 
 const BingoRules = () => {
   return (
-    <Stack
-      component={'section'}
-      width={'100%'}
-      height={'100vh'}
-      justifyContent={'flex-start'}
-      alignItems={'center'}
-      spacing={2}
-      sx={{ px: '2rem', pb: '2rem', overflowY: 'auto' }}
-    >
+    <PageLayout maxWidth="full" contentSx={{ alignItems: 'stretch' }}>
       <Box
         sx={{
           width: '100%',
-          height: '100%',
           position: 'sticky',
           top: 0,
           zIndex: 1,
@@ -27,12 +19,14 @@ const BingoRules = () => {
           justifyContent: 'center',
           bgcolor: '#424242',
           pt: '.5rem',
+          mx: { xs: -3, sm: -5 },
+          px: { xs: 3, sm: 5 },
         }}
       >
         <img src={daRules} alt="bingo rules" width="10%" height="auto" />
       </Box>
 
-      <Stack spacing={4} width={'100%'}>
+      <Stack spacing={4} width="100%">
         <Stack spacing={2}>
           <Typography variant="h1" fontSize={48}>
             Objective
@@ -94,9 +88,9 @@ const BingoRules = () => {
                     screenshots:{' '}
                     <Stack
                       spacing={2}
-                      justifyContent={'center'}
-                      width={'100%'}
-                      alignItems={'center'}
+                      justifyContent="center"
+                      width="100%"
+                      alignItems="center"
                       sx={{ py: 2 }}
                     >
                       <img
@@ -166,7 +160,6 @@ const BingoRules = () => {
             </ListItem>
             <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
               <ListItemText
-                sx={{}}
                 primary={
                   <>
                     Provide a screenshot of yourself at the Blast Mine to ensure no stacked ores for
@@ -217,7 +210,7 @@ const BingoRules = () => {
           </List>
         </Stack>
       </Stack>
-    </Stack>
+    </PageLayout>
   );
 };
 

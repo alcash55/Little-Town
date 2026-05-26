@@ -75,8 +75,9 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
     })
       .then((res) => {
         if (res.ok) return res.json();
-        // Token is invalid or expired — clean it up
+        // Token is invalid or expired — clean up silently (no expiry modal on boot)
         localStorage.removeItem('authToken');
+        setSessionExpired(false);
         return null;
       })
       .then((data) => {
@@ -87,12 +88,15 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
 
   const openLogin = useCallback(() => {
     ensureModalImported();
+    setSessionExpired(false);
     setIsOpen(true);
   }, []);
 
-  // Listen for token expiry events dispatched by fetchWithAuth
+  // Listen for token expiry events dispatched by fetchWithAuth (production only)
   useEffect(() => {
     const handleExpired = (e: Event) => {
+      if (import.meta.env.DEV) return;
+
       const path = (e as CustomEvent<{ returnTo: string }>).detail?.returnTo ?? null;
       localStorage.removeItem('authToken');
       setUser(null);
