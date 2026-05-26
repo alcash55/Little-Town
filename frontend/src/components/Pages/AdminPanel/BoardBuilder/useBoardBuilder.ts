@@ -1,30 +1,17 @@
 import { useEffect, useState } from 'react';
 import { getActivities } from '../../../../utils/getActivities';
 import { getSkills } from '../../../../utils/getSkills';
+import { fetchWithAuth } from '../../../../utils/fetchWithAuth';
+import { cachedFetch } from '../../../../utils/cachedFetch';
+import { darkTheme } from '../../../../layout/Theme';
 
 type Tile =
-  | {
-      type: 'Kill Count';
-      task: string;
-      points: number;
-      killCount: number;
-    }
-  | {
-      type: 'Experience';
-      task: string;
-      points: number;
-      experience: number;
-    }
-  | {
-      type: 'Drops';
-      task: string;
-      points: number;
-      dropsAmount: number;
-    };
+  | { type: 'Kill Count'; task: string; points: number; killCount: number }
+  | { type: 'Experience'; task: string; points: number; experience: number }
+  | { type: 'Drops'; task: string; points: number; dropsAmount: number };
 
 export const useBoardBuilder = () => {
-  const BASEURL = import.meta.env.VITE_BASEURL ?? 'http://localhost:8081';
-  const token = localStorage.getItem('authToken');
+  const BASEURL = `${import.meta.env.VITE_BASEURL || 'http://localhost:8081'}/api/admin`;
 
   const tilesTypeOptions = [
     { name: 'Kill Count', value: 1 },
@@ -32,210 +19,264 @@ export const useBoardBuilder = () => {
     { name: 'Drops', value: 3 },
   ];
 
+  // Form state
   const [tileType, setTileType] = useState<(typeof tilesTypeOptions)[0]>(tilesTypeOptions[0]);
-  const [tileTask, setTileTask] = useState<string>('');
+  const [tileTask, setTileTask] = useState('');
   const [tilePoints, setTilePoints] = useState<number | undefined>();
-
   const [tileKillCount, setTileKillCount] = useState<number | undefined>();
   const [tileExperience, setTileExperience] = useState<number | undefined>();
   const [tileDropsAmount, setTileDropsAmount] = useState<number | undefined>();
 
+  // Data state
   const [activities, setActivities] = useState<string[]>([]);
   const [skills, setSkills] = useState<string[]>([]);
   const [items, setItems] = useState<string[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [options, setOptions] = useState<string[]>([]);
-
+  const [loading, setLoading] = useState(true);
   const [board, setBoard] = useState<Tile[]>([]);
+  const [boardSize, setBoardSize] = useState<number>(16);
+  const [boardFromBackend, setBoardFromBackend] = useState(false);
 
-  // If there is a pre-existing board, load it & fetch skills, activities, and items
+  // UI state
+  const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Derived
+  const isExistingBoard = boardFromBackend;
+  const isBoardComplete = board.length === boardSize;
+  const isTileValid =
+    !!tileTask &&
+    tilePoints !== undefined &&
+    (tileType.name === 'Kill Count'
+      ? tileKillCount !== undefined
+      : tileType.name === 'Experience'
+      ? tileExperience !== undefined
+      : tileDropsAmount !== undefined);
+
+  // Styles
+  const inputSx = {
+    '& .MuiOutlinedInput-root': {
+      color: darkTheme.palette.text.primary,
+      backgroundColor: 'transparent',
+      '& .MuiOutlinedInput-notchedOutline': { borderColor: 'black' },
+      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#2A9D8F' },
+      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#2A9D8F' },
+      '& input': { backgroundColor: 'transparent' },
+      '& input:-webkit-autofill': {
+        WebkitBoxShadow: '0 0 0 1000px transparent inset',
+        WebkitTextFillColor: darkTheme.palette.text.primary,
+        caretColor: darkTheme.palette.text.primary,
+        transition: 'background-color 5000s ease-in-out 0s',
+      },
+    },
+    '& .MuiInputLabel-root': {
+      color: darkTheme.palette.text.secondary,
+      '&.Mui-focused': { color: '#2A9D8F' },
+    },
+  };
+
+  /**
+   * Fetch all items in osrs
+   * @returns 
+   */
+  const getItemMappings = (): Promise<string[]> =>
+    cachedFetch('osrs:items', async () => {
+      const res = await fetch('https://prices.runescape.wiki/api/v1/osrs/mapping', {
+        headers: { 'User-Agent': 'https://littletown.gay/' },
+      });
+      if (!res.ok) throw new Error(`Failed to fetch items: ${res.status}`);
+      const data = await res.json();
+      return data.map((d: any) => d.name);
+    });
+
+  // On mount: fetch existing board from backend, fallback to localStorage, load autocomplete data
   useEffect(() => {
-    // Load saved board
-    const saved = localStorage.getItem('bingoBoard');
-    if (saved) {
-      try {
-        console.log('loading board', JSON.parse(saved));
-        setBoard(JSON.parse(saved));
-      } catch (e) {
-        console.error('Failed to parse board:', e);
-        setBoard([]);
-      }
-    }
+    const loadBoard = async () => {
+      const token = localStorage.getItem('authToken');
 
-    Promise.all([getActivities(), getSkills(), getItemMappings()])
-      .then(([acts, skls, itm]) => {
-        setActivities(acts);
-        setSkills(skls);
-        setItems(itm);
-      })
+      if (token) {
+        try {
+          // Fetch active bingo to get board size
+          const bingoRes = await fetchWithAuth(`${BASEURL}/bingo/details`);
+          if (bingoRes.ok) {
+            const bingoJson = await bingoRes.json();
+            if (bingoJson.data?.boardSize) setBoardSize(bingoJson.data.boardSize);
+          }
+
+          // Fetch existing board from backend
+          const boardRes = await fetchWithAuth(`${BASEURL}/bingo/board`);
+          if (boardRes.ok) {
+            const contentType = boardRes.headers.get('content-type') ?? '';
+            if (contentType.includes('application/json')) {
+              const boardJson = await boardRes.json();
+              if (Array.isArray(boardJson.data) && boardJson.data.length > 0) {
+                setBoard(boardJson.data);
+                setBoardFromBackend(true);
+                localStorage.setItem('bingoBoard', JSON.stringify(boardJson.data));
+                return;
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Failed to fetch board from backend, falling back to localStorage:', e);
+        }
+      }
+
+      // Fallback to localStorage
+      const saved = localStorage.getItem('bingoBoard');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) setBoard(parsed);
+        } catch (e) {
+          console.error('Failed to parse saved board:', e);
+        }
+      }
+    };
+
+    loadBoard();
+
+    // Load each independently so one failure doesn't block the others
+    getActivities()
+      .then(setActivities)
+      .catch((e) => console.error('Failed to load activities:', e?.message ?? e));
+
+    getSkills()
+      .then(setSkills)
+      .catch((e) => console.error('Failed to load skills:', e?.message ?? e));
+
+    getItemMappings()
+      .then(setItems)
+      .catch((e) => console.error('Failed to load items:', e?.message ?? e))
       .finally(() => setLoading(false));
   }, []);
 
   /**
-   * Fetch all items from OSRS API
-   * @returns Promise<string[]>
-   */
-  const getItemMappings = async (): Promise<string[]> => {
-    const url = 'https://prices.runescape.wiki/api/v1/osrs/mapping';
-
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'https://littletown.gay/',
-      },
-    });
-
-    if (!res.ok) {
-      throw new Error(`Failed to fetch items: ${res.status}`);
-    }
-
-    const data = await res.json();
-
-    const items: string[] = data.map((d: any) => d.name);
-
-    return items;
-  };
-
-  /**
-   * Add a tile to the bingo board
-   * @returns void
+   * Add a single tile to the board
    */
   const addTile = () => {
-    if (!tileTask || tilePoints === undefined) {
-      console.error('Missing task or points');
-      return;
-    }
+    if (!isTileValid) return;
 
-    let tileToAdd: Tile | null = null;
+    let tileToAdd: Tile;
 
-    // Kill Count tile
-    if (tileType.name === tilesTypeOptions[0].name) {
-      if (tileKillCount === undefined) {
-        console.error('Missing kill count');
-        return;
-      }
-
+    if (tileType.name === 'Kill Count') {
       tileToAdd = {
         type: 'Kill Count',
         task: tileTask,
-        points: tilePoints,
-        killCount: tileKillCount,
+        points: tilePoints!,
+        killCount: tileKillCount!,
       };
-    }
-
-    // Experience tile
-    else if (tileType.name === tilesTypeOptions[1].name) {
-      if (tileExperience === undefined) {
-        console.error('Missing experience amount');
-        return;
-      }
-
+    } else if (tileType.name === 'Experience') {
       tileToAdd = {
         type: 'Experience',
         task: tileTask,
-        points: tilePoints,
-        experience: tileExperience,
+        points: tilePoints!,
+        experience: tileExperience!,
       };
-    }
-
-    // Drops tile
-    else {
-      if (tileDropsAmount === undefined) {
-        console.error('Missing drop info');
-        return;
-      }
-
+    } else {
       tileToAdd = {
         type: 'Drops',
         task: tileTask,
-        points: tilePoints,
-        dropsAmount: tileDropsAmount,
+        points: tilePoints!,
+        dropsAmount: tileDropsAmount!,
       };
     }
 
-    // Add to board + save
     setBoard((prev) => {
-      const updated = [...prev, tileToAdd!];
-      console.log('updating board in local storage');
+      const updated = [...prev, tileToAdd];
       localStorage.setItem('bingoBoard', JSON.stringify(updated));
       return updated;
     });
 
-    // Reset tile for next tile to be added
-    clear();
+    clearTileForm();
   };
 
-  /**
-   * Reset the bingo board
-   */
-  const clear = () => {
+  const removeTile = (tileToRemove: Tile) => {
+    const updated = board.filter((tile) => tile.task !== tileToRemove.task);
+    localStorage.setItem('bingoBoard', JSON.stringify(updated));
+    setBoard(updated);
+  };
+
+  // Clears only the current tile form inputs, not the whole board
+  const clearTileForm = () => {
     setTileTask('');
     setTilePoints(undefined);
     setTileKillCount(undefined);
     setTileExperience(undefined);
     setTileDropsAmount(undefined);
     setTileType(tilesTypeOptions[0]);
-
-    localStorage.setItem('bingoBoard', '');
   };
 
-  /**-
-   * Tile to remove from the board
-   * @param tileToRemove
-   */
-  const removeTile = (tileToRemove: Tile) => {
-    const newBoard = board.filter((tile) => tile.task !== tileToRemove.task);
-    localStorage.setItem('bingoBoard', JSON.stringify(newBoard));
-    setBoard(newBoard);
+  // Clears the entire board
+  const clearBoard = () => {
+    clearTileForm();
+    setBoard([]);
+    setBoardFromBackend(false);
+    setSubmitted(false);
+    setSubmitError(null);
+    localStorage.removeItem('bingoBoard');
   };
 
-  // TODO add verification of the board based on tbe bingo details
   const submitBoard = async () => {
+    setSubmitError(null);
     try {
-      const response = await fetch(`${BASEURL}/api/admin/bingo/board`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
+      const method = isExistingBoard ? 'PUT' : 'POST';
+      const response = await fetchWithAuth(`${BASEURL}/bingo/board`, {
+        method,
         body: JSON.stringify(board),
       });
 
       if (response.ok) {
-        console.log('bingo board successfully created');
-        // board is created, reset the form
-        clear();
+        setSubmitted(true);
+        localStorage.removeItem('bingoBoard');
       } else {
-        throw new Error(`Failed to create bingo board: ${response.statusText}`);
+        const json = await response.json().catch(() => ({}));
+        setSubmitError(json.error ?? `Failed to save board: ${response.statusText}`);
       }
     } catch (e) {
-      console.error(`Unable to create board: ${e}`);
+      setSubmitError('An unexpected error occurred. Please try again.');
+      console.error(`Unable to save board: ${e}`);
     }
   };
 
   return {
+    // Tile type options
     tilesTypeOptions,
+    // Form state
     tileType,
     setTileType,
     tileTask,
     setTileTask,
     tilePoints,
     setTilePoints,
-    addTile,
-    board,
-    clear,
-    removeTile,
-    submitBoard,
     tileKillCount,
     setTileKillCount,
     tileExperience,
     setTileExperience,
     tileDropsAmount,
     setTileDropsAmount,
+    // Data
     activities,
     skills,
     items,
-    options,
-    setOptions,
     loading,
+    // Board
+    board,
+    boardSize,
+    // UI state
+    submitted,
+    setSubmitted,
+    submitError,
+    // Derived
+    isTileValid,
+    isBoardComplete,
+    isExistingBoard,
+    // Styles
+    inputSx,
+    // Handlers
+    addTile,
+    removeTile,
+    clearTileForm,
+    clearBoard,
+    submitBoard,
   };
 };
