@@ -26,12 +26,12 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Card, CardContent, Chip, Stack, Typography, Box, colors, Button } from '@mui/material';
-import { MeasuringStrategy as _MeasuringStrategy, UniqueIdentifier } from '@dnd-kit/core';
-import { darkTheme } from '../../../../layout/Theme';
+import { Card, CardContent, Chip, Stack, Typography, Box, Button } from '@mui/material';
+import { UniqueIdentifier } from '@dnd-kit/core';
 import Grid from '@mui/material/Unstable_Grid2';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { useTeamDrafter } from './useTeamDrafter';
+import PageLayout from '../../../../layout/PageLayout/PageLayout';
 
 type Items = Record<UniqueIdentifier, UniqueIdentifier[]>;
 
@@ -335,22 +335,8 @@ export default function TeamDrafter() {
   });
 
   return (
-    <Stack
-      spacing={3}
-      height="100vh"
-      width="100%"
-      justifyContent="flex-start"
-      alignItems="stretch"
-      sx={{
-        bgcolor: darkTheme.palette.primary.main,
-        p: { xs: 2, sm: 3, md: 5 },
-      }}
-    >
-      <Typography variant="h1" sx={{ fontSize: { xs: 28, sm: 36, md: 42 }, textAlign: 'center' }}>
-        Team Drafter
-      </Typography>
-
-      <Typography variant="body1" sx={{ textAlign: { xs: 'center', md: 'left' } }}>
+    <PageLayout title="Team Drafter" maxWidth="full" contentSx={{ alignItems: 'stretch' }}>
+      <Typography variant="body1" sx={{ textAlign: { xs: 'center', md: 'left' }, width: '100%' }}>
         To draft players onto a team, drag a player in the pool and drop them on the desired team.
       </Typography>
 
@@ -456,6 +442,6 @@ export default function TeamDrafter() {
           </Button>
         ) : null}
       </Box>
-    </Stack>
+    </PageLayout>
   );
 }
