@@ -1,5 +1,5 @@
-- Host APIs
-- Create re-useable Layout component for all pages that include:
+- Host APIs through supabase or cloudflare
+- implement re-useable Layout component for all pages that include:
   - Alert components for if pre-existing data that will be modified on submit
   - The responsive layout needed to show all content
   - Included themes
@@ -8,3 +8,5 @@
 - Finish the resource page with info from the discord
 - Update the db for a user's hiscore data from osrs api
 - Update the cache for skills and activites to check once a day
+- Move input and select component styles to the theme
+- Have the user avatar pull the initials from the nickname row in the user table
