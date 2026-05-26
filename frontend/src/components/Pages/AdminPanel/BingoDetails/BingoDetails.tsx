@@ -12,6 +12,7 @@ import {
 import { darkTheme } from '../../../../layout/Theme';
 import { DateTimePicker } from '@mui/x-date-pickers';
 import { useBingoDetails } from './useBingoDetails';
+import { useEffect, useState } from 'react';
 
 const BingoDetails = () => {
   const {
@@ -29,7 +30,25 @@ const BingoDetails = () => {
     setTeamNames,
     planBingo,
     clearBingo,
+    existingBingo,
+    modifyBingo
   } = useBingoDetails();
+
+  const [isBingo, setIsBingo] = useState<boolean>(false);
+
+  useEffect(() => {
+    existingBingo().then((data) => {
+      if (data) {
+        setIsBingo(true);
+        setBingoName(data.name);
+        setBoardSize(data.boardSize);
+        setStartDate(data.startDate);
+        setEndDate(data.endDate);
+        setNumberOfTeams(data.numberOfTeams ?? 3);
+        setTeamNames(data.teams ?? []);
+      }
+    });
+  }, []);
 
   const inputSx = {
     '& .MuiOutlinedInput-root': {
@@ -58,12 +77,13 @@ const BingoDetails = () => {
     '& .MuiSvgIcon-root': { color: darkTheme.palette.text.secondary },
   };
 
+
+
   return (
     <Stack
-      spacing={3}
+      spacing={5}
       height={'100%'}
       width={'100%'}
-      justifyContent={'center'}
       alignItems={'center'}
       sx={{ bgcolor: darkTheme.palette.primary.main, p: 5 }}
     >
@@ -71,11 +91,27 @@ const BingoDetails = () => {
         Bingo Details
       </Typography>
 
+      {/* if there is a bingo warn user that changes will update it */}
+      {isBingo ? <Stack
+        spacing={3}
+        width={'100%'}
+        justifyContent={'center'}
+        alignItems={'center'}
+      >
+        <Typography variant='h2' sx={{ fontSize: 36, textAlign: 'center', color: 'red' }}>
+          !! Warning !!
+        </Typography>
+
+        <Typography variant="body1" sx={{ color: 'red' }}>
+          There is already an existing bingo, any changes made will modify the already existing bingo
+        </Typography>
+      </Stack> : null}
+
       <Stack
         spacing={3}
         justifyContent={'center'}
         alignItems={'center'}
-        sx={{ maxWidth: 500, width: '100%', height: '100%' }}
+        sx={{ maxWidth: 500, width: '100%', pt: 0, mt: 0 }}
       >
         <TextField
           id="bingo-name"
@@ -198,20 +234,32 @@ const BingoDetails = () => {
               )
             }
             variant="outlined"
-            onClick={() =>
-              planBingo({
-                name: bingoName,
-                start: startDate,
-                end: endDate,
-                size: boardSize,
-                numberOfTeams: numberOfTeams,
-                teams: teamNames,
-              })
+            onClick={() => {
+              if (isBingo) {
+                modifyBingo({
+                  name: bingoName,
+                  start: startDate,
+                  end: endDate,
+                  size: boardSize,
+                  numberOfTeams: numberOfTeams,
+                  teams: teamNames,
+                })
+              } else {
+                planBingo({
+                  name: bingoName,
+                  start: startDate,
+                  end: endDate,
+                  size: boardSize,
+                  numberOfTeams: numberOfTeams,
+                  teams: teamNames,
+                })
+              };
+            }
             }
             color="success"
             sx={{ width: '50%' }}
           >
-            Add Bingo Detail
+            {isBingo ? "Modify Bingo" : "Add Bingo Detail"}
           </Button>
 
           {teamNames.length || endDate || startDate || bingoName ? (
