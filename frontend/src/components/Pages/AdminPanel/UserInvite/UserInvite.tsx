@@ -1,10 +1,7 @@
 import { Stack, Typography } from '@mui/material'
-import { darkTheme } from '../../../layout/Theme';
+import { darkTheme } from '../../../../layout/Theme';
 
-/**
- * Resource page that shows tips and info for OSRS bossing and others
- */
-const Resources = () => {
+const UserInvite = () => {
     return (
         <Stack
             spacing={5}
@@ -23,7 +20,7 @@ const Resources = () => {
                     textAlign: 'center',
                 }}
             >
-                Resources
+                User Invite
             </Typography>
 
 
@@ -31,4 +28,4 @@ const Resources = () => {
     )
 }
 
-export default Resources;
+export default UserInvite
