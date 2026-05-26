@@ -1,0 +1,9 @@
+- Host APIs
+- Create re-useable Layout component for all pages that include:
+    - Alert components for if pre-existing data that will be modified on submit
+    - The responsive layout needed to show all content
+    - Included themes
+- Create Admin page for sending links to new users
+- Create onboarding wizard for new users
+- Finish the resource page with info from the discord
+- Update the db for a user's hiscore data from osrs api

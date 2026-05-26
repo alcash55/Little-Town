@@ -35,7 +35,7 @@ interface LoginResponse {
 
 const LoginModalContext = createContext<LoginModalContextValue | undefined>(undefined);
 
-// Lazy-load the modal component for code splitting
+// Lazy-load the modal component
 type LoginModalProps = {
   open: boolean;
   onClose: () => void;
@@ -63,6 +63,26 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
   const navigate = useNavigate();
 
   const BASE_URL = import.meta.env.VITE_BASEURL || "http://localhost:8081"
+
+  // On mount, rehydrate user from existing token
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (!token || user) return;
+
+    fetch(`${BASE_URL}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (res.ok) return res.json();
+        // Token is invalid or expired — clean it up
+        localStorage.removeItem('authToken');
+        return null;
+      })
+      .then((data) => {
+        if (data?.data) setUser(data.data);
+      })
+      .catch(() => localStorage.removeItem('authToken'));
+  }, []);
 
   const openLogin = useCallback(() => {
     ensureModalImported();
