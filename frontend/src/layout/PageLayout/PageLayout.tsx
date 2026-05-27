@@ -19,7 +19,7 @@ const getViewportHeightBelowAppBar = (toolbarMinHeight: unknown) => {
 };
 
 interface PageLayoutProps {
-    children: ReactNode;
+    children?: ReactNode;
     /** Page heading — omit for pages that define their own title in children */
     title?: string;
     /** Label for the BingoUpdated success screen e.g. 'Board', 'Details' */
@@ -46,8 +46,6 @@ interface PageLayoutProps {
     align?: 'top' | 'center';
     /** Extra sx on the inner content column */
     contentSx?: SxProps<Theme>;
-
-
 }
 
 const PageLayout = ({
