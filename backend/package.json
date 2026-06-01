@@ -11,11 +11,12 @@
     "test": "node --test",
     "local": "bash scripts/dev-local.sh",
     "local:reset": "bash scripts/dev-local.sh --reset",
-    "db:start": "npx supabase start",
-    "db:stop": "npx supabase stop",
-    "db:status": "npx supabase status",
-    "db:reset": "npx supabase db reset",
-    "db:push": "npx supabase db push"
+    "db:start": "bun x supabase start",
+    "db:stop": "bun x supabase stop",
+    "db:status": "bun x supabase status",
+    "db:reset": "bun x supabase db reset",
+    "db:push": "bun x supabase db push",
+    "db:login": "bun x supabase login"
   },
   "nodemonConfig": {
     "watch": [
