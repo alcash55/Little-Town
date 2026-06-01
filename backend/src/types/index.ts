@@ -22,6 +22,12 @@ export interface HiscoreData {
 
 export type BingoStatus = "draft" | "active" | "complete" | "archived";
 
+export interface BingoTeam {
+  id: string;
+  name: string;
+  sortOrder: number;
+}
+
 export interface BingoConfig {
   id?: string;
   name: string;
@@ -32,10 +38,20 @@ export interface BingoConfig {
   boardSize: number;
   numberOfTeams?: number;
   teams: string[];
+  teamObjects?: BingoTeam[];
   tasks: string[];
   createdBy?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface SideAccount {
+  id: string;
+  player_id: string;
+  rsn: string;
+  notes: string | null;
+  added_by: string | null;
+  added_at: string;
 }
 
 export interface User {
