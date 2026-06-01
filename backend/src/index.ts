@@ -14,15 +14,41 @@ const app = express();
 if (process.env.NODE_ENV === "production" && !process.env.FRONTEND_URL) {
   throw new Error("FRONTEND_URL must be set in production");
 }
+
+const configuredCorsOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.CORS_ORIGIN,
+]
+  .flatMap((value) => value?.split(",") ?? [])
+  .map((value) => value.trim())
+  .filter(Boolean);
+
+const devCorsOrigins = [
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+];
+
+const allowedCorsOrigins =
+  process.env.NODE_ENV === "production"
+    ? configuredCorsOrigins
+    : Array.from(new Set([...configuredCorsOrigins, ...devCorsOrigins]));
+
 // Security middleware
 app.use(helmet());
 
 // CORS configuration
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin(origin, callback) {
+      if (!origin || allowedCorsOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error(`CORS origin not allowed: ${origin}`));
+    },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
