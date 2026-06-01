@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { asyncHandler } from "../middleware/errorHandler.js";
-import { protect, authorize } from "../middleware/auth.js";
+import { LOCAL_DEV_USER_ID, protect, authorize } from "../middleware/auth.js";
 import { ApiResponse, BingoConfig } from "../types/index.js";
 import {
   getActiveBingo,
@@ -19,6 +19,13 @@ import {
   savePlayerSnapshot,
   getPlayerSnapshots,
   getAllPlayerSnapshots,
+  updatePlayerTeam,
+  updatePlayerCaptain,
+  resetPlayerTeams,
+  getSideAccounts,
+  getAllSideAccounts,
+  addSideAccount,
+  removeSideAccount,
 } from "../db/players.js";
 import { hiscores } from "../services/hiscores.js";
 
@@ -26,6 +33,9 @@ const router = Router();
 
 router.use(protect);
 router.use(authorize("admin", "moderator"));
+
+const getAuditUserId = (req: Request): string | undefined =>
+  req.user?.id === LOCAL_DEV_USER_ID ? undefined : req.user?.id;
 
 // List all bingos
 router.get(
@@ -62,7 +72,7 @@ router.post(
 
     const response: ApiResponse<BingoConfig> = {
       success: true,
-      data: await saveBingoDetails({ name, start, end, size, teams, createdBy: req.user?.id }),
+      data: await saveBingoDetails({ name, start, end, size, teams, createdBy: getAuditUserId(req) }),
       message: "Bingo details saved successfully",
     };
 
@@ -178,7 +188,14 @@ router.get(
     const bingo = await getActiveBingo();
     if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
 
-    const data = await getAllPlayerSnapshots(bingo.id);
+    const [rows, sideAccountsByPlayer] = await Promise.all([
+      getAllPlayerSnapshots(bingo.id),
+      getAllSideAccounts(bingo.id),
+    ]);
+    const data = rows.map((row) => ({
+      ...row,
+      sideAccounts: sideAccountsByPlayer[row.player.id] ?? [],
+    }));
     res.status(200).json({ success: true, data });
   }),
 );
@@ -195,7 +212,7 @@ router.post(
     if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
 
     // Register the player
-    const player = await registerBingoPlayer(bingo.id, rsn, teamId, req.user?.id);
+    const player = await registerBingoPlayer(bingo.id, rsn, teamId, getAuditUserId(req));
 
     // Fetch hiscores and save start snapshot (ignored if already exists)
     const hiscoreData = await hiscores(rsn);
@@ -279,6 +296,140 @@ router.put(
       message: `Refreshed ${succeeded} players${failed ? `, ${failed} failed` : ""}.`,
       data: { succeeded, failed },
     });
+  }),
+);
+
+// -------------------------------------------------------
+// Team draft — assign players to teams and reset
+// -------------------------------------------------------
+
+// Set or clear team captain (one captain per team)
+router.patch(
+  "/bingo/players/:rsn/captain",
+  authorize("admin"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const rsn = Array.isArray(req.params.rsn) ? req.params.rsn[0] : req.params.rsn;
+    const { captainTeamId } = req.body as { captainTeamId?: string | null };
+
+    const bingo = await getActiveBingo();
+    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+
+    const player = await updatePlayerCaptain(bingo.id, rsn, captainTeamId ?? null);
+    res.status(200).json({ success: true, data: player });
+  }),
+);
+
+// Assign a player to a team (or unassign by passing teamId: null)
+router.patch(
+  "/bingo/players/:rsn/team",
+  authorize("admin"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const rsn = Array.isArray(req.params.rsn) ? req.params.rsn[0] : req.params.rsn;
+    const { teamId } = req.body as { teamId: string | null };
+
+    const bingo = await getActiveBingo();
+    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+
+    const player = await updatePlayerTeam(bingo.id, rsn, teamId ?? null);
+    res.status(200).json({ success: true, data: player });
+  }),
+);
+
+// Submit the full draft: body is an array of { rsn, teamId } assignments
+router.post(
+  "/bingo/draft",
+  authorize("admin"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const assignments = req.body as Array<{ rsn: string; teamId: string | null }>;
+    if (!Array.isArray(assignments)) {
+      return res.status(400).json({ success: false, error: "Body must be an array of { rsn, teamId }" });
+    }
+
+    const bingo = await getActiveBingo();
+    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+
+    const results = await Promise.allSettled(
+      assignments.map(({ rsn, teamId }) => updatePlayerTeam(bingo.id!, rsn, teamId ?? null)),
+    );
+
+    const succeeded = results.filter((r) => r.status === "fulfilled").length;
+    const failed = results
+      .filter((r) => r.status === "rejected")
+      .map((r) => (r as PromiseRejectedResult).reason?.message ?? "Unknown error");
+
+    res.status(200).json({
+      success: true,
+      message: `Assigned ${succeeded} players${failed.length ? `, ${failed.length} failed` : ""}.`,
+      data: { succeeded, failed },
+    });
+  }),
+);
+
+// Reset all team assignments for the active bingo
+router.delete(
+  "/bingo/draft",
+  authorize("admin"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const bingo = await getActiveBingo();
+    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+
+    await resetPlayerTeams(bingo.id);
+    res.status(200).json({ success: true, message: "All team assignments have been reset" });
+  }),
+);
+
+// -------------------------------------------------------
+// Side accounts
+// -------------------------------------------------------
+
+// Get side accounts for a player
+router.get(
+  "/bingo/players/:rsn/side-accounts",
+  asyncHandler(async (req: Request, res: Response) => {
+    const rsn = Array.isArray(req.params.rsn) ? req.params.rsn[0] : req.params.rsn;
+    const bingo = await getActiveBingo();
+    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+
+    const player = await getBingoPlayer(bingo.id, rsn);
+    if (!player) return res.status(404).json({ success: false, error: `Player "${rsn}" not found` });
+
+    const sideAccounts = await getSideAccounts(player.id);
+    res.status(200).json({ success: true, data: sideAccounts });
+  }),
+);
+
+// Add a side account to a player
+router.post(
+  "/bingo/players/:rsn/side-accounts",
+  authorize("admin"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const rsn = Array.isArray(req.params.rsn) ? req.params.rsn[0] : req.params.rsn;
+    const { rsn: sideRsn, notes } = req.body as { rsn?: string; notes?: string };
+
+    if (!sideRsn) return res.status(400).json({ success: false, error: "RSN is required" });
+
+    const bingo = await getActiveBingo();
+    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+
+    const player = await getBingoPlayer(bingo.id, rsn);
+    if (!player) return res.status(404).json({ success: false, error: `Player "${rsn}" not found` });
+
+    const sideAccount = await addSideAccount(player.id, sideRsn, notes, getAuditUserId(req));
+    res.status(201).json({ success: true, data: sideAccount });
+  }),
+);
+
+// Remove a side account by ID
+router.delete(
+  "/bingo/players/:rsn/side-accounts/:sideAccountId",
+  authorize("admin"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const sideAccountId = Array.isArray(req.params.sideAccountId)
+      ? req.params.sideAccountId[0]
+      : req.params.sideAccountId;
+
+    await removeSideAccount(sideAccountId);
+    res.status(200).json({ success: true, message: "Side account removed" });
   }),
 );
 

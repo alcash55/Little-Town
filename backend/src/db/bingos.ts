@@ -7,7 +7,11 @@ type Tile = Record<string, unknown> & {
   points: number;
 };
 
+const BINGO_WITH_TEAMS_SELECT =
+  "*, bingo_teams(id, name, created_at), bingo_board_tiles(task)";
+
 function mapBingo(row: Record<string, any>): BingoConfig {
+  const teamRows: { id: string; name: string }[] = row.bingo_teams ?? [];
   return {
     id: row.id,
     name: row.name,
@@ -16,8 +20,13 @@ function mapBingo(row: Record<string, any>): BingoConfig {
     startDate: row.start_date,
     endDate: row.end_date,
     boardSize: row.board_size,
-    numberOfTeams: row.bingo_teams?.length ?? 0,
-    teams: row.bingo_teams?.map((team: { name: string }) => team.name) ?? [],
+    numberOfTeams: teamRows.length,
+    teams: teamRows.map((team) => team.name),
+    teamObjects: teamRows.map((team, index) => ({
+      id: team.id,
+      name: team.name,
+      sortOrder: index,
+    })),
     tasks: row.bingo_board_tiles?.map((tile: { task: string }) => tile.task) ?? [],
     createdBy: row.created_by ?? undefined,
     createdAt: row.created_at,
@@ -25,20 +34,24 @@ function mapBingo(row: Record<string, any>): BingoConfig {
   };
 }
 
-export async function listBingos(): Promise<BingoConfig[]> {
-  const { data, error } = await getDb()
+function bingoWithTeamsQuery() {
+  return getDb()
     .from("bingos")
-    .select("*, bingo_teams(name), bingo_board_tiles(task)")
-    .order("created_at", { ascending: false });
+    .select(BINGO_WITH_TEAMS_SELECT)
+    .order("created_at", { referencedTable: "bingo_teams", ascending: true });
+}
+
+export async function listBingos(): Promise<BingoConfig[]> {
+  const { data, error } = await bingoWithTeamsQuery().order("created_at", {
+    ascending: false,
+  });
 
   if (error) throw new Error(error.message);
   return (data ?? []).map((row) => mapBingo(row));
 }
 
 export async function getActiveBingo(): Promise<BingoConfig | null> {
-  const { data, error } = await getDb()
-    .from("bingos")
-    .select("*, bingo_teams(name), bingo_board_tiles(task)")
+  const { data, error } = await bingoWithTeamsQuery()
     .in("status", ["active", "draft"])
     .order("created_at", { ascending: false })
     .limit(1)
@@ -74,10 +87,9 @@ export async function saveBingoDetails(input: {
   const teams = input.teams ?? [];
   if (teams.length > 0) {
     const { error: teamError } = await getDb().from("bingo_teams").insert(
-      teams.map((name, index) => ({
+      teams.map((name) => ({
         bingo_id: data.id,
         name,
-        sort_order: index,
       }))
     );
     if (teamError) throw new Error(teamError.message);
@@ -127,19 +139,16 @@ export async function updateBingo(
       const { error: insertError } = await getDb()
         .from("bingo_teams")
         .insert(
-          input.teams.map((name, index) => ({
+          input.teams.map((name) => ({
             bingo_id: id,
             name,
-            sort_order: index,
           }))
         );
       if (insertError) throw new Error(insertError.message);
     }
   }
 
-  const { data: full, error: fullError } = await getDb()
-    .from("bingos")
-    .select("*, bingo_teams(name), bingo_board_tiles(task)")
+  const { data: full, error: fullError } = await bingoWithTeamsQuery()
     .eq("id", id)
     .single();
 
