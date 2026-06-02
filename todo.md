@@ -1,8 +1,5 @@
-- Host APIs through supabase or cloudflare
-- implement the re-useable Layout component for all pages that include:
-  - Alert components for if pre-existing data that will be modified on submit
-  - The responsive layout needed to show all content
-  - Included themes
+- Host APIs through renderer
+  - Create cron job that will run every 5-10min during times where bingos are active in order to prevent cold starts
 - Create Admin page for sending links to new users
 - Create onboarding wizard for new users
 - Make the Bingo Builder have a drag and drop interface so that the admin can re-order the tiles within the grid
@@ -11,8 +8,7 @@
   - If an admin approves the screenshot is will react to the image with a thumbs up and then add the points to that teams board and related stats
   - If an admin denies the screenshot it will react to the image with as thumbs down
 - Finish the resource page with info from the discord
-- Update the db for a user's hiscore data from osrs api
 - Move input and select component styles to the theme
 - Create an admin page that can manually trigger the re-running of cron jobs etc.
-    curl -X POST http://localhost:8081/api/admin/static-data/refresh \
-    -H "Authorization: Bearer <your_token>"
+  curl -X POST http://localhost:8081/api/admin/static-data/refresh \
+   -H "Authorization: Bearer <your_token>"
