@@ -10,7 +10,7 @@ Guidelines for AI agents working in this repo. Little-Town is a full-stack OSRS 
 |---|---|
 | **Frontend** | React 18, TypeScript, MUI v5, Vite, Bun, React Router v6, dnd-kit, Victory charts |
 | **Backend** | Node.js, Express 4, TypeScript, Supabase (Postgres), JWT, bcrypt, Puppeteer |
-| **Deployment** | Cloudflare (frontend), Supabase (backend) |
+| **Deployment** | Cloudflare (frontend), Supabase (database), Renderer (APIs) |
 
 ---
 
@@ -84,7 +84,7 @@ import { foo } from "../utils/foo";    // wrong — breaks at runtime
 - Lazy-load large pages: `const MyPage = lazy(() => import('../MyPage/MyPage').then(m => ({ default: m.MyPage })))`.
 - The `Suspense` boundary is already in `App.tsx` — don't add per-route ones.
 
-### MUI v5
+### MUI v5 (planning migration to newer version)
 
 - Use `sx` prop for one-off styles; `styled()` from `@mui/material/styles` for reusable styled components.
 - Use `theme.*` tokens for colors and spacing — avoid hardcoded hex/px values.
@@ -94,7 +94,7 @@ import { foo } from "../utils/foo";    // wrong — breaks at runtime
 
 Used in the board builder and team drafter. Use `@dnd-kit/core` + `@dnd-kit/sortable` + `CSS.Transform.toString(transform)` for transform styles.
 
-### Charts (Victory)
+### Charts (Victory - Planning migration to use MUI data visalizations once updated to newer version) 
 
 Used for score/stats views. Import from `victory`: `VictoryChart`, `VictoryLine`, `VictoryAxis`, etc.
 
