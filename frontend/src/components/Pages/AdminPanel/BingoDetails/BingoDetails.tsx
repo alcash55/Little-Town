@@ -21,7 +21,6 @@ const BingoDetails = () => {
     teamNames,
     isBingo, submitted, setSubmitted,
     isFormValid, hasFormData,
-    inputSx, selectFormControlSx,
     handleSubmit, handleTeamNameChange,
     handleStartDateChange, handleEndDateChange,
     clearBingo,
@@ -46,7 +45,6 @@ const BingoDetails = () => {
           fullWidth
           required
           autoFocus
-          sx={inputSx}
         />
 
         <Box sx={{ display: 'flex', justifyContent: 'start', alignItems: 'center', gap: 3 }}>
@@ -58,7 +56,6 @@ const BingoDetails = () => {
             value={startDate ? new Date(startDate) : null}
             onChange={handleStartDateChange}
             slotProps={{ textField: { required: true, error: false } }}
-            sx={inputSx}
           />
           <DateTimePicker
             label="End"
@@ -67,11 +64,10 @@ const BingoDetails = () => {
             value={endDate ? new Date(endDate) : null}
             onChange={handleEndDateChange}
             slotProps={{ textField: { required: true, error: false } }}
-            sx={inputSx}
           />
         </Box>
 
-        <FormControl variant="outlined" sx={{ m: 1, width: '100%', ...selectFormControlSx }} required>
+        <FormControl variant="outlined" sx={{ m: 1, width: '100%' }} required>
           <InputLabel id="board-size-label">Board Size</InputLabel>
           <Select labelId="board-size-label" id="board-size" value={boardSize} onChange={(e) => setBoardSize(e.target.value as number)} label="Board Size">
             <MenuItem value={16}>4X4</MenuItem>
@@ -79,7 +75,7 @@ const BingoDetails = () => {
           </Select>
         </FormControl>
 
-        <FormControl variant="outlined" sx={{ m: 1, width: '100%', ...selectFormControlSx }} required>
+        <FormControl variant="outlined" sx={{ m: 1, width: '100%' }} required>
           <InputLabel id="team-size-select-label">Number of teams playing</InputLabel>
           <Select labelId="team-size-select-label" id="team-size" value={numberOfTeams} onChange={(e) => setNumberOfTeams(e.target.value as number)} label="Number of teams playing">
             <MenuItem value={2}>2</MenuItem>
@@ -99,7 +95,6 @@ const BingoDetails = () => {
               onChange={(e) => handleTeamNameChange(index, e.target.value)}
               variant="outlined"
               fullWidth
-              sx={inputSx}
             />
           ))}
         </Stack>
