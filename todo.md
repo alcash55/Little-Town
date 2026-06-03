@@ -1,3 +1,6 @@
+- login dialog
+  - Add eyeball icon to reveal password typed
+  - show loading spinner while waiting for login to go through (this is where we will see most cold starts)
 - Create cron job that will run every 5-10 min during times where bingos are active in order to prevent cold starts for renderer
 - Create Admin page for sending links to new users
 - Create onboarding wizard for new users
@@ -6,7 +9,6 @@
   - If an admin approves the screenshot is will react to the image with a thumbs up and then add the points to that teams board and related stats
   - If an admin denies the screenshot it will react to the image with as thumbs down
 - Finish the resource page with info from the discord
-- Move input and select component styles to the theme
 - Create an admin page that can manually trigger the re-running of cron jobs etc.
   curl -X POST http://localhost:8081/api/admin/static-data/refresh \
    -H "Authorization: Bearer <your_token>"
