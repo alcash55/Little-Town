@@ -7,12 +7,17 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# builds/build info/modules
 node_modules
 dist
 dist-ssr
+*.tsbuildinfo
+
+# secrets/credentials
 *.local
 .env.local.generated
 .env
+credentials.json
 
 # Editor directories and files
 .vscode/*
@@ -25,5 +30,4 @@ dist-ssr
 *.sln
 *.sw?
 
-credentials.json
 

@@ -1,7 +1,6 @@
 import { Alert, Stack, SxProps, Theme, Typography, useTheme } from '@mui/material';
 import { darkTheme } from '../Theme/theme';
 import { ReactNode } from 'react';
-import { BingoUpdated } from '../../components/BingoUpdated/BingoUpdated';
 
 const DEFAULT_TOOLBAR_OFFSET = '64px';
 
@@ -22,18 +21,16 @@ interface PageLayoutProps {
     children?: ReactNode;
     /** Page heading — omit for pages that define their own title in children */
     title?: string;
-    /** Label for the BingoUpdated success screen e.g. 'Board', 'Details' */
-    bingoItem?: string;
+    /** Success message shown in a green Alert after submit e.g. 'Details saved!' */
+    successMessage?: string;
     /** Show the pre-existing data warning alert */
     showExistingWarning?: boolean;
-    /** Custom warning message — defaults to a sensible message using bingoItem */
+    /** Custom warning message — defaults to a sensible fallback */
     warningMessage?: string;
     /** Surface API errors */
     error?: string | null;
-    /** Show the success screen after submit */
+    /** Show the success alert after submit */
     submitted?: boolean;
-    /** true = PUT (modify), false = POST (create) */
-    isUpdated?: boolean;
     /**
      * Max width of the content column. Defaults to 500px (forms).
      * Use 'full' for grids, charts, or drag-and-drop layouts.
@@ -51,12 +48,11 @@ interface PageLayoutProps {
 const PageLayout = ({
     children,
     title,
-    bingoItem,
+    successMessage,
     showExistingWarning = false,
     warningMessage,
     error,
     submitted = false,
-    isUpdated = false,
     maxWidth = 500,
     align = 'top',
     contentSx,
@@ -67,10 +63,7 @@ const PageLayout = ({
     const alertMaxWidth = maxWidth === 'full' ? 500 : contentMaxWidth;
 
     const resolvedWarning =
-        warningMessage ??
-        (bingoItem
-            ? `A bingo ${bingoItem.toLowerCase()} already exists. Submitting will overwrite it.`
-            : 'Existing data was found. Submitting will overwrite it.');
+        warningMessage ?? 'Existing data was found. Submitting will overwrite it.';
 
     return (
         <Stack
@@ -88,37 +81,39 @@ const PageLayout = ({
                 minHeight: viewportHeight,
             }}
         >
-            {submitted && bingoItem ? (
-                <BingoUpdated isUpdated={isUpdated} itemUpdated={bingoItem} />
-            ) : (
-                <Stack
-                    spacing={3}
-                    width="100%"
-                    maxWidth={contentMaxWidth}
-                    alignItems="center"
-                    sx={contentSx}
-                >
-                    {title && (
-                        <Typography variant="h1" sx={{ fontSize: { xs: 32, sm: 42 }, textAlign: 'center' }}>
-                            {title}
-                        </Typography>
-                    )}
+            <Stack
+                spacing={3}
+                width="100%"
+                maxWidth={contentMaxWidth}
+                alignItems="center"
+                sx={contentSx}
+            >
+                {title && (
+                    <Typography variant="h1" sx={{ fontSize: { xs: 32, sm: 42 }, textAlign: 'center' }}>
+                        {title}
+                    </Typography>
+                )}
 
-                    {showExistingWarning && (
-                        <Alert severity="warning" variant="filled" sx={{ width: '100%', maxWidth: alertMaxWidth }}>
-                            {resolvedWarning}
-                        </Alert>
-                    )}
+                {showExistingWarning && (
+                    <Alert severity="warning" variant="filled" sx={{ width: '100%', maxWidth: alertMaxWidth }}>
+                        {resolvedWarning}
+                    </Alert>
+                )}
 
-                    {error && (
-                        <Alert severity="error" sx={{ width: '100%', maxWidth: alertMaxWidth }}>
-                            {error}
-                        </Alert>
-                    )}
+                {submitted && successMessage && (
+                    <Alert severity="success" sx={{ width: '100%', maxWidth: alertMaxWidth }}>
+                        {successMessage}
+                    </Alert>
+                )}
 
-                    {children}
-                </Stack>
-            )}
+                {error && (
+                    <Alert severity="error" sx={{ width: '100%', maxWidth: alertMaxWidth }}>
+                        {error}
+                    </Alert>
+                )}
+
+                {children}
+            </Stack>
         </Stack>
     );
 };

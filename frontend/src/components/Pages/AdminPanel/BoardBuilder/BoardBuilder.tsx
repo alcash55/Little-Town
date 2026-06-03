@@ -143,12 +143,12 @@ const BoardBuilder = () => {
   return (
     <PageLayout
       title="Board Builder"
-      bingoItem="Board"
       maxWidth="full"
       showExistingWarning={isExistingBoard}
+      warningMessage="A board already exists. Submitting will overwrite it."
       error={submitError}
       submitted={submitted}
-      isUpdated={isExistingBoard}
+      successMessage={isExistingBoard ? 'Board updated!' : 'Board created!'}
     >
       <Stack spacing={3} justifyContent="center" alignItems="center" sx={{ maxWidth: 500, width: '100%' }}>
         <FormControl variant="outlined" sx={{ m: 1, minWidth: 120, width: '100%' }} required>

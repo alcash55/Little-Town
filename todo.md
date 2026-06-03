@@ -1,5 +1,4 @@
-- Host APIs through renderer
-  - Create cron job that will run every 5-10min during times where bingos are active in order to prevent cold starts
+- Create cron job that will run every 5-10 min during times where bingos are active in order to prevent cold starts for renderer
 - Create Admin page for sending links to new users
 - Create onboarding wizard for new users
 - Start the bingo submission page, have it pull images from the bucket that is in supabase
