@@ -30,10 +30,10 @@ const BingoDetails = () => {
   return (
     <PageLayout
       title="Bingo Details"
-      bingoItem="Details"
       showExistingWarning={isBingo}
       submitted={submitted}
-      isUpdated={isBingo}
+      successMessage={isBingo ? 'Bingo details updated!' : 'Bingo details created!'}
+      warningMessage="Bingo details already exist. Submitting will overwrite them."
     >
       <Stack spacing={3} justifyContent="center" alignItems="center" sx={{ maxWidth: 500, width: '100%' }}>
         <TextField
