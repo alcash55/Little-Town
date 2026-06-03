@@ -96,9 +96,6 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
 
           {user ? (
             <Box display="flex" alignItems="center" gap={1}>
-              <Typography variant="body2" color="white" sx={{ mr: 1 }}>
-                {user.nickname ?? user.username}
-              </Typography>
               <IconButton
                 size="large"
                 aria-label="User menu"
