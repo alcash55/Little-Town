@@ -1,14 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getActivities } from '../../../../utils/getActivities';
 import { getSkills } from '../../../../utils/getSkills';
 import { fetchWithAuth } from '../../../../utils/fetchWithAuth';
 import { cachedFetch } from '../../../../utils/cachedFetch';
 import { darkTheme } from '../../../../layout/Theme';
 
-type Tile =
+export type Tile =
   | { type: 'Kill Count'; task: string; points: number; killCount: number }
   | { type: 'Experience'; task: string; points: number; experience: number }
   | { type: 'Drops'; task: string; points: number; dropsAmount: number };
+
+export type EditingTile = {
+  index: number;
+  tile: Tile;
+};
 
 export const useBoardBuilder = () => {
   const BASEURL = `${import.meta.env.VITE_BASEURL || 'http://localhost:8081'}/api/admin`;
@@ -39,6 +44,7 @@ export const useBoardBuilder = () => {
   // UI state
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [editingTile, setEditingTile] = useState<EditingTile | null>(null);
 
   // Derived
   const isExistingBoard = boardFromBackend;
@@ -196,6 +202,38 @@ export const useBoardBuilder = () => {
     setBoard(updated);
   };
 
+  const reorderTiles = useCallback((oldIndex: number, newIndex: number) => {
+    setBoard((prev) => {
+      const updated = [...prev];
+      const [moved] = updated.splice(oldIndex, 1);
+      updated.splice(newIndex, 0, moved);
+      localStorage.setItem('bingoBoard', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const startEditingTile = (index: number) => {
+    setEditingTile({ index, tile: { ...board[index] } as Tile });
+  };
+
+  const updateEditingTile = (fields: Partial<Tile>) => {
+    if (!editingTile) return;
+    setEditingTile({ ...editingTile, tile: { ...editingTile.tile, ...fields } as Tile });
+  };
+
+  const saveEditingTile = () => {
+    if (!editingTile) return;
+    setBoard((prev) => {
+      const updated = [...prev];
+      updated[editingTile.index] = editingTile.tile;
+      localStorage.setItem('bingoBoard', JSON.stringify(updated));
+      return updated;
+    });
+    setEditingTile(null);
+  };
+
+  const cancelEditingTile = () => setEditingTile(null);
+
   // Clears only the current tile form inputs, not the whole board
   const clearTileForm = () => {
     setTileTask('');
@@ -275,6 +313,12 @@ export const useBoardBuilder = () => {
     // Handlers
     addTile,
     removeTile,
+    reorderTiles,
+    editingTile,
+    startEditingTile,
+    updateEditingTile,
+    saveEditingTile,
+    cancelEditingTile,
     clearTileForm,
     clearBoard,
     submitBoard,
