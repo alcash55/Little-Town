@@ -2,7 +2,6 @@
   - Create cron job that will run every 5-10min during times where bingos are active in order to prevent cold starts
 - Create Admin page for sending links to new users
 - Create onboarding wizard for new users
-- Make the Bingo Builder have a drag and drop interface so that the admin can re-order the tiles within the grid
 - Start the bingo submission page, have it pull images from the bucket that is in supabase
   - Create an API that uses the discord api that pulls messages from a text channel in the littletown discord and POSTs them to the storage bucket
   - If an admin approves the screenshot is will react to the image with a thumbs up and then add the points to that teams board and related stats

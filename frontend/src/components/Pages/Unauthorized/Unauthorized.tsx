@@ -26,13 +26,13 @@ const Unauthorized = () => {
           ? "You don't have permission to view this page."
           : 'You need to log in to access this page.'}
       </Typography>
-      <Stack direction="row" spacing={2}>
-        {!user && (
+      <Stack direction="row" spacing={2} justifyContent="center" alignItems="center">
+        {!user ? (
           <Button variant="outlined" color="success" onClick={openLogin}>
             Log In
           </Button>
-        )}
-        <Button variant="outlined" onClick={() => navigate('/')}>
+        ) : null}
+        <Button variant="outlined" color='success' onClick={() => navigate('/')}>
           Go Home
         </Button>
       </Stack>
