@@ -9,7 +9,7 @@
 const MEDIAWIKI_API =
   "https://runescape.wiki/api.php?action=parse&page=Application_programming_interface&prop=wikitext&format=json&origin=*";
 
-const SKILLS_KEYWORDS = ["overall", "attack", "constitution"];
+const SKILLS_KEYWORDS = ["overall", "attack", "hitpoints"];
 const ACTIVITIES_KEYWORDS = ["grid points", "bounty hunter", "clue scrolls"];
 
 // In-memory cache — persists for the lifetime of the server process

@@ -15,12 +15,101 @@ import {
   Typography,
   Autocomplete,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
-import { useBoardBuilder } from './useBoardBuilder';
+import { useBoardBuilder, Tile } from './useBoardBuilder';
 import { darkTheme } from '../../../../layout/Theme';
 import Close from '@mui/icons-material/Close';
+import Edit from '@mui/icons-material/Edit';
+import DragIndicator from '@mui/icons-material/DragIndicator';
 import PageLayout from '../../../../layout/PageLayout/PageLayout';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  rectSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+// Sortable tile card
+const SortableTileCard = ({
+  tile,
+  idx,
+  onRemove,
+  onEdit,
+}: {
+  tile: Tile;
+  idx: number;
+  onRemove: () => void;
+  onEdit: () => void;
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: idx });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 999 : 'auto',
+  };
+
+  return (
+    <Grid
+      ref={setNodeRef}
+      style={style}
+      xs={12} sm={6} md={4} lg={3}
+      width="220px"
+      height="200px"
+      sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+    >
+      <Card sx={{ width: '100%', height: '100%', backgroundImage: 'linear-gradient(to bottom, #2A9D8F, rgba(13, 13, 13, 0.86))', cursor: 'default' }}>
+        <CardHeader
+          title={tile.task}
+          avatar={
+            <IconButton size="small" {...listeners} {...attributes} sx={{ cursor: 'grab', color: 'black', touchAction: 'none' }}>
+              <DragIndicator />
+            </IconButton>
+          }
+          action={
+            <Stack direction="row">
+              <IconButton aria-label="edit tile" onClick={onEdit}>
+                <Edit fontSize="small" sx={{ color: 'black' }} />
+              </IconButton>
+              <IconButton aria-label="remove tile" onClick={onRemove}>
+                <Close sx={{ color: 'black' }} />
+              </IconButton>
+            </Stack>
+          }
+          titleTypographyProps={{ variant: 'h6', fontSize: 16, noWrap: true }}
+        />
+        <CardContent>
+          <Stack>
+            <Typography variant="body1">Type: {tile.type}</Typography>
+            <Typography variant="body1">Points: {tile.points}</Typography>
+            <Typography variant="body1">
+              Objective:{' '}
+              {tile.type === 'Kill Count'
+                ? `Kill ${tile.killCount}`
+                : tile.type === 'Experience'
+                  ? `Gain ${tile.experience} xp`
+                  : `Get ${tile.dropsAmount} ${tile.task}s`}
+            </Typography>
+          </Stack>
+        </CardContent>
+      </Card>
+    </Grid>
+  );
+};
 
 const BoardBuilder = () => {
   const {
@@ -37,8 +126,19 @@ const BoardBuilder = () => {
     submitError,
     isTileValid, isBoardComplete, isExistingBoard,
     inputSx,
-    addTile, removeTile, clearTileForm, clearBoard, submitBoard,
+    addTile, removeTile, reorderTiles,
+    editingTile, startEditingTile, updateEditingTile, saveEditingTile, cancelEditingTile,
+    clearTileForm, clearBoard, submitBoard,
   } = useBoardBuilder();
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      reorderTiles(active.id as number, over.id as number);
+    }
+  };
 
   return (
     <PageLayout
@@ -241,43 +341,77 @@ const BoardBuilder = () => {
       </Stack>
 
       <Box sx={{ width: '100%', boxSizing: 'border-box', pb: 8 }}>
-        <Grid container spacing={2} width="100%" sx={{ p: 0 }}>
-          {board.map((tile, idx) => (
-            <Grid
-              key={idx}
-              xs={12} sm={6} md={4} lg={3}
-              width="220px"
-              height="200px"
-              sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-            >
-              <Card sx={{ width: '100%', height: '100%', backgroundImage: 'linear-gradient(to bottom, #2A9D8F, rgba(13, 13, 13, 0.86))' }}>
-                <CardHeader
-                  title={tile.task}
-                  action={
-                    <IconButton aria-label="remove tile" onClick={() => removeTile(tile)}>
-                      <Close />
-                    </IconButton>
-                  }
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={board.map((_, i) => i)} strategy={rectSortingStrategy}>
+            <Grid container spacing={2} width="100%" sx={{ p: 0 }}>
+              {board.map((tile, idx) => (
+                <SortableTileCard
+                  key={idx}
+                  tile={tile}
+                  idx={idx}
+                  onRemove={() => removeTile(tile)}
+                  onEdit={() => startEditingTile(idx)}
                 />
-                <CardContent>
-                  <Stack>
-                    <Typography>Type: {tile.type}</Typography>
-                    <Typography>Points: {tile.points}</Typography>
-                    <Typography>
-                      Objective:{' '}
-                      {tile.type === 'Kill Count'
-                        ? `Kill ${tile.killCount}`
-                        : tile.type === 'Experience'
-                          ? `Gain ${tile.experience} xp`
-                          : `Get ${tile.dropsAmount} ${tile.task}s`}
-                    </Typography>
-                  </Stack>
-                </CardContent>
-              </Card>
+              ))}
             </Grid>
-          ))}
-        </Grid>
+          </SortableContext>
+        </DndContext>
       </Box>
+
+      {/* Inline edit dialog */}
+      <Dialog open={!!editingTile} onClose={cancelEditingTile} maxWidth="xs" fullWidth>
+        <DialogTitle>Edit Tile</DialogTitle>
+        <DialogContent>
+          {editingTile && (
+            <Stack spacing={2} sx={{ pt: 1 }}>
+              <TextField
+                label="Task"
+                fullWidth
+                value={editingTile.tile.task}
+                onChange={(e) => updateEditingTile({ task: e.target.value })}
+              />
+              <TextField
+                label="Points"
+                type="number"
+                fullWidth
+                value={editingTile.tile.points}
+                onChange={(e) => updateEditingTile({ points: Number(e.target.value) })}
+              />
+              {editingTile.tile.type === 'Kill Count' && (
+                <TextField
+                  label="Kill Count"
+                  type="number"
+                  fullWidth
+                  value={(editingTile.tile as any).killCount}
+                  onChange={(e) => updateEditingTile({ killCount: Number(e.target.value) } as any)}
+                />
+              )}
+              {editingTile.tile.type === 'Experience' && (
+                <TextField
+                  label="Experience"
+                  type="number"
+                  fullWidth
+                  value={(editingTile.tile as any).experience}
+                  onChange={(e) => updateEditingTile({ experience: Number(e.target.value) } as any)}
+                />
+              )}
+              {editingTile.tile.type === 'Drops' && (
+                <TextField
+                  label="Drops Amount"
+                  type="number"
+                  fullWidth
+                  value={(editingTile.tile as any).dropsAmount}
+                  onChange={(e) => updateEditingTile({ dropsAmount: Number(e.target.value) } as any)}
+                />
+              )}
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelEditingTile} color="error">Cancel</Button>
+          <Button onClick={saveEditingTile} color="success" variant="outlined">Save</Button>
+        </DialogActions>
+      </Dialog>
     </PageLayout>
   );
 };
