@@ -3,7 +3,6 @@ import { getActivities } from '../../../../utils/getActivities';
 import { getSkills } from '../../../../utils/getSkills';
 import { fetchWithAuth } from '../../../../utils/fetchWithAuth';
 import { cachedFetch } from '../../../../utils/cachedFetch';
-import { darkTheme } from '../../../../layout/Theme';
 
 export type Tile =
   | { type: 'Kill Count'; task: string; points: number; killCount: number }
@@ -57,28 +56,6 @@ export const useBoardBuilder = () => {
       : tileType.name === 'Experience'
       ? tileExperience !== undefined
       : tileDropsAmount !== undefined);
-
-  // Styles
-  const inputSx = {
-    '& .MuiOutlinedInput-root': {
-      color: darkTheme.palette.text.primary,
-      backgroundColor: 'transparent',
-      '& .MuiOutlinedInput-notchedOutline': { borderColor: 'black' },
-      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#2A9D8F' },
-      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#2A9D8F' },
-      '& input': { backgroundColor: 'transparent' },
-      '& input:-webkit-autofill': {
-        WebkitBoxShadow: '0 0 0 1000px transparent inset',
-        WebkitTextFillColor: darkTheme.palette.text.primary,
-        caretColor: darkTheme.palette.text.primary,
-        transition: 'background-color 5000s ease-in-out 0s',
-      },
-    },
-    '& .MuiInputLabel-root': {
-      color: darkTheme.palette.text.secondary,
-      '&.Mui-focused': { color: '#2A9D8F' },
-    },
-  };
 
   /**
    * Fetch all items in osrs
@@ -308,8 +285,6 @@ export const useBoardBuilder = () => {
     isTileValid,
     isBoardComplete,
     isExistingBoard,
-    // Styles
-    inputSx,
     // Handlers
     addTile,
     removeTile,
