@@ -6,7 +6,7 @@
   "homepage": "https://alcash55.github.io/Little-Town/",
   "scripts": {
     "dev": "bunx --bun vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build --mode production",
     "preview": "vite build && vite preview",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx}\""
   },
