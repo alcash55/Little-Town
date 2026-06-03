@@ -6,12 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon",
-    "build": "npm install && tsc",
-    "postinstall": "echo 'no postinstall needed'",
-    "start": "npm install && tsc && node dist/index.js",
-    "test": "node --test",
-    "local": "bash scripts/dev-local.sh",
-    "local:reset": "bash scripts/dev-local.sh --reset",
+    "build": "tsc && bun run build",
+    "start": "bun run dist/index.js",
+    "test": "bun test",
     "db:start": "bun x supabase start",
     "db:stop": "bun x supabase stop",
     "db:status": "bun x supabase status",
@@ -20,11 +17,9 @@
     "db:login": "bun x supabase login"
   },
   "nodemonConfig": {
-    "watch": [
-      "src"
-    ],
+    "watch": ["src"],
     "ext": "ts",
-    "exec": "npm run build && npm run start",
+    "exec": "bun run build && bun run start",
     "legacyWatch": true
   },
   "devDependencies": {

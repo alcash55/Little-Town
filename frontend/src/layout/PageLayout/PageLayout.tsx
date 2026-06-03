@@ -105,7 +105,7 @@ const PageLayout = ({
                     )}
 
                     {showExistingWarning && (
-                        <Alert severity="warning" variant="outlined" sx={{ width: '100%', maxWidth: alertMaxWidth }}>
+                        <Alert severity="warning" variant="filled" sx={{ width: '100%', maxWidth: alertMaxWidth }}>
                             {resolvedWarning}
                         </Alert>
                     )}
