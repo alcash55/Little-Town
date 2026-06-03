@@ -263,6 +263,8 @@ const BingoOverview = () => {
   if (isPlanned) {
     return (
       <PageLayout title="Bingo Overview" maxWidth={700}>
+        <Countdown targetDate={new Date(bingo.startDate)} label="Time until the bingo" />
+
         <Card sx={{ ...cardSx, width: '100%' }}>
           <CardHeader
             title={
@@ -274,6 +276,7 @@ const BingoOverview = () => {
               <Chip label="Upcoming" size="small" sx={{ bgcolor: 'rgba(42,157,143,0.2)', color: '#2A9D8F', mt: 0.5 }} />
             }
           />
+
           <CardContent>
             <Stack spacing={1.5} divider={<Divider sx={{ borderColor: subtleBorder }} />}>
               <InfoRow icon={<CalendarTodayIcon fontSize="small" />} label="Starts" value={fmt(bingo.startDate)} />
@@ -304,7 +307,6 @@ const BingoOverview = () => {
           </CardContent>
         </Card>
 
-        <Countdown targetDate={new Date(bingo.startDate)} label="Time until the bingo begins" />
 
         {startError && <Alert severity="error" sx={{ width: '100%' }}>{startError}</Alert>}
 
