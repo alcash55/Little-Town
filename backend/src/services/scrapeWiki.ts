@@ -7,7 +7,7 @@
  */
 
 const MEDIAWIKI_API =
-  "https://runescape.wiki/api.php?action=parse&page=Application_programming_interface&prop=wikitext&section=0&format=json&origin=*";
+  "https://runescape.wiki/api.php?action=parse&page=Application_programming_interface&prop=wikitext&format=json&origin=*";
 
 const SKILLS_KEYWORDS = ["overall", "attack", "constitution"];
 const ACTIVITIES_KEYWORDS = ["grid points", "bounty hunter", "clue scrolls"];
