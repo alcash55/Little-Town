@@ -1,10 +1,20 @@
 import chromium from "@sparticuz/chromium";
 import puppeteer, { Browser } from "puppeteer-core";
+import { execSync } from "child_process";
 
 const WIKI_URL =
   "https://runescape.wiki/w/Application_programming_interface#Hiscores_Lite_2";
 const ANCHOR_SELECTOR = "a#Hiscores_Lite_2";
-const PAGE_TIMEOUT_MS = 20000;
+const PAGE_TIMEOUT_MS = 45000;
+
+// Ensure the Chromium binary is executable on Linux (e.g. Render)
+function ensureChromiumExecutable(execPath: string): void {
+  try {
+    execSync(`chmod +x "${execPath}"`);
+  } catch {
+    // Best-effort — ignore if it fails
+  }
+}
 
 const SKILLS_CONTENT_KEYWORDS = ["overall\nattack", "overall", "constitution"];
 const ACTIVITIES_CONTENT_KEYWORDS = [
@@ -34,15 +44,18 @@ export default async function scrapeWiki(
 
   let browser: Browser | undefined;
   try {
+    const execPath = await chromium.executablePath();
+    ensureChromiumExecutable(execPath);
+
     browser = await puppeteer.launch({
-      args: chromium.args,
+      args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox"],
       defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
+      executablePath: execPath,
       headless: chromium.headless,
     });
 
     const page = await browser.newPage();
-    await page.goto(WIKI_URL, { waitUntil: "domcontentloaded" });
+    await page.goto(WIKI_URL, { waitUntil: "networkidle2", timeout: PAGE_TIMEOUT_MS });
     await page.waitForSelector(ANCHOR_SELECTOR, { timeout: PAGE_TIMEOUT_MS });
 
     const extractedData = await page.evaluate(
