@@ -22,7 +22,6 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
 import { useBoardBuilder, Tile } from './useBoardBuilder';
-import { darkTheme } from '../../../../layout/Theme';
 import Close from '@mui/icons-material/Close';
 import Edit from '@mui/icons-material/Edit';
 import DragIndicator from '@mui/icons-material/DragIndicator';
@@ -125,7 +124,6 @@ const BoardBuilder = () => {
     submitted,
     submitError,
     isTileValid, isBoardComplete, isExistingBoard,
-    inputSx,
     addTile, removeTile, reorderTiles,
     editingTile, startEditingTile, updateEditingTile, saveEditingTile, cancelEditingTile,
     clearTileForm, clearBoard, submitBoard,
@@ -165,7 +163,6 @@ const BoardBuilder = () => {
               }
             }}
             label="Tile Type"
-            sx={inputSx}
           >
             {tilesTypeOptions.map((option) => (
               <MenuItem key={option.value} value={option.value}>
@@ -196,7 +193,6 @@ const BoardBuilder = () => {
                     </>
                   ),
                 }}
-                sx={inputSx}
               />
             )}
           />
@@ -223,7 +219,6 @@ const BoardBuilder = () => {
                     </>
                   ),
                 }}
-                sx={inputSx}
               />
             )}
           />
@@ -250,7 +245,6 @@ const BoardBuilder = () => {
                     </>
                   ),
                 }}
-                sx={inputSx}
               />
             )}
           />
@@ -265,7 +259,6 @@ const BoardBuilder = () => {
           required
           value={tilePoints ?? ''}
           onChange={(e) => setTilePoints(Number(e.target.value))}
-          sx={inputSx}
         />
 
         {tileType.name === 'Kill Count' ? (
@@ -277,7 +270,6 @@ const BoardBuilder = () => {
             fullWidth
             value={tileKillCount ?? ''}
             onChange={(e) => setTileKillCount(Number(e.target.value))}
-            sx={inputSx}
           />
         ) : tileType.name === 'Experience' ? (
           <TextField
@@ -288,7 +280,6 @@ const BoardBuilder = () => {
             fullWidth
             value={tileExperience ?? ''}
             onChange={(e) => setTileExperience(Number(e.target.value))}
-            sx={inputSx}
           />
         ) : (
           <TextField
@@ -299,7 +290,6 @@ const BoardBuilder = () => {
             fullWidth
             value={tileDropsAmount ?? ''}
             onChange={(e) => setTileDropsAmount(Number(e.target.value))}
-            sx={inputSx}
           />
         )}
 
@@ -323,7 +313,7 @@ const BoardBuilder = () => {
           </Button>
         </Stack>
 
-        <Typography variant="body2" sx={{ color: darkTheme.palette.text.secondary }}>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {board.length} / {boardSize} tiles added
         </Typography>
 

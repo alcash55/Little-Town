@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { darkTheme } from '../../../../layout/Theme';
 import { fetchWithAuth } from '../../../../utils/fetchWithAuth';
 
 type Bingo = {
@@ -53,42 +52,6 @@ export const useBingoDetails = () => {
     (boardSize === 16 || boardSize === 35);
 
   const hasFormData = !!(teamNames.length || endDate || startDate || bingoName);
-
-  // SX styles
-  const inputSx = {
-    '& .MuiOutlinedInput-root': {
-      color: darkTheme.palette.text.primary,
-      backgroundColor: 'transparent',
-      '& .MuiOutlinedInput-notchedOutline': { borderColor: 'black' },
-      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#2A9D8F' },
-      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#2A9D8F' },
-      '& input': { backgroundColor: 'transparent' },
-      '& input:-webkit-autofill': {
-        WebkitBoxShadow: '0 0 0 1000px transparent inset',
-        WebkitTextFillColor: darkTheme.palette.text.primary,
-        caretColor: darkTheme.palette.text.primary,
-        transition: 'background-color 5000s ease-in-out 0s',
-      },
-    },
-    '& .MuiInputLabel-root': {
-      color: darkTheme.palette.text.secondary,
-      '&.Mui-focused': { color: '#2A9D8F' },
-    },
-  };
-
-  const selectFormControlSx = {
-    '& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline': { borderColor: 'black' },
-    '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#2A9D8F' },
-    '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-      borderColor: '#2A9D8F',
-    },
-    '& .MuiSelect-select': { color: darkTheme.palette.text.primary },
-    '& .MuiInputLabel-root': {
-      color: darkTheme.palette.text.secondary,
-      '&.Mui-focused': { color: '#2A9D8F' },
-    },
-    '& .MuiSvgIcon-root': { color: darkTheme.palette.text.secondary },
-  };
 
   const existingBingo = async (): Promise<BingoConfig | null> => {
     try {
@@ -205,9 +168,6 @@ export const useBingoDetails = () => {
     // Derived
     isFormValid,
     hasFormData,
-    // Styles
-    inputSx,
-    selectFormControlSx,
     // Handlers
     handleSubmit,
     handleTeamNameChange,
