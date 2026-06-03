@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "nodemon",
     "build": "npm install && tsc",
-    "postinstall": "chmod +x node_modules/@sparticuz/chromium/bin/chromium || true",
+    "postinstall": "echo 'no postinstall needed'",
     "start": "npm install && tsc && node dist/index.js",
     "test": "node --test",
     "local": "bash scripts/dev-local.sh",
@@ -31,7 +31,6 @@
     "nodemon": "^3.1.11"
   },
   "dependencies": {
-    "@sparticuz/chromium": "^131.0.0",
     "@supabase/supabase-js": "^2.105.4",
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
@@ -46,7 +45,6 @@
     "helmet": "^7.1.0",
     "install": "^0.13.0",
     "jsonwebtoken": "^9.0.2",
-    "puppeteer-core": "^24.13.0",
     "typescript": "^5.2.2"
   }
 }
