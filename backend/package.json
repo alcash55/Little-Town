@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon",
-    "build": "bun x tsc && bun build src/index.js --outdir ./dist",
-    "start": "bun run dist/index.js",
+    "build": "bun x tsc",
+    "start": "bun --bun dist/index.js",
     "test": "bun test",
     "db:start": "bun x supabase start",
     "db:stop": "bun x supabase stop",
@@ -19,7 +19,7 @@
   "nodemonConfig": {
     "watch": ["src"],
     "ext": "ts",
-    "exec": "bun run build && bun run start",
+    "exec": "bun x tsc && bun --bun dist/index.js",
     "legacyWatch": true
   },
   "devDependencies": {
