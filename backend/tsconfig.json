@@ -3,6 +3,7 @@
     "module": "ESNext",                // or NodeNext, both are fine
     "moduleResolution": "Bundler",     // for max Bun support (optional)
     "target": "ES2020",
+    "rootDir": "src",
     "outDir": "dist",
     "strict": true,
     "esModuleInterop": true,
