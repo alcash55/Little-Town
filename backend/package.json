@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon",
-    "build": "tsc && bun run build",
+    "build": "bun x tsc && bun build src/index.js --outdir ./dist",
     "start": "bun run dist/index.js",
     "test": "bun test",
     "db:start": "bun x supabase start",
