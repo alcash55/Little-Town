@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { fetchWithAuth } from '../../../../utils/fetchWithAuth';
 
 type Bingo = {
@@ -42,6 +42,19 @@ export const useBingoDetails = () => {
   const [submitted, setSubmitted] = useState(false);
 
   // Derived
+  // Start of today (midnight) — no past dates allowed
+  const minStartDate = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+
+  // End date must be at least as late as the chosen start date
+  const minEndDate = useMemo(
+    () => (startDate ? new Date(startDate) : minStartDate),
+    [startDate, minStartDate],
+  );
+
   const isFormValid =
     teamNames.length > 0 &&
     numberOfTeams >= 2 &&
@@ -79,7 +92,7 @@ export const useBingoDetails = () => {
     }
   };
 
-  const modifyBingo = async (details: Partial<Bingo>): Promise<boolean> => {
+  const modifyBingo = async (details: Partial<BingoConfig>): Promise<boolean> => {
     try {
       const current = await existingBingo();
       if (!current?.id) {
@@ -108,7 +121,15 @@ export const useBingoDetails = () => {
       numberOfTeams,
       teams: teamNames,
     };
-    const success = isBingo ? await modifyBingo(details) : await planBingo(details);
+    const modifyDetails = {
+      name: bingoName,
+      startDate,
+      endDate,
+      boardSize,
+      numberOfTeams,
+      teams: teamNames,
+    };
+    const success = isBingo ? await modifyBingo(modifyDetails) : await planBingo(details);
     if (success) setSubmitted(true);
   };
 
@@ -119,7 +140,12 @@ export const useBingoDetails = () => {
   };
 
   const handleStartDateChange = (newDate: Date | null) => {
-    setStartDate(newDate ? newDate.toISOString() : '');
+    const iso = newDate ? newDate.toISOString() : '';
+    setStartDate(iso);
+    // Clear end date if it is now before the new start
+    if (iso && endDate && new Date(endDate) < new Date(iso)) {
+      setEndDate('');
+    }
   };
 
   const handleEndDateChange = (newDate: Date | null) => {
@@ -174,5 +200,7 @@ export const useBingoDetails = () => {
     handleStartDateChange,
     handleEndDateChange,
     clearBingo,
+    minStartDate,
+    minEndDate,
   };
 };
