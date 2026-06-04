@@ -1,5 +1,6 @@
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
   Card,
@@ -11,7 +12,7 @@ import {
 } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { useTeamDrafter } from './useTeamDrafter';
+import { useTeamDrafter, BingoPlayer } from './useTeamDrafter';
 import { SideAccountsDialog } from './SideAccountsDialog';
 import { TrackedPlayersList } from './TrackedPlayersList';
 import {
@@ -52,6 +53,8 @@ export function PlayerManagementTab(props: ReturnType<typeof useTeamDrafter>) {
     teamNameById,
     setPlayerCaptain,
     captainUpdatingRsn,
+    playerSearchQuery,
+    setPlayerSearchQuery,
   } = props;
 
   const parsedCount = csvInput
@@ -140,6 +143,26 @@ export function PlayerManagementTab(props: ReturnType<typeof useTeamDrafter>) {
             )}
           </Typography>
 
+          {!loadingPlayers && players.length > 0 && (
+            <Autocomplete<BingoPlayer>
+              options={players}
+              getOptionLabel={(p) => p.rsn}
+              value={playerSearchQuery}
+              onChange={(_e, value) => setPlayerSearchQuery(value)}
+              isOptionEqualToValue={(a, b) => a.id === b.id}
+              clearOnEscape
+              sx={{ mb: 2 }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="Search players…"
+                  size="small"
+                  sx={inputSx}
+                />
+              )}
+            />
+          )}
+
           {loadingPlayers ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
               <CircularProgress size={28} sx={{ color: '#2A9D8F' }} />
@@ -150,7 +173,7 @@ export function PlayerManagementTab(props: ReturnType<typeof useTeamDrafter>) {
             </Typography>
           ) : (
             <TrackedPlayersList
-              players={players}
+              players={playerSearchQuery ? players.filter((p) => p.id === playerSearchQuery.id) : players}
               teams={teams}
               teamNameById={teamNameById}
               sideAccountsByPlayerId={sideAccountsByPlayerId}

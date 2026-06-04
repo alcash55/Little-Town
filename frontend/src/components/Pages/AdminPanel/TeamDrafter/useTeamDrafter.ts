@@ -93,6 +93,9 @@ export const useTeamDrafter = () => {
   const [removingRsn, setRemovingRsn] = useState<string | null>(null);
   const [captainUpdatingRsn, setCaptainUpdatingRsn] = useState<string | null>(null);
 
+  /** Search/filter query for the tracked players autocomplete */
+  const [playerSearchQuery, setPlayerSearchQuery] = useState<BingoPlayer | null>(null);
+
   // ── Side account dialog state ─────────────────────────
   /** Player whose side-account dialog is open (null = closed) */
   const [sideAccountPlayer, setSideAccountPlayer] = useState<BingoPlayer | null>(null);
@@ -223,7 +226,9 @@ export const useTeamDrafter = () => {
 
   /**
    * Add a list of players parsed from the CSV input to the active bingo.
-   * Fires one POST per player and collects per-RSN results.
+   * First checks each RSN against the OSRS hiscores API — players with no
+   * hiscore data are skipped and reported as failed.
+   * Fires one POST per valid player and collects per-RSN results.
    */
   const addPlayersFromCsv = useCallback(async () => {
     const rsns = parseCsv(csvInput);
@@ -238,6 +243,16 @@ export const useTeamDrafter = () => {
     await Promise.allSettled(
       rsns.map(async (rsn) => {
         try {
+          // Step 1: verify the player exists on OSRS hiscores
+          const hiscoreRes = await fetchWithAuth(
+            `${import.meta.env.VITE_BASEURL || 'http://localhost:8081'}/api/hiscores/${encodeURIComponent(rsn)}`,
+          );
+          if (!hiscoreRes.ok) {
+            results[rsn] = 'not found on OSRS hiscores';
+            return;
+          }
+
+          // Step 2: add to bingo
           const res = await fetchWithAuth(`${BASE_URL}/bingo/players`, {
             method: 'POST',
             body: JSON.stringify({ rsn }),
@@ -533,6 +548,8 @@ export const useTeamDrafter = () => {
     removePlayer,
     captainUpdatingRsn,
     setPlayerCaptain,
+    playerSearchQuery,
+    setPlayerSearchQuery,
 
     // Side accounts
     sideAccountPlayer,

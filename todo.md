@@ -1,3 +1,4 @@
+- Team drafter styles needs to be merged into the MUI theme that is already created
 - login dialog
   - Add eyeball icon to reveal password typed
   - show loading spinner while waiting for login to go through (this is where we will see most cold starts)
