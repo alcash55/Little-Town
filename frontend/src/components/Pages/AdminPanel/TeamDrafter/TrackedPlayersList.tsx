@@ -303,7 +303,7 @@ export function TrackedPlayersList({
               'Team Captain',
               'Captain For',
               'Side Accounts',
-              'Add',
+              'Add Side Account',
               'Remove',
             ].map((h, i) => (
               <TableCell

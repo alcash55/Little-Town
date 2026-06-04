@@ -11,6 +11,7 @@ import {
   updateBingo,
 } from "../db/bingos.js";
 import { refreshStaticData } from "../services/staticDataCron.js";
+import { refreshAllPlayerSnapshots } from "../services/playerSnapshotCron.js";
 import {
   registerBingoPlayer,
   getBingoPlayers,
@@ -139,6 +140,67 @@ router.get(
       success: true,
       data: await getActiveBingoBoard(),
     };
+    res.status(200).json(response);
+  }),
+);
+
+// -------------------------------------------------------
+// /bingo/activate — snapshot all players then set status active
+// Must be before /bingo/:id to avoid wildcard match
+// -------------------------------------------------------
+
+router.post(
+  "/bingo/activate",
+  authorize("admin"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const bingo = await getActiveBingo();
+    if (!bingo?.id) {
+      return res.status(404).json({ success: false, error: "No active bingo found" });
+    }
+
+    if (bingo.status === "active") {
+      return res.status(409).json({ success: false, error: "Bingo is already active" });
+    }
+
+    // Fetch all registered players
+    const players = await getBingoPlayers(bingo.id);
+    if (!players.length) {
+      return res.status(400).json({ success: false, error: "No players registered to this bingo" });
+    }
+
+    // Fetch hiscores and save start + current snapshots for every player concurrently
+    const snapshotResults = await Promise.allSettled(
+      players.map(async (player) => {
+        const data = await hiscores(player.rsn);
+        if (!data) throw new Error(`No hiscore data found for "${player.rsn}"`);
+        // start is idempotent — won't overwrite if already exists
+        await savePlayerSnapshot(player.id, "start", data);
+        await savePlayerSnapshot(player.id, "current", data);
+        return player.rsn;
+      })
+    );
+
+    const failed = snapshotResults
+      .filter((r) => r.status === "rejected")
+      .map((r) => (r as PromiseRejectedResult).reason?.message ?? "Unknown error");
+
+    // Activate the bingo, setting start to now if not already set
+    const now = new Date().toISOString();
+    const updatedBingo = await updateBingo(bingo.id, {
+      status: "active",
+      start: bingo.startDate ?? now,
+    });
+
+    const succeeded = snapshotResults.filter((r) => r.status === "fulfilled").length;
+
+    const response: ApiResponse<BingoConfig> = {
+      success: true,
+      data: updatedBingo,
+      message: `Bingo activated. Snapshots saved for ${succeeded} player${succeeded !== 1 ? "s" : ""}${
+        failed.length ? `; ${failed.length} failed: ${failed.join(", ")}` : ""
+      }.`,
+    };
+
     res.status(200).json(response);
   }),
 );
@@ -430,6 +492,28 @@ router.delete(
 
     await removeSideAccount(sideAccountId);
     res.status(200).json({ success: true, message: "Side account removed" });
+  }),
+);
+
+// -------------------------------------------------------
+// Manual snapshot refresh for all players
+// -------------------------------------------------------
+
+router.post(
+  "/bingo/players/refresh/snapshots",
+  authorize("admin"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { succeeded, failed } = await refreshAllPlayerSnapshots();
+
+    const response: ApiResponse = {
+      success: true,
+      message: `Refreshed ${succeeded} player snapshot${succeeded !== 1 ? "s" : ""}${
+        failed.length ? `; ${failed.length} failed: ${failed.join(", ")}` : ""
+      }.`,
+      data: { succeeded, failed },
+    };
+
+    res.status(200).json(response);
   }),
 );
 

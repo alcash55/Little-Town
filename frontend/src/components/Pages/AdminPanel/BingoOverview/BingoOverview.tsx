@@ -1,3 +1,4 @@
+import React, { useMemo } from 'react';
 import {
   Alert,
   Box,
@@ -29,6 +30,7 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import LinkOffIcon from '@mui/icons-material/LinkOff';
 import StarIcon from '@mui/icons-material/Star';
+import SyncIcon from '@mui/icons-material/Sync';
 import PageLayout from '../../../../layout/PageLayout/PageLayout';
 import { Countdown } from '../../../Countdown/Countdown';
 import { useBingoOverview } from './useBingoOverview';
@@ -36,6 +38,7 @@ import { BingoTeam, BingoPlayer } from '../TeamDrafter/useTeamDrafter';
 import { Tile } from '../BoardBuilder/useBoardBuilder';
 import {
   cardSx,
+  inputSx,
   tableCellSx,
   textPrimary,
   textSecondary,
@@ -216,6 +219,9 @@ const BingoOverview = () => {
     startingNow,
     startError,
     startNow,
+    refreshingStats,
+    refreshStatsMessage,
+    refreshAllStats,
     endDialogOpen,
     setEndDialogOpen,
     endConfirmName,
@@ -225,6 +231,17 @@ const BingoOverview = () => {
     endError,
     endBingo,
   } = useBingoOverview();
+
+  // Memoize parsed dates so Countdown's useEffect only re-fires on actual value changes
+  // Must be before any early returns to satisfy the Rules of Hooks
+  const startDateObj = useMemo(
+    () => (bingo?.startDate ? new Date(bingo.startDate) : new Date()),
+    [bingo?.startDate],
+  );
+  const endDateObj = useMemo(
+    () => (bingo?.endDate ? new Date(bingo.endDate) : new Date()),
+    [bingo?.endDate],
+  );
 
   // ── Loading / error / empty states ──────────────────────────────────────
   if (loading) {
@@ -263,7 +280,7 @@ const BingoOverview = () => {
   if (isPlanned) {
     return (
       <PageLayout title="Bingo Overview" maxWidth={700}>
-        <Countdown targetDate={new Date(bingo.startDate)} label="Time until the bingo" />
+        <Countdown targetDate={startDateObj} label="Time until the bingo" />
 
         <Card sx={{ ...cardSx, width: '100%' }}>
           <CardHeader
@@ -273,8 +290,19 @@ const BingoOverview = () => {
               </Typography>
             }
             subheader={
-              <Chip label="Upcoming" size="small" sx={{ bgcolor: 'rgba(42,157,143,0.2)', color: '#2A9D8F', mt: 0.5 }} />
+              <Chip
+                label={bingo.status === 'planned' ? 'Upcoming' : bingo.status ?? 'Draft'}
+                size="small"
+                sx={{
+                  bgcolor: bingo.status === 'planned'
+                    ? 'rgba(255, 214, 0, 0.15)'
+                    : 'rgba(255, 140, 0, 0.15)',
+                  color: bingo.status === 'planned' ? '#FFD600' : '#FF8C00',
+                  textTransform: 'capitalize',
+                }}
+              />
             }
+            subheaderTypographyProps={{ py: 1.5 }}
           />
 
           <CardContent>
@@ -300,7 +328,7 @@ const BingoOverview = () => {
           <CardHeader
             avatar={<EmojiEventsIcon sx={{ color: '#2A9D8F' }} />}
             title={<Typography variant="h3" sx={{ fontSize: 18, color: textPrimary }}>Planned Board</Typography>}
-            subheader={<Typography variant="body2" sx={{ color: mutedText }}>{boardLabel} — hover a tile for details</Typography>}
+            subheader={<Typography variant="body2" sx={{ color: mutedText }}>{boardLabel}</Typography>}
           />
           <CardContent sx={{ pt: 0 }}>
             <CompactBoard tiles={board} boardSize={bingo.boardSize} />
@@ -327,6 +355,17 @@ const BingoOverview = () => {
   // ── Active bingo dashboard ───────────────────────────────────────────────
   return (
     <PageLayout title="Bingo Overview" maxWidth="full">
+
+      {/* ── Stats refresh feedback ── */}
+      {refreshStatsMessage && (
+        <Alert
+          severity={refreshStatsMessage.startsWith('Failed') ? 'error' : 'success'}
+          onClose={() => {}}
+          sx={{ width: '100%' }}
+        >
+          {refreshStatsMessage}
+        </Alert>
+      )}
 
       {/* ── Pending screenshots alert ── */}
       {pendingScreenshots.length > 0 && (
@@ -493,23 +532,42 @@ const BingoOverview = () => {
             <AccessTimeIcon sx={{ color: '#2A9D8F' }} />
             <Typography variant="h3" sx={{ fontSize: 18, color: textPrimary }}>Time Remaining</Typography>
           </Stack>
-          <Countdown targetDate={new Date(bingo.endDate)} label="" />
+          <Countdown targetDate={endDateObj} label="" />
         </CardContent>
       </Card>
 
       {/* ── End bingo button ── */}
-      <Button
-        variant="outlined"
-        color="error"
-        onClick={() => setEndDialogOpen(true)}
-        sx={{ alignSelf: 'flex-end' }}
-      >
-        End Bingo Early
-      </Button>
+      <Stack direction="row" spacing={2} alignSelf="flex-end">
+        <Button
+          variant="outlined"
+          disabled={refreshingStats}
+          startIcon={refreshingStats ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : <SyncIcon />}
+          onClick={refreshAllStats}
+          sx={{ ...outlinedButtonSx, color: '#2A9D8F', borderColor: '#2A9D8F', '&:hover': { borderColor: '#2A9D8F', bgcolor: 'rgba(42,157,143,0.08)' } }}
+        >
+          {refreshingStats ? 'Refreshing…' : 'Refresh Player Stats'}
+        </Button>
+        <Button
+          variant="outlined"
+          color="error"
+          onClick={() => setEndDialogOpen(true)}
+          sx={{ ...outlinedButtonSx }}
+        >
+          End Bingo Early
+        </Button>
+      </Stack>
 
       {/* ── End bingo confirmation dialog ── */}
-      <Dialog open={endDialogOpen} onClose={() => { setEndDialogOpen(false); setEndConfirmName(''); }} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ color: '#f44336' }}>End Bingo Early?</DialogTitle>
+      <Dialog open={endDialogOpen} onClose={() => { setEndDialogOpen(false); setEndConfirmName(''); }} maxWidth="xs" fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: '#1a1a1a',
+            backgroundImage: 'none',
+            border: '1px solid rgba(255,255,255,0.12)',
+          },
+        }}
+      >
+        <DialogTitle sx={{ color: '#f44336', fontFamily: "'pacifico', cursive" }}>End Bingo Early?</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             <Typography variant="body2" sx={{ color: textSecondary }}>
@@ -527,20 +585,25 @@ const BingoOverview = () => {
               onChange={e => setEndConfirmName(e.target.value)}
               error={endConfirmName.length > 0 && !endNameMatches}
               helperText={endConfirmName.length > 0 && !endNameMatches ? 'Name does not match' : ' '}
+              sx={{
+                ...inputSx,
+                '& .MuiFormHelperText-root': { color: '#f44336' },
+              }}
             />
             {endError && <Alert severity="error">{endError}</Alert>}
           </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => { setEndDialogOpen(false); setEndConfirmName(''); }} color="inherit">
+        <DialogActions sx={{ borderTop: '1px solid rgba(255,255,255,0.08)', px: 3, pb: 2 }}>
+          <Button onClick={() => { setEndDialogOpen(false); setEndConfirmName(''); }} sx={{ color: textSecondary }}>
             Cancel
           </Button>
           <Button
-            variant="contained"
+            variant="outlined"
             color="error"
             disabled={!endNameMatches || ending}
             startIcon={ending ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : undefined}
             onClick={endBingo}
+            sx={{ ...outlinedButtonSx }}
           >
             {ending ? 'Ending…' : 'End Bingo'}
           </Button>

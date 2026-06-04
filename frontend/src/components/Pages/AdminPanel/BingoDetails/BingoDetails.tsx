@@ -24,6 +24,8 @@ const BingoDetails = () => {
     handleSubmit, handleTeamNameChange,
     handleStartDateChange, handleEndDateChange,
     clearBingo,
+    minStartDate,
+    minEndDate,
   } = useBingoDetails();
 
   return (
@@ -52,7 +54,7 @@ const BingoDetails = () => {
             label="Start"
             views={['day', 'month', 'hours']}
             showDaysOutsideCurrentMonth
-            disablePast
+            minDate={minStartDate}
             value={startDate ? new Date(startDate) : null}
             onChange={handleStartDateChange}
             slotProps={{ textField: { required: true, error: false } }}
@@ -61,6 +63,7 @@ const BingoDetails = () => {
             label="End"
             views={['day', 'month', 'hours']}
             showDaysOutsideCurrentMonth
+            minDate={minEndDate}
             value={endDate ? new Date(endDate) : null}
             onChange={handleEndDateChange}
             slotProps={{ textField: { required: true, error: false } }}

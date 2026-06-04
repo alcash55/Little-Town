@@ -55,6 +55,10 @@ export const useBingoOverview = () => {
   const [ending, setEnding] = useState(false);
   const [endError, setEndError] = useState<string | null>(null);
 
+  // Manual stats refresh
+  const [refreshingStats, setRefreshingStats] = useState(false);
+  const [refreshStatsMessage, setRefreshStatsMessage] = useState<string | null>(null);
+
   const isActive = bingo?.status === 'active';
   const isPlanned = bingo?.status === 'planned' || (bingo && bingo.status !== 'active' && bingo.status !== 'ended');
   const endNameMatches = endConfirmName.trim().toLowerCase() === (bingo?.name ?? '').trim().toLowerCase();
@@ -145,15 +149,29 @@ export const useBingoOverview = () => {
     return () => clearInterval(interval);
   }, [isActive, fetchPlayerStats, fetchConflicts, fetchPendingScreenshots]);
 
+  const refreshAllStats = useCallback(async () => {
+    setRefreshingStats(true);
+    setRefreshStatsMessage(null);
+    try {
+      const res = await fetchWithAuth(`${BASE_URL}/bingo/players/refresh/snapshots`, { method: 'POST' });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? res.statusText);
+      setRefreshStatsMessage(json.message ?? 'Stats refreshed.');
+      await fetchPlayerStats();
+    } catch (e: any) {
+      setRefreshStatsMessage(`Failed to refresh: ${e.message}`);
+    } finally {
+      setRefreshingStats(false);
+    }
+  }, [fetchPlayerStats]);
+
   const startNow = async () => {
     if (!bingo?.id) return;
     setStartingNow(true);
     setStartError(null);
     try {
-      const now = new Date().toISOString();
-      const res = await fetchWithAuth(`${BASE_URL}/bingo/${bingo.id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ start: now, status: 'active' }),
+      const res = await fetchWithAuth(`${BASE_URL}/bingo/activate`, {
+        method: 'POST',
       });
       if (!res.ok) throw new Error((await res.json()).error ?? res.statusText);
       await fetchBingo();
@@ -163,6 +181,23 @@ export const useBingoOverview = () => {
       setStartingNow(false);
     }
   };
+
+  // Auto-activate when today's date matches the bingo start date and it isn't active yet
+  useEffect(() => {
+    if (!bingo || isActive) return;
+    const startDate = new Date(bingo.startDate);
+    const now = new Date();
+    const sameDay =
+      startDate.getFullYear() === now.getFullYear() &&
+      startDate.getMonth() === now.getMonth() &&
+      startDate.getDate() === now.getDate();
+    if (!sameDay) return;
+
+    // Fire-and-forget: trigger activation automatically
+    fetchWithAuth(`${BASE_URL}/bingo/activate`, { method: 'POST' })
+      .then((res) => { if (res.ok) fetchBingo(); })
+      .catch(() => { /* silent — user can still press the button manually */ });
+  }, [bingo?.startDate, isActive]);
 
   const endBingo = async () => {
     if (!bingo?.id || !endNameMatches) return;
@@ -200,6 +235,10 @@ export const useBingoOverview = () => {
     startingNow,
     startError,
     startNow,
+    // Stats refresh
+    refreshingStats,
+    refreshStatsMessage,
+    refreshAllStats,
     // End dialog
     endDialogOpen,
     setEndDialogOpen,

@@ -7,7 +7,9 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import authRoutes from "./routes/auth.js";
 import hiscoresRoutes from "./routes/hiscores.js";
 import adminRoutes from "./routes/admin.js";
+import bingoRoutes from "./routes/bingo.js";
 import { startStaticDataCron, stopStaticDataCron, refreshStaticData } from "./services/staticDataCron.js";
+import { startPlayerSnapshotCron, stopPlayerSnapshotCron } from "./services/playerSnapshotCron.js";
 
 const app = express();
 
@@ -76,6 +78,7 @@ app.get("/api/health", (_req: Request, res: Response) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/hiscores", hiscoresRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/bingo", bingoRoutes);
 
 // 404 handler
 app.use("*", (req: Request, res: Response) => {
@@ -94,8 +97,9 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/api/health`);
   startStaticDataCron();
+  startPlayerSnapshotCron();
 });
 
 // Graceful shutdown
-process.on('SIGTERM', () => { stopStaticDataCron(); process.exit(0); });
-process.on('SIGINT', () => { stopStaticDataCron(); process.exit(0); });
+process.on('SIGTERM', () => { stopStaticDataCron(); stopPlayerSnapshotCron(); process.exit(0); });
+process.on('SIGINT', () => { stopStaticDataCron(); stopPlayerSnapshotCron(); process.exit(0); });
