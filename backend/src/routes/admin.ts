@@ -172,7 +172,9 @@ router.post(
     const snapshotResults = await Promise.allSettled(
       players.map(async (player) => {
         const data = await hiscores(player.rsn);
-        if (!data) throw new Error(`No hiscore data found for "${player.rsn}"`);
+        if (!data) {
+          throw new Error(`Player "${player.rsn}" is not ranked on the OSRS hiscores — ensure the RSN is correct and the account has played enough to appear on the hiscores`);
+        }
         // start is idempotent — won't overwrite if already exists
         await savePlayerSnapshot(player.id, "start", data);
         await savePlayerSnapshot(player.id, "current", data);
@@ -278,6 +280,15 @@ router.post(
 
     // Fetch hiscores and save start snapshot (ignored if already exists)
     const hiscoreData = await hiscores(rsn);
+    if (!hiscoreData) {
+      // Still register the player but skip the snapshot — they can be refreshed later
+      console.warn(`[admin] Player "${rsn}" not on hiscores at registration time — snapshot skipped.`);
+      return res.status(201).json({
+        success: true,
+        data: { player, startSnapshot: null },
+        message: `Player "${rsn}" registered but has no hiscore data yet. Ensure the RSN is correct and the account is ranked.`,
+      });
+    }
     const snapshot = await savePlayerSnapshot(player.id, "start", hiscoreData);
     // Also set current to match start on first registration
     await savePlayerSnapshot(player.id, "current", hiscoreData);
@@ -328,6 +339,12 @@ router.put(
     if (!player) return res.status(404).json({ success: false, error: `Player "${rsn}" not found` });
 
     const hiscoreData = await hiscores(rsn);
+    if (!hiscoreData) {
+      return res.status(404).json({
+        success: false,
+        error: `Player "${rsn}" is not ranked on the OSRS hiscores. The RSN may be incorrect or the account may be too new/inactive to appear.`,
+      });
+    }
     const snapshot = await savePlayerSnapshot(player.id, "current", hiscoreData);
     res.status(200).json({ success: true, data: snapshot });
   }),
@@ -346,6 +363,9 @@ router.put(
     const results = await Promise.allSettled(
       players.map(async (player) => {
         const hiscoreData = await hiscores(player.rsn);
+        if (!hiscoreData) {
+          throw new Error(`Player "${player.rsn}" is not ranked on the OSRS hiscores`);
+        }
         return savePlayerSnapshot(player.id, "current", hiscoreData);
       }),
     );

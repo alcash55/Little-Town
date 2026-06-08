@@ -36,16 +36,6 @@ import { Countdown } from '../../../Countdown/Countdown';
 import { useBingoOverview } from './useBingoOverview';
 import { BingoTeam, BingoPlayer } from '../TeamDrafter/useTeamDrafter';
 import { Tile } from '../BoardBuilder/useBoardBuilder';
-import {
-  cardSx,
-  inputSx,
-  tableCellSx,
-  textPrimary,
-  textSecondary,
-  mutedText,
-  subtleBorder,
-  outlinedButtonSx,
-} from '../TeamDrafter/teamDrafterStyles';
 
 const fmt = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—';
@@ -62,18 +52,18 @@ const SUSPICIOUS_MINUTES = 360;
 const InfoRow = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) => (
   <Stack direction="row" alignItems="center" spacing={1.5}>
     <Box sx={{ color: '#2A9D8F', display: 'flex' }}>{icon}</Box>
-    <Typography variant="body2" sx={{ color: textSecondary, minWidth: 110 }}>{label}</Typography>
-    <Typography variant="body2" sx={{ color: textPrimary, fontWeight: 500 }}>{value}</Typography>
+    <Typography variant="body2" sx={{ minWidth: 110 }}>{label}</Typography>
+    <Typography variant="body2" sx={{ fontWeight: 500 }}>{value}</Typography>
   </Stack>
 );
 
 // ─── Stat Card ───────────────────────────────────────────────────────────────
 const StatCard = ({ label, value, sub }: { label: string; value: string | number; sub?: string }) => (
-  <Card sx={{ ...cardSx, flex: 1, minWidth: 130 }}>
+  <Card sx={{ flex: 1, minWidth: 130 }}>
     <CardContent sx={{ pb: '12px !important' }}>
-      <Typography variant="body2" sx={{ color: mutedText, mb: 0.5 }}>{label}</Typography>
-      <Typography variant="h5" sx={{ color: textPrimary, fontFamily: "'pacifico', cursive" }}>{value}</Typography>
-      {sub && <Typography variant="caption" sx={{ color: mutedText }}>{sub}</Typography>}
+      <Typography variant="body2" sx={{ mb: 0.5 }}>{label}</Typography>
+      <Typography variant="h5" sx={{ fontFamily: "'pacifico', cursive" }}>{value}</Typography>
+      {sub && <Typography variant="caption">{sub}</Typography>}
     </CardContent>
   </Card>
 );
@@ -81,17 +71,17 @@ const StatCard = ({ label, value, sub }: { label: string; value: string | number
 // ─── Team Roster ─────────────────────────────────────────────────────────────
 const TeamRoster = ({ teams, players }: { teams: BingoTeam[]; players: BingoPlayer[] }) => {
   if (teams.length === 0) return (
-    <Typography variant="body2" sx={{ color: mutedText }}>No teams assigned yet.</Typography>
+    <Typography variant="body2">No teams assigned yet.</Typography>
   );
   return (
     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, width: '100%' }}>
       {teams.map(team => {
         const members = players.filter(p => p.team_id === team.id || p.captain_team_id === team.id);
         return (
-          <Card key={team.id} sx={{ ...cardSx, flex: '1 1 180px', minWidth: 180 }}>
+          <Card key={team.id} sx={{ flex: '1 1 180px', minWidth: 180 }}>
             <CardHeader
               title={
-                <Typography variant="body1" sx={{ color: textPrimary, fontWeight: 600, fontSize: 14 }}>
+                <Typography variant="body1" sx={{ fontWeight: 600, fontSize: 14 }}>
                   {team.name}
                 </Typography>
               }
@@ -99,7 +89,7 @@ const TeamRoster = ({ teams, players }: { teams: BingoTeam[]; players: BingoPlay
             />
             <CardContent sx={{ pt: 1, pb: '8px !important' }}>
               {members.length === 0 ? (
-                <Typography variant="body2" sx={{ color: mutedText, fontStyle: 'italic' }}>No players</Typography>
+                <Typography variant="body2" sx={{ fontStyle: 'italic' }}>No players</Typography>
               ) : (
                 <Stack spacing={0.5}>
                   {members.map(p => {
@@ -113,7 +103,10 @@ const TeamRoster = ({ teams, players }: { teams: BingoTeam[]; players: BingoPlay
                         )}
                         <Typography
                           variant="body2"
-                          sx={{ color: isCaptain ? textPrimary : textSecondary, fontWeight: isCaptain ? 600 : 400 }}
+                          sx={{
+                            // color: isCaptain ? textPrimary : textSecondary, 
+                            fontWeight: isCaptain ? 600 : 400
+                          }}
                         >
                           {p.rsn}
                         </Typography>
@@ -140,7 +133,7 @@ const tileObjective = (tile: Tile): string => {
 const CompactBoard = ({ tiles, boardSize }: { tiles: Tile[]; boardSize: number }) => {
   const cols = boardSize === 35 ? 5 : 4;
   if (tiles.length === 0) return (
-    <Typography variant="body2" sx={{ color: mutedText }}>Board not set up yet.</Typography>
+    <Typography variant="body2">Board not set up yet.</Typography>
   );
   return (
     <Box
@@ -180,7 +173,7 @@ const CompactBoard = ({ tiles, boardSize }: { tiles: Tile[]; boardSize: number }
             <Typography
               variant="caption"
               sx={{
-                color: textPrimary,
+                // color: textPrimary,
                 fontSize: 10,
                 fontWeight: 600,
                 lineHeight: 1.2,
@@ -221,6 +214,7 @@ const BingoOverview = () => {
     startNow,
     refreshingStats,
     refreshStatsMessage,
+    clearRefreshStatsMessage,
     refreshAllStats,
     endDialogOpen,
     setEndDialogOpen,
@@ -263,7 +257,7 @@ const BingoOverview = () => {
   if (!bingo) {
     return (
       <PageLayout title="Bingo Overview" align="center">
-        <Typography sx={{ color: textSecondary }}>
+        <Typography>
           No bingo has been set up yet. Head to Bingo Details to get started.
         </Typography>
       </PageLayout>
@@ -282,10 +276,10 @@ const BingoOverview = () => {
       <PageLayout title="Bingo Overview" maxWidth={700}>
         <Countdown targetDate={startDateObj} label="Time until the bingo" />
 
-        <Card sx={{ ...cardSx, width: '100%' }}>
+        <Card sx={{ width: '100%' }}>
           <CardHeader
             title={
-              <Typography variant="h3" sx={{ fontSize: 22, color: textPrimary }}>
+              <Typography variant="h3" sx={{ fontSize: 22 }}>
                 {bingo.name}
               </Typography>
             }
@@ -306,7 +300,7 @@ const BingoOverview = () => {
           />
 
           <CardContent>
-            <Stack spacing={1.5} divider={<Divider sx={{ borderColor: subtleBorder }} />}>
+            <Stack spacing={1.5} divider={<Divider />}>
               <InfoRow icon={<CalendarTodayIcon fontSize="small" />} label="Starts" value={fmt(bingo.startDate)} />
               <InfoRow icon={<CalendarTodayIcon fontSize="small" />} label="Ends" value={fmt(bingo.endDate)} />
               <InfoRow icon={<EmojiEventsIcon fontSize="small" />} label="Board" value={boardLabel} />
@@ -314,21 +308,21 @@ const BingoOverview = () => {
           </CardContent>
         </Card>
 
-        <Card sx={{ ...cardSx, width: '100%' }}>
+        <Card sx={{ width: '100%' }}>
           <CardHeader
             avatar={<GroupsIcon sx={{ color: '#2A9D8F' }} />}
-            title={<Typography variant="h3" sx={{ fontSize: 18, color: textPrimary }}>Teams</Typography>}
+            title={<Typography variant="h3" sx={{ fontSize: 18 }}>Teams</Typography>}
           />
           <CardContent sx={{ pt: 0 }}>
             <TeamRoster teams={teams} players={players} />
           </CardContent>
         </Card>
 
-        <Card sx={{ ...cardSx, width: '100%' }}>
+        <Card sx={{ width: '100%' }}>
           <CardHeader
             avatar={<EmojiEventsIcon sx={{ color: '#2A9D8F' }} />}
-            title={<Typography variant="h3" sx={{ fontSize: 18, color: textPrimary }}>Planned Board</Typography>}
-            subheader={<Typography variant="body2" sx={{ color: mutedText }}>{boardLabel}</Typography>}
+            title={<Typography variant="h3" sx={{ fontSize: 18 }}>Planned Board</Typography>}
+            subheader={<Typography variant="body2">{boardLabel}</Typography>}
           />
           <CardContent sx={{ pt: 0 }}>
             <CompactBoard tiles={board} boardSize={bingo.boardSize} />
@@ -344,7 +338,7 @@ const BingoOverview = () => {
           disabled={startingNow}
           startIcon={startingNow ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : undefined}
           onClick={startNow}
-          sx={{ alignSelf: 'center', ...outlinedButtonSx }}
+          sx={{ alignSelf: 'center' }}
         >
           {startingNow ? 'Starting…' : 'Start Bingo Now'}
         </Button>
@@ -360,7 +354,7 @@ const BingoOverview = () => {
       {refreshStatsMessage && (
         <Alert
           severity={refreshStatsMessage.startsWith('Failed') ? 'error' : 'success'}
-          onClose={() => {}}
+          onClose={clearRefreshStatsMessage}
           sx={{ width: '100%' }}
         >
           {refreshStatsMessage}
@@ -405,20 +399,20 @@ const BingoOverview = () => {
       </Box>
 
       {/* ── Player stats table ── */}
-      <Card sx={{ ...cardSx, width: '100%' }}>
+      <Card sx={{ width: '100%' }}>
         <CardHeader
-          title={<Typography variant="h3" sx={{ fontSize: 18, color: textPrimary }}>Player Stats</Typography>}
+          title={<Typography variant="h3" sx={{ fontSize: 18 }}>Player Stats</Typography>}
         />
         <CardContent sx={{ p: 0 }}>
           {playerStats.length === 0 ? (
-            <Typography sx={{ color: mutedText, p: 2 }}>No player data yet.</Typography>
+            <Typography sx={{ p: 2 }}>No player data yet.</Typography>
           ) : (
             <Box sx={{ overflowX: 'auto' }}>
               <Table size="small">
                 <TableHead>
                   <TableRow>
                     {['Player', 'Team', 'Tiles', 'Points', 'Time Online', 'Last Seen', 'Side Accounts'].map(h => (
-                      <TableCell key={h} sx={{ ...tableCellSx, color: mutedText, fontWeight: 600, fontSize: 12, textTransform: 'uppercase' }}>
+                      <TableCell key={h} sx={{ fontWeight: 600, fontSize: 12, textTransform: 'uppercase' }}>
                         {h}
                       </TableCell>
                     ))}
@@ -432,9 +426,9 @@ const BingoOverview = () => {
                         key={p.rsn}
                         sx={{ bgcolor: suspicious ? 'rgba(211,47,47,0.08)' : 'transparent' }}
                       >
-                        <TableCell sx={tableCellSx}>
+                        <TableCell>
                           <Stack direction="row" alignItems="center" spacing={1}>
-                            <Typography variant="body2" sx={{ color: textPrimary }}>{p.rsn}</Typography>
+                            <Typography variant="body2">{p.rsn}</Typography>
                             {suspicious && (
                               <Tooltip title={`${minutesToHours(p.minutesOnline)} online — possible bot/AHK`}>
                                 <WarningAmberIcon fontSize="small" sx={{ color: '#f44336' }} />
@@ -442,35 +436,35 @@ const BingoOverview = () => {
                             )}
                           </Stack>
                         </TableCell>
-                        <TableCell sx={tableCellSx}>
-                          <Typography variant="body2" sx={{ color: textSecondary }}>{p.teamName}</Typography>
+                        <TableCell>
+                          <Typography variant="body2">{p.teamName}</Typography>
                         </TableCell>
-                        <TableCell sx={tableCellSx}>
-                          <Typography variant="body2" sx={{ color: textPrimary }}>{p.tilesCompleted}</Typography>
+                        <TableCell>
+                          <Typography variant="body2">{p.tilesCompleted}</Typography>
                         </TableCell>
-                        <TableCell sx={tableCellSx}>
-                          <Typography variant="body2" sx={{ color: textPrimary }}>{p.totalPoints}</Typography>
+                        <TableCell>
+                          <Typography variant="body2">{p.totalPoints}</Typography>
                         </TableCell>
-                        <TableCell sx={tableCellSx}>
+                        <TableCell>
                           <Typography
                             variant="body2"
-                            sx={{ color: suspicious ? '#f44336' : textSecondary, fontWeight: suspicious ? 600 : 400 }}
+                            sx={{ color: suspicious ? '#f44336' : '', fontWeight: suspicious ? 600 : 400 }}
                           >
                             {minutesToHours(p.minutesOnline)}
                           </Typography>
                         </TableCell>
-                        <TableCell sx={tableCellSx}>
-                          <Typography variant="body2" sx={{ color: mutedText }}>{fmt(p.lastSeen)}</Typography>
+                        <TableCell>
+                          <Typography variant="body2">{fmt(p.lastSeen)}</Typography>
                         </TableCell>
-                        <TableCell sx={tableCellSx}>
+                        <TableCell>
                           {p.sideAccounts.length > 0 ? (
                             <Stack direction="row" spacing={0.5} flexWrap="wrap">
                               {p.sideAccounts.map(acc => (
-                                <Chip key={acc} label={acc} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.08)', color: textSecondary }} />
+                                <Chip key={acc} label={acc} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.08)' }} />
                               ))}
                             </Stack>
                           ) : (
-                            <Typography variant="body2" sx={{ color: mutedText }}>—</Typography>
+                            <Typography variant="body2">—</Typography>
                           )}
                         </TableCell>
                       </TableRow>
@@ -485,11 +479,11 @@ const BingoOverview = () => {
 
       {/* ── Side-account conflicts table ── */}
       {conflicts.length > 0 && (
-        <Card sx={{ ...cardSx, width: '100%', border: '1px solid rgba(244,67,54,0.4)' }}>
+        <Card sx={{ width: '100%', border: '1px solid rgba(244,67,54,0.4)' }}>
           <CardHeader
             avatar={<LinkOffIcon sx={{ color: '#f44336' }} />}
             title={<Typography variant="h3" sx={{ fontSize: 18, color: '#f44336' }}>Side Account Conflicts</Typography>}
-            subheader={<Typography variant="body2" sx={{ color: mutedText }}>Both accounts detected online simultaneously</Typography>}
+            subheader={<Typography variant="body2">Both accounts detected online simultaneously</Typography>}
           />
           <CardContent sx={{ p: 0 }}>
             <Box sx={{ overflowX: 'auto' }}>
@@ -497,7 +491,7 @@ const BingoOverview = () => {
                 <TableHead>
                   <TableRow>
                     {['Main Account', 'Side Account', 'Overlap', 'Detected At'].map(h => (
-                      <TableCell key={h} sx={{ ...tableCellSx, color: mutedText, fontWeight: 600, fontSize: 12, textTransform: 'uppercase' }}>
+                      <TableCell key={h} sx={{ fontWeight: 600, fontSize: 12, textTransform: 'uppercase' }}>
                         {h}
                       </TableCell>
                     ))}
@@ -506,16 +500,16 @@ const BingoOverview = () => {
                 <TableBody>
                   {conflicts.map((c, i) => (
                     <TableRow key={i}>
-                      <TableCell sx={tableCellSx}><Typography variant="body2" sx={{ color: textPrimary }}>{c.mainRsn}</Typography></TableCell>
-                      <TableCell sx={tableCellSx}><Typography variant="body2" sx={{ color: textPrimary }}>{c.sideRsn}</Typography></TableCell>
-                      <TableCell sx={tableCellSx}>
+                      <TableCell><Typography variant="body2">{c.mainRsn}</Typography></TableCell>
+                      <TableCell><Typography variant="body2">{c.sideRsn}</Typography></TableCell>
+                      <TableCell>
                         <Chip
                           label={`${c.overlapMinutes}m overlap`}
                           size="small"
                           sx={{ bgcolor: 'rgba(244,67,54,0.15)', color: '#f44336' }}
                         />
                       </TableCell>
-                      <TableCell sx={tableCellSx}><Typography variant="body2" sx={{ color: mutedText }}>{fmt(c.detectedAt)}</Typography></TableCell>
+                      <TableCell><Typography variant="body2">{fmt(c.detectedAt)}</Typography></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -526,11 +520,11 @@ const BingoOverview = () => {
       )}
 
       {/* ── Time remaining ── */}
-      <Card sx={{ ...cardSx, width: '100%' }}>
+      <Card sx={{ width: '100%' }}>
         <CardContent>
           <Stack direction="row" alignItems="center" spacing={1} mb={2}>
             <AccessTimeIcon sx={{ color: '#2A9D8F' }} />
-            <Typography variant="h3" sx={{ fontSize: 18, color: textPrimary }}>Time Remaining</Typography>
+            <Typography variant="h3" sx={{ fontSize: 18 }}>Time Remaining</Typography>
           </Stack>
           <Countdown targetDate={endDateObj} label="" />
         </CardContent>
@@ -543,7 +537,7 @@ const BingoOverview = () => {
           disabled={refreshingStats}
           startIcon={refreshingStats ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : <SyncIcon />}
           onClick={refreshAllStats}
-          sx={{ ...outlinedButtonSx, color: '#2A9D8F', borderColor: '#2A9D8F', '&:hover': { borderColor: '#2A9D8F', bgcolor: 'rgba(42,157,143,0.08)' } }}
+          sx={{ color: '#2A9D8F', borderColor: '#2A9D8F', '&:hover': { borderColor: '#2A9D8F', bgcolor: 'rgba(42,157,143,0.08)' } }}
         >
           {refreshingStats ? 'Refreshing…' : 'Refresh Player Stats'}
         </Button>
@@ -551,7 +545,6 @@ const BingoOverview = () => {
           variant="outlined"
           color="error"
           onClick={() => setEndDialogOpen(true)}
-          sx={{ ...outlinedButtonSx }}
         >
           End Bingo Early
         </Button>
@@ -570,12 +563,12 @@ const BingoOverview = () => {
         <DialogTitle sx={{ color: '#f44336', fontFamily: "'pacifico', cursive" }}>End Bingo Early?</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            <Typography variant="body2" sx={{ color: textSecondary }}>
-              This will immediately end <strong style={{ color: textPrimary }}>{bingo.name}</strong> and set the end time to now.
+            <Typography variant="body2">
+              This will immediately end <strong>{bingo.name}</strong> and set the end time to now.
               This cannot be undone.
             </Typography>
-            <Typography variant="body2" sx={{ color: textSecondary }}>
-              Type <strong style={{ color: textPrimary }}>{bingo.name}</strong> to confirm.
+            <Typography variant="body2">
+              Type <strong>{bingo.name}</strong> to confirm.
             </Typography>
             <TextField
               autoFocus
@@ -586,7 +579,6 @@ const BingoOverview = () => {
               error={endConfirmName.length > 0 && !endNameMatches}
               helperText={endConfirmName.length > 0 && !endNameMatches ? 'Name does not match' : ' '}
               sx={{
-                ...inputSx,
                 '& .MuiFormHelperText-root': { color: '#f44336' },
               }}
             />
@@ -594,7 +586,7 @@ const BingoOverview = () => {
           </Stack>
         </DialogContent>
         <DialogActions sx={{ borderTop: '1px solid rgba(255,255,255,0.08)', px: 3, pb: 2 }}>
-          <Button onClick={() => { setEndDialogOpen(false); setEndConfirmName(''); }} sx={{ color: textSecondary }}>
+          <Button onClick={() => { setEndDialogOpen(false); setEndConfirmName(''); }}>
             Cancel
           </Button>
           <Button
@@ -603,7 +595,6 @@ const BingoOverview = () => {
             disabled={!endNameMatches || ending}
             startIcon={ending ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : undefined}
             onClick={endBingo}
-            sx={{ ...outlinedButtonSx }}
           >
             {ending ? 'Ending…' : 'End Bingo'}
           </Button>
