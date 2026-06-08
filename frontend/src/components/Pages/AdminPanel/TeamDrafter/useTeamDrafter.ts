@@ -33,6 +33,12 @@ export interface SideAccount {
 /** Items map used by the DnD context: container id -> list of RSN strings */
 export type DraftItems = Record<string, string[]>;
 
+/** Per-RSN result after attempting to add a player */
+export type AddResult =
+  | { status: 'ok' }
+  | { status: 'renamed'; originalRsn: string; newRsn: string }
+  | { status: 'error'; message: string };
+
 function draftsEqual(a: DraftItems, b: DraftItems): boolean {
   const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
   for (const key of keys) {
@@ -88,8 +94,8 @@ export const useTeamDrafter = () => {
   const [csvInput, setCsvInput] = useState('');
   const [addingPlayers, setAddingPlayers] = useState(false);
   const [addPlayerError, setAddPlayerError] = useState<string | null>(null);
-  /** Per-RSN result feedback after CSV submit { rsn -> 'ok' | error message } */
-  const [addResults, setAddResults] = useState<Record<string, string>>({});
+  /** Per-RSN result feedback after CSV submit */
+  const [addResults, setAddResults] = useState<Record<string, AddResult>>({});
   const [removingRsn, setRemovingRsn] = useState<string | null>(null);
   const [captainUpdatingRsn, setCaptainUpdatingRsn] = useState<string | null>(null);
 
@@ -225,10 +231,73 @@ export const useTeamDrafter = () => {
       .filter(Boolean);
 
   /**
-   * Add a list of players parsed from the CSV input to the active bingo.
-   * First checks each RSN against the OSRS hiscores API — players with no
-   * hiscore data are skipped and reported as failed.
-   * Fires one POST per valid player and collects per-RSN results.
+   * Checks WOM for a name change for the given RSN.
+   * Returns the newName if a recent approved/pending change is found, else null.
+   */
+  const checkWomNameChange = async (rsn: string): Promise<string | null> => {
+    try {
+      const res = await fetch(
+        `https://api.wiseoldman.net/v2/names?username=${encodeURIComponent(rsn)}&limit=5`,
+        { headers: { Accept: 'application/json', 'User-Agent': 'LittleTown/1.0' } },
+      );
+      if (!res.ok) return null;
+      const data = await res.json() as Array<{ oldName: string; newName: string; status: string }>;
+      if (!data.length) return null;
+      // Prefer approved over pending; within each status take the most recent (first)
+      const approved = data.find((n) => n.status === 'approved');
+      const pending = data.find((n) => n.status === 'pending');
+      const match = approved ?? pending ?? null;
+      if (!match) return null;
+      // The RSN we searched was the OLD name — return the new one
+      return match.newName;
+    } catch {
+      return null;
+    }
+  };
+
+  /**
+   * Try to register a single RSN. On hiscore 404, consults WOM for a name
+   * change and retries with the new name if found.
+   * Returns an AddResult.
+   */
+  const tryAddPlayer = async (rsn: string): Promise<AddResult> => {
+    const hiscoreRes = await fetchWithAuth(
+      `${import.meta.env.VITE_BASEURL || 'http://localhost:8081'}/api/hiscores/${encodeURIComponent(rsn)}`,
+    );
+
+    // Player not on hiscores — check WOM for a name change
+    if (!hiscoreRes.ok) {
+      const newRsn = await checkWomNameChange(rsn);
+      if (!newRsn) {
+        return { status: 'error', message: 'not found on OSRS hiscores and no name change found' };
+      }
+      // Retry with the new name
+      const retryRes = await fetchWithAuth(`${BASE_URL}/bingo/players`, {
+        method: 'POST',
+        body: JSON.stringify({ rsn: newRsn }),
+      });
+      if (!retryRes.ok) {
+        const err = await retryRes.json().catch(() => ({}));
+        return { status: 'error', message: err.error ?? retryRes.statusText };
+      }
+      return { status: 'renamed', originalRsn: rsn, newRsn };
+    }
+
+    // Hiscores OK — register normally
+    const res = await fetchWithAuth(`${BASE_URL}/bingo/players`, {
+      method: 'POST',
+      body: JSON.stringify({ rsn }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { status: 'error', message: err.error ?? res.statusText };
+    }
+    return { status: 'ok' };
+  };
+
+  /**
+   * Add players from the CSV textarea.
+   * On hiscore failure, falls back to WOM name-change lookup before giving up.
    */
   const addPlayersFromCsv = useCallback(async () => {
     const rsns = parseCsv(csvInput);
@@ -238,33 +307,14 @@ export const useTeamDrafter = () => {
     setAddPlayerError(null);
     setAddResults({});
 
-    const results: Record<string, string> = {};
+    const results: Record<string, AddResult> = {};
 
     await Promise.allSettled(
       rsns.map(async (rsn) => {
         try {
-          // Step 1: verify the player exists on OSRS hiscores
-          const hiscoreRes = await fetchWithAuth(
-            `${import.meta.env.VITE_BASEURL || 'http://localhost:8081'}/api/hiscores/${encodeURIComponent(rsn)}`,
-          );
-          if (!hiscoreRes.ok) {
-            results[rsn] = 'not found on OSRS hiscores';
-            return;
-          }
-
-          // Step 2: add to bingo
-          const res = await fetchWithAuth(`${BASE_URL}/bingo/players`, {
-            method: 'POST',
-            body: JSON.stringify({ rsn }),
-          });
-          if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            results[rsn] = err.error ?? res.statusText;
-          } else {
-            results[rsn] = 'ok';
-          }
+          results[rsn] = await tryAddPlayer(rsn);
         } catch (e) {
-          results[rsn] = String(e);
+          results[rsn] = { status: 'error', message: String(e) };
         }
       }),
     );
@@ -273,10 +323,9 @@ export const useTeamDrafter = () => {
     setCsvInput('');
     setAddingPlayers(false);
 
-    const anyFailed = Object.values(results).some((r) => r !== 'ok');
+    const anyFailed = Object.values(results).some((r) => r.status === 'error');
     if (anyFailed) setAddPlayerError('Some players could not be added — see results below.');
 
-    // Refresh player list
     await loadPlayers();
   }, [csvInput, BASE_URL, loadPlayers]);
 

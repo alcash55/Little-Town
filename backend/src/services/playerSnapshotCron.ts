@@ -26,7 +26,10 @@ export async function refreshAllPlayerSnapshots(): Promise<{
   const results = await Promise.allSettled(
     players.map(async (player) => {
       const data = await hiscores(player.rsn);
-      if (!data) throw new Error(`No hiscore data for "${player.rsn}"`);
+      if (!data) {
+        console.warn(`[playerSnapshotCron] Skipping "${player.rsn}" — not on hiscores (unranked).`);
+        throw new Error(`Player "${player.rsn}" is not ranked on the OSRS hiscores`);
+      }
       await savePlayerSnapshot(player.id, "current", data);
       return player.rsn;
     }),

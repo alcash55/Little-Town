@@ -1,15 +1,22 @@
 import { useState, FormEvent } from 'react';
 import {
   Alert,
+  CircularProgress,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   Button,
   Box,
+  Checkbox,
+  FormControlLabel,
+  IconButton,
+  InputAdornment,
   Typography,
   TextField,
 } from '@mui/material';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 
 interface Props {
   open: boolean;
@@ -17,16 +24,20 @@ interface Props {
   isSubmitting?: boolean;
   errorMessage?: string | null;
   sessionExpired?: boolean;
-  onSubmit?: (username: string, password: string) => void | Promise<void>;
+  savedUsername?: string;
+  rememberMe?: boolean;
+  onSubmit?: (username: string, password: string, rememberMe: boolean) => void | Promise<void>;
 }
 
-const LoginModal = ({ open, onClose, isSubmitting = false, errorMessage, sessionExpired, onSubmit }: Props) => {
-  const [username, setUsername] = useState('');
+const LoginModal = ({ open, onClose, isSubmitting = false, errorMessage, sessionExpired, savedUsername = '', rememberMe: initialRememberMe = false, onSubmit }: Props) => {
+  const [username, setUsername] = useState(savedUsername);
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(initialRememberMe);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (onSubmit) await onSubmit(username, password);
+    if (onSubmit) await onSubmit(username, password, rememberMe);
   };
 
   return (
@@ -90,7 +101,7 @@ const LoginModal = ({ open, onClose, isSubmitting = false, errorMessage, session
           <TextField
             label="Password"
             variant="outlined"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             fullWidth
@@ -101,6 +112,21 @@ const LoginModal = ({ open, onClose, isSubmitting = false, errorMessage, session
                 '&.Mui-focused': { color: 'rgba(255,255,255,0.85)' },
               },
             }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    onClick={() => setShowPassword((v) => !v)}
+                    edge="end"
+                    size="small"
+                    sx={{ color: 'rgba(255,255,255,0.5)', '&:hover': { color: 'white' } }}
+                  >
+                    {showPassword ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
             sx={{
               '& .MuiOutlinedInput-root': {
                 color: 'white',
@@ -110,6 +136,26 @@ const LoginModal = ({ open, onClose, isSubmitting = false, errorMessage, session
                 '&.Mui-focused fieldset': { borderColor: '#7a7a7a' },
               },
             }}
+          />
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                size="small"
+                sx={{
+                  color: 'rgba(255,255,255,0.5)',
+                  '&.Mui-checked': { color: '#2A9D8F' },
+                  p: 0.5,
+                }}
+              />
+            }
+            label={
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                Remember me
+              </Typography>
+            }
+            sx={{ ml: 0 }}
           />
           {errorMessage ? (
             <Typography variant="caption" color="error">
@@ -124,9 +170,11 @@ const LoginModal = ({ open, onClose, isSubmitting = false, errorMessage, session
               type="submit"
               variant="contained"
               disabled={isSubmitting}
+              startIcon={isSubmitting ? <CircularProgress size={16} sx={{ color: 'rgba(255,255,255,0.7)' }} /> : null}
               sx={{
                 bgcolor: (theme) => theme.palette.primary.main,
                 color: 'white',
+                minWidth: 90,
                 '&:hover': {
                   bgcolor: '#2e2e2e',
                 },

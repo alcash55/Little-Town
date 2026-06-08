@@ -110,20 +110,22 @@ export function PlayerManagementTab(props: ReturnType<typeof useTeamDrafter>) {
                   key={rsn}
                   size="small"
                   icon={
-                    result === 'ok' ? (
+                    result.status === 'ok' || result.status === 'renamed' ? (
                       <CheckCircleOutlineIcon fontSize="small" />
                     ) : (
                       <ErrorOutlineIcon fontSize="small" />
                     )
                   }
                   label={
-                    result === 'ok'
+                    result.status === 'ok'
                       ? rsn
-                      : result.includes('authorized')
-                        ? `${rsn}: not authorized by the admin API`
-                        : `${rsn}: ${result}`
+                      : result.status === 'renamed'
+                        ? `${result.originalRsn} → ${result.newRsn}`
+                        : result.message.includes('authorized')
+                          ? `${rsn}: not authorized by the admin API`
+                          : `${rsn}: ${result.message}`
                   }
-                  color={result === 'ok' ? 'success' : 'error'}
+                  color={result.status === 'error' ? 'error' : 'success'}
                   variant="outlined"
                 />
               ))}
