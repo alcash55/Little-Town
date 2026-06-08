@@ -1,8 +1,4 @@
-- Team drafter styles needs to be merged into the MUI theme that is already created
-- login dialog
-  - Add eyeball icon to reveal password typed
-  - show loading spinner while waiting for login to go through (this is where we will see most cold starts)
-- Create cron job that will run every 5-10 min during times where bingos are active in order to prevent cold starts for renderer
+
 - Create Admin page for sending links to new users
 - Create onboarding wizard for new users
 - Start the bingo submission page, have it pull images from the bucket that is in supabase

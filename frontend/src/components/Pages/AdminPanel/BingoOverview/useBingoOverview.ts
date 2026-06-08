@@ -149,8 +149,16 @@ export const useBingoOverview = () => {
     return () => clearInterval(interval);
   }, [isActive, fetchPlayerStats, fetchConflicts, fetchPendingScreenshots]);
 
+  const clearRefreshStatsMessage = useCallback(() => setRefreshStatsMessage(null), []);
+
+  // Auto-dismiss the refresh message after 8 seconds
+  useEffect(() => {
+    if (!refreshStatsMessage) return;
+    const t = setTimeout(() => setRefreshStatsMessage(null), 8_000);
+    return () => clearTimeout(t);
+  }, [refreshStatsMessage]);
+
   const refreshAllStats = useCallback(async () => {
-    setRefreshingStats(true);
     setRefreshStatsMessage(null);
     try {
       const res = await fetchWithAuth(`${BASE_URL}/bingo/players/refresh/snapshots`, { method: 'POST' });
@@ -238,6 +246,7 @@ export const useBingoOverview = () => {
     // Stats refresh
     refreshingStats,
     refreshStatsMessage,
+    clearRefreshStatsMessage,
     refreshAllStats,
     // End dialog
     endDialogOpen,

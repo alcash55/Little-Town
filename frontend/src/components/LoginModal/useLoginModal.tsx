@@ -9,7 +9,7 @@ type LoginModalContextValue = {
   isOpen: boolean;
   isSubmitting: boolean;
   errorMessage: string | null;
-  loginWithCredentials: (username: string, password: string) => Promise<void>;
+  loginWithCredentials: (username: string, password: string, rememberMe: boolean) => Promise<void>;
   user: User | null;
   logout: () => void;
 };
@@ -43,7 +43,9 @@ type LoginModalProps = {
   isSubmitting?: boolean;
   errorMessage?: string | null;
   sessionExpired?: boolean;
-  onSubmit?: (username: string, password: string) => void | Promise<void>;
+  savedUsername?: string;
+  rememberMe?: boolean;
+  onSubmit?: (username: string, password: string, rememberMe: boolean) => void | Promise<void>;
 };
 
 let LoginModalLazy: React.LazyExoticComponent<React.ComponentType<LoginModalProps>> | null = null;
@@ -61,6 +63,8 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
   const [user, setUser] = useState<User | null>(null);
   const [returnTo, setReturnTo] = useState<string | null>(null);
   const [sessionExpired, setSessionExpired] = useState(false);
+  const [savedUsername, setSavedUsername] = useState(() => localStorage.getItem('rememberedUsername') ?? '');
+  const [rememberMe, setRememberMe] = useState(() => !!localStorage.getItem('rememberedUsername'));
   const navigate = useNavigate();
 
   const BASE_URL = import.meta.env.VITE_BASEURL || "http://localhost:8081"
@@ -121,7 +125,17 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
     ensureModalImported();
   }, []);
 
-  const loginWithCredentials = useCallback(async (username: string, password: string) => {
+  const loginWithCredentials = useCallback(async (username: string, password: string, rememberMe: boolean) => {
+    if (rememberMe) {
+      localStorage.setItem('rememberedUsername', username);
+      setSavedUsername(username);
+      setRememberMe(true);
+    } else {
+      localStorage.removeItem('rememberedUsername');
+      setSavedUsername('');
+      setRememberMe(false);
+    }
+
     setErrorMessage(null);
     if (!username || !password) {
       setErrorMessage('Please enter both username and password.');
@@ -151,7 +165,7 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
       setIsOpen(false);
       setSessionExpired(false);
 
-      console.log(`Welcome ${user}`)
+      console.log(`Welcome ${data.data.user.username}`)
 
       // Navigate back to the page they were on when their token expired
       if (returnTo) {
@@ -213,6 +227,8 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
             isSubmitting={isSubmitting}
             errorMessage={errorMessage}
             sessionExpired={sessionExpired}
+            savedUsername={savedUsername}
+            rememberMe={rememberMe}
             onSubmit={loginWithCredentials}
           />
         </Suspense>

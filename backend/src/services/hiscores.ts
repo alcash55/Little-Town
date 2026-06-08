@@ -1,90 +1,89 @@
 import { HiscoreData } from "../types/index.js";
 
+const HISCORES_URL = "https://secure.runescape.com/m=hiscore_oldschool/index_lite.json";
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1500;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /**
- * @see https://runescape.wiki/w/Application_programming_interface#Hiscores_Lite_2
- * @returns {Promise<HiscoreData>}
+ * Fetch raw hiscore JSON from the OSRS API with retry on transient errors.
+ * Returns null if the player is unranked (404) or genuinely not on hiscores.
+ * Throws on persistent network/server errors after MAX_RETRIES attempts.
  */
-export async function hiscores(rsn: string): Promise<HiscoreData> {
-  async function getHiscoreData(rsn: string): Promise<{
-    name: string;
-    skills: [
-      {
-        id: number;
-        name: "string";
-        rank: number;
-        level: number;
-        xp: number;
-      },
-    ];
-    activities: [{ id: number; name: "string"; rank: number; score: number }];
-  }> {
+async function getHiscoreData(rsn: string): Promise<{
+  name: string;
+  skills: Array<{ id: number; name: string; rank: number; level: number; xp: number }>;
+  activities: Array<{ id: number; name: string; rank: number; score: number }>;
+} | null> {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       const response = await fetch(
-        `https://secure.runescape.com/m=hiscore_oldschool/index_lite.json?player=${rsn}`,
+        `${HISCORES_URL}?player=${encodeURIComponent(rsn)}`,
         {
           method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
+          signal: AbortSignal.timeout(10_000), // 10 s timeout per request
         },
       );
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      // 404 = player not on hiscores (unranked or RSN doesn't exist)
+      if (response.status === 404) {
+        console.warn(`[hiscores] Player "${rsn}" not found on hiscores (404).`);
+        return null;
       }
 
-      return response.json();
+      // Retry on server-side errors
+      if (response.status >= 500) {
+        throw new Error(`OSRS hiscores server error: ${response.status}`);
+      }
+
+      if (!response.ok) {
+        throw new Error(`Unexpected HTTP status: ${response.status}`);
+      }
+
+      return await response.json() as Awaited<ReturnType<typeof getHiscoreData>>;
     } catch (e) {
-      console.error("Error fetching hiscore data:", e);
-      throw new Error("Failed to fetch hiscore data");
+      lastError = e;
+      if (attempt < MAX_RETRIES) {
+        console.warn(`[hiscores] Attempt ${attempt}/${MAX_RETRIES} failed for "${rsn}", retrying in ${RETRY_DELAY_MS}ms...`);
+        await sleep(RETRY_DELAY_MS * attempt); // linear back-off
+      }
     }
   }
 
-  /**
-   * Takes all types of skills/categories and formats them into an array of objects
-   * that each object has a skills/category object with level and experience properties
-   * @returns {HiscoreData}
-   */
-  async function formatHiscoresOptions(unformatedHiscoreData: {
-    name: string;
-    skills: [
-      { id: number; name: "string"; rank: number; level: number; xp: number },
-    ];
-    activities: [{ id: number; name: "string"; rank: number; score: number }];
-  }): Promise<HiscoreData> {
-    if (!unformatedHiscoreData) {
-      throw new Error("No hiscore data to format");
-    }
+  console.error(`[hiscores] All ${MAX_RETRIES} attempts failed for "${rsn}":`, lastError);
+  throw new Error(`Failed to fetch hiscore data for "${rsn}" after ${MAX_RETRIES} attempts`);
+}
 
-    const formattedActivities = unformatedHiscoreData.activities.map(
-      (activity) => {
-        const { id, name, rank, score } = activity;
-        return {
-          id,
-          name,
-          rank,
-          kc: score,
-        };
-      },
-    );
+/**
+ * Fetch and format OSRS hiscores for a given RSN.
+ *
+ * Returns null if the player is unranked / not found on the OSRS hiscores.
+ * Throws only on genuine network / server failures (after retries).
+ *
+ * @see https://runescape.wiki/w/Application_programming_interface#Hiscores_Lite_2
+ */
+export async function hiscores(rsn: string): Promise<HiscoreData | null> {
+  const raw = await getHiscoreData(rsn);
 
-    return {
-      name: unformatedHiscoreData.name,
-      skills: unformatedHiscoreData.skills,
-      activities: formattedActivities,
-      updatedAt: new Date(),
-    };
-  }
+  if (!raw) return null; // unranked player
 
-  try {
-    const unformatedHiscoreData = await getHiscoreData(rsn);
-    const formattedHiscoreData = await formatHiscoresOptions(
-      unformatedHiscoreData,
-    );
+  const formattedActivities = raw.activities.map(({ id, name, rank, score }) => ({
+    id,
+    name,
+    rank,
+    kc: score,
+  }));
 
-    return formattedHiscoreData;
-  } catch (e) {
-    console.error("Error in hiscores function:", e);
-    throw e; // Re-throw to let the caller handle it
-  }
+  return {
+    name: raw.name,
+    skills: raw.skills,
+    activities: formattedActivities,
+    updatedAt: new Date(),
+  };
 }

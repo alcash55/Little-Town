@@ -23,9 +23,11 @@ export const darkTheme = createTheme({
       fontSize: '6rem',
       lineHeight: 1,
       letterSpacing: '-0.01562em',
+      color: '#fff'
     },
     h2: {
       fontFamily: "'pacifico', cursive",
+      color: '#fff'
     },
     h3: {
       fontFamily: "'pacifico', cursive",
@@ -46,6 +48,9 @@ export const darkTheme = createTheme({
       lineHeight: 1.5,
       letterSpacing: '0.00938em',
     },
+    allVariants: {
+      color: '#fff'
+    }
   },
   components: {
     MuiButtonBase: {
@@ -54,6 +59,13 @@ export const darkTheme = createTheme({
           cursor: `url(${cursor}), auto`,
         },
       },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#000',
+        }
+      }
     },
     MuiOutlinedInput: {
       styleOverrides: {

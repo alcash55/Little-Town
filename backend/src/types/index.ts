@@ -7,15 +7,13 @@ export interface ApiResponse<T = any> {
 
 export interface HiscoreData {
   name: string;
-  skills: [
-    {
-      id: number;
-      name: string;
-      rank: number;
-      level: number;
-      xp: number;
-    }
-  ];
+  skills: Array<{
+    id: number;
+    name: string;
+    rank: number;
+    level: number;
+    xp: number;
+  }>;
   activities: Array<{ id: number; name: string; rank: number; kc: number }>;
   updatedAt: Date;
 }
