@@ -39,18 +39,14 @@ export async function registerBingoPlayer(
 ): Promise<BingoPlayer> {
   const db = getDb();
 
-  const { data: existing } = await db
-    .from("bingo_players")
-    .select("*")
-    .eq("bingo_id", bingoId)
-    .eq("rsn", rsn)
-    .maybeSingle();
-
-  if (existing) return existing as BingoPlayer;
-
+  // Single upsert instead of check-then-insert — avoids a race where two
+  // concurrent registrations for the same RSN both pass the "not found" check.
   const { data, error } = await db
     .from("bingo_players")
-    .insert({ bingo_id: bingoId, rsn, team_id: teamId ?? null, registered_by: registeredBy ?? null })
+    .upsert(
+      { bingo_id: bingoId, rsn, team_id: teamId ?? null, registered_by: registeredBy ?? null },
+      { onConflict: "bingo_id,rsn", ignoreDuplicates: false },
+    )
     .select()
     .single();
 
@@ -126,6 +122,8 @@ export async function updatePlayerTeam(
 
 /**
  * Set or clear a player's team captain role. Only one captain per team per bingo.
+ * Delegates to the set_team_captain RPC, which atomically clears the team's
+ * existing captain and sets the new one (avoiding the clear-then-set race).
  */
 export async function updatePlayerCaptain(
   bingoId: string,
@@ -134,36 +132,17 @@ export async function updatePlayerCaptain(
 ): Promise<BingoPlayer> {
   const db = getDb();
 
-  if (captainTeamId) {
-    const { data: team, error: teamErr } = await db
-      .from("bingo_teams")
-      .select("id")
-      .eq("id", captainTeamId)
-      .eq("bingo_id", bingoId)
-      .maybeSingle();
+  const { data, error } = await db.rpc("set_team_captain", {
+    p_bingo_id: bingoId,
+    p_rsn: rsn,
+    p_captain_team_id: captainTeamId,
+  });
 
-    if (teamErr) throw new Error(`Failed to validate team: ${teamErr.message}`);
-    if (!team) throw new Error("Captain team not found for this bingo");
+  if (error) throw new Error(`Failed to update captain for "${rsn}": ${error.message}`);
 
-    const { error: clearErr } = await db
-      .from("bingo_players")
-      .update({ captain_team_id: null })
-      .eq("bingo_id", bingoId)
-      .eq("captain_team_id", captainTeamId);
-
-    if (clearErr) throw new Error(`Failed to clear existing captain: ${clearErr.message}`);
-  }
-
-  const { data, error } = await db
-    .from("bingo_players")
-    .update({ captain_team_id: captainTeamId })
-    .eq("bingo_id", bingoId)
-    .eq("rsn", rsn)
-    .select()
-    .single();
-
-  if (error || !data) throw new Error(`Failed to update captain for "${rsn}": ${error?.message}`);
-  return data as BingoPlayer;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new Error(`Failed to update captain for "${rsn}": player not found`);
+  return row as BingoPlayer;
 }
 
 /**
@@ -195,19 +174,6 @@ export async function savePlayerSnapshot(
 ): Promise<PlayerSnapshot> {
   const db = getDb();
 
-  // Never overwrite a start snapshot
-  if (type === "start") {
-    const { data: existing } = await db
-      .from("bingo_player_hiscores")
-      .select("*")
-      .eq("player_id", playerId)
-      .eq("type", "start")
-      .is("side_account_id", null)
-      .maybeSingle();
-
-    if (existing) return existing as PlayerSnapshot;
-  }
-
   const payload = {
     player_id: playerId,
     type,
@@ -216,6 +182,29 @@ export async function savePlayerSnapshot(
     taken_at: new Date().toISOString(),
     side_account_id: null,
   };
+
+  if (type === "start") {
+    // Never overwrite a start snapshot, even under concurrent registration
+    // races — insert-if-absent, then always read back whichever row won.
+    const { error: insertError } = await db
+      .from("bingo_player_hiscores")
+      .upsert(payload, { onConflict: "player_id,type", ignoreDuplicates: true });
+
+    if (insertError) throw new Error(`Failed to save start snapshot: ${insertError.message}`);
+
+    const { data: existing, error: selectError } = await db
+      .from("bingo_player_hiscores")
+      .select("*")
+      .eq("player_id", playerId)
+      .eq("type", "start")
+      .is("side_account_id", null)
+      .single();
+
+    if (selectError || !existing) {
+      throw new Error(`Failed to save start snapshot: ${selectError?.message}`);
+    }
+    return existing as PlayerSnapshot;
+  }
 
   const { data: saved, error } = await db
     .from("bingo_player_hiscores")
@@ -319,18 +308,14 @@ export async function addSideAccount(
 ): Promise<SideAccount> {
   const db = getDb();
 
-  const { data: existing } = await db
-    .from("bingo_player_side_accounts")
-    .select("*")
-    .eq("player_id", playerId)
-    .eq("rsn", rsn)
-    .maybeSingle();
-
-  if (existing) return existing as SideAccount;
-
+  // Single upsert instead of check-then-insert — avoids a race where two
+  // concurrent adds for the same RSN both pass the "not found" check.
   const { data, error } = await db
     .from("bingo_player_side_accounts")
-    .insert({ player_id: playerId, rsn, notes: notes ?? null, added_by: addedBy ?? null })
+    .upsert(
+      { player_id: playerId, rsn, notes: notes ?? null, added_by: addedBy ?? null },
+      { onConflict: "player_id,rsn", ignoreDuplicates: false },
+    )
     .select()
     .single();
 

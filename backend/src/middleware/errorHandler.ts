@@ -23,14 +23,12 @@ export const errorHandler = (
   let error = { ...err };
   error.message = err.message;
 
-  // Log error for debugging
+  // Log error for debugging (never log req.body — may contain credentials/PII)
   console.error("Error:", {
     message: err.message,
     stack: err.stack,
     url: req.url,
     method: req.method,
-    body: req.body,
-    query: req.query,
   });
 
   // Supabase/Postgres unique constraint violation (e.g. duplicate username/email)
@@ -82,7 +80,13 @@ export const errorHandler = (
   }
 
   const statusCode = (error as AppError).statusCode || 500;
-  const message = error.message || "Server Error";
+
+  // Non-AppError 500s are unexpected/unmapped failures — don't leak internal
+  // error messages (e.g. raw Postgres/driver text) to the client.
+  const message =
+    statusCode === 500 && !(err instanceof AppError)
+      ? "Internal server error"
+      : error.message || "Server Error";
 
   const errorResponse: ErrorResponse = {
     error: message,

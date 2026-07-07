@@ -33,6 +33,7 @@ async function verifyPassword(
 ): Promise<boolean> {
   if (passwordHash.startsWith("dev:")) {
     return (
+      process.env.ALLOW_DEV_AUTH === "true" &&
       process.env.NODE_ENV !== "production" &&
       password === passwordHash.slice(4)
     );

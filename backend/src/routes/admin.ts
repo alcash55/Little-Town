@@ -3,6 +3,16 @@ import { asyncHandler } from "../middleware/errorHandler.js";
 import { LOCAL_DEV_USER_ID, protect, authorize } from "../middleware/auth.js";
 import { ApiResponse, BingoConfig } from "../types/index.js";
 import {
+  validateBody,
+  bingoDetailsSchema,
+  bingoUpdateSchema,
+  boardTilesSchema,
+  draftAssignmentsSchema,
+  playerRegistrationSchema,
+  sideAccountSchema,
+} from "../lib/validation.js";
+import { mapWithConcurrency } from "../lib/concurrency.js";
+import {
   getActiveBingo,
   getActiveBingoBoard,
   listBingos,
@@ -12,6 +22,7 @@ import {
 } from "../db/bingos.js";
 import { refreshStaticData } from "../services/staticDataCron.js";
 import { refreshAllPlayerSnapshots } from "../services/playerSnapshotCron.js";
+import { activateBingoWithSnapshots, HISCORE_CONCURRENCY } from "../services/bingoActivation.js";
 import {
   registerBingoPlayer,
   getBingoPlayers,
@@ -58,6 +69,7 @@ router.get(
 router.post(
   "/bingo/details",
   authorize("admin"),
+  validateBody(bingoDetailsSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const { name, start, end, size, teams } = req.body as {
       name?: string;
@@ -100,11 +112,8 @@ router.get(
 router.post(
   "/bingo/board",
   authorize("admin"),
+  validateBody(boardTilesSchema),
   asyncHandler(async (req: Request, res: Response) => {
-    if (!Array.isArray(req.body)) {
-      return res.status(400).json({ success: false, error: "Board must be an array of tiles" });
-    }
-
     const response: ApiResponse = {
       success: true,
       data: await saveActiveBingoBoard(req.body),
@@ -118,11 +127,8 @@ router.post(
 router.put(
   "/bingo/board",
   authorize("admin"),
+  validateBody(boardTilesSchema),
   asyncHandler(async (req: Request, res: Response) => {
-    if (!Array.isArray(req.body)) {
-      return res.status(400).json({ success: false, error: "Board must be an array of tiles" });
-    }
-
     const response: ApiResponse = {
       success: true,
       data: await saveActiveBingoBoard(req.body),
@@ -168,32 +174,15 @@ router.post(
       return res.status(400).json({ success: false, error: "No players registered to this bingo" });
     }
 
-    // Fetch hiscores and save start + current snapshots for every player concurrently
-    const snapshotResults = await Promise.allSettled(
-      players.map(async (player) => {
-        const data = await hiscores(player.rsn);
-        if (!data) {
-          throw new Error(`Player "${player.rsn}" is not ranked on the OSRS hiscores — ensure the RSN is correct and the account has played enough to appear on the hiscores`);
-        }
-        // start is idempotent — won't overwrite if already exists
-        await savePlayerSnapshot(player.id, "start", data);
-        await savePlayerSnapshot(player.id, "current", data);
-        return player.rsn;
-      })
-    );
+    // Take start + current snapshots (concurrency-capped), then atomically
+    // flip draft -> active via the activate_bingo RPC. `activated` is false
+    // if another request won the activation race in the meantime.
+    const { activated, succeeded, failed } = await activateBingoWithSnapshots(bingo.id);
+    if (!activated) {
+      return res.status(409).json({ success: false, error: "Bingo is already active" });
+    }
 
-    const failed = snapshotResults
-      .filter((r) => r.status === "rejected")
-      .map((r) => (r as PromiseRejectedResult).reason?.message ?? "Unknown error");
-
-    // Activate the bingo, setting start to now if not already set
-    const now = new Date().toISOString();
-    const updatedBingo = await updateBingo(bingo.id, {
-      status: "active",
-      start: bingo.startDate ?? now,
-    });
-
-    const succeeded = snapshotResults.filter((r) => r.status === "fulfilled").length;
+    const updatedBingo = (await getActiveBingo()) ?? bingo;
 
     const response: ApiResponse<BingoConfig> = {
       success: true,
@@ -213,6 +202,8 @@ router.post(
 
 router.put(
   "/bingo/:id",
+  authorize("admin"),
+  validateBody(bingoUpdateSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
@@ -268,9 +259,9 @@ router.get(
 router.post(
   "/bingo/players",
   authorize("admin"),
+  validateBody(playerRegistrationSchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const { rsn, teamId } = req.body as { rsn?: string; teamId?: string };
-    if (!rsn) return res.status(400).json({ success: false, error: "RSN is required" });
+    const { rsn, teamId } = req.body as { rsn: string; teamId?: string };
 
     const bingo = await getActiveBingo();
     if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
@@ -330,6 +321,7 @@ router.get(
 // Refresh the current snapshot for a specific player from the OSRS API
 router.put(
   "/bingo/players/:rsn/refresh",
+  authorize("admin"),
   asyncHandler(async (req: Request, res: Response) => {
     const rsn = Array.isArray(req.params.rsn) ? req.params.rsn[0] : req.params.rsn;
     const bingo = await getActiveBingo();
@@ -353,6 +345,7 @@ router.put(
 // Refresh current snapshots for ALL players in the active bingo
 router.put(
   "/bingo/players/refresh/all",
+  authorize("admin"),
   asyncHandler(async (req: Request, res: Response) => {
     const bingo = await getActiveBingo();
     if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
@@ -360,15 +353,13 @@ router.put(
     const players = await getBingoPlayers(bingo.id);
     if (!players.length) return res.status(200).json({ success: true, data: [], message: "No players to refresh" });
 
-    const results = await Promise.allSettled(
-      players.map(async (player) => {
-        const hiscoreData = await hiscores(player.rsn);
-        if (!hiscoreData) {
-          throw new Error(`Player "${player.rsn}" is not ranked on the OSRS hiscores`);
-        }
-        return savePlayerSnapshot(player.id, "current", hiscoreData);
-      }),
-    );
+    const results = await mapWithConcurrency(players, HISCORE_CONCURRENCY, async (player) => {
+      const hiscoreData = await hiscores(player.rsn);
+      if (!hiscoreData) {
+        throw new Error(`Player "${player.rsn}" is not ranked on the OSRS hiscores`);
+      }
+      return savePlayerSnapshot(player.id, "current", hiscoreData);
+    });
 
     const succeeded = results.filter((r) => r.status === "fulfilled").length;
     const failed = results.filter((r) => r.status === "rejected").length;
@@ -421,11 +412,9 @@ router.patch(
 router.post(
   "/bingo/draft",
   authorize("admin"),
+  validateBody(draftAssignmentsSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const assignments = req.body as Array<{ rsn: string; teamId: string | null }>;
-    if (!Array.isArray(assignments)) {
-      return res.status(400).json({ success: false, error: "Body must be an array of { rsn, teamId }" });
-    }
 
     const bingo = await getActiveBingo();
     if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
@@ -484,11 +473,10 @@ router.get(
 router.post(
   "/bingo/players/:rsn/side-accounts",
   authorize("admin"),
+  validateBody(sideAccountSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const rsn = Array.isArray(req.params.rsn) ? req.params.rsn[0] : req.params.rsn;
-    const { rsn: sideRsn, notes } = req.body as { rsn?: string; notes?: string };
-
-    if (!sideRsn) return res.status(400).json({ success: false, error: "RSN is required" });
+    const { rsn: sideRsn, notes } = req.body as { rsn: string; notes?: string };
 
     const bingo = await getActiveBingo();
     if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
