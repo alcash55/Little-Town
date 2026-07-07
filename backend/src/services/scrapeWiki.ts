@@ -16,14 +16,15 @@ const ACTIVITIES_KEYWORDS = ["grid points", "bounty hunter", "clue scrolls"];
 const cache = new Map<string, string[]>();
 
 export default async function scrapeWiki(
-  category: "skills" | "activities"
+  category: "skills" | "activities",
+  options: { bypassCache?: boolean } = {}
 ): Promise<string[]> {
   if (category !== "skills" && category !== "activities") {
     console.warn(`[scrapeWiki] Unrecognized category, defaulting to skills`);
     category = "skills";
   }
 
-  if (cache.has(category)) {
+  if (!options.bypassCache && cache.has(category)) {
     console.log(`[scrapeWiki] Returning cached result for: ${category}`);
     return cache.get(category)!;
   }

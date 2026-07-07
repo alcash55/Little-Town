@@ -13,8 +13,8 @@ export async function refreshStaticData(): Promise<void> {
   console.log("[staticDataCron] Refreshing static data...");
 
   const results = await Promise.allSettled([
-    scrapeWiki("skills").then((data) => upsertStaticData("skills", data)),
-    scrapeWiki("activities").then((data) => upsertStaticData("activities", data)),
+    scrapeWiki("skills", { bypassCache: true }).then((data) => upsertStaticData("skills", data)),
+    scrapeWiki("activities", { bypassCache: true }).then((data) => upsertStaticData("activities", data)),
   ]);
 
   for (const result of results) {

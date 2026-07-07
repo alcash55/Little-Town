@@ -1,5 +1,6 @@
 import { getDb } from "./client.js";
 import { HiscoreData, SideAccount } from "../types/index.js";
+import { AppError } from "../middleware/errorHandler.js";
 
 // -------------------------------------------------------
 // Types
@@ -39,15 +40,22 @@ export async function registerBingoPlayer(
 ): Promise<BingoPlayer> {
   const db = getDb();
 
-  // Single upsert instead of check-then-insert — avoids a race where two
-  // concurrent registrations for the same RSN both pass the "not found" check.
+  // Insert-if-absent (ignoreDuplicates), then always read back whichever row
+  // exists. Re-registering an already-registered RSN must be a race-free
+  // no-op — a merge-duplicates upsert would null out an existing team_id/
+  // registered_by on every re-add (e.g. re-importing the same CSV).
+  const { error: insertError } = await db.from("bingo_players").upsert(
+    { bingo_id: bingoId, rsn, team_id: teamId ?? null, registered_by: registeredBy ?? null },
+    { onConflict: "bingo_id,rsn", ignoreDuplicates: true },
+  );
+
+  if (insertError) throw new Error(`Failed to register player "${rsn}": ${insertError.message}`);
+
   const { data, error } = await db
     .from("bingo_players")
-    .upsert(
-      { bingo_id: bingoId, rsn, team_id: teamId ?? null, registered_by: registeredBy ?? null },
-      { onConflict: "bingo_id,rsn", ignoreDuplicates: false },
-    )
-    .select()
+    .select("*")
+    .eq("bingo_id", bingoId)
+    .eq("rsn", rsn)
     .single();
 
   if (error || !data) throw new Error(`Failed to register player "${rsn}": ${error?.message}`);
@@ -138,10 +146,18 @@ export async function updatePlayerCaptain(
     p_captain_team_id: captainTeamId,
   });
 
-  if (error) throw new Error(`Failed to update captain for "${rsn}": ${error.message}`);
+  if (error) {
+    // set_team_captain raises 'Player "..." not found in this bingo' /
+    // 'Captain team not found for this bingo' — surface those as 404s
+    // instead of letting them fall through to a generic 500.
+    if (/not found/i.test(error.message)) {
+      throw new AppError(error.message, 404);
+    }
+    throw new Error(`Failed to update captain for "${rsn}": ${error.message}`);
+  }
 
   const row = Array.isArray(data) ? data[0] : data;
-  if (!row) throw new Error(`Failed to update captain for "${rsn}": player not found`);
+  if (!row) throw new AppError(`Player "${rsn}" not found in this bingo`, 404);
   return row as BingoPlayer;
 }
 
@@ -308,15 +324,22 @@ export async function addSideAccount(
 ): Promise<SideAccount> {
   const db = getDb();
 
-  // Single upsert instead of check-then-insert — avoids a race where two
-  // concurrent adds for the same RSN both pass the "not found" check.
+  // Insert-if-absent (ignoreDuplicates), then always read back whichever row
+  // exists. Re-adding an already-tracked RSN must be a race-free no-op — a
+  // merge-duplicates upsert would wipe existing notes/added_by on every
+  // re-add.
+  const { error: insertError } = await db.from("bingo_player_side_accounts").upsert(
+    { player_id: playerId, rsn, notes: notes ?? null, added_by: addedBy ?? null },
+    { onConflict: "player_id,rsn", ignoreDuplicates: true },
+  );
+
+  if (insertError) throw new Error(`Failed to add side account "${rsn}": ${insertError.message}`);
+
   const { data, error } = await db
     .from("bingo_player_side_accounts")
-    .upsert(
-      { player_id: playerId, rsn, notes: notes ?? null, added_by: addedBy ?? null },
-      { onConflict: "player_id,rsn", ignoreDuplicates: false },
-    )
-    .select()
+    .select("*")
+    .eq("player_id", playerId)
+    .eq("rsn", rsn)
     .single();
 
   if (error || !data) throw new Error(`Failed to add side account "${rsn}": ${error?.message}`);

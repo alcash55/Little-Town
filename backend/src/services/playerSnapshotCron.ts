@@ -54,6 +54,11 @@ export async function refreshAllPlayerSnapshots(): Promise<{
  * using the same snapshot-then-activate logic as the manual admin route.
  */
 async function autoActivateDueBingos(): Promise<void> {
+  // Only one bingo can be active at a time (uq_bingos_one_active) — if one
+  // already is, there's nothing to activate and no point snapshot-fanning-out.
+  const activeBingo = await getActiveBingo();
+  if (activeBingo?.status === "active") return;
+
   const dueBingos = await getDueDraftBingos();
   for (const bingo of dueBingos) {
     if (!bingo.id) continue;
@@ -65,6 +70,8 @@ async function autoActivateDueBingos(): Promise<void> {
             failed.length ? `, ${failed.length} failed` : ""
           }).`,
         );
+        // Only one bingo can be active — stop after the first success.
+        break;
       }
     } catch (e) {
       console.error(`[playerSnapshotCron] Failed to auto-activate bingo "${bingo.name}":`, e);

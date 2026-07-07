@@ -60,7 +60,7 @@ export const useBingoOverview = () => {
   const [refreshStatsMessage, setRefreshStatsMessage] = useState<string | null>(null);
 
   const isActive = bingo?.status === 'active';
-  const isPlanned = bingo?.status === 'planned' || (bingo && bingo.status !== 'active' && bingo.status !== 'ended');
+  const isPlanned = bingo?.status === 'planned' || (bingo && bingo.status !== 'active' && bingo.status !== 'complete');
   const endNameMatches = endConfirmName.trim().toLowerCase() === (bingo?.name ?? '').trim().toLowerCase();
 
   const fetchBingo = useCallback(async () => {
@@ -161,7 +161,7 @@ export const useBingoOverview = () => {
     try {
       const res = await fetchWithAuth(`${BASE_URL}/bingo/${bingo.id}`, {
         method: 'PUT',
-        body: JSON.stringify({ endDate: new Date().toISOString(), status: 'ended' }),
+        body: JSON.stringify({ endDate: new Date().toISOString(), status: 'complete' }),
       });
       if (!res.ok) throw new Error((await res.json()).error ?? res.statusText);
       setEndDialogOpen(false);
