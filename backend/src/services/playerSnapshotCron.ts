@@ -1,10 +1,13 @@
-import { getActiveBingo } from "../db/bingos.js";
+import { getActiveBingo, getDueDraftBingos } from "../db/bingos.js";
 import { getBingoPlayers, savePlayerSnapshot } from "../db/players.js";
+import { activateBingoWithSnapshots, HISCORE_CONCURRENCY } from "./bingoActivation.js";
+import { mapWithConcurrency } from "../lib/concurrency.js";
 import { hiscores } from "./hiscores.js";
 
 const INTERVAL_MS = 20 * 60 * 1000; // 20 minutes
 
 let cronTimer: ReturnType<typeof setTimeout> | null = null;
+let stopped = false;
 
 /**
  * Fetches the latest hiscores for every player in the active bingo
@@ -23,17 +26,15 @@ export async function refreshAllPlayerSnapshots(): Promise<{
   const players = await getBingoPlayers(bingo.id);
   if (!players.length) return { succeeded: 0, failed: [] };
 
-  const results = await Promise.allSettled(
-    players.map(async (player) => {
-      const data = await hiscores(player.rsn);
-      if (!data) {
-        console.warn(`[playerSnapshotCron] Skipping "${player.rsn}" — not on hiscores (unranked).`);
-        throw new Error(`Player "${player.rsn}" is not ranked on the OSRS hiscores`);
-      }
-      await savePlayerSnapshot(player.id, "current", data);
-      return player.rsn;
-    }),
-  );
+  const results = await mapWithConcurrency(players, HISCORE_CONCURRENCY, async (player) => {
+    const data = await hiscores(player.rsn);
+    if (!data) {
+      console.warn(`[playerSnapshotCron] Skipping "${player.rsn}" — not on hiscores (unranked).`);
+      throw new Error(`Player "${player.rsn}" is not ranked on the OSRS hiscores`);
+    }
+    await savePlayerSnapshot(player.id, "current", data);
+    return player.rsn;
+  });
 
   const failed = results
     .filter((r) => r.status === "rejected")
@@ -48,21 +49,49 @@ export async function refreshAllPlayerSnapshots(): Promise<{
   return { succeeded, failed };
 }
 
+/**
+ * Auto-activates any draft bingo whose scheduled start_date has passed,
+ * using the same snapshot-then-activate logic as the manual admin route.
+ */
+async function autoActivateDueBingos(): Promise<void> {
+  const dueBingos = await getDueDraftBingos();
+  for (const bingo of dueBingos) {
+    if (!bingo.id) continue;
+    try {
+      const { activated, succeeded, failed } = await activateBingoWithSnapshots(bingo.id);
+      if (activated) {
+        console.log(
+          `[playerSnapshotCron] Auto-activated bingo "${bingo.name}" (${succeeded} snapshot(s) saved${
+            failed.length ? `, ${failed.length} failed` : ""
+          }).`,
+        );
+      }
+    } catch (e) {
+      console.error(`[playerSnapshotCron] Failed to auto-activate bingo "${bingo.name}":`, e);
+    }
+  }
+}
+
 async function tick(): Promise<void> {
   try {
+    await autoActivateDueBingos();
     await refreshAllPlayerSnapshots();
   } catch (e) {
     console.error("[playerSnapshotCron] Tick error:", e);
   }
+  // A stop() call during this in-flight tick must not resurrect the timer.
+  if (stopped) return;
   cronTimer = setTimeout(tick, INTERVAL_MS);
 }
 
 export function startPlayerSnapshotCron(): void {
   console.log("[playerSnapshotCron] Starting (interval: 20 min)...");
+  stopped = false;
   tick();
 }
 
 export function stopPlayerSnapshotCron(): void {
+  stopped = true;
   if (cronTimer) {
     clearTimeout(cronTimer);
     cronTimer = null;
