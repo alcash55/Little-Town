@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, lazy, Suspense } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LoadingContainer } from '../LoadingContainer/LoadingContainer';
 
@@ -12,6 +12,8 @@ type LoginModalContextValue = {
   loginWithCredentials: (username: string, password: string, rememberMe: boolean) => Promise<void>;
   user: User | null;
   logout: () => void;
+  /** False until the mount-time /me rehydration has settled (or immediately true when there's no stored token). */
+  authReady: boolean;
 };
 
 interface User {
@@ -61,7 +63,8 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [returnTo, setReturnTo] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const returnToRef = useRef<string | null>(null);
   const [sessionExpired, setSessionExpired] = useState(false);
   const [savedUsername, setSavedUsername] = useState(() => localStorage.getItem('rememberedUsername') ?? '');
   const [rememberMe, setRememberMe] = useState(() => !!localStorage.getItem('rememberedUsername'));
@@ -72,7 +75,10 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
   // On mount, rehydrate user from existing token
   useEffect(() => {
     const token = localStorage.getItem('authToken');
-    if (!token || user) return;
+    if (!token || user) {
+      setAuthReady(true);
+      return;
+    }
 
     fetch(`${BASE_URL}/api/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -87,7 +93,8 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
       .then((data) => {
         if (data?.data) setUser(data.data);
       })
-      .catch(() => localStorage.removeItem('authToken'));
+      .catch(() => localStorage.removeItem('authToken'))
+      .finally(() => setAuthReady(true));
   }, []);
 
   const openLogin = useCallback(() => {
@@ -104,7 +111,7 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
       const path = (e as CustomEvent<{ returnTo: string }>).detail?.returnTo ?? null;
       localStorage.removeItem('authToken');
       setUser(null);
-      setReturnTo(path);
+      returnToRef.current = path;
       setSessionExpired(true);
       ensureModalImported();
       setIsOpen(true);
@@ -168,9 +175,9 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
       console.log(`Welcome ${data.data.user.username}`)
 
       // Navigate back to the page they were on when their token expired
-      if (returnTo) {
-        navigate(returnTo);
-        setReturnTo(null);
+      if (returnToRef.current) {
+        navigate(returnToRef.current);
+        returnToRef.current = null;
       }
 
       window.dispatchEvent(new CustomEvent('auth:login', { detail: data.data }));
@@ -179,7 +186,7 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
     } finally {
       setIsSubmitting(false);
     }
-  }, []);
+  }, [navigate]);
 
   const logout = useCallback(() => {
     localStorage.removeItem('authToken');
@@ -200,6 +207,7 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
       loginWithCredentials,
       user,
       logout,
+      authReady,
     }),
     [
       openLogin,
@@ -211,6 +219,7 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
       loginWithCredentials,
       user,
       logout,
+      authReady,
     ],
   );
 
