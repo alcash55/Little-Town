@@ -28,7 +28,13 @@ export const bingoDetailsSchema = z.object({
   start: z.string().optional(),
   end: z.string().optional(),
   size: z.number().int().positive().optional(),
-  teams: z.array(z.string().min(1)).optional(),
+  teams: z
+    .array(z.string().min(1))
+    .refine(
+      (names) => new Set(names.map((n) => n.trim().toLowerCase())).size === names.length,
+      { message: "Team names must be unique" },
+    )
+    .optional(),
 });
 
 // -------------------------------------------------------
@@ -42,7 +48,13 @@ export const bingoUpdateSchema = z.object({
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   boardSize: z.number().int().positive().optional(),
-  teams: z.array(z.string().min(1)).optional(),
+  teams: z
+    .array(z.string().min(1))
+    .refine(
+      (names) => new Set(names.map((n) => n.trim().toLowerCase())).size === names.length,
+      { message: "Team names must be unique" },
+    )
+    .optional(),
 });
 
 // -------------------------------------------------------

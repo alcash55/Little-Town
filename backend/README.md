@@ -125,6 +125,7 @@ Local dev seed users (created by `db:reset`):
 | `PORT`                      | Server port (default: `8081`)                                           | No                     |
 | `FRONTEND_URL`              | Frontend origin for CORS (default: `http://localhost:3000`)             | Yes                    |
 | `JWT_SECRET`                | JWT signing secret — server refuses to start without this in production | Yes                    |
+| `ALLOW_DEV_AUTH`            | Set to `true` to enable local-dev auth bypasses (no-token admin, `dev:` passwords, fallback JWT secret). Ignored in production — never set it there. | No                     |
 | `JWT_EXPIRES_IN`            | JWT expiration duration (default: `24h`)                                | No                     |
 | `SUPABASE_URL`              | Supabase project API URL                                                | Yes                    |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-only Supabase service role key — never expose to the frontend    | Yes                    |
