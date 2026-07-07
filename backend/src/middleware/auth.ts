@@ -40,7 +40,10 @@ export const protect = async (
   }
 
   if (!token) {
-    if (process.env.NODE_ENV !== "production") {
+    if (
+      process.env.ALLOW_DEV_AUTH === "true" &&
+      process.env.NODE_ENV !== "production"
+    ) {
       req.user = localDevUser;
       return next();
     }

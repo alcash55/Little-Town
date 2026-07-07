@@ -4,6 +4,7 @@ import { upsertStaticData, getStaticDataUpdatedAt } from "../db/staticData.js";
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 let cronTimer: ReturnType<typeof setTimeout> | null = null;
+let stopped = false;
 
 /**
  * Scrapes skills and activities from the wiki and saves them to the DB.
@@ -49,6 +50,9 @@ async function tick(): Promise<void> {
     console.error("[staticDataCron] Tick error:", e);
   }
 
+  // A stop() call during this in-flight tick must not resurrect the timer.
+  if (stopped) return;
+
   // Schedule next run in 24 hours
   cronTimer = setTimeout(tick, ONE_DAY_MS);
 }
@@ -58,6 +62,7 @@ async function tick(): Promise<void> {
  */
 export function startStaticDataCron(): void {
   console.log("[staticDataCron] Starting...");
+  stopped = false;
   tick();
 }
 
@@ -65,6 +70,7 @@ export function startStaticDataCron(): void {
  * Stops the cron job (useful for graceful shutdown).
  */
 export function stopStaticDataCron(): void {
+  stopped = true;
   if (cronTimer) {
     clearTimeout(cronTimer);
     cronTimer = null;

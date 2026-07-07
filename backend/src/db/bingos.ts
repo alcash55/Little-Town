@@ -127,25 +127,14 @@ export async function updateBingo(
 
   if (error) throw new Error(error.message);
 
-  // If teams are provided, replace them
+  // If teams are provided, replace them atomically (preserves ids/player
+  // assignments for teams whose name is unchanged; see replace_bingo_teams).
   if (input.teams !== undefined) {
-    const { error: deleteError } = await getDb()
-      .from("bingo_teams")
-      .delete()
-      .eq("bingo_id", id);
-    if (deleteError) throw new Error(deleteError.message);
-
-    if (input.teams.length > 0) {
-      const { error: insertError } = await getDb()
-        .from("bingo_teams")
-        .insert(
-          input.teams.map((name) => ({
-            bingo_id: id,
-            name,
-          }))
-        );
-      if (insertError) throw new Error(insertError.message);
-    }
+    const { error: teamsError } = await getDb().rpc("replace_bingo_teams", {
+      p_bingo_id: id,
+      p_team_names: input.teams,
+    });
+    if (teamsError) throw new Error(teamsError.message);
   }
 
   const { data: full, error: fullError } = await bingoWithTeamsQuery()
@@ -160,14 +149,11 @@ export async function saveActiveBingoBoard(tiles: Tile[]): Promise<Tile[]> {
   const bingo = await getActiveBingo();
   if (!bingo?.id) throw new Error("Create bingo details before creating a board.");
 
-  await getDb().from("bingo_board_tiles").delete().eq("bingo_id", bingo.id);
-
   const rows = tiles.map((tile, index) => {
     const targetValue =
       tile.killCount ?? tile.experience ?? tile.dropsAmount ?? null;
 
     return {
-      bingo_id: bingo.id,
       position: index,
       type: tile.type,
       task: tile.task,
@@ -177,12 +163,42 @@ export async function saveActiveBingoBoard(tiles: Tile[]): Promise<Tile[]> {
     };
   });
 
-  if (rows.length > 0) {
-    const { error } = await getDb().from("bingo_board_tiles").insert(rows);
-    if (error) throw new Error(error.message);
-  }
+  // Atomic replace (delete + insert in one transaction) — avoids a window
+  // where concurrent readers see an empty board.
+  const { error } = await getDb().rpc("replace_bingo_board", {
+    p_bingo_id: bingo.id,
+    p_tiles: rows,
+  });
+  if (error) throw new Error(error.message);
 
   return tiles;
+}
+
+/**
+ * Atomically flips a bingo from draft -> active (setting start_date if unset).
+ * Returns false if this call lost the race (already active, or not a draft).
+ */
+export async function activateBingo(bingoId: string): Promise<boolean> {
+  const { data, error } = await getDb().rpc("activate_bingo", {
+    p_bingo_id: bingoId,
+  });
+  if (error) throw new Error(error.message);
+  return Boolean(data);
+}
+
+/**
+ * Draft bingos whose scheduled start_date has already passed — used by the
+ * snapshot cron to auto-activate them without an admin manually clicking
+ * "Start now".
+ */
+export async function getDueDraftBingos(): Promise<BingoConfig[]> {
+  const { data, error } = await bingoWithTeamsQuery()
+    .eq("status", "draft")
+    .not("start_date", "is", null)
+    .lte("start_date", new Date().toISOString());
+
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => mapBingo(row));
 }
 
 export async function getActiveBingoBoard(): Promise<Tile[]> {
