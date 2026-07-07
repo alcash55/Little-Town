@@ -44,7 +44,10 @@ export const bingoDetailsSchema = z.object({
 export const bingoUpdateSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
-  status: z.enum(["draft", "active", "complete", "archived"]).optional(),
+  // "active" is deliberately excluded — activation must go through
+  // POST /bingo/activate so start/current snapshots get taken; a direct PUT
+  // to "active" would also collide confusingly with uq_bingos_one_active.
+  status: z.enum(["draft", "complete", "archived"]).optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   boardSize: z.number().int().positive().optional(),
