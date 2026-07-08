@@ -6,6 +6,7 @@ import {
   insertPendingSubmission,
   SCREENSHOTS_BUCKET,
 } from "../db/bingoSubmissions.js";
+import { extractImgurCandidates, downloadImgurImage, type ImgurDownloadResult } from "./imageLinks.js";
 
 const BACKFILL_LIMIT = 100;
 
@@ -53,17 +54,50 @@ async function uploadAttachment(
 }
 
 /**
- * Ingests every image attachment on a message into bingo_submissions
- * (status pending). Skips attachments whose discord_message_id has already
- * been ingested. Messages with more than one image attachment get one row
- * per attachment, suffixed `:<index>` so discord_message_id stays unique
- * (see reactToSubmissionMessage, which strips the suffix back off).
+ * Uploads an already-downloaded, already-validated imgur image to the
+ * private `screenshots` bucket. The storage path is built entirely from
+ * validated parts (`id` already passed the `^[A-Za-z0-9]{5,10}$` gate in
+ * imageLinks.ts, `ext` is the *detected* extension from the downloaded
+ * bytes) — never from the user's original URL string.
  */
-async function ingestMessage(message: Message): Promise<void> {
+async function uploadImgurImage(
+  bingoId: string,
+  discordMessageId: string,
+  download: Extract<ImgurDownloadResult, { ok: true }>,
+): Promise<string> {
+  const path = `${bingoId}/${sanitizeFileName(discordMessageId)}-imgur-${download.id}.${download.ext}`;
+
+  const { error } = await getDb()
+    .storage.from(SCREENSHOTS_BUCKET)
+    .upload(path, download.buffer, {
+      contentType: download.contentType,
+      upsert: false,
+    });
+
+  if (error) throw new Error(`Failed to upload imgur screenshot to storage: ${error.message}`);
+  return path;
+}
+
+/**
+ * Ingests every image attachment and valid imgur link on a message into
+ * bingo_submissions (status pending). Attachments and links form one
+ * combined, ordered list (attachments first, then links) — skips whose
+ * discord_message_id has already been ingested. Messages with more than one
+ * total item get one row per item, suffixed `:<index>` so discord_message_id
+ * stays unique (see reactToSubmissionMessage, which strips the suffix back
+ * off); exactly one item gets the bare message id.
+ *
+ * Exported (in addition to being used internally by the gateway handlers
+ * below) so it can be exercised directly in tests without spinning up a
+ * real Discord client.
+ */
+export async function ingestMessage(message: Message): Promise<void> {
   if (message.author.bot) return;
 
   const imageAttachments = [...message.attachments.values()].filter(isImageAttachment);
-  if (imageAttachments.length === 0) return;
+  const imgurCandidates = extractImgurCandidates(message.content);
+  const totalItems = imageAttachments.length + imgurCandidates.length;
+  if (totalItems === 0) return;
 
   const bingo = await getActiveBingo();
   if (!bingo?.id || bingo.status !== "active") {
@@ -73,11 +107,11 @@ async function ingestMessage(message: Message): Promise<void> {
     return;
   }
   const bingoId = bingo.id;
+  const notes = `Submitted via Discord by ${message.author.tag} (${message.author.id})`;
 
   for (let index = 0; index < imageAttachments.length; index++) {
     const attachment = imageAttachments[index];
-    const discordMessageId =
-      imageAttachments.length > 1 ? `${message.id}:${index}` : message.id;
+    const discordMessageId = totalItems > 1 ? `${message.id}:${index}` : message.id;
 
     try {
       if (await submissionExistsByDiscordMessageId(discordMessageId)) continue;
@@ -92,7 +126,7 @@ async function ingestMessage(message: Message): Promise<void> {
         // authors generally have no corresponding registered account, so
         // there's nowhere else in the current schema to record who posted
         // this — stash it in `notes` for the reviewing admin.
-        notes: `Submitted via Discord by ${message.author.tag} (${message.author.id})`,
+        notes,
       });
 
       console.log(
@@ -101,6 +135,42 @@ async function ingestMessage(message: Message): Promise<void> {
     } catch (e) {
       console.error(
         `[discordScreenshots] Failed to ingest attachment ${attachment.id} on message ${message.id}:`,
+        e,
+      );
+    }
+  }
+
+  for (let linkIndex = 0; linkIndex < imgurCandidates.length; linkIndex++) {
+    const candidate = imgurCandidates[linkIndex];
+    const index = imageAttachments.length + linkIndex;
+    const discordMessageId = totalItems > 1 ? `${message.id}:${index}` : message.id;
+
+    try {
+      if (await submissionExistsByDiscordMessageId(discordMessageId)) continue;
+
+      const result = await downloadImgurImage(candidate);
+      if (!result.ok) {
+        console.log(
+          `[discordScreenshots] Skipping imgur link ${candidate.id} on message ${message.id} (${result.reason}).`,
+        );
+        continue;
+      }
+
+      const imagePath = await uploadImgurImage(bingoId, discordMessageId, result);
+
+      await insertPendingSubmission({
+        bingoId,
+        discordMessageId,
+        imagePath,
+        notes,
+      });
+
+      console.log(
+        `[discordScreenshots] Ingested imgur link ${candidate.id} from ${message.author.tag} (message ${discordMessageId})`,
+      );
+    } catch (e) {
+      console.error(
+        `[discordScreenshots] Failed to ingest imgur link ${candidate.id} on message ${message.id}:`,
         e,
       );
     }
