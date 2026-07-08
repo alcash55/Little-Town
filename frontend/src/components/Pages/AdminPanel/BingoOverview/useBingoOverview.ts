@@ -3,6 +3,7 @@ import { fetchWithAuth } from '../../../../utils/fetchWithAuth';
 import { BingoConfig } from '../BingoDetails/useBingoDetails';
 import { BingoTeam, BingoPlayer } from '../TeamDrafter/useTeamDrafter';
 import { Tile } from '../BoardBuilder/useBoardBuilder';
+import { PendingScreenshotSubmission } from '../ScreenshotSubmission/useScreenshotSubmission';
 
 const BASE_URL = `${import.meta.env.VITE_BASEURL || 'http://localhost:8081'}/api/admin`;
 
@@ -26,13 +27,6 @@ export type SideAccountConflict = {
   detectedAt: string;
 };
 
-export type PendingScreenshot = {
-  id: string;
-  submittedBy: string;
-  tileName: string;
-  submittedAt: string;
-};
-
 export const useBingoOverview = () => {
   const [bingo, setBingo] = useState<BingoConfig | null>(null);
   const [teams, setTeams] = useState<BingoTeam[]>([]);
@@ -40,7 +34,7 @@ export const useBingoOverview = () => {
   const [board, setBoard] = useState<Tile[]>([]);
   const [playerStats, setPlayerStats] = useState<PlayerStat[]>([]);
   const [conflicts, setConflicts] = useState<SideAccountConflict[]>([]);
-  const [pendingScreenshots, setPendingScreenshots] = useState<PendingScreenshot[]>([]);
+  const [pendingScreenshots, setPendingScreenshots] = useState<PendingScreenshotSubmission[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -97,10 +91,20 @@ export const useBingoOverview = () => {
     } catch { /* non-fatal */ }
   }, []);
 
-  // TODO: GET /bingo/player-stats, /bingo/conflicts, and /bingo/screenshots/pending
-  // do not exist on the backend yet. Polling is disabled below; playerStats/conflicts/
-  // pendingScreenshots stay empty (UI sections that depend on them just stay hidden)
-  // until those endpoints are implemented.
+  // TODO: GET /bingo/player-stats and /bingo/conflicts do not exist on the backend
+  // yet. playerStats/conflicts stay empty (UI sections that depend on them just
+  // stay hidden) until those endpoints are implemented.
+
+  const fetchPendingScreenshots = useCallback(async () => {
+    try {
+      const res = await fetchWithAuth(`${BASE_URL}/bingo/screenshots/pending`);
+      if (!res.ok) return;
+      const json = await res.json();
+      setPendingScreenshots(Array.isArray(json.data) ? json.data : []);
+    } catch {
+      /* non-fatal: the pending-review banner just keeps its last known count */
+    }
+  }, []);
 
   // Initial load
   useEffect(() => {
@@ -108,10 +112,18 @@ export const useBingoOverview = () => {
       setLoading(true);
       await fetchBingo();
       await fetchPlayersAndBoard();
+      await fetchPendingScreenshots();
       setLoading(false);
     };
     load();
-  }, [fetchBingo, fetchPlayersAndBoard]);
+  }, [fetchBingo, fetchPlayersAndBoard, fetchPendingScreenshots]);
+
+  // Poll pending screenshots every 30s while the overview page is mounted so the
+  // "N screenshots pending review" banner stays fresh without a manual refresh.
+  useEffect(() => {
+    const interval = setInterval(fetchPendingScreenshots, 30_000);
+    return () => clearInterval(interval);
+  }, [fetchPendingScreenshots]);
 
   const clearRefreshStatsMessage = useCallback(() => setRefreshStatsMessage(null), []);
 
