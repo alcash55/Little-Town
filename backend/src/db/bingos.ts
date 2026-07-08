@@ -149,7 +149,10 @@ export async function saveActiveBingoBoard(tiles: Tile[]): Promise<Tile[]> {
   const bingo = await getActiveBingo();
   if (!bingo?.id) throw new Error("Create bingo details before creating a board.");
 
-  const rows = tiles.map((tile, index) => {
+  const rows = tiles.map((tileWithId, index) => {
+    // Strip the row id a previously-fetched board may carry — metadata stores
+    // only the tile definition; ids are regenerated on insert.
+    const { id: _id, ...tile } = tileWithId;
     const targetValue =
       tile.killCount ?? tile.experience ?? tile.dropsAmount ?? null;
 
@@ -207,10 +210,11 @@ export async function getActiveBingoBoard(): Promise<Tile[]> {
 
   const { data, error } = await getDb()
     .from("bingo_board_tiles")
-    .select("metadata")
+    .select("id, metadata")
     .eq("bingo_id", bingo.id)
     .order("position", { ascending: true });
 
   if (error) throw new Error(error.message);
-  return (data ?? []).map((row) => row.metadata as Tile);
+  // Tiles carry their row id so the screenshot review UI can reference them.
+  return (data ?? []).map((row) => ({ ...(row.metadata as Tile), id: row.id }));
 }
