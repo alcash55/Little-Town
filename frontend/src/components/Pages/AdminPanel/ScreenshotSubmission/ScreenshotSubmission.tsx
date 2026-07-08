@@ -12,6 +12,7 @@ const ScreenshotSubmission = () => {
     tileOptions,
     boardMissingTileIds,
     loading,
+    refreshing,
     error,
     refresh,
     tileSelection,
@@ -54,16 +55,24 @@ const ScreenshotSubmission = () => {
         <Button
           variant="outlined"
           size="small"
-          startIcon={<SyncIcon />}
+          disabled={refreshing}
+          startIcon={
+            refreshing ? (
+              <CircularProgress size={16} sx={{ color: '#2A9D8F' }} />
+            ) : (
+              <SyncIcon />
+            )
+          }
           onClick={refresh}
           sx={{ color: '#2A9D8F', borderColor: '#2A9D8F', '&:hover': { borderColor: '#2A9D8F', bgcolor: 'rgba(42,157,143,0.08)' } }}
         >
-          Refresh
+          {refreshing ? 'Refreshing…' : 'Refresh'}
         </Button>
       </Box>
 
       {pending.length > 0 && (
         <Box
+          aria-busy={refreshing}
           sx={{
             display: 'flex',
             flexWrap: 'wrap',
