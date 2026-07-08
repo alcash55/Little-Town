@@ -61,6 +61,7 @@ export function ScreenshotCard({
 
   return (
     <Card sx={{ width: '100%', maxWidth: 380, display: 'flex', flexDirection: 'column' }}>
+      {submission.imageUrl ? (
       <Box
         component="a"
         href={submission.imageUrl}
@@ -94,6 +95,21 @@ export function ScreenshotCard({
           <OpenInNewIcon sx={{ fontSize: 16, color: textPrimary }} />
         </Box>
       </Box>
+      ) : (
+      <Box
+        sx={{
+          height: 200,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'rgba(255,255,255,0.04)',
+        }}
+      >
+        <Typography variant="caption" sx={{ color: textSecondary }}>
+          Image unavailable
+        </Typography>
+      </Box>
+      )}
 
       <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, flexGrow: 1 }}>
         <Stack spacing={0.25}>

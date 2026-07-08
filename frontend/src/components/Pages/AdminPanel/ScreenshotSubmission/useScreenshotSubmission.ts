@@ -33,7 +33,7 @@ export type BoardTile = Tile & { id?: string };
  */
 export type PendingScreenshotSubmission = {
   id: string;
-  imageUrl: string;
+  imageUrl: string | null;
   submittedBy: string;
   submittedAt: string;
   discordMessageId?: string;

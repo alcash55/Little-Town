@@ -530,7 +530,9 @@ router.get(
         id: submission.id,
         discordMessageId: submission.discord_message_id,
         notes: submission.notes,
-        createdAt: submission.created_at,
+        submittedBy:
+          submission.notes?.match(/Submitted via Discord by (.+?) \(/)?.[1] ?? "Discord",
+        submittedAt: submission.created_at,
         imageUrl: submission.image_path ? await getSignedScreenshotUrl(submission.image_path) : null,
       })),
     );
