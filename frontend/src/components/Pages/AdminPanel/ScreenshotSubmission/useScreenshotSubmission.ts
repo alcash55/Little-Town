@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchWithAuth } from '../../../../utils/fetchWithAuth';
 import { BingoTeam } from '../TeamDrafter/useTeamDrafter';
 import { Tile } from '../BoardBuilder/useBoardBuilder';
@@ -9,12 +9,10 @@ const BASE_URL = `${import.meta.env.VITE_BASEURL || 'http://localhost:8081'}/api
  * A board tile as returned by GET /bingo/board, extended with the underlying
  * bingo_board_tiles row id.
  *
- * CONTRACT NOTE: as of this writing, getActiveBingoBoard() in
- * backend/src/db/bingos.ts only selects `metadata` (task/type/points/etc.),
- * not `id` — so `id` will be undefined until that query is extended to also
- * select the tile's id. The tile picker below only offers tiles that have an
- * id, so it degrades to "no tiles available" rather than ever submitting a
- * fabricated tileId.
+ * getActiveBingoBoard() in backend/src/db/bingos.ts selects `id, metadata`
+ * and maps the row id onto each tile, so `id` is populated in practice. The
+ * tile picker below still only offers tiles that have an id, as a safety net
+ * against ever submitting a fabricated tileId.
  */
 export type BoardTile = Tile & { id?: string };
 
@@ -53,6 +51,7 @@ export const useScreenshotSubmission = () => {
   const [teams, setTeams] = useState<BingoTeam[]>([]);
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   /** Per-submission tile/team selections, keyed by submission id. */
@@ -62,6 +61,9 @@ export const useScreenshotSubmission = () => {
   /** In-flight approve/deny request, if any. */
   const [reviewing, setReviewing] = useState<{ id: string; action: ReviewAction } | null>(null);
   const [reviewError, setReviewError] = useState<Record<string, string>>({});
+
+  /** Guards `refresh` against overlapping calls without depending on render state. */
+  const refreshingRef = useRef(false);
 
   const fetchPending = useCallback(async () => {
     try {
@@ -105,7 +107,15 @@ export const useScreenshotSubmission = () => {
   }, [fetchPending, fetchTeamsAndBoard]);
 
   const refresh = useCallback(async () => {
-    await Promise.all([fetchPending(), fetchTeamsAndBoard()]);
+    if (refreshingRef.current) return;
+    refreshingRef.current = true;
+    setRefreshing(true);
+    try {
+      await Promise.all([fetchPending(), fetchTeamsAndBoard()]);
+    } finally {
+      refreshingRef.current = false;
+      setRefreshing(false);
+    }
   }, [fetchPending, fetchTeamsAndBoard]);
 
   const setTileForSubmission = useCallback((submissionId: string, tileId: string) => {
@@ -166,6 +176,7 @@ export const useScreenshotSubmission = () => {
     tileOptions,
     boardMissingTileIds: board.length > 0 && tileOptions.length === 0,
     loading,
+    refreshing,
     error,
     refresh,
 
