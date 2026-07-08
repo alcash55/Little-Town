@@ -105,6 +105,19 @@ All admin routes require a valid JWT with role `admin` or `moderator`.
 | POST   | `/api/admin/bingo/board`   | admin            | Save the tile board for the active bingo    |
 | PUT    | `/api/admin/bingo/board`   | admin            | Replace the tile board for the active bingo |
 | GET    | `/api/admin/bingo/board`   | admin            | Get the current tile board                  |
+| GET    | `/api/admin/bingo/screenshots/pending`        | admin, moderator | Pending Discord screenshot submissions, each with a short-lived signed image URL |
+| POST   | `/api/admin/bingo/screenshots/:id/approve`    | admin, moderator | Approve a submission; body `{ tileId, teamId }` (admin assigns which tile/team it counts for) |
+| POST   | `/api/admin/bingo/screenshots/:id/deny`       | admin, moderator | Deny a submission                            |
+
+### Discord screenshot ingest
+
+When `DISCORD_BOT_TOKEN` and `DISCORD_SCREENSHOT_CHANNEL_ID` are both set, a discord.js gateway
+client (`src/services/discordScreenshots.ts`) watches the configured channel for image
+attachments. On startup it backfills the channel's last 100 messages; after that it listens live.
+Each image attachment is downloaded, uploaded to the private `screenshots` Supabase storage
+bucket, and inserted as a `pending` row in `bingo_submissions` (deduped on `discord_message_id`,
+so re-scans are safe). Approving/denying a submission via the admin API reacts 👍/👎 on the
+original Discord message, best-effort (never blocks the review).
 
 ## Authentication
 
@@ -129,6 +142,8 @@ Local dev seed users (created by `db:reset`):
 | `JWT_EXPIRES_IN`            | JWT expiration duration (default: `24h`)                                | No                     |
 | `SUPABASE_URL`              | Supabase project API URL                                                | Yes                    |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-only Supabase service role key — never expose to the frontend    | Yes                    |
+| `DISCORD_BOT_TOKEN`         | Discord bot token for the screenshot ingest service. Optional — if unset (along with `DISCORD_SCREENSHOT_CHANNEL_ID`), the service logs one warning on startup and does not run; the admin screenshot review API still works. Never log this value. | No |
+| `DISCORD_SCREENSHOT_CHANNEL_ID` | Discord channel ID the bot watches for screenshot attachments      | No                      |
 
 ## Scripts
 

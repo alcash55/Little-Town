@@ -4,7 +4,14 @@ Business logic layer between routes and the database. Files here orchestrate mul
 
 ## Files
 
-This directory is currently empty. The following files are candidates to be moved here as the project grows:
+(This README predates most files actually in this directory — e.g. `hiscores.ts`, `scrapeWiki.ts`,
+`staticDataCron.ts`, `playerSnapshotCron.ts`, `bingoActivation.ts` — none of which are documented
+below.)
 
-- `hiscores.ts` (currently at `src/hiscores.ts`) — fetches and formats data from the OSRS hiscores API. This is external API orchestration and belongs here.
-- `scrapeWiki.ts` (currently at `src/utils/scrapeWiki.ts`) — scrapes the RuneScape wiki using Puppeteer.
+### `discordScreenshots.ts`
+Discord gateway ingest for bingo screenshot submissions. Env-optional: does nothing but log one
+warning if `DISCORD_BOT_TOKEN` / `DISCORD_SCREENSHOT_CHANNEL_ID` are unset. When configured,
+watches the channel for image attachments, uploads them to the `screenshots` storage bucket, and
+inserts `bingo_submissions` rows (deduped on `discord_message_id`). `startDiscordScreenshotService`
+/ `stopDiscordScreenshotService` follow the same start/stop pattern as the cron services.
+`reactToSubmissionMessage` is called by `routes/admin.ts` on approve/deny (best-effort).
