@@ -10,6 +10,7 @@ import {
   draftAssignmentsSchema,
   playerRegistrationSchema,
   sideAccountSchema,
+  screenshotApprovalSchema,
 } from "../lib/validation.js";
 import { mapWithConcurrency } from "../lib/concurrency.js";
 import {
@@ -40,6 +41,14 @@ import {
   removeSideAccount,
 } from "../db/players.js";
 import { hiscores } from "../services/hiscores.js";
+import {
+  getPendingSubmissions,
+  getSubmissionById,
+  approveSubmission,
+  denySubmission,
+  getSignedScreenshotUrl,
+} from "../db/bingoSubmissions.js";
+import { reactToSubmissionMessage } from "../services/discordScreenshots.js";
 
 const router = Router();
 
@@ -500,6 +509,92 @@ router.delete(
 
     await removeSideAccount(sideAccountId);
     res.status(200).json({ success: true, message: "Side account removed" });
+  }),
+);
+
+// -------------------------------------------------------
+// Screenshot submissions (Discord ingest review queue)
+// -------------------------------------------------------
+
+// List pending screenshot submissions for the active bingo, each with a
+// short-lived signed URL to the stored image.
+router.get(
+  "/bingo/screenshots/pending",
+  asyncHandler(async (req: Request, res: Response) => {
+    const bingo = await getActiveBingo();
+    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+
+    const submissions = await getPendingSubmissions(bingo.id);
+    const data = await Promise.all(
+      submissions.map(async (submission) => ({
+        id: submission.id,
+        discordMessageId: submission.discord_message_id,
+        notes: submission.notes,
+        createdAt: submission.created_at,
+        imageUrl: submission.image_path ? await getSignedScreenshotUrl(submission.image_path) : null,
+      })),
+    );
+
+    res.status(200).json({ success: true, data });
+  }),
+);
+
+// Approve a pending submission — admin assigns the tile + team it counts for.
+router.post(
+  "/bingo/screenshots/:id/approve",
+  validateBody(screenshotApprovalSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    if (!id) return res.status(400).json({ success: false, error: "Submission ID is required" });
+
+    const { tileId, teamId } = req.body as { tileId: string; teamId: string };
+
+    const submission = await getSubmissionById(id);
+    if (!submission) return res.status(404).json({ success: false, error: "Submission not found" });
+    if (submission.status !== "pending") {
+      return res
+        .status(409)
+        .json({ success: false, error: `Submission has already been ${submission.status}` });
+    }
+
+    const updated = await approveSubmission(id, { tileId, teamId, reviewedBy: getAuditUserId(req) });
+
+    if (updated.discord_message_id) {
+      // Best-effort — a failed Discord reaction must not fail the review.
+      reactToSubmissionMessage(updated.discord_message_id, "\u{1F44D}").catch((e) =>
+        console.warn(`[admin] Failed to react to Discord message for submission ${id}:`, e),
+      );
+    }
+
+    res.status(200).json({ success: true, data: updated, message: "Screenshot approved" });
+  }),
+);
+
+// Deny a pending submission.
+router.post(
+  "/bingo/screenshots/:id/deny",
+  asyncHandler(async (req: Request, res: Response) => {
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    if (!id) return res.status(400).json({ success: false, error: "Submission ID is required" });
+
+    const submission = await getSubmissionById(id);
+    if (!submission) return res.status(404).json({ success: false, error: "Submission not found" });
+    if (submission.status !== "pending") {
+      return res
+        .status(409)
+        .json({ success: false, error: `Submission has already been ${submission.status}` });
+    }
+
+    const updated = await denySubmission(id, { reviewedBy: getAuditUserId(req) });
+
+    if (updated.discord_message_id) {
+      // Best-effort — a failed Discord reaction must not fail the review.
+      reactToSubmissionMessage(updated.discord_message_id, "\u{1F44E}").catch((e) =>
+        console.warn(`[admin] Failed to react to Discord message for submission ${id}:`, e),
+      );
+    }
+
+    res.status(200).json({ success: true, data: updated, message: "Screenshot denied" });
   }),
 );
 

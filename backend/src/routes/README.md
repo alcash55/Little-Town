@@ -20,6 +20,12 @@ Admin-only routes at `/api/admin`. All routes require `protect` + `authorize("ad
 - `POST /bingo/board` — save the tile board for the active bingo
 - `PUT /bingo/board` — replace the tile board for the active bingo
 - `GET /bingo/board` — get the current tile board
+- `GET /bingo/screenshots/pending` — pending Discord screenshot submissions with signed image URLs
+- `POST /bingo/screenshots/:id/approve` — approve a submission; body `{ tileId, teamId }`
+- `POST /bingo/screenshots/:id/deny` — deny a submission
+
+(Note: this file predates several other admin.ts routes — e.g. players, team draft, side
+accounts, snapshot refresh — that aren't listed above either.)
 
 ### `hiscores.ts`
 OSRS hiscores routes at `/api/hiscores`:
