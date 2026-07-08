@@ -60,7 +60,7 @@ export const useBingoOverview = () => {
   const [refreshStatsMessage, setRefreshStatsMessage] = useState<string | null>(null);
 
   const isActive = bingo?.status === 'active';
-  const isPlanned = bingo?.status === 'planned' || (bingo && bingo.status !== 'active' && bingo.status !== 'ended');
+  const isPlanned = bingo?.status === 'planned' || (bingo && bingo.status !== 'active' && bingo.status !== 'complete');
   const endNameMatches = endConfirmName.trim().toLowerCase() === (bingo?.name ?? '').trim().toLowerCase();
 
   const fetchBingo = useCallback(async () => {
@@ -97,32 +97,10 @@ export const useBingoOverview = () => {
     } catch { /* non-fatal */ }
   }, []);
 
-  const fetchPlayerStats = useCallback(async () => {
-    try {
-      const res = await fetchWithAuth(`${BASE_URL}/bingo/player-stats`);
-      if (!res.ok) return;
-      const json = await res.json();
-      setPlayerStats(json.data ?? []);
-    } catch { /* non-fatal */ }
-  }, []);
-
-  const fetchConflicts = useCallback(async () => {
-    try {
-      const res = await fetchWithAuth(`${BASE_URL}/bingo/conflicts`);
-      if (!res.ok) return;
-      const json = await res.json();
-      setConflicts(json.data ?? []);
-    } catch { /* non-fatal */ }
-  }, []);
-
-  const fetchPendingScreenshots = useCallback(async () => {
-    try {
-      const res = await fetchWithAuth(`${BASE_URL}/bingo/screenshots/pending`);
-      if (!res.ok) return;
-      const json = await res.json();
-      setPendingScreenshots(json.data ?? []);
-    } catch { /* non-fatal */ }
-  }, []);
+  // TODO: GET /bingo/player-stats, /bingo/conflicts, and /bingo/screenshots/pending
+  // do not exist on the backend yet. Polling is disabled below; playerStats/conflicts/
+  // pendingScreenshots stay empty (UI sections that depend on them just stay hidden)
+  // until those endpoints are implemented.
 
   // Initial load
   useEffect(() => {
@@ -135,20 +113,6 @@ export const useBingoOverview = () => {
     load();
   }, [fetchBingo, fetchPlayersAndBoard]);
 
-  // Poll active-bingo data every 60s
-  useEffect(() => {
-    if (!isActive) return;
-    fetchPlayerStats();
-    fetchConflicts();
-    fetchPendingScreenshots();
-    const interval = setInterval(() => {
-      fetchPlayerStats();
-      fetchConflicts();
-      fetchPendingScreenshots();
-    }, 60_000);
-    return () => clearInterval(interval);
-  }, [isActive, fetchPlayerStats, fetchConflicts, fetchPendingScreenshots]);
-
   const clearRefreshStatsMessage = useCallback(() => setRefreshStatsMessage(null), []);
 
   // Auto-dismiss the refresh message after 8 seconds
@@ -159,19 +123,19 @@ export const useBingoOverview = () => {
   }, [refreshStatsMessage]);
 
   const refreshAllStats = useCallback(async () => {
+    setRefreshingStats(true);
     setRefreshStatsMessage(null);
     try {
       const res = await fetchWithAuth(`${BASE_URL}/bingo/players/refresh/snapshots`, { method: 'POST' });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? res.statusText);
       setRefreshStatsMessage(json.message ?? 'Stats refreshed.');
-      await fetchPlayerStats();
     } catch (e: any) {
       setRefreshStatsMessage(`Failed to refresh: ${e.message}`);
     } finally {
       setRefreshingStats(false);
     }
-  }, [fetchPlayerStats]);
+  }, []);
 
   const startNow = async () => {
     if (!bingo?.id) return;
@@ -190,23 +154,6 @@ export const useBingoOverview = () => {
     }
   };
 
-  // Auto-activate when today's date matches the bingo start date and it isn't active yet
-  useEffect(() => {
-    if (!bingo || isActive) return;
-    const startDate = new Date(bingo.startDate);
-    const now = new Date();
-    const sameDay =
-      startDate.getFullYear() === now.getFullYear() &&
-      startDate.getMonth() === now.getMonth() &&
-      startDate.getDate() === now.getDate();
-    if (!sameDay) return;
-
-    // Fire-and-forget: trigger activation automatically
-    fetchWithAuth(`${BASE_URL}/bingo/activate`, { method: 'POST' })
-      .then((res) => { if (res.ok) fetchBingo(); })
-      .catch(() => { /* silent — user can still press the button manually */ });
-  }, [bingo?.startDate, isActive]);
-
   const endBingo = async () => {
     if (!bingo?.id || !endNameMatches) return;
     setEnding(true);
@@ -214,7 +161,7 @@ export const useBingoOverview = () => {
     try {
       const res = await fetchWithAuth(`${BASE_URL}/bingo/${bingo.id}`, {
         method: 'PUT',
-        body: JSON.stringify({ end: new Date().toISOString(), status: 'ended' }),
+        body: JSON.stringify({ endDate: new Date().toISOString(), status: 'complete' }),
       });
       if (!res.ok) throw new Error((await res.json()).error ?? res.statusText);
       setEndDialogOpen(false);

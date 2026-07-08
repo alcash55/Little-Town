@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import jwt from "jsonwebtoken";
+import jwt, { SignOptions } from "jsonwebtoken";
 import { getJwtSecret } from "../lib/jwt.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { protect } from "../middleware/auth.js";
@@ -37,18 +37,26 @@ router.post(
     }
 
     // Generate JWT token
+    const expiresIn = (process.env.JWT_EXPIRES_IN || "24h") as SignOptions["expiresIn"];
     const token = jwt.sign(
       { id: user.id, username: user.username, role: user.role },
       getJwtSecret(),
-      { expiresIn: "24h" },
+      { expiresIn },
     );
+
+    // Read the actual `exp` claim back off the token so expiresAt always
+    // matches what was signed, regardless of JWT_EXPIRES_IN's format.
+    const decoded = jwt.decode(token) as { exp?: number } | null;
+    const expiresAt = decoded?.exp
+      ? new Date(decoded.exp * 1000).toISOString()
+      : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
     const response: ApiResponse<LoginResponse> = {
       success: true,
       data: {
         user,
         token,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        expiresAt,
       },
     };
 

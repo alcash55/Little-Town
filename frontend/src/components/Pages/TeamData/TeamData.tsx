@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
@@ -19,7 +19,17 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import PageLayout from '../../../layout/PageLayout/PageLayout';
 import { useTeamData, TileInfo, PlayerRow } from './useTeamData';
-import { appColors } from '../../../layout/Theme';
+
+// Local palette for this page, matching the dark theme (teal accent #2A9D8F).
+// TODO: promote into layout/Theme once the pending theme rework lands.
+const appColors = {
+  accent: '#2A9D8F',
+  textPrimary: '#ffffff',
+  textSecondary: 'rgba(255,255,255,0.7)',
+  mutedText: 'rgba(255,255,255,0.5)',
+  subtleBorder: 'rgba(255,255,255,0.12)',
+};
+
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -131,6 +141,8 @@ function TileHeader({ tile }: { tile: TileInfo }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 const TeamData = () => {
+  const { data, loading, error, lastUpdated, refresh } = useTeamData();
+  const [search, setSearch] = useState('');
   const [dismissedError, setDismissedError] = useState(false);
 
   // Reset dismissed state whenever the error changes
@@ -146,13 +158,14 @@ const TeamData = () => {
   // Columns = one per tile on the board
   const tileCols: GridColDef[] = useMemo(() => {
     if (!data?.tiles) return [];
-    return data.tiles.map((tile) => ({
+    return data.tiles.map((tile): GridColDef => ({
       field: tileField(tile.task),
       headerName: tile.task,
       width: 150,
       sortable: false,
       renderHeader: () => <TileHeader tile={tile} />,
-      valueGetter: (_: any, row: PlayerRow & { id: string }) => {
+      valueGetter: (params) => {
+        const row = params.row as PlayerRow;
         if (tile.type === 'Experience') return row.skillDeltas[tile.task] ?? 0;
         if (tile.type === 'Kill Count') return row.activityDeltas[tile.task] ?? 0;
         return row.dropStatus[tile.task] ?? null;

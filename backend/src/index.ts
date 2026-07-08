@@ -12,6 +12,7 @@ import { startStaticDataCron, stopStaticDataCron, refreshStaticData } from "./se
 import { startPlayerSnapshotCron, stopPlayerSnapshotCron } from "./services/playerSnapshotCron.js";
 
 const app = express();
+app.set("trust proxy", 1);
 
 if (process.env.NODE_ENV === "production" && !process.env.FRONTEND_URL) {
   throw new Error("FRONTEND_URL must be set in production");
@@ -57,17 +58,28 @@ app.use(
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  max: Number(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
   message: {
     error: "Too many requests from this IP, please try again later.",
   },
 });
 app.use("/api/", limiter);
 
+// Stricter limiter on the login route to slow down credential stuffing/brute
+// force — fixed 15 min window regardless of RATE_LIMIT_WINDOW_MS.
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10, // limit each IP to 10 login attempts per 15 minutes
+  message: {
+    error: "Too many login attempts from this IP, please try again later.",
+  },
+});
+app.use("/api/auth/login", loginLimiter);
+
 // Body parsing middleware
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
 // Health check endpoint
 app.get("/api/health", (_req: Request, res: Response) => {

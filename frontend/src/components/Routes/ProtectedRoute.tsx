@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useLoginModal } from '../LoginModal/useLoginModal';
+import { LoadingContainer } from '../LoadingContainer/LoadingContainer';
 
 type Role = 'admin' | 'user' | 'moderator';
 
@@ -21,8 +22,15 @@ export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) 
     return children;
   }
 
-  const { user } = useLoginModal();
+  const { user, authReady } = useLoginModal();
   const location = useLocation();
+
+  // Wait for the mount-time /me rehydration to settle before deciding whether
+  // to redirect — otherwise a hard refresh briefly bounces logged-in users to
+  // /unauthorized while the token is still being verified.
+  if (!authReady) {
+    return <LoadingContainer loading width={250} height={250} />;
+  }
 
   if (!user) {
     return <Navigate to="/unauthorized" state={{ from: location, reason: 'unauthenticated' }} replace />;

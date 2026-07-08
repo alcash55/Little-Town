@@ -174,7 +174,9 @@ export const useBoardBuilder = () => {
   };
 
   const removeTile = (tileToRemove: Tile) => {
-    const updated = board.filter((tile) => tile.task !== tileToRemove.task);
+    const idx = board.indexOf(tileToRemove);
+    if (idx === -1) return;
+    const updated = board.filter((_, i) => i !== idx);
     localStorage.setItem('bingoBoard', JSON.stringify(updated));
     setBoard(updated);
   };
