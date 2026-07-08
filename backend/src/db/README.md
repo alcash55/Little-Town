@@ -22,3 +22,14 @@ All database operations for user data. Exports:
 - `loginUser` — verify credentials and return a safe user object (no password hash)
 - `findUserById` — look up a user by UUID, used by the auth middleware on every protected request
 - `hashPassword` — hash a plain text password with bcrypt before storing
+
+### `bingoSubmissions.ts`
+All database operations for `bingo_submissions` (screenshot review queue), plus signed-URL
+access to the private `screenshots` storage bucket. Exports:
+- `submissionExistsByDiscordMessageId` / `insertPendingSubmission` — used by the Discord ingest
+  service for dedupe-safe inserts (`discord_message_id` UNIQUE)
+- `getPendingSubmissions`, `getSubmissionById` — used by the admin review routes
+- `approveSubmission`, `denySubmission` — admin review actions
+- `getSignedScreenshotUrl` — short-lived signed URL for a stored screenshot object path
+
+(Note: this file predates `players.ts` and `staticData.ts`, which also aren't listed above.)
