@@ -298,26 +298,42 @@ export const useTeamDrafter = () => {
   /**
    * Add players from the CSV textarea.
    * On hiscore failure, falls back to WOM name-change lookup before giving up.
+   * De-duplicates RSNs case-insensitively and processes them in batches of 5
+   * so we don't fan out an unbounded number of requests at once.
    */
   const addPlayersFromCsv = useCallback(async () => {
-    const rsns = parseCsv(csvInput);
-    if (!rsns.length) return;
+    const parsed = parseCsv(csvInput);
+    if (!parsed.length) return;
+
+    // De-duplicate case-insensitively, keeping the first-seen casing.
+    const seen = new Set<string>();
+    const rsns: string[] = [];
+    for (const rsn of parsed) {
+      const key = rsn.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      rsns.push(rsn);
+    }
 
     setAddingPlayers(true);
     setAddPlayerError(null);
     setAddResults({});
 
     const results: Record<string, AddResult> = {};
+    const BATCH_SIZE = 5;
 
-    await Promise.allSettled(
-      rsns.map(async (rsn) => {
-        try {
-          results[rsn] = await tryAddPlayer(rsn);
-        } catch (e) {
-          results[rsn] = { status: 'error', message: String(e) };
-        }
-      }),
-    );
+    for (let i = 0; i < rsns.length; i += BATCH_SIZE) {
+      const batch = rsns.slice(i, i + BATCH_SIZE);
+      await Promise.allSettled(
+        batch.map(async (rsn) => {
+          try {
+            results[rsn] = await tryAddPlayer(rsn);
+          } catch (e) {
+            results[rsn] = { status: 'error', message: String(e) };
+          }
+        }),
+      );
+    }
 
     setAddResults(results);
     setCsvInput('');
