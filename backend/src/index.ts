@@ -10,6 +10,7 @@ import adminRoutes from "./routes/admin.js";
 import bingoRoutes from "./routes/bingo.js";
 import { startStaticDataCron, stopStaticDataCron, refreshStaticData } from "./services/staticDataCron.js";
 import { startPlayerSnapshotCron, stopPlayerSnapshotCron } from "./services/playerSnapshotCron.js";
+import { startDiscordScreenshotService, stopDiscordScreenshotService } from "./services/discordScreenshots.js";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -110,8 +111,9 @@ app.listen(PORT, () => {
   console.log(`Health check: http://localhost:${PORT}/api/health`);
   startStaticDataCron();
   startPlayerSnapshotCron();
+  startDiscordScreenshotService();
 });
 
 // Graceful shutdown
-process.on('SIGTERM', () => { stopStaticDataCron(); stopPlayerSnapshotCron(); process.exit(0); });
-process.on('SIGINT', () => { stopStaticDataCron(); stopPlayerSnapshotCron(); process.exit(0); });
+process.on('SIGTERM', () => { stopStaticDataCron(); stopPlayerSnapshotCron(); stopDiscordScreenshotService(); process.exit(0); });
+process.on('SIGINT', () => { stopStaticDataCron(); stopPlayerSnapshotCron(); stopDiscordScreenshotService(); process.exit(0); });
