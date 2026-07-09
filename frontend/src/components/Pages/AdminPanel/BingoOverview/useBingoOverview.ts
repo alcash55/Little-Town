@@ -7,25 +7,20 @@ import { PendingScreenshotSubmission } from '../ScreenshotSubmission/useScreensh
 
 const BASE_URL = `${import.meta.env.VITE_BASEURL || 'http://localhost:8081'}/api/admin`;
 
+// Contract 3 (TEAM-BRIEF.md): GET /api/admin/bingo/player-stats -> { success: true, data: PlayerStat[] }
+// `minutesOnline` from the old type is DROPPED — there is no data source for it.
 export type PlayerStat = {
   rsn: string;
   teamName: string;
   tilesCompleted: number;
   totalPoints: number;
-  /** Total time online in minutes during the bingo window */
-  minutesOnline: number;
   /** ISO timestamp of last seen online */
   lastSeen: string | null;
   sideAccounts: string[];
 };
 
-export type SideAccountConflict = {
-  mainRsn: string;
-  sideRsn: string;
-  /** Both were online within this many minutes of each other */
-  overlapMinutes: number;
-  detectedAt: string;
-};
+// Contract 4: conflict detection is OUT this sprint (GET /bingo/conflicts does not
+// exist). Real detection lands after side-account snapshots exist.
 
 export const useBingoOverview = () => {
   const [bingo, setBingo] = useState<BingoConfig | null>(null);
@@ -33,7 +28,7 @@ export const useBingoOverview = () => {
   const [players, setPlayers] = useState<BingoPlayer[]>([]);
   const [board, setBoard] = useState<Tile[]>([]);
   const [playerStats, setPlayerStats] = useState<PlayerStat[]>([]);
-  const [conflicts, setConflicts] = useState<SideAccountConflict[]>([]);
+  const [playerStatsError, setPlayerStatsError] = useState<string | null>(null);
   const [pendingScreenshots, setPendingScreenshots] = useState<PendingScreenshotSubmission[]>([]);
 
   const [loading, setLoading] = useState(true);
@@ -91,9 +86,27 @@ export const useBingoOverview = () => {
     } catch { /* non-fatal */ }
   }, []);
 
-  // TODO: GET /bingo/player-stats and /bingo/conflicts do not exist on the backend
-  // yet. playerStats/conflicts stay empty (UI sections that depend on them just
-  // stay hidden) until those endpoints are implemented.
+  // Contract 3: GET /api/admin/bingo/player-stats. The backend agent is implementing
+  // this in parallel — while it 404s (or is otherwise unreachable) this degrades to an
+  // empty list instead of crashing; the Player Stats card just shows "No player data yet."
+  const fetchPlayerStats = useCallback(async () => {
+    try {
+      const res = await fetchWithAuth(`${BASE_URL}/bingo/player-stats`);
+      if (!res.ok) {
+        // 404 = endpoint not implemented yet (expected during parallel development).
+        // Any other non-ok status is surfaced so a real backend failure isn't silent.
+        setPlayerStats([]);
+        setPlayerStatsError(res.status === 404 ? null : `Failed to load player stats (${res.status}).`);
+        return;
+      }
+      const json = await res.json();
+      setPlayerStats(Array.isArray(json.data) ? json.data : []);
+      setPlayerStatsError(null);
+    } catch {
+      setPlayerStats([]);
+      setPlayerStatsError('Failed to load player stats.');
+    }
+  }, []);
 
   const fetchPendingScreenshots = useCallback(async () => {
     try {
@@ -112,17 +125,42 @@ export const useBingoOverview = () => {
       setLoading(true);
       await fetchBingo();
       await fetchPlayersAndBoard();
+      await fetchPlayerStats();
       await fetchPendingScreenshots();
       setLoading(false);
     };
     load();
-  }, [fetchBingo, fetchPlayersAndBoard, fetchPendingScreenshots]);
+  }, [fetchBingo, fetchPlayersAndBoard, fetchPlayerStats, fetchPendingScreenshots]);
 
-  // Poll pending screenshots every 30s while the overview page is mounted so the
-  // "N screenshots pending review" banner stays fresh without a manual refresh.
+  // Contract 6: poll pending screenshots every 45s while the page is visible, so the
+  // "N screenshots pending review" banner stays fresh without a manual refresh. Paused
+  // while the tab is hidden (no review-in-flight state on this page, unlike
+  // ScreenshotSubmission) and always cleaned up on unmount.
   useEffect(() => {
-    const interval = setInterval(fetchPendingScreenshots, 30_000);
-    return () => clearInterval(interval);
+    let interval: ReturnType<typeof setInterval> | null = null;
+
+    const start = () => {
+      if (interval) return;
+      interval = setInterval(fetchPendingScreenshots, 45_000);
+    };
+    const stop = () => {
+      if (!interval) return;
+      clearInterval(interval);
+      interval = null;
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') stop();
+      else start();
+    };
+
+    if (document.visibilityState !== 'hidden') start();
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      stop();
+    };
   }, [fetchPendingScreenshots]);
 
   const clearRefreshStatsMessage = useCallback(() => setRefreshStatsMessage(null), []);
@@ -192,7 +230,7 @@ export const useBingoOverview = () => {
     players,
     board,
     playerStats,
-    conflicts,
+    playerStatsError,
     pendingScreenshots,
     loading,
     error,
