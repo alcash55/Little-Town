@@ -160,3 +160,35 @@ Local dev seed users (created by `db:reset`):
 | `bun run db:reset`    | Wipe local DB and re-apply all migrations                         |
 | `bun run db:push`     | Push migrations to linked hosted Supabase project                 |
 | `bun run test`        | Run Node.js built-in test runner                                  |
+
+## Running tests
+
+`bun test` runs both `tests/unit/**` (no DB required) and `tests/integration/**`
+(needs a reachable Supabase target). Integration suites never read plain
+`SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` — those are the hosted prod
+project's credentials once bun auto-loads `backend/.env`, and integration
+tests must never be able to silently hit production. Instead
+`tests/integration/helpers.ts` resolves a target in this order:
+
+1. `TEST_SUPABASE_URL` + `TEST_SUPABASE_SERVICE_ROLE_KEY`, if **both** are
+   set — an explicit override (e.g. CI without the Supabase CLI, or a
+   disposable test project).
+2. Otherwise, the local stack via `bun x supabase status` (the default —
+   just run `bun run db:start` first, no env vars needed).
+3. If neither resolves (or the resolved URL doesn't respond), every
+   integration suite skips cleanly — `bun test` still exits 0.
+
+A guardrail throws (fails the run, does not skip) if the resolved URL is a
+`*.supabase.co` host without `TEST_SUPABASE_URL` explicitly set, as a
+backstop in case the plain-env fallthrough is ever reintroduced.
+
+```bash
+bun run db:start   # start the local stack (once); then:
+bun test            # unit + integration against the local stack
+
+bun run db:stop     # integration suites skip cleanly, unit tests still run
+
+TEST_SUPABASE_URL=http://127.0.0.1:54321 \
+TEST_SUPABASE_SERVICE_ROLE_KEY=<local service_role key from db:status> \
+bun test             # explicit override, e.g. in CI
+```
