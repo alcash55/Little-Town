@@ -9,6 +9,7 @@ import BarChart from '@mui/icons-material/BarChart';
 import EmojiEvents from '@mui/icons-material/EmojiEvents';
 import DriveFileMove from '@mui/icons-material/DriveFileMove';
 import QueryStats from '@mui/icons-material/QueryStats';
+import Build from '@mui/icons-material/Build';
 import type { PropsWithChildren, ReactNode } from 'react';
 import { createContext, useState, useEffect, useContext, useMemo } from 'react';
 import BoardGame from '../../../../assets/Images/BoardGame';
@@ -78,6 +79,11 @@ const allSidebarItems: SidebarItem[] = [
         title: 'Bingo Overview',
         href: '/AdminPanel/BingoOverview',
         icon: <QueryStats />
+      },
+      {
+        title: 'Maintenance',
+        href: '/AdminPanel/Maintenance',
+        icon: <Build />
       }
     ],
   },
