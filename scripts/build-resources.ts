@@ -161,6 +161,10 @@ const RETITLE_BY_RAW_TITLE: Record<string, { title: string; description: string 
       description:
         "Blue = move/pray on tick 3, green = tick 4, optional red = tick 2 (that fremennik dies immediately). Use it to know when it's safe to attack freely between fremennik spawns.",
     },
+  "heres all the sounds u gotta remove from hydra + extra": {
+    title: "Alchemical Hydra: sound effect IDs to mute",
+    description: "Mute these sound effect IDs during Alchemical Hydra kills to cut down on audio clutter.",
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -507,12 +511,15 @@ function build(onlyCategoryIds: Set<string> | null) {
         type PendingImage = ResolvedMedia & { ext: string };
         const pendingImages: PendingImage[] = [];
         let droppedLocalFiles: string[] = [];
+        let judgmentCut = false;
 
         for (const img of item.images) {
           const resolved = resolveMediaPath(img.target);
           if (!resolved) continue;
           if (CUT_MESSAGE_IDS.has(resolved.messageId)) {
-            cutLog.push({ category: destCategoryId, section: destSectionKind, title, reason: "judgment pass: no instructional value (blank/empty field screenshot)" });
+            // cut the whole item, not just this image — a dangling "Image
+            // source" link with no visible thumbnail is useless on its own
+            judgmentCut = true;
             continue;
           }
           if (!existsSync(resolved.absPath)) {
@@ -581,6 +588,16 @@ function build(onlyCategoryIds: Set<string> | null) {
         if (item.fenceContent && !item.embeddedFile && (item.fenceLang === "txt" || item.fenceLang === "text")) {
           const blurb = item.fenceContent.trim();
           description = description ? `${description}\n\n${blurb}` : blurb;
+        }
+
+        if (judgmentCut) {
+          cutLog.push({
+            category: destCategoryId,
+            section: destSectionKind,
+            title,
+            reason: "judgment pass: no instructional value (blank/empty field screenshot) — whole item dropped, including its dangling source link",
+          });
+          continue;
         }
 
         const hasContent = pendingImages.length > 0 || linksOut.length > 0 || runelite;
