@@ -12,6 +12,11 @@ export interface BingoSubmission {
   tile_id: string | null;
   team_id: string | null;
   submitted_by: string | null;
+  // uuid FK -> bingo_players.id, nullable (contract 1, migration owned by
+  // data-engineer). Not selected explicitly except where noted below, so
+  // rows read via `.select("*")` degrade to `undefined` (not `null`) until
+  // the column exists — callers that branch on it should use `?? null`.
+  player_id: string | null;
   screenshot_url: string | null;
   status: SubmissionStatus;
   notes: string | null;
@@ -103,9 +108,63 @@ export async function getSubmissionById(id: string): Promise<BingoSubmission | n
   return data as BingoSubmission | null;
 }
 
+/**
+ * Validates a screenshot-approval `playerId` against the submission's bingo
+ * roster (contract 2). Pure over the passed-in roster so it's unit-testable
+ * without a DB — route handlers supply the roster via `getBingoPlayers()`.
+ * Returns null when valid (including `playerId` omitted entirely); an error
+ * message otherwise.
+ */
+export function validateApprovalPlayerId(
+  playerId: string | undefined,
+  teamId: string,
+  roster: Array<{ id: string; team_id: string | null }>,
+): string | null {
+  if (playerId === undefined) return null;
+  const player = roster.find((p) => p.id === playerId);
+  if (!player || player.team_id !== teamId) {
+    return "playerId must be a registered player on the given team";
+  }
+  return null;
+}
+
+export interface DropSubmissionAttribution {
+  tile_id: string;
+  player_id: string | null;
+  status: SubmissionStatus;
+}
+
+/**
+ * Builds `dropStatus[rsn][tileTask] = 'approved' | 'pending'` for
+ * `/my-team-data`. Attribution is via `player_id` (a bingo_players.id) —
+ * NOT `submitted_by`, which is a users FK unrelated to team roster
+ * membership (contract 5). 'approved' wins over 'pending' for the same
+ * rsn+tile. Pure over its inputs so it's unit-testable without a DB.
+ */
+export function buildDropStatusByRsn(
+  submissions: DropSubmissionAttribution[],
+  playerIdToRsn: Map<string, string>,
+  tileIdToTask: Map<string, string>,
+): Record<string, Record<string, "approved" | "pending">> {
+  const dropStatus: Record<string, Record<string, "approved" | "pending">> = {};
+  for (const sub of submissions) {
+    const rsn = sub.player_id ? playerIdToRsn.get(sub.player_id) : undefined;
+    if (!rsn) continue;
+    const tileTask = tileIdToTask.get(sub.tile_id);
+    if (!tileTask) continue;
+    if (!dropStatus[rsn]) dropStatus[rsn] = {};
+    const existing = dropStatus[rsn][tileTask];
+    // approved beats pending
+    if (!existing || (sub.status === "approved" && existing === "pending")) {
+      dropStatus[rsn][tileTask] = sub.status as "approved" | "pending";
+    }
+  }
+  return dropStatus;
+}
+
 export async function approveSubmission(
   id: string,
-  input: { tileId: string; teamId: string; reviewedBy?: string },
+  input: { tileId: string; teamId: string; playerId?: string; reviewedBy?: string },
 ): Promise<BingoSubmission> {
   const { data, error } = await getDb()
     .from("bingo_submissions")
@@ -113,6 +172,10 @@ export async function approveSubmission(
       status: "approved",
       tile_id: input.tileId,
       team_id: input.teamId,
+      // Only touch player_id when the caller explicitly passed one (including
+      // `undefined` intentionally omits the key rather than nulling out an
+      // existing attribution on re-approve-style calls).
+      ...(input.playerId !== undefined ? { player_id: input.playerId } : {}),
       reviewed_by: input.reviewedBy ?? null,
       reviewed_at: new Date().toISOString(),
     })

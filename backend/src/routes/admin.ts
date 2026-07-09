@@ -47,7 +47,9 @@ import {
   approveSubmission,
   denySubmission,
   getSignedScreenshotUrl,
+  validateApprovalPlayerId,
 } from "../db/bingoSubmissions.js";
+import { getPlayerStats, PlayerStat } from "../db/playerStats.js";
 import { reactToSubmissionMessage } from "../services/discordScreenshots.js";
 
 const router = Router();
@@ -549,7 +551,11 @@ router.post(
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     if (!id) return res.status(400).json({ success: false, error: "Submission ID is required" });
 
-    const { tileId, teamId } = req.body as { tileId: string; teamId: string };
+    const { tileId, teamId, playerId } = req.body as {
+      tileId: string;
+      teamId: string;
+      playerId?: string;
+    };
 
     const submission = await getSubmissionById(id);
     if (!submission) return res.status(404).json({ success: false, error: "Submission not found" });
@@ -559,7 +565,22 @@ router.post(
         .json({ success: false, error: `Submission has already been ${submission.status}` });
     }
 
-    const updated = await approveSubmission(id, { tileId, teamId, reviewedBy: getAuditUserId(req) });
+    // playerId is optional, but per contract 2 must resolve to a
+    // bingo_players.id on `teamId` within the submission's bingo when present.
+    if (playerId !== undefined) {
+      const rosterPlayers = await getBingoPlayers(submission.bingo_id);
+      const validationError = validateApprovalPlayerId(playerId, teamId, rosterPlayers);
+      if (validationError) {
+        return res.status(400).json({ success: false, error: validationError });
+      }
+    }
+
+    const updated = await approveSubmission(id, {
+      tileId,
+      teamId,
+      playerId,
+      reviewedBy: getAuditUserId(req),
+    });
 
     if (updated.discord_message_id) {
       // Best-effort — a failed Discord reaction must not fail the review.
@@ -597,6 +618,24 @@ router.post(
     }
 
     res.status(200).json({ success: true, data: updated, message: "Screenshot denied" });
+  }),
+);
+
+// -------------------------------------------------------
+// Player stats (overview page) — contract 3
+// -------------------------------------------------------
+
+router.get(
+  "/bingo/player-stats",
+  asyncHandler(async (req: Request, res: Response) => {
+    const bingo = await getActiveBingo();
+    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+
+    const response: ApiResponse<PlayerStat[]> = {
+      success: true,
+      data: await getPlayerStats(bingo.id),
+    };
+    res.status(200).json(response);
   }),
 );
 

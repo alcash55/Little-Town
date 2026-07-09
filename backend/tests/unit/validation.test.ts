@@ -10,6 +10,7 @@ import {
   draftAssignmentsSchema,
   playerRegistrationSchema,
   sideAccountSchema,
+  screenshotApprovalSchema,
 } from "../../src/lib/validation.js";
 
 // -------------------------------------------------------
@@ -203,6 +204,47 @@ describe("sideAccountSchema", () => {
   test("notes is optional", () => {
     const result = sideAccountSchema.safeParse({ rsn: "AltAccount" });
     expect(result.success).toBe(true);
+  });
+});
+
+describe("screenshotApprovalSchema (contract 2)", () => {
+  test("requires a non-empty tileId", () => {
+    const result = screenshotApprovalSchema.safeParse({ tileId: "", teamId: "team-1" });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe("Tile ID is required");
+    }
+  });
+
+  test("requires a non-empty teamId", () => {
+    const result = screenshotApprovalSchema.safeParse({ tileId: "tile-1", teamId: "" });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe("Team ID is required");
+    }
+  });
+
+  test("playerId is optional", () => {
+    const result = screenshotApprovalSchema.safeParse({ tileId: "tile-1", teamId: "team-1" });
+    expect(result.success).toBe(true);
+  });
+
+  test("accepts tileId, teamId and playerId together", () => {
+    const result = screenshotApprovalSchema.safeParse({
+      tileId: "tile-1",
+      teamId: "team-1",
+      playerId: "player-1",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("rejects an empty-string playerId", () => {
+    const result = screenshotApprovalSchema.safeParse({
+      tileId: "tile-1",
+      teamId: "team-1",
+      playerId: "",
+    });
+    expect(result.success).toBe(false);
   });
 });
 

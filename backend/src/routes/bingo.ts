@@ -4,6 +4,7 @@ import { protect } from "../middleware/auth.js";
 import { ApiResponse } from "../types/index.js";
 import { getActiveBingo, getActiveBingoBoard } from "../db/bingos.js";
 import { getAllPlayerSnapshots } from "../db/players.js";
+import { buildDropStatusByRsn, DropSubmissionAttribution } from "../db/bingoSubmissions.js";
 import { getDb } from "../db/client.js";
 
 const router = Router();
@@ -230,41 +231,26 @@ router.get(
     const teamPlayerIds = teamRows.map(({ player }) => player.id);
     const teamPlayerIdToRsn = new Map(teamRows.map(({ player }) => [player.id, player.rsn]));
 
-    // Fetch pending+approved submissions for this team on Drops tiles
-    let submissionsData: Array<{
-      id: string;
-      tile_id: string;
-      submitted_by: string | null;
-      status: "pending" | "approved" | "rejected";
-    }> = [];
+    // Fetch pending+approved submissions for this team on Drops tiles.
+    // Attribution is via bingo_submissions.player_id (a bingo_players.id) —
+    // NOT submitted_by, which is a users FK unrelated to team roster
+    // membership (contract 5).
+    let submissionsData: DropSubmissionAttribution[] = [];
 
     if (tileIdByTask.size > 0 && teamPlayerIds.length > 0) {
       const dropsTileIds = Array.from(tileIdByTask.values());
       const { data: subs, error: subsErr } = await db
         .from("bingo_submissions")
-        .select("id, tile_id, submitted_by, status")
+        .select("id, tile_id, player_id, status")
         .eq("bingo_id", bingo.id)
         .in("status", ["pending", "approved"])
         .in("tile_id", dropsTileIds);
       if (subsErr) throw new Error(subsErr.message);
-      submissionsData = (subs ?? []) as typeof submissionsData;
+      submissionsData = (subs ?? []) as DropSubmissionAttribution[];
     }
 
-    // Build dropStatus[rsn][tileTask] = 'approved' | 'pending'
-    // Only keep the best status per rsn+tile (approved wins over pending)
-    const dropStatus: Record<string, Record<string, "approved" | "pending">> = {};
-    for (const sub of submissionsData) {
-      const rsn = sub.submitted_by ? teamPlayerIdToRsn.get(sub.submitted_by) : undefined;
-      if (!rsn) continue;
-      const tileTask = tileRows?.find((t: any) => t.id === sub.tile_id)?.task as string | undefined;
-      if (!tileTask) continue;
-      if (!dropStatus[rsn]) dropStatus[rsn] = {};
-      const existing = dropStatus[rsn][tileTask];
-      // approved beats pending
-      if (!existing || (sub.status === "approved" && existing === "pending")) {
-        dropStatus[rsn][tileTask] = sub.status as "approved" | "pending";
-      }
-    }
+    const tileTaskById = new Map(Array.from(tileIdByTask.entries()).map(([task, id]) => [id, task]));
+    const dropStatus = buildDropStatusByRsn(submissionsData, teamPlayerIdToRsn, tileTaskById);
 
     // Shape the tile list for the frontend
     const tileList = tiles.map((tile) => ({
