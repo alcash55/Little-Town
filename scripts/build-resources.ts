@@ -534,7 +534,7 @@ function build(onlyCategoryIds: Set<string> | null) {
             if (realExt) {
               pendingImages.push({ ...resolved, ext: realExt });
             } else {
-              droppedLocalFiles.push(`${resolved.fileName || "(no name)"}${ext ? "." + ext : " (no ext)"}`);
+              droppedLocalFiles.push(resolved.fileName || "(no name)");
             }
           } else {
             const label = unescapeMd(link.label).replace(/^Youtube$/, "YouTube");
