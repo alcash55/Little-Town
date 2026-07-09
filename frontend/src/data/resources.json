@@ -1,0 +1,181 @@
+{
+  "generatedAt": "2026-07-09T14:34:04.823Z",
+  "categories": [
+    {
+      "id": "tob",
+      "name": "Theatre of Blood",
+      "group": "Raids",
+      "order": 1,
+      "sections": [
+        {
+          "kind": "guides",
+          "title": "Guides & videos",
+          "items": [
+            {
+              "id": "tob-bad-crabs-osrs",
+              "title": "Bad crabs osrs",
+              "images": [
+                "tob/bad-crabs-osrs.jpg"
+              ],
+              "links": [
+                {
+                  "label": "YouTube",
+                  "url": "https://www.youtube.com/watch?v=4lo6MnytjM8&t=1s",
+                  "kind": "youtube"
+                }
+              ]
+            },
+            {
+              "id": "tob-east-tick-2-boak",
+              "title": "East tick 2 boak",
+              "images": [
+                "tob/east-tick-2-boak.jpg"
+              ],
+              "links": [
+                {
+                  "label": "Streamable",
+                  "url": "https://streamable.com/mrfo73",
+                  "kind": "streamable"
+                }
+              ]
+            },
+            {
+              "id": "tob-how-to-tank-verzik-tick-perfect-p3-above-20",
+              "title": "How to Tank Verzik Tick Perfect (P3 Above 20%)",
+              "images": [
+                "tob/how-to-tank-verzik-tick-perfect-p3-above-20.jpg"
+              ],
+              "links": [
+                {
+                  "label": "YouTube",
+                  "url": "https://www.youtube.com/watch?v=2FTc0nzn_no",
+                  "kind": "youtube"
+                }
+              ]
+            },
+            {
+              "id": "tob-new-west-crabs-p2-example",
+              "title": "New west crabs p2 example",
+              "images": [
+                "tob/new-west-crabs-p2-example.jpg"
+              ],
+              "links": [
+                {
+                  "label": "Streamable",
+                  "url": "https://streamable.com/3raz1i",
+                  "kind": "streamable"
+                }
+              ]
+            },
+            {
+              "id": "tob-p2-tiles-example-2",
+              "title": "p2 tiles example (2)",
+              "images": [
+                "tob/p2-tiles-example-2.jpg"
+              ],
+              "links": [
+                {
+                  "label": "Streamable",
+                  "url": "https://streamable.com/4voamt",
+                  "kind": "streamable"
+                }
+              ]
+            },
+            {
+              "id": "tob-rare-crabs-osrs",
+              "title": "Rare crabs osrs",
+              "images": [
+                "tob/rare-crabs-osrs.jpg"
+              ],
+              "links": [
+                {
+                  "label": "YouTube",
+                  "url": "https://www.youtube.com/watch?v=cA88n9KXWBA",
+                  "kind": "youtube"
+                }
+              ]
+            },
+            {
+              "id": "tob-tob-boak",
+              "title": "Tob BOAK",
+              "images": [
+                "tob/tob-boak.jpg"
+              ],
+              "links": [
+                {
+                  "label": "Streamable",
+                  "url": "https://streamable.com/sm5ebb",
+                  "kind": "streamable"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "tileMarkers",
+          "title": "Tile markers & setups",
+          "items": [
+            {
+              "id": "tob-tob-hm-big-split-radius-markers",
+              "title": "ToB HM big-split radius markers",
+              "runelite": {
+                "label": "ToB HM big-split radius markers",
+                "kind": "npcMarkers",
+                "json": "[{\"id\":1656485829370,\"name\":\"HM Big Split - Mage\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":2343,\"spawnY\":3701,\"spawnColour\":\"#FFFFFFFF\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":10796,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":false,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":0,\"interactionColour\":\"#FFFFFFFF\",\"interactionVisible\":true},{\"id\":1656485875162,\"name\":\"HM Big Split - Melee\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":2343,\"spawnY\":3701,\"spawnColour\":\"#FFFFFFFF\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":10794,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":false,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":0,\"interactionColour\":\"#FFFFFFFF\",\"interactionVisible\":true},{\"id\":1656485908082,\"name\":\"HM Big Split - Range\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":2343,\"spawnY\":3701,\"spawnColour\":\"#FFFFFFFF\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":10795,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":false,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":0,\"interactionColour\":\"#FFFFFFFF\",\"interactionVisible\":true},{\"id\":1656486033769,\"name\":\"HM Mage Aggro Big\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":2341,\"spawnY\":3701,\"spawnColour\":\"#FF66B2FF\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":10802,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":false,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":0,\"interactionColour\":\"#FF66B2FF\",\"interactionVisible\":true},{\"id\":1656485954593,\"name\":\"HM Mage Aggro Small\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":2341,\"spawnY\":3701,\"spawnColour\":\"#FF66B2FF\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":10799,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":false,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":0,\"interactionColour\":\"#FF66B2FF\",\"interactionVisible\":true},{\"id\":1656486083992,\"name\":\"HM Melee Aggro Big\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":2341,\"spawnY\":3701,\"spawnColour\":\"#FF6C0D0D\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":10800,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":false,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":0,\"interactionColour\":\"#FF6C0D0D\",\"interactionVisible\":true},{\"id\":1656486113048,\"name\":\"HM Melee Aggro Small\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":2341,\"spawnY\":3701,\"spawnColour\":\"#FF6C0D0D\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":10797,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":false,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":0,\"interactionColour\":\"#FF6C0D0D\",\"interactionVisible\":true},{\"id\":1656486143976,\"name\":\"HM Range Aggro Big\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":2341,\"spawnY\":3701,\"spawnColour\":\"#FF709943\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":10801,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":false,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":0,\"interactionColour\":\"#FF709943\",\"interactionVisible\":true},{\"id\":1656486192224,\"name\":\"HM Range Aggro Small\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":2341,\"spawnY\":3701,\"spawnColour\":\"#FF709943\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":10798,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":false,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":0,\"interactionColour\":\"#FF709943\",\"interactionVisible\":true},{\"id\":1656486215623,\"name\":\"HM Verz Nylo Mage\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":2341,\"spawnY\":3701,\"spawnColour\":\"#FF66B2FF\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":10860,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":false,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":1,\"interactionColour\":\"#FF66B2FF\",\"interactionVisible\":true},{\"id\":1656486272303,\"name\":\"HM Verz Nylo Melee\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":2341,\"spawnY\":3701,\"spawnColour\":\"#FF6C0D0D\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":10858,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":false,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":1,\"interactionColour\":\"#FF6C0D0D\",\"interactionVisible\":true},{\"id\":1656486295735,\"name\":\"HM Verz Nylo Range\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":2341,\"spawnY\":3701,\"spawnColour\":\"#FF709943\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":10859,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":false,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":1,\"interactionColour\":\"#FF709943\",\"interactionVisible\":true},{\"id\":1658335718499,\"name\":\"Mage Aggro Big\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":3652,\"spawnY\":3208,\"spawnColour\":\"#FF66B2FF\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":8353,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":true,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":0,\"interactionColour\":\"#FF66B2FF\",\"interactionVisible\":true},{\"id\":1658335849629,\"name\":\"Mage Aggro Small\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":3652,\"spawnY\":3208,\"spawnColour\":\"#FF66B2FF\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":8350,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":true,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":0,\"interactionColour\":\"#FF66B2FF\",\"interactionVisible\":true},{\"id\":1658335889922,\"name\":\"Melee Aggro Big\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":3652,\"spawnY\":3208,\"spawnColour\":\"#FF6C0D0D\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":8351,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":true,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":0,\"interactionColour\":\"#FF6C0D0D\",\"interactionVisible\":true},{\"id\":1658335911248,\"name\":\"Melee Aggro Small\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":3652,\"spawnY\":3208,\"spawnColour\":\"#FF6C0D0D\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":8348,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":true,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":0,\"interactionColour\":\"#FF6C0D0D\",\"interactionVisible\":true},{\"id\":1695232672709,\"name\":\"Nex Aggro Normal\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":2923,\"spawnY\":5191,\"spawnColour\":\"#FF00FFFF\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":11278,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":true,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":10,\"interactionColour\":\"#FF66B2FF\",\"interactionVisible\":true},{\"id\":1695233506417,\"name\":\"Nex Aggro Range melee\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":2923,\"spawnY\":5203,\"spawnColour\":\"#FF00FFFF\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":11281,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":true,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":10,\"interactionColour\":\"#FF66B2FF\",\"interactionVisible\":true},{\"id\":1695233507047,\"name\":\"Nex Aggro ss\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":2923,\"spawnY\":5203,\"spawnColour\":\"#FF00FFFF\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":11280,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":true,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":10,\"interactionColour\":\"#FF66B2FF\",\"interactionVisible\":true},{\"id\":1658336036090,\"name\":\"Range Aggro Big\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":3652,\"spawnY\":3208,\"spawnColour\":\"#FF709943\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":8352,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":true,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":0,\"interactionColour\":\"#FF709943\",\"interactionVisible\":true},{\"id\":1658336042911,\"name\":\"Range Aggro Small\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":3652,\"spawnY\":3208,\"spawnColour\":\"#FF709943\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":8349,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":true,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":0,\"interactionColour\":\"#FF709943\",\"interactionVisible\":true},{\"id\":1658340516293,\"name\":\"Verz Nylo Mage\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":3652,\"spawnY\":3208,\"spawnColour\":\"#FF66B2FF\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":8383,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":true,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":1,\"interactionColour\":\"#FF66B2FF\",\"interactionVisible\":true},{\"id\":1658340541134,\"name\":\"Verz Nylo Melee\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":3652,\"spawnY\":3208,\"spawnColour\":\"#FF6C0D0D\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":8381,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":true,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":1,\"interactionColour\":\"#FF6C0D0D\",\"interactionVisible\":true},{\"id\":1658340562325,\"name\":\"Verz Nylo Range\",\"visible\":true,\"collapsed\":true,\"z\":0,\"spawnX\":3652,\"spawnY\":3208,\"spawnColour\":\"#FF709943\",\"spawnVisible\":false,\"wanderRadius\":5,\"wanderColour\":\"#FFFFFF00\",\"wanderVisible\":true,\"maxRadius\":7,\"maxColour\":\"#FFFF00FF\",\"maxVisible\":true,\"aggressionColour\":\"#FFFF0000\",\"aggressionVisible\":true,\"retreatInteractionColour\":\"#FF0000FF\",\"retreatInteractionVisible\":false,\"npcId\":8382,\"attackRadius\":1,\"attackColour\":\"#FF7F0000\",\"attackType\":\"MELEE\",\"attackVisible\":true,\"huntRadius\":1,\"huntColour\":\"#FFFF7F00\",\"huntVisible\":false,\"interactionRadius\":1,\"interactionColour\":\"#FF709943\",\"interactionVisible\":true}]"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "dataSheets",
+          "title": "Data sheets & theory",
+          "items": [
+            {
+              "id": "tob-heres-more-data",
+              "title": "Here's more data",
+              "images": [
+                "tob/heres-more-data.png"
+              ]
+            },
+            {
+              "id": "tob-tob-mvp-points-vs-purple-chance-linear-relationship",
+              "title": "ToB MVP points vs purple chance (linear relationship)",
+              "description": "MVP points vs purple chance is linear: each MVP point is +0.16% (trio) / +0.13% (duo). Trio gives +2.24% total, duo +1.82%, all assuming 0 deaths. Deaths hurt: -0.65% per death in trio, -0.51% in duo.",
+              "images": [
+                "tob/tob-mvp-points-vs-purple-chance-linear-relationship-1.png",
+                "tob/tob-mvp-points-vs-purple-chance-linear-relationship-2.png"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "media",
+          "title": "Media",
+          "items": [
+            {
+              "id": "tob-part-2",
+              "title": "part 2",
+              "images": [
+                "tob/part-2.jpg"
+              ]
+            },
+            {
+              "id": "tob-tob-maiden-freeze-accuracy",
+              "title": "TOB Maiden Freeze Accuracy:",
+              "images": [
+                "tob/tob-maiden-freeze-accuracy.png"
+              ]
+            },
+            {
+              "id": "tob-tob-zaryte-crossbow-tech",
+              "title": "ToB Zaryte Crossbow tech",
+              "images": [
+                "tob/tob-zaryte-crossbow-tech.png"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
