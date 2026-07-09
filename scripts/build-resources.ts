@@ -421,6 +421,7 @@ function build(onlyCategoryIds: Set<string> | null) {
   mergeKnownDuplicates(rawCategories);
 
   const cutLog: CutLogEntry[] = [];
+  const missingSourceLog: string[] = [];
   const usedIds = new Set<string>();
   const perCategorySlug = new Map<string, Set<string>>();
   let imageCount = 0;
@@ -514,6 +515,10 @@ function build(onlyCategoryIds: Set<string> | null) {
             cutLog.push({ category: destCategoryId, section: destSectionKind, title, reason: "judgment pass: no instructional value (blank/empty field screenshot)" });
             continue;
           }
+          if (!existsSync(resolved.absPath)) {
+            missingSourceLog.push(`${destCategoryId}/${destSectionKind} "${title}" — referenced media/${resolved.messageId}/${resolved.fileName} not present on disk (source dump gap), image skipped`);
+            continue;
+          }
           let ext = path.extname(resolved.fileName).slice(1).toLowerCase();
           if (!IMAGE_EXTS.has(ext)) {
             const sniffed = detectImageExt(resolved.absPath);
@@ -529,6 +534,10 @@ function build(onlyCategoryIds: Set<string> | null) {
           if (isLocal) {
             const resolved = resolveMediaPath(link.target);
             if (!resolved) continue;
+            if (!existsSync(resolved.absPath)) {
+              missingSourceLog.push(`${destCategoryId}/${destSectionKind} "${title}" — referenced media/${resolved.messageId}/${resolved.fileName} not present on disk (source dump gap), link skipped`);
+              continue;
+            }
             let ext = path.extname(resolved.fileName).slice(1).toLowerCase();
             const realExt = IMAGE_EXTS.has(ext) ? ext : detectImageExt(resolved.absPath);
             if (realExt) {
@@ -551,7 +560,18 @@ function build(onlyCategoryIds: Set<string> | null) {
           const resolved = resolveMediaPath(item.embeddedFile);
           if (resolved && existsSync(resolved.absPath)) {
             const raw = readFileSync(resolved.absPath, "utf8").trim();
-            const kind = raw.includes('"npcId"') ? "npcMarkers" : raw.includes('"regionId"') ? "tileMarkers" : "other";
+            // "other" covers non-JSON RuneLite plugin config lines (e.g. the
+            // Object Indicators plugin's `objectindicators.region_NNNN=[...]`
+            // format) even though they happen to contain a "regionId" key —
+            // only a bare JSON array/object gets classified as a marker kind.
+            const looksLikeJson = raw.startsWith("[") || raw.startsWith("{");
+            const kind = !looksLikeJson
+              ? "other"
+              : raw.includes('"npcId"')
+                ? "npcMarkers"
+                : raw.includes('"regionId"')
+                  ? "tileMarkers"
+                  : "other";
             runelite = { label: title, kind, json: raw };
           }
         }
@@ -619,7 +639,7 @@ function build(onlyCategoryIds: Set<string> | null) {
     }
   }
 
-  return { builtCategories, cutLog, imageCount, itemCount };
+  return { builtCategories, cutLog, missingSourceLog, imageCount, itemCount };
 }
 
 const sectionsByKindCache = new WeakMap<ManifestCategory, Map<string, ManifestSection>>();
@@ -640,7 +660,7 @@ function main() {
     onlyCategoryIds = new Set(args[onlyIdx + 1].split(",").map((s) => s.trim()));
   }
 
-  const { builtCategories, cutLog, imageCount, itemCount } = build(onlyCategoryIds);
+  const { builtCategories, cutLog, missingSourceLog, imageCount, itemCount } = build(onlyCategoryIds);
 
   // merge with any existing manifest (categories not processed this run are preserved)
   let existing: Manifest | null = null;
@@ -677,6 +697,10 @@ function main() {
   console.log(`Cut ${cutLog.length} items this run:`);
   for (const c of cutLog) {
     console.log(`  - [${c.category}/${c.section}] "${c.title}" — ${c.reason}`);
+  }
+  if (missingSourceLog.length) {
+    console.log(`${missingSourceLog.length} referenced media file(s) missing from resourcesMedia/ (source dump gap, not this script's doing):`);
+    for (const m of missingSourceLog) console.log(`  - ${m}`);
   }
 }
 
