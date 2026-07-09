@@ -29,7 +29,14 @@ access to the private `screenshots` storage bucket. Exports:
 - `submissionExistsByDiscordMessageId` / `insertPendingSubmission` — used by the Discord ingest
   service for dedupe-safe inserts (`discord_message_id` UNIQUE)
 - `getPendingSubmissions`, `getSubmissionById` — used by the admin review routes
-- `approveSubmission`, `denySubmission` — admin review actions
+- `approveSubmission`, `denySubmission` — admin review actions. `approveSubmission` accepts an
+  optional `playerId`, persisted to `bingo_submissions.player_id` (validated by the route handler)
 - `getSignedScreenshotUrl` — short-lived signed URL for a stored screenshot object path
 
 (Note: this file predates `players.ts` and `staticData.ts`, which also aren't listed above.)
+
+### `playerStats.ts`
+`getPlayerStats(bingoId)` — per-player stats (tiles completed, points, last seen, side accounts) for
+the admin overview page, attributed via `bingo_submissions.player_id`. Aggregates over a fixed set of
+bulk queries (players/teams/tiles/approved submissions/snapshots/side accounts) rather than querying
+per player.
