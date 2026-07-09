@@ -32,10 +32,6 @@ interface CliArgs {
   out?: string;
 }
 
-function printUsage(): void {
-  console.error("Usage: bun run dump-resources -- --channel <id> [--out <path>]");
-}
-
 function parseArgs(argv: string[]): CliArgs {
   let channel: string | undefined;
   let out: string | undefined;
@@ -60,7 +56,7 @@ function parseArgs(argv: string[]): CliArgs {
     }
   }
 
-  if (!channel) throw new Error("--channel <id> is required");
+  if (!channel) throw new Error("--channel <id> is required. Usage: bun run dump-resources -- --channel <id> [--out <path>]");
   return { channel, out };
 }
 
