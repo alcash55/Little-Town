@@ -114,6 +114,20 @@ export function uniqueSuffix(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/**
+ * True if `table.column` exists in the connected database. Used to
+ * `skipIf` tests that depend on a migration (e.g. `player_id`, an RPC's
+ * backing column) that may not have landed yet — see the NOTE at the top of
+ * TEAM-BRIEF.md.
+ */
+export async function columnExists(table: string, column: string): Promise<boolean> {
+  const { error } = await getDb().from(table).select(column).limit(0);
+  if (!error) return true;
+  // PostgREST reports "column does not exist" as Postgres code 42703.
+  if ((error as { code?: string }).code === "42703") return false;
+  throw new Error(`Failed to check for column "${table}.${column}": ${error.message}`);
+}
+
 // -------------------------------------------------------
 // Raw fixture helpers (bypass src/db wrappers so fixture setup never
 // depends on the ambiguous-global-read behavior of e.g. getActiveBingo()).
@@ -180,6 +194,45 @@ export async function getTeamRows(bingoId: string): Promise<BingoTeamRow[]> {
   const { data, error } = await getDb().from("bingo_teams").select("*").eq("bingo_id", bingoId);
   if (error) throw new Error(`Failed to fetch teams for bingo ${bingoId}: ${error.message}`);
   return (data ?? []) as BingoTeamRow[];
+}
+
+export interface BingoBoardTileRow {
+  id: string;
+  bingo_id: string;
+  position: number;
+  type: "Kill Count" | "Experience" | "Drops";
+  task: string;
+  points: number;
+}
+
+/**
+ * Inserts a single board tile row directly (bypassing saveActiveBingoBoard,
+ * which resolves "the active bingo" globally rather than taking an explicit
+ * bingo id — unsafe for fixtures on a shared local stack).
+ */
+export async function insertTestTile(
+  bingoId: string,
+  overrides: Partial<{
+    position: number;
+    type: "Kill Count" | "Experience" | "Drops";
+    task: string;
+    points: number;
+  }> = {},
+): Promise<BingoBoardTileRow> {
+  const { data, error } = await getDb()
+    .from("bingo_board_tiles")
+    .insert({
+      bingo_id: bingoId,
+      position: overrides.position ?? 0,
+      type: overrides.type ?? "Drops",
+      task: overrides.task ?? `Test Tile ${uniqueSuffix()}`,
+      points: overrides.points ?? 10,
+    })
+    .select("id, bingo_id, position, type, task, points")
+    .single();
+
+  if (error || !data) throw new Error(`Failed to insert test tile: ${error?.message}`);
+  return data as BingoBoardTileRow;
 }
 
 export async function countHiscoreRows(playerId: string, type: "start" | "current"): Promise<number> {
