@@ -115,4 +115,5 @@ export const sideAccountSchema = z.object({
 export const screenshotApprovalSchema = z.object({
   tileId: z.string().min(1, "Tile ID is required"),
   teamId: z.string().min(1, "Team ID is required"),
+  playerId: z.string().min(1).optional(),
 });
