@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-09T14:39:14.386Z",
+  "generatedAt": "2026-07-09T14:42:50.042Z",
   "categories": [
     {
       "id": "tob",
@@ -145,6 +145,13 @@
                 "tob/tob-mvp-points-vs-purple-chance-linear-relationship-1.png",
                 "tob/tob-mvp-points-vs-purple-chance-linear-relationship-2.png"
               ]
+            },
+            {
+              "id": "tob-verzik-p3-scythe-dawnbringer-tick-chart-5-scythe-godbooking",
+              "title": "Verzik P3 scythe/dawnbringer tick chart (5-scythe godbooking)",
+              "images": [
+                "tob/verzik-p3-scythe-dawnbringer-tick-chart-5-scythe-godbooking.png"
+              ]
             }
           ]
         },
@@ -272,6 +279,13 @@
                 "kind": "tileMarkers",
                 "json": "[{\"regionId\":14131,\"regionX\":35,\"regionY\":35,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":35,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":36,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":39,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":38,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":37,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":35,\"regionY\":34,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":35,\"regionY\":33,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":35,\"regionY\":32,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":35,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":36,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":37,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":38,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":39,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":39,\"regionY\":32,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":39,\"regionY\":33,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":39,\"regionY\":34,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":39,\"regionY\":35,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":42,\"regionY\":27,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":42,\"regionY\":28,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":28,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":44,\"regionY\":28,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":45,\"regionY\":28,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":46,\"regionY\":28,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":28,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":27,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":26,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":25,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":24,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":23,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":22,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":46,\"regionY\":22,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":45,\"regionY\":22,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":44,\"regionY\":22,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":22,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":42,\"regionY\":22,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":42,\"regionY\":23,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":42,\"regionY\":24,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":42,\"regionY\":25,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":42,\"regionY\":26,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":52,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":52,\"regionY\":32,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":53,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":54,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":55,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":56,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":32,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":33,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":34,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":35,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":56,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":55,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":54,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":53,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":52,\"regionY\":35,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":52,\"regionY\":34,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":52,\"regionY\":33,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":55,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":54,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":54,\"regionY\":19,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":54,\"regionY\":18,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":54,\"regionY\":17,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":54,\"regionY\":16,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":55,\"regionY\":16,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":56,\"regionY\":16,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":16,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":58,\"regionY\":16,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":59,\"regionY\":16,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":60,\"regionY\":16,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":60,\"regionY\":17,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":60,\"regionY\":18,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":60,\"regionY\":19,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":60,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":59,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":58,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":56,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":36,\"regionY\":17,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":35,\"regionY\":17,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":36,\"regionY\":18,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":34,\"regionY\":17,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":33,\"regionY\":17,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":32,\"regionY\":17,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":32,\"regionY\":18,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":36,\"regionY\":19,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":35,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":34,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":33,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":32,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":32,\"regionY\":19,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":14,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":15,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":44,\"regionY\":15,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":45,\"regionY\":15,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":15,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":48,\"regionY\":15,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":49,\"regionY\":15,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":49,\"regionY\":14,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":49,\"regionY\":13,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":49,\"regionY\":12,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":49,\"regionY\":11,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":49,\"regionY\":10,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":49,\"regionY\":9,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":48,\"regionY\":9,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":9,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":46,\"regionY\":9,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":45,\"regionY\":9,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":44,\"regionY\":9,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":9,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":10,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":11,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":12,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":13,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":52,\"regionY\":36,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":14131,\"regionX\":36,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":46,\"regionY\":15,\"z\":0,\"color\":\"#55EFDDDD\",\"label\":\"Tunnel\"},{\"regionId\":14387,\"regionX\":47,\"regionY\":2,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14387,\"regionX\":47,\"regionY\":3,\"z\":0,\"color\":\"#55EFDDDD\"}]"
               }
+            },
+            {
+              "id": "toa-toa-room-layout-reference-numbered-position-markers",
+              "title": "ToA room layout reference (numbered position markers)",
+              "images": [
+                "toa/toa-room-layout-reference-numbered-position-markers.png"
+              ]
             }
           ]
         },
@@ -296,6 +310,13 @@
               "description": "Per-player purple chance is the same solo or in a group (groups just see more purples overall since more players are rolling), so gp/h nets out the same when split. Deaths are not very punishing solo.",
               "images": [
                 "toa/toa-purple-chance-is-independent-of-group-size.png"
+              ]
+            },
+            {
+              "id": "toa-raid-level-vs-unique-drop-rate-table",
+              "title": "Raid level vs unique drop rate table",
+              "images": [
+                "toa/raid-level-vs-unique-drop-rate-table.webp"
               ]
             }
           ]
@@ -752,6 +773,401 @@
                 "kind": "tileMarkers",
                 "json": "[{\"regionId\":11601,\"regionX\":26,\"regionY\":16,\"z\":0,\"color\":\"#7EE8D9D9\",\"label\":\"Yarr\"},{\"regionId\":11601,\"regionX\":34,\"regionY\":19,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":34,\"regionY\":18,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":34,\"regionY\":20,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":36,\"regionY\":19,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":34,\"regionY\":17,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":34,\"regionY\":21,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":33,\"regionY\":21,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":33,\"regionY\":17,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":43,\"regionY\":20,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":43,\"regionY\":18,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":45,\"regionY\":17,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":45,\"regionY\":21,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":47,\"regionY\":20,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":47,\"regionY\":18,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":32,\"regionY\":19,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":45,\"regionY\":32,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":45,\"regionY\":30,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":45,\"regionY\":28,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":44,\"regionY\":30,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":46,\"regionY\":30,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":43,\"regionY\":30,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":47,\"regionY\":30,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":43,\"regionY\":31,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":47,\"regionY\":31,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":45,\"regionY\":10,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":45,\"regionY\":8,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":45,\"regionY\":6,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":44,\"regionY\":8,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":43,\"regionY\":8,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":46,\"regionY\":8,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":47,\"regionY\":8,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":43,\"regionY\":7,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":47,\"regionY\":7,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":54,\"regionY\":19,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":56,\"regionY\":19,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":58,\"regionY\":19,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":56,\"regionY\":18,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":56,\"regionY\":17,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":56,\"regionY\":20,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":56,\"regionY\":21,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":57,\"regionY\":17,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":57,\"regionY\":28,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":56,\"regionY\":28,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":57,\"regionY\":21,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":11601,\"regionX\":40,\"regionY\":20,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":11601,\"regionX\":40,\"regionY\":19,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":11601,\"regionX\":40,\"regionY\":18,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":11601,\"regionX\":49,\"regionY\":30,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":11601,\"regionX\":49,\"regionY\":31,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":11601,\"regionX\":41,\"regionY\":30,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":11601,\"regionX\":41,\"regionY\":31,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":11601,\"regionX\":57,\"regionY\":23,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":11601,\"regionX\":56,\"regionY\":23,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":11601,\"regionX\":49,\"regionY\":8,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":11601,\"regionX\":49,\"regionY\":7,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":11601,\"regionX\":41,\"regionY\":7,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":11601,\"regionX\":41,\"regionY\":8,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":11601,\"regionX\":56,\"regionY\":15,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":11601,\"regionX\":57,\"regionY\":15,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":11601,\"regionX\":33,\"regionY\":15,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":11601,\"regionX\":34,\"regionY\":15,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":11601,\"regionX\":33,\"regionY\":23,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":11601,\"regionX\":34,\"regionY\":23,\"z\":0,\"color\":\"#7EE2E2EA\"}]"
               }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gauntlet",
+      "name": "Gauntlet",
+      "group": "Bosses",
+      "order": 9,
+      "sections": [
+        {
+          "kind": "guides",
+          "title": "Guides & videos",
+          "items": [
+            {
+              "id": "gauntlet-the-ultimate-corrupted-gauntlet-guide-old-school-runescape",
+              "title": "The Ultimate Corrupted Gauntlet Guide Old School Runescape",
+              "images": [
+                "gauntlet/the-ultimate-corrupted-gauntlet-guide-old-school-runescape.jpg"
+              ],
+              "links": [
+                {
+                  "label": "YouTube",
+                  "url": "https://www.youtube.com/watch?v=LD7UYaQR4u4",
+                  "kind": "youtube"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "dataSheets",
+          "title": "Data sheets & theory",
+          "items": [
+            {
+              "id": "gauntlet-gear-vs-hunllef-hp-swap-timing-table-no-sweet-before-crystal",
+              "title": "Gear vs Hunllef HP% swap-timing table (\"no sweet before crystal\")",
+              "images": [
+                "gauntlet/gear-vs-hunllef-hp-swap-timing-table-no-sweet-before-crystal.png"
+              ],
+              "links": [
+                {
+                  "label": "Image source",
+                  "url": "https://i.imgur.com/A8Q9IyL.png",
+                  "kind": "imgur"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nmz",
+      "name": "Nightmare Zone",
+      "group": "PvM & Slayer",
+      "order": 10,
+      "sections": [
+        {
+          "kind": "tileMarkers",
+          "title": "Tile markers & setups",
+          "items": [
+            {
+              "id": "nmz-nightmare-zone-afk-setup",
+              "title": "Nightmare Zone AFK setup",
+              "images": [
+                "nmz/nightmare-zone-afk-setup.png"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "slayer-general-pvm",
+      "name": "Slayer & General PvM",
+      "group": "PvM & Slayer",
+      "order": 11,
+      "sections": [
+        {
+          "kind": "guides",
+          "title": "Guides & videos",
+          "items": [
+            {
+              "id": "slayer-general-pvm-bloodveld-dance",
+              "title": "Bloodveld dance",
+              "images": [
+                "slayer-general-pvm/bloodveld-dance.jpg"
+              ],
+              "links": [
+                {
+                  "label": "YouTube",
+                  "url": "https://www.youtube.com/watch?v=9Gm5G0OB49c",
+                  "kind": "youtube"
+                }
+              ]
+            },
+            {
+              "id": "slayer-general-pvm-easy-chaos-elemental-alt-lure-guide-2022",
+              "title": "EASY Chaos Elemental Alt Lure Guide [2022]",
+              "images": [
+                "slayer-general-pvm/easy-chaos-elemental-alt-lure-guide-2022.jpg"
+              ],
+              "links": [
+                {
+                  "label": "YouTube",
+                  "url": "https://www.youtube.com/watch?v=1jMKvdsfF5g",
+                  "kind": "youtube"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "tools",
+          "title": "Tools & plugins",
+          "items": [
+            {
+              "id": "slayer-general-pvm-superior-slayer-monster",
+              "title": "Superior slayer monster",
+              "images": [
+                "slayer-general-pvm/superior-slayer-monster.png"
+              ],
+              "links": [
+                {
+                  "label": "OSRS Wiki",
+                  "url": "https://oldschool.runescape.wiki/images/Fighting_superior_slayer_monster.png?7bca3",
+                  "kind": "wiki"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "media",
+          "title": "Media",
+          "items": [
+            {
+              "id": "slayer-general-pvm-alchemical-hydra-sound-effect-ids-to-mute",
+              "title": "Alchemical Hydra: sound effect IDs to mute",
+              "description": "Mute these sound effect IDs during Alchemical Hydra kills to cut down on audio clutter.\n\n2677,2663,2675,2670,511,5884,2266,6410,6014,6116,5949,6216,520,519,3120,518,6160,1464,521,2667,918,6412,6093,6192,6066,6112,6105,3614,6072,6159,6230,5890,5818,5885,6235,6134,6151,6235,6129,6018,5978,5962,6042,6042,6219,6124,6153,6591,1460,227,4103,4089,4078,4112,4134,4135,4128,4132,3887,4076,4087,3944,4095,4075,4118,4096,4067,4099,4133,4080,4122,4107,4094,4106,211,212,3613",
+              "images": [
+                "slayer-general-pvm/alchemical-hydra-sound-effect-ids-to-mute.png"
+              ]
+            },
+            {
+              "id": "slayer-general-pvm-hunter-task-block-reference",
+              "title": "Hunter task block reference",
+              "images": [
+                "slayer-general-pvm/hunter-task-block-reference.png"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "skilling-utility",
+      "name": "Skilling & Utility",
+      "group": "Skilling",
+      "order": 12,
+      "sections": [
+        {
+          "kind": "guides",
+          "title": "Guides & videos",
+          "items": [
+            {
+              "id": "skilling-utility-mith-steel-plates-low-level-giant-foundry-uim-90k20k-xp-h",
+              "title": "Mith/Steel plates low level Giant Foundry UIM 90k20k xp/h",
+              "images": [
+                "skilling-utility/mith-steel-plates-low-level-giant-foundry-uim-90k20k-xp-h.jpg"
+              ],
+              "links": [
+                {
+                  "label": "YouTube",
+                  "url": "https://www.youtube.com/watch?v=Xu0xTBOcYcM",
+                  "kind": "youtube"
+                }
+              ]
+            },
+            {
+              "id": "skilling-utility-these-plugins-makes-zmi-afk-osrs-runecrafting-easy",
+              "title": "These Plugins Makes ZMI AFK - OSRS Runecrafting EASY",
+              "images": [
+                "skilling-utility/these-plugins-makes-zmi-afk-osrs-runecrafting-easy.jpg"
+              ],
+              "links": [
+                {
+                  "label": "YouTube",
+                  "url": "https://www.youtube.com/watch?v=ahPL_wk6xzU&t=201s",
+                  "kind": "youtube"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "dataSheets",
+          "title": "Data sheets & theory",
+          "items": [
+            {
+              "id": "skilling-utility-dps-calculator",
+              "title": "DPS Calculator:",
+              "images": [
+                "skilling-utility/dps-calculator.png"
+              ],
+              "links": [
+                {
+                  "label": "Google/Sheet",
+                  "url": "https://lh5.googleusercontent.com/jKiPB0wxt17YYUDeaBs4fyEcJYqyI5JDyeAJviuHx0wqaZp853oUuH6gyVaKTMvq1uLBRe8S0Xnsdg=w1200-h630-p",
+                  "kind": "sheet"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "tools",
+          "title": "Tools & plugins",
+          "items": [
+            {
+              "id": "skilling-utility-all-tasks",
+              "title": "All tasks",
+              "images": [
+                "skilling-utility/all-tasks.png"
+              ],
+              "links": [
+                {
+                  "label": "OSRS Wiki",
+                  "url": "https://oldschool.runescape.wiki/images/Wiki.png",
+                  "kind": "wiki"
+                }
+              ]
+            },
+            {
+              "id": "skilling-utility-guthix-rest",
+              "title": "Guthix rest",
+              "images": [
+                "skilling-utility/guthix-rest.png"
+              ],
+              "links": [
+                {
+                  "label": "OSRS Wiki",
+                  "url": "https://oldschool.runescape.wiki/images/thumb/Guthix_rest%281%29_detail.png/1200px-Guthix_rest%281%29_detail.png?fb141",
+                  "kind": "wiki"
+                }
+              ]
+            },
+            {
+              "id": "skilling-utility-lockbox",
+              "title": "Lockbox",
+              "images": [
+                "skilling-utility/lockbox.png"
+              ],
+              "links": [
+                {
+                  "label": "OSRS Wiki",
+                  "url": "https://oldschool.runescape.wiki/images/Wiki.png",
+                  "kind": "wiki"
+                }
+              ]
+            },
+            {
+              "id": "skilling-utility-quick-way-to-search-osrs-wiki",
+              "title": "Quick way to search osrs wiki",
+              "images": [
+                "skilling-utility/quick-way-to-search-osrs-wiki.png"
+              ]
+            },
+            {
+              "id": "skilling-utility-special-search",
+              "title": "Special:Search",
+              "images": [
+                "skilling-utility/special-search.png"
+              ],
+              "links": [
+                {
+                  "label": "OSRS Wiki",
+                  "url": "https://oldschool.runescape.wiki/images/Wiki.png",
+                  "kind": "wiki"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "media",
+          "title": "Media",
+          "items": [
+            {
+              "id": "skilling-utility-how-to-get-easy-spellbook-swapping",
+              "title": "How to get easy Spellbook Swapping",
+              "images": [
+                "skilling-utility/how-to-get-easy-spellbook-swapping.png"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "unsorted",
+      "name": "Unsorted",
+      "group": "Other",
+      "order": 13,
+      "sections": [
+        {
+          "kind": "tileMarkers",
+          "title": "Tile markers & setups",
+          "items": [
+            {
+              "id": "unsorted-unidentified-tile-markers",
+              "title": "Unidentified tile markers",
+              "runelite": {
+                "label": "Unidentified tile markers",
+                "kind": "tileMarkers",
+                "json": "[{\"regionId\":15698,\"regionX\":37,\"regionY\":44,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":41,\"regionY\":45,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":37,\"regionY\":54,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":41,\"regionY\":55,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":23,\"regionY\":44,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":27,\"regionY\":45,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":27,\"regionY\":55,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":23,\"regionY\":54,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":27,\"regionY\":20,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":23,\"regionY\":19,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":23,\"regionY\":9,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":27,\"regionY\":10,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":37,\"regionY\":19,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":37,\"regionY\":17,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":37,\"regionY\":15,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":37,\"regionY\":13,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":37,\"regionY\":11,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":37,\"regionY\":9,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":41,\"regionY\":10,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":41,\"regionY\":12,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":41,\"regionY\":14,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":41,\"regionY\":16,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":41,\"regionY\":18,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":41,\"regionY\":20,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":27,\"regionY\":18,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":27,\"regionY\":16,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":27,\"regionY\":14,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":27,\"regionY\":12,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":23,\"regionY\":17,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":23,\"regionY\":15,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":23,\"regionY\":13,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":23,\"regionY\":11,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":23,\"regionY\":46,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":27,\"regionY\":47,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":23,\"regionY\":48,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":27,\"regionY\":49,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":23,\"regionY\":50,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":27,\"regionY\":51,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":23,\"regionY\":52,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":27,\"regionY\":53,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":37,\"regionY\":46,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":37,\"regionY\":48,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":37,\"regionY\":50,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":41,\"regionY\":47,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":41,\"regionY\":49,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":37,\"regionY\":52,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":41,\"regionY\":51,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":41,\"regionY\":53,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":41,\"regionY\":8,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":27,\"regionY\":8,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":26,\"regionY\":20,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":26,\"regionY\":18,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":26,\"regionY\":16,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":26,\"regionY\":14,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":26,\"regionY\":12,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":26,\"regionY\":10,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":24,\"regionY\":19,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":24,\"regionY\":17,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":24,\"regionY\":15,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":24,\"regionY\":13,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":24,\"regionY\":11,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":24,\"regionY\":9,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":26,\"regionY\":8,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":37,\"regionY\":56,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":38,\"regionY\":56,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":38,\"regionY\":54,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":40,\"regionY\":53,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":40,\"regionY\":55,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":40,\"regionY\":51,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":40,\"regionY\":49,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":40,\"regionY\":47,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":40,\"regionY\":45,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":38,\"regionY\":44,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":38,\"regionY\":46,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":38,\"regionY\":48,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":38,\"regionY\":50,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":38,\"regionY\":52,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":26,\"regionY\":45,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":24,\"regionY\":44,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":24,\"regionY\":46,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":24,\"regionY\":48,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":24,\"regionY\":50,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":24,\"regionY\":52,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":24,\"regionY\":54,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":23,\"regionY\":56,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":24,\"regionY\":56,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":26,\"regionY\":55,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":26,\"regionY\":53,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":26,\"regionY\":51,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":26,\"regionY\":49,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":26,\"regionY\":47,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":38,\"regionY\":19,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":40,\"regionY\":20,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":40,\"regionY\":18,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":38,\"regionY\":17,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":38,\"regionY\":15,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":40,\"regionY\":16,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":40,\"regionY\":14,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":38,\"regionY\":13,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":38,\"regionY\":11,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":40,\"regionY\":12,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":40,\"regionY\":10,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":38,\"regionY\":9,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":40,\"regionY\":8,\"z\":0,\"color\":\"#7EE8D9D9\"}]"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "media",
+          "title": "Media",
+          "items": [
+            {
+              "id": "unsorted-00-embed-thumbnail-png",
+              "title": "00-embed-thumbnail.png",
+              "images": [
+                "unsorted/00-embed-thumbnail-png.png"
+              ],
+              "links": [
+                {
+                  "label": "Image source",
+                  "url": "https://i.imgur.com/6resKLZ.png",
+                  "kind": "imgur"
+                }
+              ]
+            },
+            {
+              "id": "unsorted-for-tomatoes",
+              "title": "For tomatoes",
+              "images": [
+                "unsorted/for-tomatoes.png"
+              ]
+            },
+            {
+              "id": "unsorted-gyazo",
+              "title": "Gyazo",
+              "images": [
+                "unsorted/gyazo.jpg"
+              ],
+              "links": [
+                {
+                  "label": "Image source",
+                  "url": "https://i.gyazo.com/thumb/1200/2e17195edc7fb74d543597fcfbbac8b3-png.jpg",
+                  "kind": "other"
+                }
+              ]
+            },
+            {
+              "id": "unsorted-r-ironscape-psa-you-can-bring-3x-more-bones-without-extra-ri",
+              "title": "r/ironscape - PSA: you can bring 3x more bones without extra risk",
+              "links": [
+                {
+                  "label": "YouTube",
+                  "url": "https://www.youtube.com/watch?v=cgZepwdI-FU",
+                  "kind": "youtube"
+                },
+                {
+                  "label": "Reddit",
+                  "url": "https://www.reddit.com/r/ironscape/comments/132yus0/psa_you_can_bring_3x_more_bones_without_extra/",
+                  "kind": "other"
+                },
+                {
+                  "label": "Reddit",
+                  "url": "https://external-preview.redd.it/-ErwAkJwSnYPFmjEN-TTnoG0q-0W41HuICK96gZOQog.jpg?auto=webp&v=enabled&s=aeccd61a89d154cfbae0f4d2cd9677d360936449",
+                  "kind": "other"
+                }
+              ]
+            },
+            {
+              "id": "unsorted-untitled-album",
+              "title": "Untitled Album",
+              "images": [
+                "unsorted/untitled-album.jpg"
+              ],
+              "links": [
+                {
+                  "label": "Image source",
+                  "url": "https://i.imgur.com/rCYni93h.jpg",
+                  "kind": "imgur"
+                }
+              ]
             }
           ]
         }
