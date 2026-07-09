@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-09T14:34:04.823Z",
+  "generatedAt": "2026-07-09T14:35:08.587Z",
   "categories": [
     {
       "id": "tob",
@@ -172,6 +172,250 @@
               "images": [
                 "tob/tob-zaryte-crossbow-tech.png"
               ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "toa",
+      "name": "Tombs of Amascut",
+      "group": "Raids",
+      "order": 2,
+      "sections": [
+        {
+          "kind": "guides",
+          "title": "Guides & videos",
+          "items": [
+            {
+              "id": "toa-easier-baba-quick-set-up",
+              "title": "Easier Baba, quick set-up",
+              "images": [
+                "toa/easier-baba-quick-set-up.jpg"
+              ],
+              "links": [
+                {
+                  "label": "YouTube",
+                  "url": "https://www.youtube.com/watch?v=H1JjXOoacMA",
+                  "kind": "youtube"
+                }
+              ]
+            },
+            {
+              "id": "toa-toa-p3-wardens-skulls-new-spam-skip-tech",
+              "title": "TOA P3 Wardens skulls new \"spam skip\" tech",
+              "images": [
+                "toa/toa-p3-wardens-skulls-new-spam-skip-tech.jpg"
+              ],
+              "links": [
+                {
+                  "label": "YouTube",
+                  "url": "https://www.youtube.com/watch?v=xeR6-b_wfu8&t=8s",
+                  "kind": "youtube"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "tileMarkers",
+          "title": "Tile markers & setups",
+          "items": [
+            {
+              "id": "toa-akkha-radius-markers-by-npc-id-per-prayer-switch-phase",
+              "title": "Akkha radius markers by NPC ID (per prayer-switch phase)",
+              "description": "Akkha has 4 different NPC IDs across his phases, so you can give each one a different radius-marker colour to make his prayer switches easier to notice.",
+              "images": [
+                "toa/akkha-radius-markers-by-npc-id-per-prayer-switch-phase.png"
+              ]
+            },
+            {
+              "id": "toa-reasonable-150-solo-setup",
+              "title": "Reasonable 150 Solo setup",
+              "images": [
+                "toa/reasonable-150-solo-setup.png"
+              ]
+            },
+            {
+              "id": "toa-toa-baboon-npc-radius-marker-ids",
+              "title": "ToA Baboon NPC radius marker IDs",
+              "images": [
+                "toa/toa-baboon-npc-radius-marker-ids.png"
+              ]
+            },
+            {
+              "id": "toa-toa-baboon-npc-radius-marker-ids-2",
+              "title": "ToA Baboon NPC radius marker IDs",
+              "images": [
+                "toa/toa-baboon-npc-radius-marker-ids-2.png"
+              ]
+            },
+            {
+              "id": "toa-toa-baboon-shaman-radius-marker-id",
+              "title": "ToA Baboon Shaman radius marker ID",
+              "images": [
+                "toa/toa-baboon-shaman-radius-marker-id.png"
+              ]
+            },
+            {
+              "id": "toa-toa-cursed-baboon-radius-marker-id",
+              "title": "ToA Cursed Baboon radius marker ID",
+              "images": [
+                "toa/toa-cursed-baboon-radius-marker-id.png"
+              ]
+            },
+            {
+              "id": "toa-toa-room-tile-markers",
+              "title": "ToA room tile markers",
+              "runelite": {
+                "label": "ToA room tile markers",
+                "kind": "tileMarkers",
+                "json": "[{\"regionId\":14131,\"regionX\":35,\"regionY\":35,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":35,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":36,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":39,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":38,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":37,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":35,\"regionY\":34,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":35,\"regionY\":33,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":35,\"regionY\":32,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":35,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":36,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":37,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":38,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":39,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":39,\"regionY\":32,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":39,\"regionY\":33,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":39,\"regionY\":34,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":39,\"regionY\":35,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":42,\"regionY\":27,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":42,\"regionY\":28,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":28,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":44,\"regionY\":28,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":45,\"regionY\":28,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":46,\"regionY\":28,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":28,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":27,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":26,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":25,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":24,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":23,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":22,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":46,\"regionY\":22,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":45,\"regionY\":22,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":44,\"regionY\":22,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":22,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":42,\"regionY\":22,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":42,\"regionY\":23,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":42,\"regionY\":24,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":42,\"regionY\":25,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":42,\"regionY\":26,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":52,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":52,\"regionY\":32,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":53,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":54,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":55,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":56,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":32,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":33,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":34,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":35,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":56,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":55,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":54,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":53,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":52,\"regionY\":35,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":52,\"regionY\":34,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":52,\"regionY\":33,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":55,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":54,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":54,\"regionY\":19,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":54,\"regionY\":18,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":54,\"regionY\":17,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":54,\"regionY\":16,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":55,\"regionY\":16,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":56,\"regionY\":16,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":16,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":58,\"regionY\":16,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":59,\"regionY\":16,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":60,\"regionY\":16,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":60,\"regionY\":17,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":60,\"regionY\":18,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":60,\"regionY\":19,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":60,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":59,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":58,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":56,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":36,\"regionY\":17,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":35,\"regionY\":17,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":36,\"regionY\":18,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":34,\"regionY\":17,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":33,\"regionY\":17,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":32,\"regionY\":17,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":32,\"regionY\":18,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":36,\"regionY\":19,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":35,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":34,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":33,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":32,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":32,\"regionY\":19,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":14,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":15,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":44,\"regionY\":15,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":45,\"regionY\":15,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":15,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":48,\"regionY\":15,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":49,\"regionY\":15,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":49,\"regionY\":14,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":49,\"regionY\":13,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":49,\"regionY\":12,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":49,\"regionY\":11,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":49,\"regionY\":10,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":49,\"regionY\":9,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":48,\"regionY\":9,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":9,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":46,\"regionY\":9,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":45,\"regionY\":9,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":44,\"regionY\":9,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":9,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":10,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":11,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":12,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":13,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":52,\"regionY\":36,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":14131,\"regionX\":36,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":46,\"regionY\":15,\"z\":0,\"color\":\"#55EFDDDD\",\"label\":\"Tunnel\"},{\"regionId\":14387,\"regionX\":47,\"regionY\":2,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14387,\"regionX\":47,\"regionY\":3,\"z\":0,\"color\":\"#55EFDDDD\"}]"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "dataSheets",
+          "title": "Data sheets & theory",
+          "items": [
+            {
+              "id": "toa-nerfed-fang-dps-sheet",
+              "title": "Nerfed Fang DPS Sheet",
+              "links": [
+                {
+                  "label": "Google/Sheet",
+                  "url": "https://lh3.googleusercontent.com/Y3mXJgXneYvdRJNApT0vu1jRhQTBRNHhUntYajVxjdC460eeKq-_l_kzMBpg7pJfgRTt48mZg7slEQ=w1200-h630-p",
+                  "kind": "sheet"
+                }
+              ]
+            },
+            {
+              "id": "toa-toa-purple-chance-is-independent-of-group-size",
+              "title": "ToA purple chance is independent of group size",
+              "description": "Per-player purple chance is the same solo or in a group (groups just see more purples overall since more players are rolling), so gp/h nets out the same when split. Deaths are not very punishing solo.",
+              "images": [
+                "toa/toa-purple-chance-is-independent-of-group-size.png"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "media",
+          "title": "Media",
+          "items": [
+            {
+              "id": "toa-toa-custom-swap-list",
+              "title": "ToA custom swap list",
+              "images": [
+                "toa/toa-custom-swap-list.png"
+              ],
+              "links": [
+                {
+                  "label": "Image source",
+                  "url": "https://i.imgur.com/yvGbs5N.png",
+                  "kind": "imgur"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cox",
+      "name": "Chambers of Xeric",
+      "group": "Raids",
+      "order": 3,
+      "sections": [
+        {
+          "kind": "guides",
+          "title": "Guides & videos",
+          "items": [
+            {
+              "id": "cox-no-teleport-vasa-method-cm-quick-guide",
+              "title": "NO Teleport Vasa Method: CM Quick Guide",
+              "images": [
+                "cox/no-teleport-vasa-method-cm-quick-guide.jpg"
+              ],
+              "links": [
+                {
+                  "label": "YouTube",
+                  "url": "https://www.youtube.com/watch?v=lKmuWOQeSOY",
+                  "kind": "youtube"
+                }
+              ]
+            },
+            {
+              "id": "cox-vasa-teleport-skip",
+              "title": "Vasa teleport skip",
+              "images": [
+                "cox/vasa-teleport-skip.jpg"
+              ],
+              "links": [
+                {
+                  "label": "YouTube",
+                  "url": "https://www.youtube.com/watch?v=043rd9lxZYE",
+                  "kind": "youtube"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "yama",
+      "name": "Yama",
+      "group": "Bosses",
+      "order": 4,
+      "sections": [
+        {
+          "kind": "guides",
+          "title": "Guides & videos",
+          "items": [
+            {
+              "id": "yama-infinity-yama-17-0-solo-harder-version-0-tickloss",
+              "title": "infinity Yama 17:0 Solo / Harder Version 0 Tickloss",
+              "images": [
+                "yama/infinity-yama-17-0-solo-harder-version-0-tickloss.jpg"
+              ],
+              "links": [
+                {
+                  "label": "YouTube",
+                  "url": "https://www.youtube.com/watch?v=UXV10uX9l1c",
+                  "kind": "youtube"
+                }
+              ]
+            },
+            {
+              "id": "yama-infinity-yama-17-0-solo-duo",
+              "title": "Infinity Yama 17:0 Solo/Duo",
+              "images": [
+                "yama/infinity-yama-17-0-solo-duo.jpg"
+              ],
+              "links": [
+                {
+                  "label": "YouTube",
+                  "url": "https://www.youtube.com/watch?v=b9DS9wIAppc",
+                  "kind": "youtube"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "tileMarkers",
+          "title": "Tile markers & setups",
+          "items": [
+            {
+              "id": "yama-yama-tile-markers",
+              "title": "Yama tile markers",
+              "runelite": {
+                "label": "Yama tile markers",
+                "kind": "tileMarkers",
+                "json": "[{\"regionId\":14676,\"regionX\":36,\"regionY\":39,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":40,\"regionY\":36,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":36,\"regionY\":32,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":33,\"regionY\":35,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":36,\"regionY\":31,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":32,\"regionY\":35,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":29,\"regionY\":32,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":29,\"regionY\":39,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":33,\"regionY\":28,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":40,\"regionY\":27,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":36,\"regionY\":24,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":29,\"regionY\":31,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":32,\"regionY\":28,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":25,\"regionY\":27,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":29,\"regionY\":24,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":25,\"regionY\":36,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":40,\"regionY\":28,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":33,\"regionY\":27,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":32,\"regionY\":27,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":40,\"regionY\":35,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":33,\"regionY\":36,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":32,\"regionY\":36,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":25,\"regionY\":28,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":25,\"regionY\":35,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":14676,\"regionX\":42,\"regionY\":33,\"z\":1,\"color\":\"#7EE8D9D9\",\"label\":\"s\"},{\"regionId\":14676,\"regionX\":42,\"regionY\":30,\"z\":1,\"color\":\"#7EE8D9D9\",\"label\":\"s\"},{\"regionId\":14676,\"regionX\":34,\"regionY\":41,\"z\":1,\"color\":\"#7EE8D9D9\",\"label\":\"s\"},{\"regionId\":14676,\"regionX\":31,\"regionY\":41,\"z\":1,\"color\":\"#7EE8D9D9\",\"label\":\"s\"},{\"regionId\":14676,\"regionX\":23,\"regionY\":30,\"z\":1,\"color\":\"#7EE8D9D9\",\"label\":\"s\"},{\"regionId\":14676,\"regionX\":23,\"regionY\":33,\"z\":1,\"color\":\"#7EE8D9D9\",\"label\":\"s\"},{\"regionId\":14676,\"regionX\":34,\"regionY\":22,\"z\":1,\"color\":\"#7EE8D9D9\",\"label\":\"s\"},{\"regionId\":14676,\"regionX\":31,\"regionY\":22,\"z\":1,\"color\":\"#7EE8D9D9\",\"label\":\"s\"},{\"regionId\":15184,\"regionX\":22,\"regionY\":45,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":15184,\"regionX\":27,\"regionY\":40,\"z\":1,\"color\":\"#B12323C8\"},{\"regionId\":15184,\"regionX\":28,\"regionY\":42,\"z\":1,\"color\":\"#B12323C8\"},{\"regionId\":15184,\"regionX\":26,\"regionY\":42,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":25,\"regionY\":41,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":25,\"regionY\":39,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":26,\"regionY\":38,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":28,\"regionY\":38,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":29,\"regionY\":39,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":29,\"regionY\":41,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":27,\"regionY\":42,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":25,\"regionY\":40,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":27,\"regionY\":38,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":29,\"regionY\":40,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":24,\"regionY\":40,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":24,\"regionY\":41,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":24,\"regionY\":42,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":24,\"regionY\":43,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":25,\"regionY\":43,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":26,\"regionY\":43,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":27,\"regionY\":43,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":28,\"regionY\":43,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":29,\"regionY\":43,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":30,\"regionY\":43,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":30,\"regionY\":42,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":30,\"regionY\":41,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":30,\"regionY\":40,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":30,\"regionY\":39,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":30,\"regionY\":38,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":28,\"regionY\":37,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":29,\"regionY\":37,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":30,\"regionY\":37,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":27,\"regionY\":37,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":26,\"regionY\":37,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":25,\"regionY\":37,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":24,\"regionY\":37,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":24,\"regionY\":39,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15184,\"regionX\":24,\"regionY\":38,\"z\":1,\"color\":\"#7EE2E2EA\"},{\"regionId\":15188,\"regionX\":23,\"regionY\":29,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":24,\"regionY\":29,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":25,\"regionY\":29,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":23,\"regionY\":35,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":24,\"regionY\":35,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":25,\"regionY\":35,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":26,\"regionY\":29,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":27,\"regionY\":29,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":29,\"regionY\":29,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":26,\"regionY\":35,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":27,\"regionY\":35,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":29,\"regionY\":35,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":31,\"regionY\":35,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":32,\"regionY\":35,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":31,\"regionY\":29,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":32,\"regionY\":29,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":33,\"regionY\":29,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":34,\"regionY\":29,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":35,\"regionY\":29,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":36,\"regionY\":29,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":37,\"regionY\":29,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":38,\"regionY\":29,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":39,\"regionY\":29,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":40,\"regionY\":29,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":41,\"regionY\":29,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":33,\"regionY\":35,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":34,\"regionY\":35,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":35,\"regionY\":35,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":36,\"regionY\":35,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":41,\"regionY\":35,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":40,\"regionY\":35,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":37,\"regionY\":35,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":38,\"regionY\":35,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":39,\"regionY\":35,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":29,\"regionY\":31,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":29,\"regionY\":33,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":29,\"regionY\":27,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":29,\"regionY\":37,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15188,\"regionX\":28,\"regionY\":32,\"z\":0,\"color\":\"#961930E2\"},{\"regionId\":15188,\"regionX\":30,\"regionY\":32,\"z\":0,\"color\":\"#961930E2\"},{\"regionId\":15188,\"regionX\":32,\"regionY\":32,\"z\":0,\"color\":\"#961930E2\"},{\"regionId\":15188,\"regionX\":32,\"regionY\":34,\"z\":0,\"color\":\"#961930E2\"},{\"regionId\":15188,\"regionX\":32,\"regionY\":30,\"z\":0,\"color\":\"#961930E2\"},{\"regionId\":15188,\"regionX\":22,\"regionY\":32,\"z\":0,\"color\":\"#961930E2\"},{\"regionId\":15188,\"regionX\":33,\"regionY\":37,\"z\":0,\"color\":\"#961930E2\"},{\"regionId\":15188,\"regionX\":33,\"regionY\":27,\"z\":0,\"color\":\"#961930E2\"},{\"regionId\":15188,\"regionX\":41,\"regionY\":32,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":15696,\"regionX\":33,\"regionY\":37,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":15696,\"regionX\":31,\"regionY\":37,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":15696,\"regionX\":31,\"regionY\":38,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":15696,\"regionX\":31,\"regionY\":39,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":15696,\"regionX\":33,\"regionY\":38,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":15696,\"regionX\":33,\"regionY\":39,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":15696,\"regionX\":36,\"regionY\":44,\"z\":1,\"color\":\"#7EE8D9D9\",\"label\":\"2\"},{\"regionId\":15696,\"regionX\":34,\"regionY\":40,\"z\":1,\"color\":\"#7EE8D9D9\",\"label\":\"3\"},{\"regionId\":15696,\"regionX\":38,\"regionY\":41,\"z\":1,\"color\":\"#7EE8D9D9\",\"label\":\"4\"},{\"regionId\":15696,\"regionX\":32,\"regionY\":40,\"z\":1,\"color\":\"#7EE8D9D9\",\"label\":\"1\"},{\"regionId\":15696,\"regionX\":27,\"regionY\":42,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":15696,\"regionX\":37,\"regionY\":42,\"z\":1,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":41,\"regionY\":45,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":41,\"regionY\":55,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":27,\"regionY\":45,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":27,\"regionY\":55,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":23,\"regionY\":19,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":23,\"regionY\":9,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":37,\"regionY\":19,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":37,\"regionY\":17,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":37,\"regionY\":15,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":37,\"regionY\":13,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":37,\"regionY\":11,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":37,\"regionY\":9,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":23,\"regionY\":17,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":23,\"regionY\":15,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":23,\"regionY\":13,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":23,\"regionY\":11,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":27,\"regionY\":47,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":27,\"regionY\":49,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":27,\"regionY\":51,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":27,\"regionY\":53,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":41,\"regionY\":47,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":41,\"regionY\":49,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":41,\"regionY\":51,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":41,\"regionY\":53,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":24,\"regionY\":19,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":24,\"regionY\":17,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":24,\"regionY\":15,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":24,\"regionY\":13,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":24,\"regionY\":11,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":24,\"regionY\":9,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":40,\"regionY\":53,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":40,\"regionY\":55,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":40,\"regionY\":51,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":40,\"regionY\":49,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":40,\"regionY\":47,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":40,\"regionY\":45,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":26,\"regionY\":45,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":26,\"regionY\":55,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":26,\"regionY\":53,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":26,\"regionY\":51,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":26,\"regionY\":49,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":26,\"regionY\":47,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":38,\"regionY\":19,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":38,\"regionY\":17,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":38,\"regionY\":15,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":38,\"regionY\":13,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":38,\"regionY\":11,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":38,\"regionY\":9,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15698,\"regionX\":38,\"regionY\":7,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":15698,\"regionX\":37,\"regionY\":7,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":15698,\"regionX\":24,\"regionY\":7,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":15698,\"regionX\":23,\"regionY\":7,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":15698,\"regionX\":26,\"regionY\":57,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":15698,\"regionX\":27,\"regionY\":57,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":15698,\"regionX\":40,\"regionY\":57,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":15698,\"regionX\":41,\"regionY\":57,\"z\":0,\"color\":\"#7EE2E2EA\"},{\"regionId\":15700,\"regionX\":32,\"regionY\":32,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15700,\"regionX\":24,\"regionY\":36,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15700,\"regionX\":24,\"regionY\":34,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15700,\"regionX\":24,\"regionY\":32,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15700,\"regionX\":24,\"regionY\":30,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15700,\"regionX\":24,\"regionY\":28,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15700,\"regionX\":23,\"regionY\":37,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15700,\"regionX\":23,\"regionY\":27,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15700,\"regionX\":26,\"regionY\":32,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15700,\"regionX\":27,\"regionY\":32,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15700,\"regionX\":28,\"regionY\":32,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15700,\"regionX\":29,\"regionY\":32,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15700,\"regionX\":30,\"regionY\":32,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15700,\"regionX\":31,\"regionY\":32,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15700,\"regionX\":32,\"regionY\":31,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15700,\"regionX\":32,\"regionY\":30,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15700,\"regionX\":32,\"regionY\":33,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15700,\"regionX\":32,\"regionY\":34,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":15700,\"regionX\":25,\"regionY\":32,\"z\":0,\"color\":\"#7EE8D9D9\",\"label\":\"pots\"}]"
+              }
             }
           ]
         }
