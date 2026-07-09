@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ResourceCategory, ResourceItem, ResourceManifest, ResourceSection } from './types';
-import { resourcesFixture } from './resourcesFixture';
+import resourcesManifest from '../../../data/resources.json';
 
 export interface CategoryGroupEntry {
   group: string;
@@ -16,13 +16,9 @@ export interface FlatSearchResult {
 /**
  * Data source for the Resource Library.
  *
- * MOCK: this resolves `resourcesFixture` (Story R2.g) instead of fetching
- * the real `frontend/src/data/resources.json`. This is the single spot the
- * lead needs to touch at integration — swap the `Promise.resolve(resourcesFixture)`
- * line below for the real manifest (statically imported, since
- * `resolveJsonModule` is already on) and everything downstream (search,
- * category grouping, image resolution) works unchanged against the same
- * DATA CONTRACT shape.
+ * Resolves the real `frontend/src/data/resources.json` manifest (statically
+ * imported, `resolveJsonModule` is on). Search, category grouping, and image
+ * resolution all run off the same DATA CONTRACT shape.
  */
 export function useResources() {
   const [manifest, setManifest] = useState<ResourceManifest | null>(null);
@@ -36,7 +32,7 @@ export function useResources() {
     setLoading(true);
     setError(null);
 
-    Promise.resolve(resourcesFixture)
+    Promise.resolve(resourcesManifest as ResourceManifest)
       .then((data) => {
         if (cancelled) return;
         setManifest(data);
