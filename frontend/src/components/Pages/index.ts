@@ -16,4 +16,5 @@ export const Pages = {
   Unauthorized: lazy(() => import('./Unauthorized/Unauthorized')),
   Resources: lazy(() => import('./Resources/Resources')),
   BingoOverview: lazy(() => import('./AdminPanel/BingoOverview/BingoOverview')),
+  Maintenance: lazy(() => import('./AdminPanel/Maintenance/Maintenance')),
 };
