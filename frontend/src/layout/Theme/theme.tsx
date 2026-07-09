@@ -8,12 +8,29 @@ import cursor from '../../assets/Images/cursor-dragon-scimitar.png';
  */
 export const darkTheme = createTheme({
   palette: {
+    // Without an explicit mode, MUI components that read the palette directly —
+    // Select/Autocomplete menus, Popovers, Tooltips, Menus — fall back to MUI's
+    // *light* defaults (white background.paper) while this theme's typography
+    // forces white text everywhere (see `allVariants` below). That combination is
+    // the white-on-white/light-gray "can't read the options" bug: the popped-out
+    // menu itself was never actually themed dark, only the in-page Cards were
+    // (via per-component overrides). `mode: 'dark'` plus explicit background/text
+    // fixes every Select/Autocomplete/Menu app-wide from one place.
+    mode: 'dark',
     primary: {
       main: '#424242',
     },
 
     secondary: {
       main: '#121212',
+    },
+    background: {
+      default: '#0d0d0d',
+      paper: '#1a1a1a',
+    },
+    text: {
+      primary: '#ffffff',
+      secondary: '#9e9e9e',
     },
   },
   typography: {
@@ -107,6 +124,51 @@ export const darkTheme = createTheme({
         },
         clearIndicator: {
           color: '#9e9e9e',
+        },
+        paper: {
+          backgroundColor: '#1a1a1a',
+          backgroundImage: 'none',
+        },
+        listbox: {
+          backgroundColor: '#1a1a1a',
+        },
+        option: {
+          color: '#ffffff',
+          '&.Mui-focused, &[aria-selected="true"]': {
+            backgroundColor: 'rgba(42,157,143,0.16)',
+          },
+        },
+      },
+    },
+    // Belt-and-suspenders on top of palette.mode: 'dark' above — Select/Autocomplete
+    // menus and any other Popover-based menu render in a portal, so they must be
+    // explicitly readable here rather than relying on ad-hoc per-page backgrounds.
+    MuiPopover: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: '#1a1a1a',
+          backgroundImage: 'none',
+        },
+      },
+    },
+    MuiMenu: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: '#1a1a1a',
+          backgroundImage: 'none',
+        },
+      },
+    },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: {
+          color: '#ffffff',
+          '&.Mui-selected': {
+            backgroundColor: 'rgba(42,157,143,0.16)',
+          },
+          '&.Mui-selected:hover, &:hover': {
+            backgroundColor: 'rgba(255,255,255,0.08)',
+          },
         },
       },
     },
