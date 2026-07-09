@@ -4,14 +4,26 @@
  *
  * Credentials are resolved once (module-level cache, reused across every
  * integration test file within the same `bun test` run):
- *   1. SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY from the environment if
- *      already set (e.g. a checked-out .env, or CI secrets).
+ *   1. TEST_SUPABASE_URL / TEST_SUPABASE_SERVICE_ROLE_KEY, if BOTH are set —
+ *      an explicit, test-scoped override (e.g. CI without the Supabase CLI
+ *      available, or pointing at a disposable test project). These names
+ *      are deliberately distinct from SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY
+ *      so bun auto-loading backend/.env (which holds the hosted PROD
+ *      project's credentials) can never silently satisfy them.
  *   2. Otherwise, `bun x supabase status -o env` — the local CLI's own demo
  *      project keys (fixed, publicly documented placeholders baked into
- *      every `supabase init` project; not a real secret).
+ *      every `supabase init` project; not a real secret). This is the
+ *      default target: no env vars needed, just `bun run db:start`.
  *
- * If neither resolves, or the resolved URL doesn't actually respond, the
- * stack is treated as unreachable and callers should skip via
+ * Plain SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY from the environment (i.e.
+ * backend/.env) are NEVER read here — that was the bug that let integration
+ * tests silently run against the hosted prod project. A guardrail below
+ * throws (rather than skips) if a resolved URL ever looks like a hosted
+ * Supabase project without TEST_SUPABASE_URL explicitly set, as a backstop
+ * against that fallthrough being reintroduced by a future edit.
+ *
+ * If neither source resolves, or the resolved URL doesn't actually respond,
+ * the stack is treated as unreachable and callers should skip via
  * `describe.skipIf(!(await getLocalStackConfig()).reachable)`.
  */
 import { execFile } from "node:child_process";
@@ -33,6 +45,10 @@ export interface LocalStackConfig {
 
 const BACKEND_DIR = path.resolve(fileURLToPath(import.meta.url), "..", "..", "..");
 
+const NO_TARGET_MESSAGE =
+  "could not resolve Supabase test credentials — set TEST_SUPABASE_URL/TEST_SUPABASE_SERVICE_ROLE_KEY, " +
+  "or start the local stack via `bun run db:start` (`bun x supabase status` failed)";
+
 async function resolveCredentialsFromCli(): Promise<{ url: string; key: string } | null> {
   try {
     const { stdout } = await execFileAsync("bun", ["x", "supabase", "status", "-o", "env"], {
@@ -48,30 +64,63 @@ async function resolveCredentialsFromCli(): Promise<{ url: string; key: string }
   }
 }
 
+/**
+ * Explicit test-scoped override. Deliberately does NOT read plain
+ * SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY — those come from backend/.env
+ * (hosted prod) via bun's auto-load and must never be picked up here.
+ */
+function resolveCredentialsFromTestEnv(): { url: string; key: string } | null {
+  const url = process.env.TEST_SUPABASE_URL;
+  const key = process.env.TEST_SUPABASE_SERVICE_ROLE_KEY;
+  if (url && key) return { url, key };
+  return null;
+}
+
+/**
+ * Belt-and-suspenders guardrail: refuse (throw, don't skip) rather than run
+ * integration tests against what looks like a hosted Supabase project
+ * unless TEST_SUPABASE_URL was explicitly set. Guards against a future edit
+ * reintroducing a plain-env fallthrough to backend/.env's prod URL.
+ */
+function assertNotAccidentalProd(url: string, explicitOverride: boolean): void {
+  let host: string;
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    return;
+  }
+  if (host.endsWith(".supabase.co") && !explicitOverride) {
+    throw new Error(
+      `Refusing to run integration tests against "${url}": it looks like a hosted Supabase ` +
+        "project (*.supabase.co) but TEST_SUPABASE_URL was not explicitly set. This guards " +
+        "against integration tests silently hitting production. If this is intentional, set " +
+        "TEST_SUPABASE_URL/TEST_SUPABASE_SERVICE_ROLE_KEY explicitly.",
+    );
+  }
+}
+
 let cachedConfig: Promise<LocalStackConfig> | null = null;
 
 export function getLocalStackConfig(): Promise<LocalStackConfig> {
   if (!cachedConfig) {
     cachedConfig = (async (): Promise<LocalStackConfig> => {
-      const envCreds =
-        process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
-          ? { url: process.env.SUPABASE_URL, key: process.env.SUPABASE_SERVICE_ROLE_KEY }
-          : await resolveCredentialsFromCli();
+      const testEnvCreds = resolveCredentialsFromTestEnv();
+      const creds = testEnvCreds ?? (await resolveCredentialsFromCli());
 
-      if (!envCreds) {
+      if (!creds) {
         return {
           reachable: false,
-          reason:
-            "could not resolve local Supabase credentials (SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY unset " +
-            "and `bun x supabase status` failed — is the local stack running via `bun run db:start`?)",
+          reason: NO_TARGET_MESSAGE,
           url: "http://127.0.0.1:54321",
           serviceRoleKey: "",
         };
       }
 
+      assertNotAccidentalProd(creds.url, testEnvCreds !== null);
+
       try {
-        const res = await fetch(`${envCreds.url}/rest/v1/`, {
-          headers: { apikey: envCreds.key },
+        const res = await fetch(`${creds.url}/rest/v1/`, {
+          headers: { apikey: creds.key },
           signal: AbortSignal.timeout(5_000),
         });
         // PostgREST's root route replies 200 with the OpenAPI spec; anything
@@ -79,25 +128,25 @@ export function getLocalStackConfig(): Promise<LocalStackConfig> {
         if (res.status >= 500) {
           return {
             reachable: false,
-            reason: `local Supabase REST responded ${res.status} at ${envCreds.url}`,
-            url: envCreds.url,
-            serviceRoleKey: envCreds.key,
+            reason: `local Supabase REST responded ${res.status} at ${creds.url}`,
+            url: creds.url,
+            serviceRoleKey: creds.key,
           };
         }
       } catch (err) {
         return {
           reachable: false,
-          reason: `local Supabase unreachable at ${envCreds.url}: ${String(err)}`,
-          url: envCreds.url,
-          serviceRoleKey: envCreds.key,
+          reason: `local Supabase unreachable at ${creds.url}: ${String(err)}`,
+          url: creds.url,
+          serviceRoleKey: creds.key,
         };
       }
 
       // getDb() is a lazy singleton that reads these on first call.
-      process.env.SUPABASE_URL = envCreds.url;
-      process.env.SUPABASE_SERVICE_ROLE_KEY = envCreds.key;
+      process.env.SUPABASE_URL = creds.url;
+      process.env.SUPABASE_SERVICE_ROLE_KEY = creds.key;
 
-      return { reachable: true, url: envCreds.url, serviceRoleKey: envCreds.key };
+      return { reachable: true, url: creds.url, serviceRoleKey: creds.key };
     })();
   }
   return cachedConfig;
