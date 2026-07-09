@@ -21,8 +21,12 @@ Admin-only routes at `/api/admin`. All routes require `protect` + `authorize("ad
 - `PUT /bingo/board` — replace the tile board for the active bingo
 - `GET /bingo/board` — get the current tile board
 - `GET /bingo/screenshots/pending` — pending Discord screenshot submissions with signed image URLs
-- `POST /bingo/screenshots/:id/approve` — approve a submission; body `{ tileId, teamId }`
+- `POST /bingo/screenshots/:id/approve` — approve a submission; body `{ tileId, teamId, playerId? }`.
+  `playerId`, if present, must be a `bingo_players.id` on `teamId` within the submission's bingo (400
+  otherwise) and is persisted to `bingo_submissions.player_id`.
 - `POST /bingo/screenshots/:id/deny` — deny a submission
+- `GET /bingo/player-stats` — per-player stats (tiles completed, points, last seen, side accounts) for
+  the active bingo, aggregated via `db/playerStats.ts`
 
 (Note: this file predates several other admin.ts routes — e.g. players, team draft, side
 accounts, snapshot refresh — that aren't listed above either.)
