@@ -9,18 +9,24 @@ const ScreenshotSubmission = () => {
   const {
     pending,
     teams,
+    players,
     tileOptions,
     boardMissingTileIds,
     loading,
     refreshing,
     error,
     refresh,
+    teamsBoardError,
+    dismissTeamsBoardError,
     tileSelection,
     teamSelection,
+    playerSelection,
     setTileForSubmission,
     setTeamForSubmission,
+    setPlayerForSubmission,
     reviewing,
     reviewError,
+    dismissReviewError,
     approve,
     deny,
   } = useScreenshotSubmission();
@@ -70,6 +76,12 @@ const ScreenshotSubmission = () => {
         </Button>
       </Box>
 
+      {teamsBoardError && (
+        <Alert severity="warning" sx={{ width: '100%' }} onClose={dismissTeamsBoardError}>
+          {teamsBoardError}
+        </Alert>
+      )}
+
       {pending.length > 0 && (
         <Box
           aria-busy={refreshing}
@@ -86,16 +98,20 @@ const ScreenshotSubmission = () => {
               submission={submission}
               tileOptions={tileOptions}
               teams={teams}
+              players={players}
               boardMissingTileIds={boardMissingTileIds}
               tileId={tileSelection[submission.id]}
               teamId={teamSelection[submission.id]}
+              playerId={playerSelection[submission.id]}
               onTileChange={(tileId) => setTileForSubmission(submission.id, tileId)}
               onTeamChange={(teamId) => setTeamForSubmission(submission.id, teamId)}
+              onPlayerChange={(playerId) => setPlayerForSubmission(submission.id, playerId)}
               onApprove={() => approve(submission.id)}
               onDeny={() => deny(submission.id)}
               isApproving={reviewing?.id === submission.id && reviewing.action === 'approve'}
               isDenying={reviewing?.id === submission.id && reviewing.action === 'deny'}
               error={reviewError[submission.id]}
+              onDismissError={() => dismissReviewError(submission.id)}
             />
           ))}
         </Box>

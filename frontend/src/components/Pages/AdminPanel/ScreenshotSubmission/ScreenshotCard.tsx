@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -16,7 +17,7 @@ import {
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { BingoTeam } from '../TeamDrafter/useTeamDrafter';
+import { BingoPlayer, BingoTeam } from '../TeamDrafter/useTeamDrafter';
 import { selectSx, subtleBorder, textPrimary, textSecondary } from '../TeamDrafter/teamDrafterStyles';
 import { BoardTile, PendingScreenshotSubmission } from './useScreenshotSubmission';
 
@@ -25,43 +26,70 @@ const fmt = (iso: string) =>
 
 const tileLabel = (tile: BoardTile) => `${tile.task} — ${tile.type}, ${tile.points}pts`;
 
+/** Visible disabled styling for outlined buttons against the dark card —
+ * default MUI disabled opacity is unreadable here (Story 3c). */
+const disabledOutlinedSx = {
+  '&.Mui-disabled': {
+    color: 'rgba(255,255,255,0.38)',
+    borderColor: 'rgba(255,255,255,0.18)',
+  },
+};
+
 export type ScreenshotCardProps = {
   submission: PendingScreenshotSubmission;
   tileOptions: (BoardTile & { id: string })[];
   teams: BingoTeam[];
+  players: BingoPlayer[];
   boardMissingTileIds: boolean;
   tileId: string | undefined;
   teamId: string | undefined;
+  playerId: string | undefined;
   onTileChange: (tileId: string) => void;
   onTeamChange: (teamId: string) => void;
+  onPlayerChange: (playerId: string) => void;
   onApprove: () => void;
   onDeny: () => void;
   isApproving: boolean;
   isDenying: boolean;
   error?: string;
+  onDismissError: () => void;
 };
 
 export function ScreenshotCard({
   submission,
   tileOptions,
   teams,
+  players,
   boardMissingTileIds,
   tileId,
   teamId,
+  playerId,
   onTileChange,
   onTeamChange,
+  onPlayerChange,
   onApprove,
   onDeny,
   isApproving,
   isDenying,
   error,
+  onDismissError,
 }: ScreenshotCardProps) {
   const busy = isApproving || isDenying;
   const canApprove = !busy && !!tileId && !!teamId;
 
+  // A signed image URL can expire (5-minute TTL) before the next poll/refresh
+  // replaces it. Once the <img> fails to load, swap to the placeholder rather
+  // than showing a broken image; a fresh submission.imageUrl resets this.
+  const [imgFailed, setImgFailed] = useState(false);
+  useEffect(() => {
+    setImgFailed(false);
+  }, [submission.imageUrl]);
+
+  const teamPlayers = teamId ? players.filter((p) => p.team_id === teamId) : [];
+
   return (
     <Card sx={{ width: '100%', maxWidth: 380, display: 'flex', flexDirection: 'column' }}>
-      {submission.imageUrl ? (
+      {submission.imageUrl && !imgFailed ? (
       <Box
         component="a"
         href={submission.imageUrl}
@@ -75,6 +103,7 @@ export function ScreenshotCard({
           image={submission.imageUrl}
           alt={`Screenshot submitted by ${submission.submittedBy}`}
           loading="lazy"
+          onError={() => setImgFailed(true)}
           sx={{ height: 200, objectFit: 'cover', bgcolor: 'rgba(255,255,255,0.04)' }}
         />
         <Box
@@ -164,7 +193,42 @@ export function ScreenshotCard({
           </Select>
         </FormControl>
 
-        {error && <Alert severity="error">{error}</Alert>}
+        <FormControl size="small" fullWidth disabled={busy || !teamId || teamPlayers.length === 0}>
+          <InputLabel id={`player-label-${submission.id}`} sx={{ color: textSecondary }}>
+            Player (optional)
+          </InputLabel>
+          <Select
+            labelId={`player-label-${submission.id}`}
+            label="Player (optional)"
+            value={playerId ?? ''}
+            onChange={(e) => onPlayerChange(e.target.value)}
+            sx={{ ...selectSx, width: '100%' }}
+          >
+            <MenuItem value="">
+              <em>Unassigned</em>
+            </MenuItem>
+            {teamPlayers.map((player) => (
+              <MenuItem key={player.id} value={player.id}>
+                {player.rsn}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        {!teamId ? (
+          <Typography variant="caption" sx={{ color: textSecondary }}>
+            Choose a team to attribute this submission to a player.
+          </Typography>
+        ) : teamPlayers.length === 0 ? (
+          <Typography variant="caption" sx={{ color: textSecondary }}>
+            No players registered on this team yet.
+          </Typography>
+        ) : null}
+
+        {error && (
+          <Alert severity="error" onClose={onDismissError}>
+            {error}
+          </Alert>
+        )}
 
         <Stack direction="row" spacing={1} sx={{ mt: 'auto', pt: 1, borderTop: `1px solid ${subtleBorder}` }}>
           <Button
@@ -173,6 +237,7 @@ export function ScreenshotCard({
             fullWidth
             disabled={!canApprove}
             onClick={onApprove}
+            sx={disabledOutlinedSx}
             startIcon={
               isApproving ? (
                 <CircularProgress size={16} sx={{ color: 'inherit' }} />
@@ -189,6 +254,7 @@ export function ScreenshotCard({
             fullWidth
             disabled={busy}
             onClick={onDeny}
+            sx={disabledOutlinedSx}
             startIcon={
               isDenying ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : <HighlightOffIcon />
             }
@@ -196,6 +262,11 @@ export function ScreenshotCard({
             Deny
           </Button>
         </Stack>
+        {!busy && (!tileId || !teamId) && (
+          <Typography variant="caption" sx={{ color: textSecondary, mt: -1 }}>
+            Pick a tile and team to approve.
+          </Typography>
+        )}
       </CardContent>
     </Card>
   );
