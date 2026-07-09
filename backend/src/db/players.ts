@@ -182,6 +182,16 @@ export async function resetPlayerTeams(bingoId: string): Promise<void> {
  * Save a snapshot for a player.
  * - 'start': only written once; subsequent calls are ignored.
  * - 'current': upserted every time.
+ *
+ * Delegates to the upsert_player_hiscore_start / upsert_player_hiscore_current
+ * RPCs (see 20260709000000_snapshot_upsert_rpc.sql) instead of PostgREST's
+ * .upsert(): bingo_player_hiscores' real arbiters, uq_hiscores_primary and
+ * uq_hiscores_side, are PARTIAL unique indexes, and PostgREST's onConflict
+ * option can only emit a bare column list, never the WHERE predicate needed
+ * to infer a partial index. The RPCs pick the correct arbiter in SQL. This
+ * function always targets the primary-account row (p_side_account_id null)
+ * — side-account snapshot writes are DB-storable as of that migration but
+ * have no caller yet this sprint.
  */
 export async function savePlayerSnapshot(
   playerId: string,
@@ -190,43 +200,15 @@ export async function savePlayerSnapshot(
 ): Promise<PlayerSnapshot> {
   const db = getDb();
 
-  const payload = {
-    player_id: playerId,
-    type,
-    skills: data.skills,
-    activities: data.activities,
-    taken_at: new Date().toISOString(),
-    side_account_id: null,
-  };
+  const rpcName = type === "start" ? "upsert_player_hiscore_start" : "upsert_player_hiscore_current";
 
-  if (type === "start") {
-    // Never overwrite a start snapshot, even under concurrent registration
-    // races — insert-if-absent, then always read back whichever row won.
-    const { error: insertError } = await db
-      .from("bingo_player_hiscores")
-      .upsert(payload, { onConflict: "player_id,type", ignoreDuplicates: true });
-
-    if (insertError) throw new Error(`Failed to save start snapshot: ${insertError.message}`);
-
-    const { data: existing, error: selectError } = await db
-      .from("bingo_player_hiscores")
-      .select("*")
-      .eq("player_id", playerId)
-      .eq("type", "start")
-      .is("side_account_id", null)
-      .single();
-
-    if (selectError || !existing) {
-      throw new Error(`Failed to save start snapshot: ${selectError?.message}`);
-    }
-    return existing as PlayerSnapshot;
-  }
-
-  const { data: saved, error } = await db
-    .from("bingo_player_hiscores")
-    .upsert(payload, { onConflict: "player_id,type" })
-    .select()
-    .single();
+  const { data: saved, error } = await db.rpc(rpcName, {
+    p_player_id: playerId,
+    p_side_account_id: null,
+    p_skills: data.skills,
+    p_activities: data.activities,
+    p_taken_at: new Date().toISOString(),
+  });
 
   if (error || !saved) throw new Error(`Failed to save ${type} snapshot: ${error?.message}`);
   return saved as PlayerSnapshot;
