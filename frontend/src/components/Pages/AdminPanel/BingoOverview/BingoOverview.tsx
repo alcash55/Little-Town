@@ -28,7 +28,6 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import GroupsIcon from '@mui/icons-material/Groups';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import LinkOffIcon from '@mui/icons-material/LinkOff';
 import StarIcon from '@mui/icons-material/Star';
 import SyncIcon from '@mui/icons-material/Sync';
 import PageLayout from '../../../../layout/PageLayout/PageLayout';
@@ -39,14 +38,6 @@ import { Tile } from '../BoardBuilder/useBoardBuilder';
 
 const fmt = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—';
-
-const minutesToHours = (m: number) => {
-  if (m < 60) return `${m}m`;
-  return `${Math.floor(m / 60)}h ${m % 60}m`;
-};
-
-/** Threshold above which playtime is flagged as suspicious (6 hours) */
-const SUSPICIOUS_MINUTES = 360;
 
 // ─── Info Row ────────────────────────────────────────────────────────────────
 const InfoRow = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) => (
@@ -203,7 +194,7 @@ const BingoOverview = () => {
     players,
     board,
     playerStats,
-    conflicts,
+    playerStatsError,
     pendingScreenshots,
     loading,
     error,
@@ -268,7 +259,6 @@ const BingoOverview = () => {
   const boardLabel = bingo.boardSize === 16 ? '4×4' : bingo.boardSize === 35 ? '5×5' : `${bingo.boardSize} tiles`;
   const totalPoints = playerStats.reduce((sum, p) => sum + p.totalPoints, 0);
   const tilesCompleted = playerStats.reduce((sum, p) => sum + p.tilesCompleted, 0);
-  const suspiciousPlayers = playerStats.filter(p => p.minutesOnline >= SUSPICIOUS_MINUTES);
 
   // ── Planned (pre-start) view ─────────────────────────────────────────────
   if (isPlanned) {
@@ -377,10 +367,10 @@ const BingoOverview = () => {
         </Alert>
       )}
 
-      {/* ── Conflict alert ── */}
-      {conflicts.length > 0 && (
-        <Alert severity="error" icon={<LinkOffIcon />} sx={{ width: '100%' }}>
-          {conflicts.length} side-account conflict{conflicts.length > 1 ? 's' : ''} detected — see table below
+      {/* ── Player stats load failure (distinct from the fatal page error above) ── */}
+      {playerStatsError && (
+        <Alert severity="warning" sx={{ width: '100%' }}>
+          {playerStatsError}
         </Alert>
       )}
 
@@ -390,12 +380,7 @@ const BingoOverview = () => {
         <StatCard label="Ends" value={fmt(bingo.endDate)} />
         <StatCard label="Tiles Completed" value={tilesCompleted} />
         <StatCard label="Total Points Scored" value={totalPoints} />
-        <StatCard label="Players" value={playerStats.length} />
-        <StatCard
-          label="Suspicious Activity"
-          value={suspiciousPlayers.length}
-          sub={suspiciousPlayers.length > 0 ? `${suspiciousPlayers.length} player${suspiciousPlayers.length > 1 ? 's' : ''} flagged` : 'None detected'}
-        />
+        <StatCard label="Players" value={players.length} />
       </Box>
 
       {/* ── Player stats table ── */}
@@ -411,7 +396,7 @@ const BingoOverview = () => {
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    {['Player', 'Team', 'Tiles', 'Points', 'Time Online', 'Last Seen', 'Side Accounts'].map(h => (
+                    {['Player', 'Team', 'Tiles', 'Points', 'Last Seen', 'Side Accounts'].map(h => (
                       <TableCell key={h} sx={{ fontWeight: 600, fontSize: 12, textTransform: 'uppercase' }}>
                         {h}
                       </TableCell>
@@ -419,105 +404,42 @@ const BingoOverview = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {playerStats.map(p => {
-                    const suspicious = p.minutesOnline >= SUSPICIOUS_MINUTES;
-                    return (
-                      <TableRow
-                        key={p.rsn}
-                        sx={{ bgcolor: suspicious ? 'rgba(211,47,47,0.08)' : 'transparent' }}
-                      >
-                        <TableCell>
-                          <Stack direction="row" alignItems="center" spacing={1}>
-                            <Typography variant="body2">{p.rsn}</Typography>
-                            {suspicious && (
-                              <Tooltip title={`${minutesToHours(p.minutesOnline)} online — possible bot/AHK`}>
-                                <WarningAmberIcon fontSize="small" sx={{ color: '#f44336' }} />
-                              </Tooltip>
-                            )}
+                  {playerStats.map(p => (
+                    <TableRow key={p.rsn}>
+                      <TableCell>
+                        <Typography variant="body2">{p.rsn}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">{p.teamName}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">{p.tilesCompleted}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">{p.totalPoints}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">{fmt(p.lastSeen)}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        {p.sideAccounts.length > 0 ? (
+                          <Stack direction="row" spacing={0.5} flexWrap="wrap">
+                            {p.sideAccounts.map(acc => (
+                              <Chip key={acc} label={acc} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.08)' }} />
+                            ))}
                           </Stack>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2">{p.teamName}</Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2">{p.tilesCompleted}</Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2">{p.totalPoints}</Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography
-                            variant="body2"
-                            sx={{ color: suspicious ? '#f44336' : '', fontWeight: suspicious ? 600 : 400 }}
-                          >
-                            {minutesToHours(p.minutesOnline)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2">{fmt(p.lastSeen)}</Typography>
-                        </TableCell>
-                        <TableCell>
-                          {p.sideAccounts.length > 0 ? (
-                            <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                              {p.sideAccounts.map(acc => (
-                                <Chip key={acc} label={acc} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.08)' }} />
-                              ))}
-                            </Stack>
-                          ) : (
-                            <Typography variant="body2">—</Typography>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                        ) : (
+                          <Typography variant="body2">—</Typography>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </Box>
           )}
         </CardContent>
       </Card>
-
-      {/* ── Side-account conflicts table ── */}
-      {conflicts.length > 0 && (
-        <Card sx={{ width: '100%', border: '1px solid rgba(244,67,54,0.4)' }}>
-          <CardHeader
-            avatar={<LinkOffIcon sx={{ color: '#f44336' }} />}
-            title={<Typography variant="h3" sx={{ fontSize: 18, color: '#f44336' }}>Side Account Conflicts</Typography>}
-            subheader={<Typography variant="body2">Both accounts detected online simultaneously</Typography>}
-          />
-          <CardContent sx={{ p: 0 }}>
-            <Box sx={{ overflowX: 'auto' }}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    {['Main Account', 'Side Account', 'Overlap', 'Detected At'].map(h => (
-                      <TableCell key={h} sx={{ fontWeight: 600, fontSize: 12, textTransform: 'uppercase' }}>
-                        {h}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {conflicts.map((c, i) => (
-                    <TableRow key={i}>
-                      <TableCell><Typography variant="body2">{c.mainRsn}</Typography></TableCell>
-                      <TableCell><Typography variant="body2">{c.sideRsn}</Typography></TableCell>
-                      <TableCell>
-                        <Chip
-                          label={`${c.overlapMinutes}m overlap`}
-                          size="small"
-                          sx={{ bgcolor: 'rgba(244,67,54,0.15)', color: '#f44336' }}
-                        />
-                      </TableCell>
-                      <TableCell><Typography variant="body2">{fmt(c.detectedAt)}</Typography></TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Box>
-          </CardContent>
-        </Card>
-      )}
 
       {/* ── Time remaining ── */}
       <Card sx={{ width: '100%' }}>
