@@ -1,9 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchWithAuth } from '../../../../utils/fetchWithAuth';
-import { BingoTeam } from '../TeamDrafter/useTeamDrafter';
+import { BingoPlayer, BingoTeam } from '../TeamDrafter/useTeamDrafter';
 import { Tile } from '../BoardBuilder/useBoardBuilder';
 
 const BASE_URL = `${import.meta.env.VITE_BASEURL || 'http://localhost:8081'}/api/admin`;
+
+/** Auto-poll interval for pending screenshots, per TEAM-BRIEF contract 6. */
+const POLL_INTERVAL_MS = 45_000;
+
+/**
+ * GET /bingo/players (see BingoOverview/useBingoOverview.ts) returns rows
+ * shaped `{ player: BingoPlayer, start, current, sideAccounts }`. Only the
+ * `player` field is needed here.
+ */
+type PlayersResponseRow = { player: BingoPlayer };
 
 /**
  * A board tile as returned by GET /bingo/board, extended with the underlying
@@ -49,14 +59,20 @@ export const useScreenshotSubmission = () => {
   const [pending, setPending] = useState<PendingScreenshotSubmission[]>([]);
   const [board, setBoard] = useState<BoardTile[]>([]);
   const [teams, setTeams] = useState<BingoTeam[]>([]);
+  const [players, setPlayers] = useState<BingoPlayer[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /** Per-submission tile/team selections, keyed by submission id. */
+  /** Non-fatal: fetchTeamsAndBoard failures, surfaced as a dismissible Alert
+   * distinct from the fatal page-level `error` above. */
+  const [teamsBoardError, setTeamsBoardError] = useState<string | null>(null);
+
+  /** Per-submission tile/team/player selections, keyed by submission id. */
   const [tileSelection, setTileSelection] = useState<Record<string, string>>({});
   const [teamSelection, setTeamSelection] = useState<Record<string, string>>({});
+  const [playerSelection, setPlayerSelection] = useState<Record<string, string>>({});
 
   /** In-flight approve/deny request, if any. */
   const [reviewing, setReviewing] = useState<{ id: string; action: ReviewAction } | null>(null);
@@ -64,6 +80,8 @@ export const useScreenshotSubmission = () => {
 
   /** Guards `refresh` against overlapping calls without depending on render state. */
   const refreshingRef = useRef(false);
+  /** Mirrors `reviewing` for the poll loop, so the interval isn't rebuilt on every review. */
+  const reviewingRef = useRef<{ id: string; action: ReviewAction } | null>(null);
 
   const fetchPending = useCallback(async () => {
     try {
@@ -92,19 +110,39 @@ export const useScreenshotSubmission = () => {
         const json = await boardRes.json();
         setBoard(Array.isArray(json.data) ? json.data : []);
       }
+      if (!detailsRes.ok && !boardRes.ok) {
+        throw new Error('Failed to load teams and board.');
+      }
+      setTeamsBoardError(null);
+    } catch (e) {
+      // Tile/team pickers just stay at their last-known values; this is
+      // surfaced as a dismissible Alert, not the fatal page error.
+      setTeamsBoardError(e instanceof Error ? e.message : 'Failed to load teams and board.');
+    }
+  }, []);
+
+  /** Fetched once on mount, per Story 3a — the player picker's option list
+   * doesn't need to track the 45s poll or manual refresh. */
+  const fetchPlayers = useCallback(async () => {
+    try {
+      const res = await fetchWithAuth(`${BASE_URL}/bingo/players`);
+      if (!res.ok) return;
+      const json = await res.json();
+      const rows: PlayersResponseRow[] = Array.isArray(json.data) ? json.data : [];
+      setPlayers(rows.map((row) => row.player));
     } catch {
-      /* non-fatal: tile/team pickers just stay empty */
+      /* non-fatal: player picker just stays empty */
     }
   }, []);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      await Promise.all([fetchPending(), fetchTeamsAndBoard()]);
+      await Promise.all([fetchPending(), fetchTeamsAndBoard(), fetchPlayers()]);
       setLoading(false);
     };
     load();
-  }, [fetchPending, fetchTeamsAndBoard]);
+  }, [fetchPending, fetchTeamsAndBoard, fetchPlayers]);
 
   const refresh = useCallback(async () => {
     if (refreshingRef.current) return;
@@ -118,12 +156,38 @@ export const useScreenshotSubmission = () => {
     }
   }, [fetchPending, fetchTeamsAndBoard]);
 
+  useEffect(() => {
+    reviewingRef.current = reviewing;
+  }, [reviewing]);
+
+  // Auto-poll pending screenshots per TEAM-BRIEF contract 6: 45s interval,
+  // paused while a review is in flight, a manual refresh is already running,
+  // or the tab is hidden. Cleaned up on unmount.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'hidden') return;
+      if (reviewingRef.current) return;
+      if (refreshingRef.current) return;
+      fetchPending();
+    }, POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [fetchPending]);
+
+  const dismissTeamsBoardError = useCallback(() => setTeamsBoardError(null), []);
+
   const setTileForSubmission = useCallback((submissionId: string, tileId: string) => {
     setTileSelection((prev) => ({ ...prev, [submissionId]: tileId }));
   }, []);
 
   const setTeamForSubmission = useCallback((submissionId: string, teamId: string) => {
     setTeamSelection((prev) => ({ ...prev, [submissionId]: teamId }));
+    // The player picker's options depend on the selected team, so a prior
+    // player choice from a different team is no longer valid.
+    setPlayerSelection((prev) => omitKey(prev, submissionId));
+  }, []);
+
+  const setPlayerForSubmission = useCallback((submissionId: string, playerId: string) => {
+    setPlayerSelection((prev) => ({ ...prev, [submissionId]: playerId }));
   }, []);
 
   const review = useCallback(
@@ -132,9 +196,14 @@ export const useScreenshotSubmission = () => {
       setReviewError((prev) => omitKey(prev, submissionId));
 
       try {
+        const playerId = playerSelection[submissionId];
         const body =
           action === 'approve'
-            ? { tileId: tileSelection[submissionId], teamId: teamSelection[submissionId] }
+            ? {
+                tileId: tileSelection[submissionId],
+                teamId: teamSelection[submissionId],
+                ...(playerId ? { playerId } : {}),
+              }
             : {};
 
         const res = await fetchWithAuth(
@@ -149,6 +218,7 @@ export const useScreenshotSubmission = () => {
         setPending((prev) => prev.filter((p) => p.id !== submissionId));
         setTileSelection((prev) => omitKey(prev, submissionId));
         setTeamSelection((prev) => omitKey(prev, submissionId));
+        setPlayerSelection((prev) => omitKey(prev, submissionId));
       } catch (e) {
         setReviewError((prev) => ({
           ...prev,
@@ -158,11 +228,14 @@ export const useScreenshotSubmission = () => {
         setReviewing(null);
       }
     },
-    [tileSelection, teamSelection],
+    [tileSelection, teamSelection, playerSelection],
   );
 
   const approve = useCallback((submissionId: string) => review(submissionId, 'approve'), [review]);
   const deny = useCallback((submissionId: string) => review(submissionId, 'deny'), [review]);
+  const dismissReviewError = useCallback((submissionId: string) => {
+    setReviewError((prev) => omitKey(prev, submissionId));
+  }, []);
 
   /** Tiles that actually carry an id — the only ones safe to offer in the picker. */
   const tileOptions = useMemo(
@@ -173,6 +246,7 @@ export const useScreenshotSubmission = () => {
   return {
     pending,
     teams,
+    players,
     tileOptions,
     boardMissingTileIds: board.length > 0 && tileOptions.length === 0,
     loading,
@@ -180,13 +254,19 @@ export const useScreenshotSubmission = () => {
     error,
     refresh,
 
+    teamsBoardError,
+    dismissTeamsBoardError,
+
     tileSelection,
     teamSelection,
+    playerSelection,
     setTileForSubmission,
     setTeamForSubmission,
+    setPlayerForSubmission,
 
     reviewing,
     reviewError,
+    dismissReviewError,
     approve,
     deny,
   };
