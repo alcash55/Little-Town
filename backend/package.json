@@ -14,7 +14,8 @@
     "db:status": "bun x supabase status",
     "db:reset": "bun x supabase db reset",
     "db:push": "bun x supabase db push",
-    "db:login": "bun x supabase login"
+    "db:login": "bun x supabase login",
+    "dump-resources": "bun run scripts/dumpChannelToMarkdown.ts"
   },
   "nodemonConfig": {
     "watch": ["src"],

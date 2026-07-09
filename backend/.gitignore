@@ -13,6 +13,9 @@ dist
 dist-ssr
 *.tsbuildinfo
 
+# generated channel dumps (scripts/dumpChannelToMarkdown.ts)
+scripts/out/
+
 # secrets/credentials
 *.local
 .env.local.generated
