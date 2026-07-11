@@ -61,6 +61,14 @@ export async function getActiveBingo(): Promise<BingoConfig | null> {
   return data ? mapBingo(data) : null;
 }
 
+/** Look up a bingo by its explicit id, regardless of status. */
+export async function getBingoById(id: string): Promise<BingoConfig | null> {
+  const { data, error } = await bingoWithTeamsQuery().eq("id", id).maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data ? mapBingo(data) : null;
+}
+
 export async function saveBingoDetails(input: {
   name: string;
   start?: string;
