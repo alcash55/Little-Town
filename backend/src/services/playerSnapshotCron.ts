@@ -3,6 +3,7 @@ import { getBingoPlayers, savePlayerSnapshot } from "../db/players.js";
 import { activateBingoWithSnapshots, HISCORE_CONCURRENCY } from "./bingoActivation.js";
 import { mapWithConcurrency } from "../lib/concurrency.js";
 import { hiscores } from "./hiscores.js";
+import { checkRsnChange } from "./rsnChangeDetection.js";
 
 const INTERVAL_MS = 20 * 60 * 1000; // 20 minutes
 
@@ -28,6 +29,10 @@ export async function refreshAllPlayerSnapshots(): Promise<{
 
   const results = await mapWithConcurrency(players, HISCORE_CONCURRENCY, async (player) => {
     const data = await hiscores(player.rsn);
+    // RSN-change detection (TEAM-BRIEF.md Track A item 1) — logs loudly and
+    // records rsn_change_log when a previously-resolving RSN 404s; clears
+    // the flag if it resolves again. Detection only, never an auto-rename.
+    await checkRsnChange(player, Boolean(data), "cron");
     if (!data) {
       console.warn(`[playerSnapshotCron] Skipping "${player.rsn}" — not on hiscores (unranked).`);
       throw new Error(`Player "${player.rsn}" is not ranked on the OSRS hiscores`);
@@ -52,6 +57,12 @@ export async function refreshAllPlayerSnapshots(): Promise<{
 /**
  * Auto-activates any draft bingo whose scheduled start_date has passed,
  * using the same snapshot-then-activate logic as the manual admin route.
+ *
+ * Unlike the manual "Start now" route, this always forces activation through
+ * even if some players' start snapshots failed — there's no admin present to
+ * decide, and leaving a due bingo stuck in draft forever is worse than a few
+ * missing snapshots. Failures are logged loudly; an admin can fix them later
+ * via POST /api/admin/bingo/:bingoId/retake-start-snapshots.
  */
 async function autoActivateDueBingos(): Promise<void> {
   // Only one bingo can be active at a time (uq_bingos_one_active) — if one
@@ -63,13 +74,22 @@ async function autoActivateDueBingos(): Promise<void> {
   for (const bingo of dueBingos) {
     if (!bingo.id) continue;
     try {
-      const { activated, succeeded, failed } = await activateBingoWithSnapshots(bingo.id);
+      const { activated, succeeded, failed } = await activateBingoWithSnapshots(bingo.id, {
+        force: true,
+        source: "cron",
+      });
       if (activated) {
         console.log(
           `[playerSnapshotCron] Auto-activated bingo "${bingo.name}" (${succeeded} snapshot(s) saved${
             failed.length ? `, ${failed.length} failed` : ""
           }).`,
         );
+        if (failed.length) {
+          console.warn(
+            `[playerSnapshotCron] Auto-activation of "${bingo.name}" had ${failed.length} failed start ` +
+              `snapshot(s) — retake via POST /api/admin/bingo/${bingo.id}/retake-start-snapshots: ${failed.join("; ")}`,
+          );
+        }
         // Only one bingo can be active — stop after the first success.
         break;
       }

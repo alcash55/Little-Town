@@ -15,6 +15,7 @@ import {
 import { mapWithConcurrency } from "../lib/concurrency.js";
 import {
   getActiveBingo,
+  getBingoById,
   getActiveBingoBoard,
   listBingos,
   saveActiveBingoBoard,
@@ -23,7 +24,12 @@ import {
 } from "../db/bingos.js";
 import { refreshStaticData } from "../services/staticDataCron.js";
 import { refreshAllPlayerSnapshots } from "../services/playerSnapshotCron.js";
-import { activateBingoWithSnapshots, HISCORE_CONCURRENCY } from "../services/bingoActivation.js";
+import {
+  activateBingoWithSnapshots,
+  snapshotStartAndCurrent,
+  HISCORE_CONCURRENCY,
+  PlayerSnapshotResult,
+} from "../services/bingoActivation.js";
 import {
   registerBingoPlayer,
   getBingoPlayers,
@@ -41,6 +47,7 @@ import {
   removeSideAccount,
 } from "../db/players.js";
 import { hiscores } from "../services/hiscores.js";
+import { checkRsnChange } from "../services/rsnChangeDetection.js";
 import {
   getPendingSubmissions,
   getSubmissionById,
@@ -51,6 +58,7 @@ import {
 } from "../db/bingoSubmissions.js";
 import { getPlayerStats, PlayerStat } from "../db/playerStats.js";
 import { reactToSubmissionMessage } from "../services/discordScreenshots.js";
+import { getDependencyHealth } from "../services/dependencyHealth.js";
 
 const router = Router();
 
@@ -185,10 +193,33 @@ router.post(
       return res.status(400).json({ success: false, error: "No players registered to this bingo" });
     }
 
+    // Activation semantics (TEAM-BRIEF.md Track A item 2): activation fails
+    // with a clear error listing the players whose start snapshots failed,
+    // unless the request explicitly passes { force: true }.
+    const { force } = req.body as { force?: unknown };
+    if (force !== undefined && typeof force !== "boolean") {
+      return res.status(400).json({ success: false, error: "'force' must be a boolean" });
+    }
+
     // Take start + current snapshots (concurrency-capped), then atomically
     // flip draft -> active via the activate_bingo RPC. `activated` is false
-    // if another request won the activation race in the meantime.
-    const { activated, succeeded, failed } = await activateBingoWithSnapshots(bingo.id);
+    // if another request won the activation race in the meantime, or if
+    // activation was withheld because snapshots failed (see `blocked`).
+    const { activated, blocked, succeeded, failed } = await activateBingoWithSnapshots(bingo.id, {
+      force: force === true,
+      source: "drafter",
+    });
+
+    if (blocked) {
+      return res.status(422).json({
+        success: false,
+        error:
+          `Activation blocked: start snapshot failed for ${failed.length} player${failed.length !== 1 ? "s" : ""}: ` +
+          `${failed.join("; ")}. Fix the RSN(s) and retry, or pass { "force": true } to activate anyway.`,
+        data: { succeeded, failed },
+      });
+    }
+
     if (!activated) {
       return res.status(409).json({ success: false, error: "Bingo is already active" });
     }
@@ -201,6 +232,62 @@ router.post(
       message: `Bingo activated. Snapshots saved for ${succeeded} player${succeeded !== 1 ? "s" : ""}${
         failed.length ? `; ${failed.length} failed: ${failed.join(", ")}` : ""
       }.`,
+    };
+
+    res.status(200).json(response);
+  }),
+);
+
+// -------------------------------------------------------
+// /bingo/:bingoId/retake-start-snapshots — retry start snapshots for any
+// player on an active bingo who is missing one (e.g. from a forced or
+// cron-driven activation that had failures). Idempotent: players who
+// already have a start snapshot are skipped, and re-running after a full
+// success is a no-op. Must be before /bingo/:id to avoid the PUT wildcard
+// (different HTTP method anyway, but kept alongside the other /bingo/:id-ish
+// routes for readability).
+// -------------------------------------------------------
+
+router.post(
+  "/bingo/:bingoId/retake-start-snapshots",
+  authorize("admin"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const bingoId = Array.isArray(req.params.bingoId) ? req.params.bingoId[0] : req.params.bingoId;
+    if (!bingoId) return res.status(400).json({ success: false, error: "Bingo ID is required" });
+
+    const bingo = await getBingoById(bingoId);
+    if (!bingo) return res.status(404).json({ success: false, error: "Bingo not found" });
+    if (bingo.status !== "active") {
+      return res.status(409).json({
+        success: false,
+        error: `Bingo must be active to retake start snapshots (current status: ${bingo.status})`,
+      });
+    }
+
+    const rows = await getAllPlayerSnapshots(bingoId);
+    const missing = rows.filter((row) => row.start === null).map((row) => row.player);
+
+    if (!missing.length) {
+      const response: ApiResponse<{ results: PlayerSnapshotResult[] }> = {
+        success: true,
+        data: { results: [] },
+        message: "No players are missing a start snapshot.",
+      };
+      return res.status(200).json(response);
+    }
+
+    // Reuses the same snapshot-taking logic activation uses, scoped to just
+    // the missing players — RSN-change detection (checkRsnChange) runs
+    // inside it too. Re-running this on players who already succeeded is a
+    // no-op thanks to savePlayerSnapshot's "start" upsert-if-absent.
+    const { succeeded, failed, results } = await snapshotStartAndCurrent(missing, "drafter");
+
+    const response: ApiResponse<{ results: PlayerSnapshotResult[] }> = {
+      success: true,
+      data: { results },
+      message: `Retook start snapshots for ${succeeded} of ${missing.length} missing player${
+        missing.length !== 1 ? "s" : ""
+      }${failed.length ? `; ${failed.length} still failing` : ""}.`,
     };
 
     res.status(200).json(response);
@@ -342,6 +429,10 @@ router.put(
     if (!player) return res.status(404).json({ success: false, error: `Player "${rsn}" not found` });
 
     const hiscoreData = await hiscores(rsn);
+    // RSN-change detection (TEAM-BRIEF.md Track A item 1) — this player is
+    // already registered, so a 404 here means their on-file RSN went stale,
+    // not that it was never validated.
+    await checkRsnChange(player, Boolean(hiscoreData), "drafter");
     if (!hiscoreData) {
       return res.status(404).json({
         success: false,
@@ -366,6 +457,9 @@ router.put(
 
     const results = await mapWithConcurrency(players, HISCORE_CONCURRENCY, async (player) => {
       const hiscoreData = await hiscores(player.rsn);
+      // RSN-change detection (TEAM-BRIEF.md Track A item 1) — same rule as
+      // the single-player refresh route above.
+      await checkRsnChange(player, Boolean(hiscoreData), "drafter");
       if (!hiscoreData) {
         throw new Error(`Player "${player.rsn}" is not ranked on the OSRS hiscores`);
       }
@@ -675,6 +769,22 @@ router.post(
       success: true,
       message: "Static data refresh started. Skills and activities will be updated shortly.",
     });
+  }),
+);
+
+// -------------------------------------------------------
+// Dependency health (Track A item 4) — for the BingoOverview redesign's
+// health section (Phase 2, not part of this sprint). Contract is frozen; see
+// services/dependencyHealth.ts. Cached ~60s server-side so the UI can poll
+// freely.
+// -------------------------------------------------------
+
+router.get(
+  "/health/dependencies",
+  authorize("admin"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const data = await getDependencyHealth();
+    res.status(200).json(data);
   }),
 );
 
