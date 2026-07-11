@@ -4,12 +4,14 @@
  *
  * Fixtures push individual history points directly via the
  * upsert_player_hiscore_current RPC (rather than savePlayerSnapshot(), which
- * never targets a side account this sprint — see the doc comment on
- * savePlayerSnapshot in src/db/players.ts). Each RPC call with a distinct
- * p_taken_at produces exactly one bingo_player_hiscore_history row via the
- * AFTER INSERT/UPDATE trigger from 20260711000000_hiscore_conflict_history
- * .sql, giving these tests full control over each account's XP-over-time
- * series without waiting on the real cron.
+ * now supports side accounts too — see services/sideAccountSnapshots.ts and
+ * tests/integration/side-account-snapshots.test.ts — but goes through the
+ * real OSRS hiscores API, which these fixtures need to bypass entirely).
+ * Each RPC call with a distinct p_taken_at produces exactly one
+ * bingo_player_hiscore_history row via the AFTER INSERT/UPDATE trigger from
+ * 20260711000000_hiscore_conflict_history.sql, giving these tests full
+ * control over each account's XP-over-time series without waiting on the
+ * real cron.
  *
  * Skips cleanly (does not fail) if the local stack is unreachable, or if
  * that migration hasn't been applied yet.

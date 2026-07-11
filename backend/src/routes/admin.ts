@@ -30,6 +30,7 @@ import {
   HISCORE_CONCURRENCY,
   PlayerSnapshotResult,
 } from "../services/bingoActivation.js";
+import type { SideSnapshotResult } from "../services/sideAccountSnapshots.js";
 import {
   registerBingoPlayer,
   getBingoPlayers,
@@ -268,9 +269,9 @@ router.post(
     const missing = rows.filter((row) => row.start === null).map((row) => row.player);
 
     if (!missing.length) {
-      const response: ApiResponse<{ results: PlayerSnapshotResult[] }> = {
+      const response: ApiResponse<{ results: PlayerSnapshotResult[]; sideResults: SideSnapshotResult[] }> = {
         success: true,
-        data: { results: [] },
+        data: { results: [], sideResults: [] },
         message: "No players are missing a start snapshot.",
       };
       return res.status(200).json(response);
@@ -279,15 +280,22 @@ router.post(
     // Reuses the same snapshot-taking logic activation uses, scoped to just
     // the missing players — RSN-change detection (checkRsnChange) runs
     // inside it too. Re-running this on players who already succeeded is a
-    // no-op thanks to savePlayerSnapshot's "start" upsert-if-absent.
-    const { succeeded, failed, results } = await snapshotStartAndCurrent(missing, "drafter");
+    // no-op thanks to savePlayerSnapshot's "start" upsert-if-absent. Also
+    // retakes those players' side accounts (best-effort — never affects
+    // `succeeded`/`failed` below, which are main-account only).
+    const { succeeded, failed, results, sideResults } = await snapshotStartAndCurrent(missing, "drafter");
+    const sideFailed = sideResults.filter((r) => !r.ok);
 
-    const response: ApiResponse<{ results: PlayerSnapshotResult[] }> = {
+    const response: ApiResponse<{ results: PlayerSnapshotResult[]; sideResults: SideSnapshotResult[] }> = {
       success: true,
-      data: { results },
+      data: { results, sideResults },
       message: `Retook start snapshots for ${succeeded} of ${missing.length} missing player${
         missing.length !== 1 ? "s" : ""
-      }${failed.length ? `; ${failed.length} still failing` : ""}.`,
+      }${failed.length ? `; ${failed.length} still failing` : ""}${
+        sideResults.length
+          ? `; ${sideResults.length - sideFailed.length}/${sideResults.length} side account(s) succeeded`
+          : ""
+      }.`,
     };
 
     res.status(200).json(response);

@@ -1,12 +1,15 @@
 import { activateBingo } from "../db/bingos.js";
 import { getBingoPlayers, savePlayerSnapshot, BingoPlayer } from "../db/players.js";
-import { mapWithConcurrency } from "../lib/concurrency.js";
+import { mapWithConcurrency, HISCORE_CONCURRENCY } from "../lib/concurrency.js";
 import { hiscores } from "./hiscores.js";
 import { checkRsnChange, RsnChangeSource } from "./rsnChangeDetection.js";
+import { snapshotAllSideAccounts, SideSnapshotResult } from "./sideAccountSnapshots.js";
 
-// Cap concurrent OSRS hiscore lookups across all fan-out call sites
-// (activation, refresh-all, the snapshot cron).
-export const HISCORE_CONCURRENCY = 5;
+// Re-exported for existing call sites (routes/admin.ts, playerSnapshotCron.ts)
+// that import HISCORE_CONCURRENCY from here — the value itself now lives in
+// lib/concurrency.ts so services/sideAccountSnapshots.ts can share it
+// without a circular import back to this module.
+export { HISCORE_CONCURRENCY };
 
 export interface PlayerSnapshotResult {
   rsn: string;
@@ -17,20 +20,33 @@ export interface PlayerSnapshotResult {
 
 /**
  * Takes start + current snapshots for an explicit list of players, capped at
- * HISCORE_CONCURRENCY in-flight hiscore lookups. Also runs RSN-change
- * detection (TEAM-BRIEF.md Track A item 1) on every lookup made.
+ * HISCORE_CONCURRENCY in-flight hiscore lookups, and — as a separate capped
+ * phase afterward — start + current snapshots for every one of those
+ * players' side accounts too (see services/sideAccountSnapshots.ts; this is
+ * what feeds GET /api/bingo/:bingoId/conflicts). Also runs RSN-change
+ * detection (TEAM-BRIEF.md Track A item 1) on every MAIN-account lookup
+ * made (side accounts aren't covered — see sideAccountSnapshots.ts).
  *
- * `savePlayerSnapshot(..., "start", ...)` only ever writes once per player
+ * `savePlayerSnapshot(..., "start", ...)` only ever writes once per account
  * (see db/players.ts), so calling this again for the same players — e.g. the
  * retake-start-snapshots admin route retrying just the ones still missing a
- * start snapshot — is idempotent: players who already succeeded are simply
- * re-confirmed (their "start" row is untouched, "current" is refreshed).
+ * start snapshot — is idempotent: accounts that already succeeded are simply
+ * re-confirmed ("start" untouched, "current" refreshed).
+ *
+ * A failed side-account lookup never fails the parent player's own
+ * main-account outcome — `failed`/`succeeded` only ever reflect main
+ * accounts; side-account results are reported separately in `sideResults`.
  */
 export async function snapshotStartAndCurrent(
   players: BingoPlayer[],
   source: RsnChangeSource,
-): Promise<{ succeeded: number; failed: string[]; results: PlayerSnapshotResult[] }> {
-  if (!players.length) return { succeeded: 0, failed: [], results: [] };
+): Promise<{
+  succeeded: number;
+  failed: string[];
+  results: PlayerSnapshotResult[];
+  sideResults: SideSnapshotResult[];
+}> {
+  if (!players.length) return { succeeded: 0, failed: [], results: [], sideResults: [] };
 
   const settled = await mapWithConcurrency(players, HISCORE_CONCURRENCY, async (player) => {
     const data = await hiscores(player.rsn);
@@ -50,14 +66,24 @@ export async function snapshotStartAndCurrent(
   const failed = results.filter((r) => !r.ok).map((r) => r.error!);
   const succeeded = results.filter((r) => r.ok).length;
 
-  return { succeeded, failed, results };
+  // Separate phase, strictly after the main-account pass above — keeps peak
+  // in-flight OSRS requests capped at HISCORE_CONCURRENCY at any instant
+  // rather than adding a second concurrent pool on top.
+  const sideResults = await snapshotAllSideAccounts(players, ["start", "current"]);
+
+  return { succeeded, failed, results, sideResults };
 }
 
-/** Takes start + current snapshots for every player currently in a bingo. */
+/** Takes start + current snapshots for every player currently in a bingo (and their side accounts). */
 export async function takeActivationSnapshots(
   bingoId: string,
   source: RsnChangeSource = "drafter",
-): Promise<{ succeeded: number; failed: string[]; results: PlayerSnapshotResult[] }> {
+): Promise<{
+  succeeded: number;
+  failed: string[];
+  results: PlayerSnapshotResult[];
+  sideResults: SideSnapshotResult[];
+}> {
   const players = await getBingoPlayers(bingoId);
   return snapshotStartAndCurrent(players, source);
 }
@@ -92,6 +118,11 @@ export interface ActivationOutcome {
   succeeded: number;
   failed: string[];
   results: PlayerSnapshotResult[];
+  /**
+   * Side-account snapshot outcomes (best-effort, never blocks activation —
+   * only main-account `failed` above affects `blocked`).
+   */
+  sideResults: SideSnapshotResult[];
 }
 
 /**
@@ -112,12 +143,12 @@ export async function activateBingoWithSnapshots(
   options: { force?: boolean; source?: RsnChangeSource } = {},
 ): Promise<ActivationOutcome> {
   const { force = false, source = "drafter" } = options;
-  const { succeeded, failed, results } = await takeActivationSnapshots(bingoId, source);
+  const { succeeded, failed, results, sideResults } = await takeActivationSnapshots(bingoId, source);
 
   if (failed.length > 0 && !force) {
-    return { activated: false, blocked: true, succeeded, failed, results };
+    return { activated: false, blocked: true, succeeded, failed, results, sideResults };
   }
 
   const activated = await activateBingo(bingoId);
-  return { activated, blocked: false, succeeded, failed, results };
+  return { activated, blocked: false, succeeded, failed, results, sideResults };
 }
