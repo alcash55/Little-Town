@@ -187,7 +187,7 @@ describe.skipIf(!suite)("activateBingoWithSnapshots + snapshotStartAndCurrent (r
 
   test("calling with an empty player list is a no-op, not an error", async () => {
     const outcome = await snapshotStartAndCurrent([], "drafter");
-    expect(outcome).toEqual({ succeeded: 0, failed: [], results: [] });
+    expect(outcome).toEqual({ succeeded: 0, failed: [], results: [], sideResults: [] });
   });
 });
 
