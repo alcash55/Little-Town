@@ -19,6 +19,7 @@ export interface BingoPlayer {
 export interface PlayerSnapshot {
   id: string;
   player_id: string;
+  side_account_id: string | null;
   type: "start" | "current";
   skills: HiscoreData["skills"];
   activities: HiscoreData["activities"];
@@ -179,7 +180,8 @@ export async function resetPlayerTeams(bingoId: string): Promise<void> {
 // -------------------------------------------------------
 
 /**
- * Save a snapshot for a player.
+ * Save a snapshot for a player, or (passing `sideAccountId`) for one of
+ * their side accounts.
  * - 'start': only written once; subsequent calls are ignored.
  * - 'current': upserted every time.
  *
@@ -188,15 +190,18 @@ export async function resetPlayerTeams(bingoId: string): Promise<void> {
  * .upsert(): bingo_player_hiscores' real arbiters, uq_hiscores_primary and
  * uq_hiscores_side, are PARTIAL unique indexes, and PostgREST's onConflict
  * option can only emit a bare column list, never the WHERE predicate needed
- * to infer a partial index. The RPCs pick the correct arbiter in SQL. This
- * function always targets the primary-account row (p_side_account_id null)
- * — side-account snapshot writes are DB-storable as of that migration but
- * have no caller yet this sprint.
+ * to infer a partial index. The RPCs pick the correct arbiter in SQL.
+ *
+ * Side-account writes (as of this sprint's services/sideAccountSnapshots.ts)
+ * also feed bingo_player_hiscore_history via a DB trigger
+ * (20260711000000_hiscore_conflict_history.sql), which is what
+ * GET /api/bingo/:bingoId/conflicts reads — no extra call needed here.
  */
 export async function savePlayerSnapshot(
   playerId: string,
   type: "start" | "current",
   data: HiscoreData,
+  sideAccountId?: string,
 ): Promise<PlayerSnapshot> {
   const db = getDb();
 
@@ -204,7 +209,7 @@ export async function savePlayerSnapshot(
 
   const { data: saved, error } = await db.rpc(rpcName, {
     p_player_id: playerId,
-    p_side_account_id: null,
+    p_side_account_id: sideAccountId ?? null,
     p_skills: data.skills,
     p_activities: data.activities,
     p_taken_at: new Date().toISOString(),
