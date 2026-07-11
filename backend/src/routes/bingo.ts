@@ -1,10 +1,11 @@
 import { Router, Request, Response } from "express";
 import { asyncHandler } from "../middleware/errorHandler.js";
-import { protect } from "../middleware/auth.js";
+import { protect, authorize } from "../middleware/auth.js";
 import { ApiResponse } from "../types/index.js";
 import { getActiveBingo, getActiveBingoBoard } from "../db/bingos.js";
 import { getAllPlayerSnapshots } from "../db/players.js";
 import { buildDropStatusByRsn, DropSubmissionAttribution } from "../db/bingoSubmissions.js";
+import { getBingoConflicts } from "../db/conflicts.js";
 import { getDb } from "../db/client.js";
 
 const router = Router();
@@ -282,6 +283,45 @@ router.get(
         })),
       },
     });
+  }),
+);
+
+/**
+ * GET /api/bingo/:bingoId/conflicts
+ *
+ * Admin-only (replaces the removed `/bingo/conflicts` stub — see todo.md
+ * and 20260711000000_hiscore_conflict_history.sql). Detects main + side
+ * accounts of the same registered player both gaining XP in overlapping
+ * snapshot windows — see the detection-rules comment block above
+ * getBingoConflicts() in src/db/conflicts.ts.
+ *
+ * Response shape is the frozen TEAM-BRIEF.md contract exactly — a bare
+ * `{ conflicts: [...] }`, not the usual ApiResponse `{success,data}`
+ * envelope, matching Track A's dependency-health contract's same bare-
+ * object style.
+ */
+router.get(
+  "/:bingoId/conflicts",
+  authorize("admin", "moderator"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const bingoId = Array.isArray(req.params.bingoId) ? req.params.bingoId[0] : req.params.bingoId;
+    if (!bingoId) {
+      return res.status(400).json({ success: false, error: "Bingo ID is required" });
+    }
+
+    const db = getDb();
+    const { data: bingo, error: bingoError } = await db
+      .from("bingos")
+      .select("id")
+      .eq("id", bingoId)
+      .maybeSingle();
+    if (bingoError) throw new Error(`Failed to look up bingo: ${bingoError.message}`);
+    if (!bingo) {
+      return res.status(404).json({ success: false, error: "Bingo not found" });
+    }
+
+    const conflicts = await getBingoConflicts(bingoId);
+    res.status(200).json({ conflicts });
   }),
 );
 
