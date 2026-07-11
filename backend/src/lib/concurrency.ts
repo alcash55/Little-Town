@@ -1,4 +1,13 @@
 /**
+ * Cap on concurrent OSRS hiscore lookups, shared by every fan-out call site
+ * (activation, refresh-all, the snapshot cron, and side-account polling —
+ * see services/sideAccountSnapshots.ts). Defined here rather than in
+ * services/bingoActivation.ts so both it and sideAccountSnapshots.ts can
+ * import the same budget without a circular import between the two.
+ */
+export const HISCORE_CONCURRENCY = 5;
+
+/**
  * Runs `fn` over `items` with at most `limit` calls in flight at once,
  * mirroring the shape of `Promise.allSettled` (results are returned in the
  * same order as `items`, and one failure never aborts the rest).
