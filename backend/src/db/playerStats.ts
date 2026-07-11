@@ -1,5 +1,6 @@
 import { getDb } from "./client.js";
 import { getAllSideAccounts } from "./players.js";
+import { getUnresolvedRsnChangesByPlayer } from "./rsnChangeLog.js";
 
 // -------------------------------------------------------
 // Types (contract 3, TEAM-BRIEF.md)
@@ -12,6 +13,12 @@ export interface PlayerStat {
   totalPoints: number; // sum of those tiles' points
   lastSeen: string | null; // ISO: latest approved submission (fallback: latest snapshot) for the player
   sideAccounts: string[];
+  // RSN change detection (Track A item 1, TEAM-BRIEF.md): true when the
+  // player's on-file RSN currently has an unresolved rsn_change_log entry
+  // (most recent hiscore lookup for it 404'd). rsnStaleSince is that entry's
+  // detected_at, or null when rsnStale is false.
+  rsnStale: boolean;
+  rsnStaleSince: string | null;
 }
 
 /**
@@ -52,7 +59,7 @@ export async function getPlayerStats(bingoId: string): Promise<PlayerStat[]> {
 
   const playerIds = playerRows.map((p) => p.id);
 
-  const [submissionsRes, snapshotsRes, sideAccountsByPlayer] = await Promise.all([
+  const [submissionsRes, snapshotsRes, sideAccountsByPlayer, unresolvedRsnChanges] = await Promise.all([
     db
       .from("bingo_submissions")
       .select("player_id, tile_id, created_at")
@@ -72,6 +79,7 @@ export async function getPlayerStats(bingoId: string): Promise<PlayerStat[]> {
       .in("player_id", playerIds)
       .is("side_account_id", null),
     getAllSideAccounts(bingoId),
+    getUnresolvedRsnChangesByPlayer(playerIds),
   ]);
 
   if (submissionsRes.error) {
@@ -109,6 +117,8 @@ export async function getPlayerStats(bingoId: string): Promise<PlayerStat[]> {
       0,
     );
 
+    const rsnStaleSince = unresolvedRsnChanges.get(player.id) ?? null;
+
     return {
       rsn: player.rsn,
       teamName: player.team_id ? (teamNameById.get(player.team_id) ?? "") : "",
@@ -116,6 +126,8 @@ export async function getPlayerStats(bingoId: string): Promise<PlayerStat[]> {
       totalPoints,
       lastSeen: lastSubmissionByPlayer.get(player.id) ?? lastSnapshotByPlayer.get(player.id) ?? null,
       sideAccounts: (sideAccountsByPlayer[player.id] ?? []).map((sa) => sa.rsn),
+      rsnStale: rsnStaleSince !== null,
+      rsnStaleSince,
     };
   });
 }

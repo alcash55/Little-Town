@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import rateLimit from "express-rate-limit";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { protect } from "../middleware/auth.js";
 import { hiscores } from "../services/hiscores.js";
@@ -6,6 +7,27 @@ import { getStaticData } from "../db/staticData.js";
 import { ApiResponse, HiscoreData } from "../types/index.js";
 
 const router = Router();
+
+// Per-IP rate limit on the public hiscores proxy (TEAM-BRIEF.md Track A item
+// 3): stays unauthenticated, but capped at ~30 lookups/min/IP so it can't be
+// hammered as a free unthrottled OSRS-hiscores relay.
+//
+// NOTE — multi-instance caveat: express-rate-limit's default store is
+// in-memory and per-process. If this API ever runs multiple replicas behind
+// a load balancer (it's a single Render instance today), each instance
+// enforces its own independent 30/min bucket, so the effective per-IP
+// ceiling becomes 30 * instance count unless a shared store (e.g. Redis) is
+// configured.
+const hiscoresLookupLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: Number(process.env.HISCORES_RATE_LIMIT_MAX) || 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: "Too many hiscore lookups from this IP, please try again shortly.",
+  },
+});
 
 // Get available skills — must be before /:player to avoid wildcard match
 router.get(
@@ -34,6 +56,7 @@ router.get(
 // Get hiscores for a specific player
 router.get(
   "/:player",
+  hiscoresLookupLimiter,
   asyncHandler(async (req: Request, res: Response) => {
     const { player } = req.params;
 
