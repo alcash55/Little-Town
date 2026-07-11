@@ -17,14 +17,8 @@ import {
   UniqueIdentifier,
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-} from '@mui/material';
-import Grid from '@mui/material/Unstable_Grid2';
+import { Alert, Box, Button, Chip, CircularProgress } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import { DraftItems, BingoTeam } from './useTeamDrafter';
 import { DroppableContainer } from './DroppableContainer';
 import { SortableItem } from './SortableItem';
@@ -185,7 +179,6 @@ export function DrafterTab({
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}>
       {submitError && <Alert severity="error">{submitError}</Alert>}
       {submitSuccess && <Alert severity="success">Teams saved successfully!</Alert>}
-
       <DndContext
         sensors={sensors}
         collisionDetection={collisionDetection}
@@ -218,7 +211,15 @@ export function DrafterTab({
             sx={{ flex: 1, alignContent: 'flex-start', m: 0, minWidth: 0 }}
           >
             {teams.map((team) => (
-              <Grid key={team.id} xs={12} sm={6} lg={4} sx={{ display: 'flex', minWidth: 0 }}>
+              <Grid
+                key={team.id}
+                sx={{ display: 'flex', minWidth: 0 }}
+                size={{
+                  xs: 12,
+                  sm: 6,
+                  lg: 4,
+                }}
+              >
                 <DroppableContainer
                   id={team.id}
                   label={team.name}
@@ -242,7 +243,6 @@ export function DrafterTab({
           ) : null}
         </DragOverlay>
       </DndContext>
-
       <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, pt: 1 }}>
         {showSubmitButton && (
           <Button

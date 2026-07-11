@@ -1,7 +1,10 @@
-import { Alert, Box, Button, CircularProgress, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import { Alert, Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
 import SyncIcon from '@mui/icons-material/Sync';
+import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import PageLayout from '../../../../layout/PageLayout/PageLayout';
 import { textSecondary } from '../TeamDrafter/teamDrafterStyles';
+import { appColors } from '../../../../layout/Theme';
 import { useScreenshotSubmission } from './useScreenshotSubmission';
 import { ScreenshotCard } from './ScreenshotCard';
 
@@ -34,7 +37,7 @@ const ScreenshotSubmission = () => {
   if (loading) {
     return (
       <PageLayout title="Screenshot Submissions" align="center">
-        <CircularProgress sx={{ color: '#2A9D8F' }} />
+        <CircularProgress sx={{ color: appColors.accent }} />
       </PageLayout>
     );
   }
@@ -42,8 +45,14 @@ const ScreenshotSubmission = () => {
   if (error) {
     return (
       <PageLayout title="Screenshot Submissions" align="center">
-        <Alert severity="error" sx={{ width: '100%', maxWidth: 500 }}>{error}</Alert>
-        <Button variant="outlined" onClick={refresh} sx={{ color: '#2A9D8F', borderColor: '#2A9D8F' }}>
+        <Alert severity="error" sx={{ width: '100%', maxWidth: 500 }}>
+          {error}
+        </Alert>
+        <Button
+          variant="outlined"
+          onClick={refresh}
+          sx={{ color: appColors.accent, borderColor: appColors.accent }}
+        >
           Retry
         </Button>
       </PageLayout>
@@ -52,11 +61,20 @@ const ScreenshotSubmission = () => {
 
   return (
     <PageLayout title="Screenshot Submissions" maxWidth="full">
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          width: '100%',
+        }}
+      >
         <Typography variant="body2" sx={{ color: textSecondary }}>
           {pending.length === 0
-            ? 'No screenshots pending review.'
-            : `${pending.length} screenshot${pending.length > 1 ? 's' : ''} pending review — assign a tile and team, then approve or deny.`}
+            ? ' '
+            : `${pending.length} screenshot${
+                pending.length > 1 ? 's' : ''
+              } pending review — assign a tile and team, then approve or deny.`}
         </Typography>
         <Button
           variant="outlined"
@@ -64,13 +82,17 @@ const ScreenshotSubmission = () => {
           disabled={refreshing}
           startIcon={
             refreshing ? (
-              <CircularProgress size={16} sx={{ color: '#2A9D8F' }} />
+              <CircularProgress size={16} sx={{ color: appColors.accent }} />
             ) : (
               <SyncIcon />
             )
           }
           onClick={refresh}
-          sx={{ color: '#2A9D8F', borderColor: '#2A9D8F', '&:hover': { borderColor: '#2A9D8F', bgcolor: 'rgba(42,157,143,0.08)' } }}
+          sx={{
+            color: appColors.accent,
+            borderColor: appColors.accent,
+            '&:hover': { borderColor: appColors.accent, bgcolor: alpha(appColors.accent, 0.08) },
+          }}
         >
           {refreshing ? 'Refreshing…' : 'Refresh'}
         </Button>
@@ -82,7 +104,27 @@ const ScreenshotSubmission = () => {
         </Alert>
       )}
 
-      {pending.length > 0 && (
+      {pending.length === 0 ? (
+        <Stack
+          spacing={1.5}
+          sx={{
+            alignItems: 'center',
+            textAlign: 'center',
+            width: '100%',
+            py: 8,
+            color: textSecondary,
+          }}
+        >
+          <TaskAltIcon sx={{ fontSize: 56, color: appColors.accent }} />
+          <Typography variant="h3" sx={{ fontSize: 20, color: appColors.textPrimary }}>
+            All caught up
+          </Typography>
+          <Typography variant="body2" sx={{ color: textSecondary, maxWidth: 360 }}>
+            No screenshots are waiting for review right now. New submissions from Discord will show
+            up here automatically — this page polls every 45 seconds.
+          </Typography>
+        </Stack>
+      ) : (
         <Box
           aria-busy={refreshing}
           sx={{

@@ -19,17 +19,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import PageLayout from '../../../layout/PageLayout/PageLayout';
 import { useTeamData, TileInfo, PlayerRow } from './useTeamData';
-
-// Local palette for this page, matching the dark theme (teal accent #2A9D8F).
-// TODO: promote into layout/Theme once the pending theme rework lands.
-const appColors = {
-  accent: '#2A9D8F',
-  textPrimary: '#ffffff',
-  textSecondary: 'rgba(255,255,255,0.7)',
-  mutedText: 'rgba(255,255,255,0.5)',
-  subtleBorder: 'rgba(255,255,255,0.12)',
-};
-
+import { appColors } from '../../../layout/Theme';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -51,7 +41,12 @@ const tileField = (task: string) => `tile__${task}`;
 // ── Cell renderers ────────────────────────────────────────────────────────────
 
 function ProgressCell({ val, tile }: { val: number; tile: TileInfo }) {
-  if (!val) return <Typography variant="caption" sx={{ color: appColors.mutedText }}>—</Typography>;
+  if (!val)
+    return (
+      <Typography variant="caption" sx={{ color: appColors.mutedText }}>
+        —
+      </Typography>
+    );
   const pct = tile.target ? Math.min(100, Math.round((val / tile.target) * 100)) : null;
   return (
     <Stack spacing={0.25} sx={{ width: '100%', pr: 0.5 }}>
@@ -70,7 +65,12 @@ function ProgressCell({ val, tile }: { val: number; tile: TileInfo }) {
 }
 
 function DropCell({ status }: { status: 'approved' | 'pending' | null }) {
-  if (!status) return <Typography variant="caption" sx={{ color: appColors.mutedText }}>—</Typography>;
+  if (!status)
+    return (
+      <Typography variant="caption" sx={{ color: appColors.mutedText }}>
+        —
+      </Typography>
+    );
   if (status === 'approved') {
     return (
       <Chip
@@ -107,9 +107,7 @@ function DropCell({ status }: { status: 'approved' | 'pending' | null }) {
 
 function TileHeader({ tile }: { tile: TileInfo }) {
   const typeColor =
-    tile.type === 'Experience' ? '#64b4ff'
-    : tile.type === 'Kill Count' ? '#ffa050'
-    : '#b39ddb';
+    tile.type === 'Experience' ? '#64b4ff' : tile.type === 'Kill Count' ? '#ffa050' : '#b39ddb';
   return (
     <Stack spacing={0.25} sx={{ lineHeight: 1.2, py: 0.5 }}>
       <Typography
@@ -124,13 +122,20 @@ function TileHeader({ tile }: { tile: TileInfo }) {
       >
         {tile.task}
       </Typography>
-      <Stack direction="row" alignItems="center" spacing={0.5}>
+      <Stack
+        direction="row"
+        spacing={0.5}
+        sx={{
+          alignItems: 'center',
+        }}
+      >
         <Typography variant="caption" sx={{ color: typeColor, fontSize: 10 }}>
           {tile.type}
         </Typography>
         {tile.target && (
           <Typography variant="caption" sx={{ color: appColors.mutedText, fontSize: 10 }}>
-            · {tile.type === 'Experience' ? fmtProgress(tile.target, tile.type) : `${tile.target} kc`}
+            ·{' '}
+            {tile.type === 'Experience' ? fmtProgress(tile.target, tile.type) : `${tile.target} kc`}
           </Typography>
         )}
       </Stack>
@@ -146,7 +151,9 @@ const TeamData = () => {
   const [dismissedError, setDismissedError] = useState(false);
 
   // Reset dismissed state whenever the error changes
-  useEffect(() => { setDismissedError(false); }, [error]);
+  useEffect(() => {
+    setDismissedError(false);
+  }, [error]);
   const rows = useMemo(() => {
     if (!data?.players) return [];
     const q = search.trim().toLowerCase();
@@ -158,84 +165,96 @@ const TeamData = () => {
   // Columns = one per tile on the board
   const tileCols: GridColDef[] = useMemo(() => {
     if (!data?.tiles) return [];
-    return data.tiles.map((tile): GridColDef => ({
-      field: tileField(tile.task),
-      headerName: tile.task,
-      width: 150,
-      sortable: false,
-      renderHeader: () => <TileHeader tile={tile} />,
-      valueGetter: (params) => {
-        const row = params.row as PlayerRow;
-        if (tile.type === 'Experience') return row.skillDeltas[tile.task] ?? 0;
-        if (tile.type === 'Kill Count') return row.activityDeltas[tile.task] ?? 0;
-        return row.dropStatus[tile.task] ?? null;
-      },
-      renderCell: (params: GridRenderCellParams) => {
-        if (tile.type === 'Drops') {
-          return <DropCell status={params.value as 'approved' | 'pending' | null} />;
-        }
-        return <ProgressCell val={params.value as number} tile={tile} />;
-      },
-    }));
+    return data.tiles.map(
+      (tile): GridColDef => ({
+        field: tileField(tile.task),
+        headerName: tile.task,
+        width: 150,
+        sortable: false,
+        renderHeader: () => <TileHeader tile={tile} />,
+        valueGetter: (_value, row: PlayerRow) => {
+          if (tile.type === 'Experience') return row.skillDeltas[tile.task] ?? 0;
+          if (tile.type === 'Kill Count') return row.activityDeltas[tile.task] ?? 0;
+          return row.dropStatus[tile.task] ?? null;
+        },
+        renderCell: (params: GridRenderCellParams) => {
+          if (tile.type === 'Drops') {
+            return <DropCell status={params.value as 'approved' | 'pending' | null} />;
+          }
+          return <ProgressCell val={params.value as number} tile={tile} />;
+        },
+      }),
+    );
   }, [data?.tiles]);
 
-  const columns: GridColDef[] = useMemo(() => [
-    {
-      field: 'rsn',
-      headerName: 'Player',
-      width: 160,
-      renderHeader: () => (
-        <Typography
-          variant="caption"
-          sx={{
-            color: appColors.textSecondary,
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            fontSize: 11,
-          }}
-        >
-          Player
-        </Typography>
-      ),
-      renderCell: (params: GridRenderCellParams) => {
-        const row = params.row as PlayerRow & { id: string };
-        return (
-          <Stack direction="row" alignItems="center" spacing={0.75}>
-            {row.isCaptain && (
-              <Tooltip title="Team Captain">
-                <StarIcon sx={{ fontSize: 14, color: '#FFD700', flexShrink: 0 }} />
-              </Tooltip>
-            )}
-            <Stack spacing={0}>
-              <Typography
-                variant="body2"
-                sx={{ color: appColors.textPrimary, fontWeight: 600, lineHeight: 1.3 }}
-              >
-                {row.rsn}
-              </Typography>
-              {row.snapshotTakenAt && (
-                <Typography variant="caption" sx={{ color: appColors.mutedText, fontSize: 10 }}>
-                  {fmt(row.snapshotTakenAt)}
-                </Typography>
+  const columns: GridColDef[] = useMemo(
+    () => [
+      {
+        field: 'rsn',
+        headerName: 'Player',
+        width: 160,
+        renderHeader: () => (
+          <Typography
+            variant="caption"
+            sx={{
+              color: appColors.textSecondary,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              fontSize: 11,
+            }}
+          >
+            Player
+          </Typography>
+        ),
+        renderCell: (params: GridRenderCellParams) => {
+          const row = params.row as PlayerRow & { id: string };
+          return (
+            <Stack
+              direction="row"
+              spacing={0.75}
+              sx={{
+                alignItems: 'center',
+              }}
+            >
+              {row.isCaptain && (
+                <Tooltip title="Team Captain">
+                  <StarIcon sx={{ fontSize: 14, color: '#FFD700', flexShrink: 0 }} />
+                </Tooltip>
               )}
+              <Stack spacing={0}>
+                <Typography
+                  variant="body2"
+                  sx={{ color: appColors.textPrimary, fontWeight: 600, lineHeight: 1.3 }}
+                >
+                  {row.rsn}
+                </Typography>
+                {row.snapshotTakenAt && (
+                  <Typography variant="caption" sx={{ color: appColors.mutedText, fontSize: 10 }}>
+                    {fmt(row.snapshotTakenAt)}
+                  </Typography>
+                )}
+              </Stack>
             </Stack>
-          </Stack>
-        );
+          );
+        },
       },
-    },
-    ...tileCols,
-  ], [tileCols]);
+      ...tileCols,
+    ],
+    [tileCols],
+  );
 
   return (
     <PageLayout title="My Team" maxWidth="full">
       {/* Header */}
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
-        justifyContent="space-between"
-        alignItems={{ xs: 'flex-start', sm: 'center' }}
-        width="100%"
-        gap={1}
+        sx={{
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          width: '100%',
+          gap: 1,
+        }}
       >
         <Stack spacing={0.25}>
           {data && (
@@ -255,19 +274,18 @@ const TeamData = () => {
           )}
         </Stack>
 
-        <Stack direction="row" alignItems="center" spacing={1}>
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{
+            alignItems: 'center',
+          }}
+        >
           <TextField
             size="small"
             placeholder="Search players…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ fontSize: 18, color: appColors.mutedText }} />
-                </InputAdornment>
-              ),
-            }}
             sx={{
               width: 180,
               '& .MuiOutlinedInput-root': {
@@ -277,6 +295,15 @@ const TeamData = () => {
                 '&.Mui-focused fieldset': { borderColor: appColors.accent },
               },
               '& .MuiInputBase-input::placeholder': { color: appColors.mutedText, opacity: 1 },
+            }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ fontSize: 18, color: appColors.mutedText }} />
+                  </InputAdornment>
+                ),
+              },
             }}
           />
           <Tooltip title="Refresh team data">
@@ -290,33 +317,33 @@ const TeamData = () => {
                   borderRadius: 2,
                 }}
               >
-                {loading
-                  ? <CircularProgress size={20} sx={{ color: appColors.accent }} />
-                  : <SyncIcon />}
+                {loading ? (
+                  <CircularProgress size={20} sx={{ color: appColors.accent }} />
+                ) : (
+                  <SyncIcon />
+                )}
               </IconButton>
             </span>
           </Tooltip>
         </Stack>
       </Stack>
-
       {error && (
         <Alert severity="error" sx={{ width: '100%' }}>
           {error}
         </Alert>
       )}
-
       {loading && !data && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 6, width: '100%' }}>
           <CircularProgress sx={{ color: appColors.accent }} />
         </Box>
       )}
-
       {!loading && !error && !data && (
-        <Typography sx={{ color: appColors.textSecondary, textAlign: 'center', width: '100%', mt: 4 }}>
+        <Typography
+          sx={{ color: appColors.textSecondary, textAlign: 'center', width: '100%', mt: 4 }}
+        >
           You're not assigned to a team in the active bingo yet.
         </Typography>
       )}
-
       {data && (
         <Box sx={{ width: '100%', overflowX: 'auto' }}>
           <DataGrid

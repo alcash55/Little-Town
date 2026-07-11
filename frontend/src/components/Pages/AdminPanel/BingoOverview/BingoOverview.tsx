@@ -40,20 +40,50 @@ const fmt = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 
 // ─── Info Row ────────────────────────────────────────────────────────────────
-const InfoRow = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) => (
-  <Stack direction="row" alignItems="center" spacing={1.5}>
+const InfoRow = ({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) => (
+  <Stack
+    direction="row"
+    spacing={1.5}
+    sx={{
+      alignItems: 'center',
+    }}
+  >
     <Box sx={{ color: '#2A9D8F', display: 'flex' }}>{icon}</Box>
-    <Typography variant="body2" sx={{ minWidth: 110 }}>{label}</Typography>
-    <Typography variant="body2" sx={{ fontWeight: 500 }}>{value}</Typography>
+    <Typography variant="body2" sx={{ minWidth: 110 }}>
+      {label}
+    </Typography>
+    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+      {value}
+    </Typography>
   </Stack>
 );
 
 // ─── Stat Card ───────────────────────────────────────────────────────────────
-const StatCard = ({ label, value, sub }: { label: string; value: string | number; sub?: string }) => (
+const StatCard = ({
+  label,
+  value,
+  sub,
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+}) => (
   <Card sx={{ flex: 1, minWidth: 130 }}>
     <CardContent sx={{ pb: '12px !important' }}>
-      <Typography variant="body2" sx={{ mb: 0.5 }}>{label}</Typography>
-      <Typography variant="h5" sx={{ fontFamily: "'pacifico', cursive" }}>{value}</Typography>
+      <Typography variant="body2" sx={{ mb: 0.5 }}>
+        {label}
+      </Typography>
+      <Typography variant="h5" sx={{ fontFamily: "'pacifico', cursive" }}>
+        {value}
+      </Typography>
       {sub && <Typography variant="caption">{sub}</Typography>}
     </CardContent>
   </Card>
@@ -61,13 +91,13 @@ const StatCard = ({ label, value, sub }: { label: string; value: string | number
 
 // ─── Team Roster ─────────────────────────────────────────────────────────────
 const TeamRoster = ({ teams, players }: { teams: BingoTeam[]; players: BingoPlayer[] }) => {
-  if (teams.length === 0) return (
-    <Typography variant="body2">No teams assigned yet.</Typography>
-  );
+  if (teams.length === 0) return <Typography variant="body2">No teams assigned yet.</Typography>;
   return (
     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, width: '100%' }}>
-      {teams.map(team => {
-        const members = players.filter(p => p.team_id === team.id || p.captain_team_id === team.id);
+      {teams.map((team) => {
+        const members = players.filter(
+          (p) => p.team_id === team.id || p.captain_team_id === team.id,
+        );
         return (
           <Card key={team.id} sx={{ flex: '1 1 180px', minWidth: 180 }}>
             <CardHeader
@@ -80,13 +110,22 @@ const TeamRoster = ({ teams, players }: { teams: BingoTeam[]; players: BingoPlay
             />
             <CardContent sx={{ pt: 1, pb: '8px !important' }}>
               {members.length === 0 ? (
-                <Typography variant="body2" sx={{ fontStyle: 'italic' }}>No players</Typography>
+                <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+                  No players
+                </Typography>
               ) : (
                 <Stack spacing={0.5}>
-                  {members.map(p => {
+                  {members.map((p) => {
                     const isCaptain = p.captain_team_id === team.id;
                     return (
-                      <Stack key={p.rsn} direction="row" alignItems="center" spacing={0.75}>
+                      <Stack
+                        key={p.rsn}
+                        direction="row"
+                        spacing={0.75}
+                        sx={{
+                          alignItems: 'center',
+                        }}
+                      >
                         {isCaptain && (
                           <Tooltip title="Captain">
                             <StarIcon sx={{ fontSize: 13, color: '#FFD700' }} />
@@ -95,8 +134,8 @@ const TeamRoster = ({ teams, players }: { teams: BingoTeam[]; players: BingoPlay
                         <Typography
                           variant="body2"
                           sx={{
-                            // color: isCaptain ? textPrimary : textSecondary, 
-                            fontWeight: isCaptain ? 600 : 400
+                            // color: isCaptain ? textPrimary : textSecondary,
+                            fontWeight: isCaptain ? 600 : 400,
                           }}
                         >
                           {p.rsn}
@@ -123,9 +162,7 @@ const tileObjective = (tile: Tile): string => {
 
 const CompactBoard = ({ tiles, boardSize }: { tiles: Tile[]; boardSize: number }) => {
   const cols = boardSize === 35 ? 5 : 4;
-  if (tiles.length === 0) return (
-    <Typography variant="body2">Board not set up yet.</Typography>
-  );
+  if (tiles.length === 0) return <Typography variant="body2">Board not set up yet.</Typography>;
   return (
     <Box
       sx={{
@@ -140,7 +177,9 @@ const CompactBoard = ({ tiles, boardSize }: { tiles: Tile[]; boardSize: number }
           key={i}
           title={
             <Stack spacing={0.25}>
-              <Typography variant="caption" sx={{ fontWeight: 600 }}>{tile.task}</Typography>
+              <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                {tile.task}
+              </Typography>
               <Typography variant="caption">{tile.type}</Typography>
               <Typography variant="caption">Obj: {tileObjective(tile)}</Typography>
               <Typography variant="caption">{tile.points} pts</Typography>
@@ -185,7 +224,6 @@ const CompactBoard = ({ tiles, boardSize }: { tiles: Tile[]; boardSize: number }
     </Box>
   );
 };
-
 
 const BingoOverview = () => {
   const {
@@ -248,15 +286,14 @@ const BingoOverview = () => {
   if (!bingo) {
     return (
       <PageLayout title="Bingo Overview" align="center">
-        <Typography>
-          No bingo has been set up yet. Head to Bingo Details to get started.
-        </Typography>
+        <Typography>No bingo has been set up yet. Head to Bingo Details to get started.</Typography>
       </PageLayout>
     );
   }
 
   // ── Derived display values ───────────────────────────────────────────────
-  const boardLabel = bingo.boardSize === 16 ? '4×4' : bingo.boardSize === 35 ? '5×5' : `${bingo.boardSize} tiles`;
+  const boardLabel =
+    bingo.boardSize === 16 ? '4×4' : bingo.boardSize === 35 ? '5×5' : `${bingo.boardSize} tiles`;
   const totalPoints = playerStats.reduce((sum, p) => sum + p.totalPoints, 0);
   const tilesCompleted = playerStats.reduce((sum, p) => sum + p.tilesCompleted, 0);
 
@@ -278,9 +315,10 @@ const BingoOverview = () => {
                 label={bingo.status === 'planned' ? 'Upcoming' : bingo.status ?? 'Draft'}
                 size="small"
                 sx={{
-                  bgcolor: bingo.status === 'planned'
-                    ? 'rgba(255, 214, 0, 0.15)'
-                    : 'rgba(255, 140, 0, 0.15)',
+                  bgcolor:
+                    bingo.status === 'planned'
+                      ? 'rgba(255, 214, 0, 0.15)'
+                      : 'rgba(255, 140, 0, 0.15)',
                   color: bingo.status === 'planned' ? '#FFD600' : '#FF8C00',
                   textTransform: 'capitalize',
                 }}
@@ -291,9 +329,21 @@ const BingoOverview = () => {
 
           <CardContent>
             <Stack spacing={1.5} divider={<Divider />}>
-              <InfoRow icon={<CalendarTodayIcon fontSize="small" />} label="Starts" value={fmt(bingo.startDate)} />
-              <InfoRow icon={<CalendarTodayIcon fontSize="small" />} label="Ends" value={fmt(bingo.endDate)} />
-              <InfoRow icon={<EmojiEventsIcon fontSize="small" />} label="Board" value={boardLabel} />
+              <InfoRow
+                icon={<CalendarTodayIcon fontSize="small" />}
+                label="Starts"
+                value={fmt(bingo.startDate)}
+              />
+              <InfoRow
+                icon={<CalendarTodayIcon fontSize="small" />}
+                label="Ends"
+                value={fmt(bingo.endDate)}
+              />
+              <InfoRow
+                icon={<EmojiEventsIcon fontSize="small" />}
+                label="Board"
+                value={boardLabel}
+              />
             </Stack>
           </CardContent>
         </Card>
@@ -301,7 +351,11 @@ const BingoOverview = () => {
         <Card sx={{ width: '100%' }}>
           <CardHeader
             avatar={<GroupsIcon sx={{ color: '#2A9D8F' }} />}
-            title={<Typography variant="h3" sx={{ fontSize: 18 }}>Teams</Typography>}
+            title={
+              <Typography variant="h3" sx={{ fontSize: 18 }}>
+                Teams
+              </Typography>
+            }
           />
           <CardContent sx={{ pt: 0 }}>
             <TeamRoster teams={teams} players={players} />
@@ -311,7 +365,11 @@ const BingoOverview = () => {
         <Card sx={{ width: '100%' }}>
           <CardHeader
             avatar={<EmojiEventsIcon sx={{ color: '#2A9D8F' }} />}
-            title={<Typography variant="h3" sx={{ fontSize: 18 }}>Planned Board</Typography>}
+            title={
+              <Typography variant="h3" sx={{ fontSize: 18 }}>
+                Planned Board
+              </Typography>
+            }
             subheader={<Typography variant="body2">{boardLabel}</Typography>}
           />
           <CardContent sx={{ pt: 0 }}>
@@ -319,14 +377,19 @@ const BingoOverview = () => {
           </CardContent>
         </Card>
 
-
-        {startError && <Alert severity="error" sx={{ width: '100%' }}>{startError}</Alert>}
+        {startError && (
+          <Alert severity="error" sx={{ width: '100%' }}>
+            {startError}
+          </Alert>
+        )}
 
         <Button
           variant="outlined"
           color="success"
           disabled={startingNow}
-          startIcon={startingNow ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : undefined}
+          startIcon={
+            startingNow ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : undefined
+          }
           onClick={startNow}
           sx={{ alignSelf: 'center' }}
         >
@@ -339,7 +402,6 @@ const BingoOverview = () => {
   // ── Active bingo dashboard ───────────────────────────────────────────────
   return (
     <PageLayout title="Bingo Overview" maxWidth="full">
-
       {/* ── Stats refresh feedback ── */}
       {refreshStatsMessage && (
         <Alert
@@ -350,7 +412,6 @@ const BingoOverview = () => {
           {refreshStatsMessage}
         </Alert>
       )}
-
       {/* ── Pending screenshots alert ── */}
       {pendingScreenshots.length > 0 && (
         <Alert
@@ -363,17 +424,16 @@ const BingoOverview = () => {
           }
           sx={{ width: '100%' }}
         >
-          {pendingScreenshots.length} screenshot{pendingScreenshots.length > 1 ? 's' : ''} pending review
+          {pendingScreenshots.length} screenshot{pendingScreenshots.length > 1 ? 's' : ''} pending
+          review
         </Alert>
       )}
-
       {/* ── Player stats load failure (distinct from the fatal page error above) ── */}
       {playerStatsError && (
         <Alert severity="warning" sx={{ width: '100%' }}>
           {playerStatsError}
         </Alert>
       )}
-
       {/* ── Summary stat cards ── */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, width: '100%' }}>
         <StatCard label="Bingo" value={bingo.name} />
@@ -382,11 +442,14 @@ const BingoOverview = () => {
         <StatCard label="Total Points Scored" value={totalPoints} />
         <StatCard label="Players" value={players.length} />
       </Box>
-
       {/* ── Player stats table ── */}
       <Card sx={{ width: '100%' }}>
         <CardHeader
-          title={<Typography variant="h3" sx={{ fontSize: 18 }}>Player Stats</Typography>}
+          title={
+            <Typography variant="h3" sx={{ fontSize: 18 }}>
+              Player Stats
+            </Typography>
+          }
         />
         <CardContent sx={{ p: 0 }}>
           {playerStats.length === 0 ? (
@@ -396,15 +459,20 @@ const BingoOverview = () => {
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    {['Player', 'Team', 'Tiles', 'Points', 'Last Seen', 'Side Accounts'].map(h => (
-                      <TableCell key={h} sx={{ fontWeight: 600, fontSize: 12, textTransform: 'uppercase' }}>
-                        {h}
-                      </TableCell>
-                    ))}
+                    {['Player', 'Team', 'Tiles', 'Points', 'Last Seen', 'Side Accounts'].map(
+                      (h) => (
+                        <TableCell
+                          key={h}
+                          sx={{ fontWeight: 600, fontSize: 12, textTransform: 'uppercase' }}
+                        >
+                          {h}
+                        </TableCell>
+                      ),
+                    )}
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {playerStats.map(p => (
+                  {playerStats.map((p) => (
                     <TableRow key={p.rsn}>
                       <TableCell>
                         <Typography variant="body2">{p.rsn}</Typography>
@@ -423,9 +491,20 @@ const BingoOverview = () => {
                       </TableCell>
                       <TableCell>
                         {p.sideAccounts.length > 0 ? (
-                          <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                            {p.sideAccounts.map(acc => (
-                              <Chip key={acc} label={acc} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.08)' }} />
+                          <Stack
+                            direction="row"
+                            spacing={0.5}
+                            sx={{
+                              flexWrap: 'wrap',
+                            }}
+                          >
+                            {p.sideAccounts.map((acc) => (
+                              <Chip
+                                key={acc}
+                                label={acc}
+                                size="small"
+                                sx={{ bgcolor: 'rgba(255,255,255,0.08)' }}
+                              />
                             ))}
                           </Stack>
                         ) : (
@@ -440,49 +519,78 @@ const BingoOverview = () => {
           )}
         </CardContent>
       </Card>
-
       {/* ── Time remaining ── */}
       <Card sx={{ width: '100%' }}>
         <CardContent>
-          <Stack direction="row" alignItems="center" spacing={1} mb={2}>
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{
+              alignItems: 'center',
+              mb: 2,
+            }}
+          >
             <AccessTimeIcon sx={{ color: '#2A9D8F' }} />
-            <Typography variant="h3" sx={{ fontSize: 18 }}>Time Remaining</Typography>
+            <Typography variant="h3" sx={{ fontSize: 18 }}>
+              Time Remaining
+            </Typography>
           </Stack>
           <Countdown targetDate={endDateObj} label="" />
         </CardContent>
       </Card>
-
       {/* ── End bingo button ── */}
-      <Stack direction="row" spacing={2} alignSelf="flex-end">
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{
+          alignSelf: 'flex-end',
+        }}
+      >
         <Button
           variant="outlined"
           disabled={refreshingStats}
-          startIcon={refreshingStats ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : <SyncIcon />}
+          startIcon={
+            refreshingStats ? (
+              <CircularProgress size={16} sx={{ color: 'inherit' }} />
+            ) : (
+              <SyncIcon />
+            )
+          }
           onClick={refreshAllStats}
-          sx={{ color: '#2A9D8F', borderColor: '#2A9D8F', '&:hover': { borderColor: '#2A9D8F', bgcolor: 'rgba(42,157,143,0.08)' } }}
+          sx={{
+            color: '#2A9D8F',
+            borderColor: '#2A9D8F',
+            '&:hover': { borderColor: '#2A9D8F', bgcolor: 'rgba(42,157,143,0.08)' },
+          }}
         >
           {refreshingStats ? 'Refreshing…' : 'Refresh Player Stats'}
         </Button>
-        <Button
-          variant="outlined"
-          color="error"
-          onClick={() => setEndDialogOpen(true)}
-        >
+        <Button variant="outlined" color="error" onClick={() => setEndDialogOpen(true)}>
           End Bingo Early
         </Button>
       </Stack>
-
       {/* ── End bingo confirmation dialog ── */}
-      <Dialog open={endDialogOpen} onClose={() => { setEndDialogOpen(false); setEndConfirmName(''); }} maxWidth="xs" fullWidth
-        PaperProps={{
-          sx: {
-            backgroundColor: '#1a1a1a',
-            backgroundImage: 'none',
-            border: '1px solid rgba(255,255,255,0.12)',
+      <Dialog
+        open={endDialogOpen}
+        onClose={() => {
+          setEndDialogOpen(false);
+          setEndConfirmName('');
+        }}
+        maxWidth="xs"
+        fullWidth
+        slotProps={{
+          paper: {
+            sx: {
+              backgroundColor: '#1a1a1a',
+              backgroundImage: 'none',
+              border: '1px solid rgba(255,255,255,0.12)',
+            },
           },
         }}
       >
-        <DialogTitle sx={{ color: '#f44336', fontFamily: "'pacifico', cursive" }}>End Bingo Early?</DialogTitle>
+        <DialogTitle sx={{ color: '#f44336', fontFamily: "'pacifico', cursive" }}>
+          End Bingo Early?
+        </DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             <Typography variant="body2">
@@ -497,9 +605,11 @@ const BingoOverview = () => {
               fullWidth
               placeholder={bingo.name}
               value={endConfirmName}
-              onChange={e => setEndConfirmName(e.target.value)}
+              onChange={(e) => setEndConfirmName(e.target.value)}
               error={endConfirmName.length > 0 && !endNameMatches}
-              helperText={endConfirmName.length > 0 && !endNameMatches ? 'Name does not match' : ' '}
+              helperText={
+                endConfirmName.length > 0 && !endNameMatches ? 'Name does not match' : ' '
+              }
               sx={{
                 '& .MuiFormHelperText-root': { color: '#f44336' },
               }}
@@ -508,21 +618,27 @@ const BingoOverview = () => {
           </Stack>
         </DialogContent>
         <DialogActions sx={{ borderTop: '1px solid rgba(255,255,255,0.08)', px: 3, pb: 2 }}>
-          <Button onClick={() => { setEndDialogOpen(false); setEndConfirmName(''); }}>
+          <Button
+            onClick={() => {
+              setEndDialogOpen(false);
+              setEndConfirmName('');
+            }}
+          >
             Cancel
           </Button>
           <Button
             variant="outlined"
             color="error"
             disabled={!endNameMatches || ending}
-            startIcon={ending ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : undefined}
+            startIcon={
+              ending ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : undefined
+            }
             onClick={endBingo}
           >
             {ending ? 'Ending…' : 'End Bingo'}
           </Button>
         </DialogActions>
       </Dialog>
-
     </PageLayout>
   );
 };

@@ -40,11 +40,11 @@ export const darkTheme = createTheme({
       fontSize: '6rem',
       lineHeight: 1,
       letterSpacing: '-0.01562em',
-      color: '#fff'
+      color: '#fff',
     },
     h2: {
       fontFamily: "'pacifico', cursive",
-      color: '#fff'
+      color: '#fff',
     },
     h3: {
       fontFamily: "'pacifico', cursive",
@@ -66,8 +66,8 @@ export const darkTheme = createTheme({
       letterSpacing: '0.00938em',
     },
     allVariants: {
-      color: '#fff'
-    }
+      color: '#fff',
+    },
   },
   components: {
     MuiButtonBase: {
@@ -81,8 +81,8 @@ export const darkTheme = createTheme({
       styleOverrides: {
         root: {
           backgroundColor: '#000',
-        }
-      }
+        },
+      },
     },
     MuiOutlinedInput: {
       styleOverrides: {

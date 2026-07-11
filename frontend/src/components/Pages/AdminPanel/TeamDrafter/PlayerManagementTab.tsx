@@ -10,18 +10,12 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlined';
 import { useTeamDrafter, BingoPlayer } from './useTeamDrafter';
 import { SideAccountsDialog } from './SideAccountsDialog';
 import { TrackedPlayersList } from './TrackedPlayersList';
-import {
-  cardSx,
-  inputSx,
-  outlinedButtonSx,
-  textPrimary,
-  textSecondary,
-} from './teamDrafterStyles';
+import { cardSx, inputSx, outlinedButtonSx, textPrimary, textSecondary } from './teamDrafterStyles';
 
 export function PlayerManagementTab(props: ReturnType<typeof useTeamDrafter>) {
   const {
@@ -120,10 +114,10 @@ export function PlayerManagementTab(props: ReturnType<typeof useTeamDrafter>) {
                     result.status === 'ok'
                       ? rsn
                       : result.status === 'renamed'
-                        ? `${result.originalRsn} → ${result.newRsn}`
-                        : result.message.includes('authorized')
-                          ? `${rsn}: not authorized by the admin API`
-                          : `${rsn}: ${result.message}`
+                      ? `${result.originalRsn} → ${result.newRsn}`
+                      : result.message.includes('authorized')
+                      ? `${rsn}: not authorized by the admin API`
+                      : `${rsn}: ${result.message}`
                   }
                   color={result.status === 'error' ? 'error' : 'success'}
                   variant="outlined"
@@ -139,7 +133,11 @@ export function PlayerManagementTab(props: ReturnType<typeof useTeamDrafter>) {
           <Typography variant="h2" sx={{ fontSize: 20, mb: 2, color: textPrimary }}>
             Tracked Players{' '}
             {!loadingPlayers && (
-              <Typography component="span" variant="body1" sx={{ color: textSecondary, fontSize: 14 }}>
+              <Typography
+                component="span"
+                variant="body1"
+                sx={{ color: textSecondary, fontSize: 14 }}
+              >
                 ({players.length})
               </Typography>
             )}
@@ -155,12 +153,7 @@ export function PlayerManagementTab(props: ReturnType<typeof useTeamDrafter>) {
               clearOnEscape
               sx={{ mb: 2 }}
               renderInput={(params) => (
-                <TextField
-                  {...params}
-                  placeholder="Search players…"
-                  size="small"
-                  sx={inputSx}
-                />
+                <TextField {...params} placeholder="Search players…" size="small" sx={inputSx} />
               )}
             />
           )}
@@ -175,7 +168,9 @@ export function PlayerManagementTab(props: ReturnType<typeof useTeamDrafter>) {
             </Typography>
           ) : (
             <TrackedPlayersList
-              players={playerSearchQuery ? players.filter((p) => p.id === playerSearchQuery.id) : players}
+              players={
+                playerSearchQuery ? players.filter((p) => p.id === playerSearchQuery.id) : players
+              }
               teams={teams}
               teamNameById={teamNameById}
               sideAccountsByPlayerId={sideAccountsByPlayerId}
