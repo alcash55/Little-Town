@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Stack, Typography } from '@mui/material';
-import { VictoryPie, VictoryLabel } from 'victory';
+import { Gauge, gaugeClasses } from '@mui/x-charts/Gauge';
 import '@fontsource/pacifico';
 
 interface CountdownProps {
@@ -45,52 +45,42 @@ export const Countdown: React.FC<CountdownProps> = ({
   ];
 
   return (
-    <Stack alignItems="center" spacing={1}>
+    <Stack spacing={1} sx={{ alignItems: 'center' }}>
       {label && (
         <Typography variant="h2" sx={{ fontSize: { xs: 20, sm: 26 }, textAlign: 'center' }}>
           {label}
         </Typography>
       )}
-      <Box display="flex" justifyContent="center">
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
         {segments.map(({ value, unit, max }) => (
-          <svg key={unit} viewBox="0 0 50 50" width="80px" height="80px">
-            {/* Track */}
-            <VictoryPie
-              standalone={false}
-              colorScale={['rgba(255,255,255,0.12)']}
-              data={[{ y: 1 }]}
-              width={50}
-              height={50}
-              innerRadius={13}
-              radius={15}
-              labels={() => null}
-            />
-            {/* Progress */}
-            <VictoryPie
-              standalone={false}
-              colorScale={['#2A9D8F', 'transparent']}
-              data={[{ y: value }, { y: max - value }]}
-              width={50}
-              height={50}
-              innerRadius={13}
-              radius={15}
-              cornerRadius={30}
-              labels={() => null}
-            />
-            {/* Label */}
-            <VictoryLabel
-              textAnchor="middle"
-              verticalAnchor="middle"
-              y={25}
-              x={25}
-              text={`${value}${unit}`}
-              style={{
-                fill: '#ffffff',
-                fontSize: 7,
+          <Gauge
+            key={unit}
+            width={80}
+            height={80}
+            value={value}
+            valueMin={0}
+            valueMax={max}
+            innerRadius="70%"
+            outerRadius="100%"
+            cornerRadius="50%"
+            text={() => `${value}${unit}`}
+            aria-label={`${value} ${
+              unit === 'd' ? 'days' : unit === 'h' ? 'hours' : unit === 'm' ? 'minutes' : 'seconds'
+            } remaining`}
+            sx={{
+              [`& .${gaugeClasses.referenceArc}`]: {
+                fill: 'rgba(255,255,255,0.12)',
+              },
+              [`& .${gaugeClasses.valueArc}`]: {
+                fill: '#2A9D8F',
+              },
+              [`& .${gaugeClasses.valueText}`]: {
                 fontFamily: "'pacifico', cursive",
-              }}
-            />
-          </svg>
+                fontSize: 14,
+                fill: '#ffffff',
+              },
+            }}
+          />
         ))}
       </Box>
     </Stack>

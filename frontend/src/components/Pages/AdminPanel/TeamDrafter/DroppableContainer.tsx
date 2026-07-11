@@ -20,11 +20,7 @@ export function DroppableContainer({
   return (
     <Card sx={{ ...cardSx, height: '100%', minWidth: 170 }}>
       <CardContent>
-        <Typography
-          variant="h2"
-          sx={{ fontSize: 16, mb: 1, color: textPrimary }}
-          noWrap
-        >
+        <Typography variant="h2" sx={{ fontSize: 16, mb: 1, color: textPrimary }} noWrap>
           {label}
         </Typography>
         <Box

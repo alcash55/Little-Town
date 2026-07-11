@@ -25,7 +25,11 @@ const ResourceItemCard = ({ item }: ResourceItemCardProps) => {
   return (
     <Card sx={cardSx} component="article" aria-labelledby={`${item.id}-title`}>
       <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
-        <Typography id={`${item.id}-title`} variant="body1" sx={{ fontWeight: 600, color: textPrimary }}>
+        <Typography
+          id={`${item.id}-title`}
+          variant="body1"
+          sx={{ fontWeight: 600, color: textPrimary }}
+        >
           {item.title}
         </Typography>
 
@@ -36,7 +40,13 @@ const ResourceItemCard = ({ item }: ResourceItemCardProps) => {
         )}
 
         {images.length > 0 && (
-          <Stack direction="row" spacing={1} flexWrap="wrap">
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{
+              flexWrap: 'wrap',
+            }}
+          >
             {images.map((image, idx) => (
               <ButtonBase
                 key={`${item.id}-img-${idx}`}
@@ -61,7 +71,15 @@ const ResourceItemCard = ({ item }: ResourceItemCardProps) => {
                     sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                 ) : (
-                  <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Box
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
                     <BrokenImageIcon sx={{ color: textSecondary, fontSize: 28 }} />
                   </Box>
                 )}
@@ -86,7 +104,13 @@ const ResourceItemCard = ({ item }: ResourceItemCardProps) => {
         )}
 
         {item.links && item.links.length > 0 && (
-          <Stack direction="row" spacing={1} flexWrap="wrap">
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{
+              flexWrap: 'wrap',
+            }}
+          >
             {item.links.map((link) => (
               <LinkButton key={link.url} link={link} />
             ))}
@@ -95,7 +119,6 @@ const ResourceItemCard = ({ item }: ResourceItemCardProps) => {
 
         {item.runelite && <RuneliteCopyControl config={item.runelite} />}
       </CardContent>
-
       {lightboxIndex !== null && (
         <ImageLightbox
           images={images}

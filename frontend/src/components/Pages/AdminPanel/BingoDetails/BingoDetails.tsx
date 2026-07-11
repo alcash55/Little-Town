@@ -14,15 +14,24 @@ import PageLayout from '../../../../layout/PageLayout/PageLayout';
 
 const BingoDetails = () => {
   const {
-    bingoName, setBingoName,
-    startDate, endDate,
-    boardSize, setBoardSize,
-    numberOfTeams, setNumberOfTeams,
+    bingoName,
+    setBingoName,
+    startDate,
+    endDate,
+    boardSize,
+    setBoardSize,
+    numberOfTeams,
+    setNumberOfTeams,
     teamNames,
-    isBingo, submitted, setSubmitted,
-    isFormValid, hasFormData,
-    handleSubmit, handleTeamNameChange,
-    handleStartDateChange, handleEndDateChange,
+    isBingo,
+    submitted,
+    setSubmitted,
+    isFormValid,
+    hasFormData,
+    handleSubmit,
+    handleTeamNameChange,
+    handleStartDateChange,
+    handleEndDateChange,
     clearBingo,
     minStartDate,
     minEndDate,
@@ -36,7 +45,15 @@ const BingoDetails = () => {
       successMessage={isBingo ? 'Bingo details updated!' : 'Bingo details created!'}
       warningMessage="Bingo details already exist. Submitting will overwrite them."
     >
-      <Stack spacing={3} justifyContent="center" alignItems="center" sx={{ maxWidth: 500, width: '100%' }}>
+      <Stack
+        spacing={3}
+        sx={{
+          justifyContent: 'center',
+          alignItems: 'center',
+          maxWidth: 500,
+          width: '100%',
+        }}
+      >
         <TextField
           id="bingo-name"
           label="Bingo Name"
@@ -72,7 +89,13 @@ const BingoDetails = () => {
 
         <FormControl variant="outlined" sx={{ m: 1, width: '100%' }} required>
           <InputLabel id="board-size-label">Board Size</InputLabel>
-          <Select labelId="board-size-label" id="board-size" value={boardSize} onChange={(e) => setBoardSize(e.target.value as number)} label="Board Size">
+          <Select
+            labelId="board-size-label"
+            id="board-size"
+            value={boardSize}
+            onChange={(e) => setBoardSize(e.target.value as number)}
+            label="Board Size"
+          >
             <MenuItem value={16}>4X4</MenuItem>
             <MenuItem value={35}>5X5</MenuItem>
           </Select>
@@ -80,7 +103,13 @@ const BingoDetails = () => {
 
         <FormControl variant="outlined" sx={{ m: 1, width: '100%' }} required>
           <InputLabel id="team-size-select-label">Number of teams playing</InputLabel>
-          <Select labelId="team-size-select-label" id="team-size" value={numberOfTeams} onChange={(e) => setNumberOfTeams(e.target.value as number)} label="Number of teams playing">
+          <Select
+            labelId="team-size-select-label"
+            id="team-size"
+            value={numberOfTeams}
+            onChange={(e) => setNumberOfTeams(e.target.value as number)}
+            label="Number of teams playing"
+          >
             <MenuItem value={2}>2</MenuItem>
             <MenuItem value={3}>3</MenuItem>
             <MenuItem value={4}>4</MenuItem>
@@ -88,7 +117,12 @@ const BingoDetails = () => {
           </Select>
         </FormControl>
 
-        <Stack spacing={2} width="100%">
+        <Stack
+          spacing={2}
+          sx={{
+            width: '100%',
+          }}
+        >
           {Array.from({ length: numberOfTeams }).map((_, index) => (
             <TextField
               key={`team-${index}`}
@@ -102,8 +136,20 @@ const BingoDetails = () => {
           ))}
         </Stack>
 
-        <Stack spacing={2} direction="row" width="100%">
-          <Button variant="outlined" color={isBingo ? 'info' : 'success'} disabled={!isFormValid} onClick={handleSubmit} sx={{ width: '50%' }}>
+        <Stack
+          spacing={2}
+          direction="row"
+          sx={{
+            width: '100%',
+          }}
+        >
+          <Button
+            variant="outlined"
+            color={isBingo ? 'info' : 'success'}
+            disabled={!isFormValid}
+            onClick={handleSubmit}
+            sx={{ width: '50%' }}
+          >
             {isBingo ? 'Modify Bingo' : 'Add Bingo Details'}
           </Button>
           {hasFormData && (

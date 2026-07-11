@@ -15,13 +15,15 @@ export const LoadingContainer = ({ width, height, loading, children, ...rest }: 
   if (loading) {
     return (
       <Box
-        display={'flex'}
-        justifyContent={'center'}
-        alignItems={'center'}
-        height={'100vh'}
-        overflow={'hidden'}
-        p={0}
-        sx={{ bgcolor: darkTheme.palette.secondary.main }}
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          overflow: 'hidden',
+          p: 0,
+          bgcolor: darkTheme.palette.secondary.main,
+        }}
       >
         <img
           src={LittleTownAnimation}

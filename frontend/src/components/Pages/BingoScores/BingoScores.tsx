@@ -1,5 +1,5 @@
 import { Box } from '@mui/material';
-import { VictoryChart, VictoryLine, VictoryLegend, VictoryAxis, Curve } from 'victory';
+import { LineChart } from '@mui/x-charts/LineChart';
 import { useBingoScores } from './useBingoScores';
 import PageLayout from '../../../layout/PageLayout/PageLayout';
 
@@ -38,43 +38,51 @@ const BingoScores = () => {
     ],
   ];
 
+  // All three mock series share the same x-axis dates.
+  const dates = chartData[0].map((point) => point.x);
+
   useBingoScores();
 
   return (
     <PageLayout title="Total Team XP" maxWidth="full">
       <Box sx={{ width: '100%', overflowX: 'auto' }}>
-        <VictoryChart>
-          {chartData.map((line, index) => (
-            <VictoryLine
-              key={index}
-              data={line}
-              dataComponent={<Curve tabIndex={0} />}
-              interpolation={'natural'}
-              style={{ data: { stroke: teamColors[index] } }}
-            />
-          ))}
-
-          <VictoryAxis
-            tickValues={[0, 500000, 1000000, 1500000, 2000000, 2500000, 3000000]}
-            dependentAxis
-            style={{
-              tickLabels: { fontSize: 12, padding: 5, color: 'red' },
-              axis: { stroke: 'black' },
-            }}
-          />
-          <VictoryLegend
-            x={15}
-            y={10}
-            orientation="horizontal"
-            gutter={20}
-            style={{
-              border: { stroke: 'black' },
-              title: { fill: 'black' },
-              labels: { fill: 'black' },
-            }}
-            data={teamNames.map((name, index) => ({ name, symbol: { fill: teamColors[index] } }))}
-          />
-        </VictoryChart>
+        <LineChart
+          height={400}
+          xAxis={[
+            {
+              data: dates,
+              // 'point' scale => exactly one evenly-spaced tick per data point.
+              // A continuous 'time' scale generated extra sub-day ticks that
+              // duplicated the same "Jul 23" label multiple times in a row.
+              scaleType: 'point',
+              valueFormatter: (date: Date) =>
+                date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+            },
+          ]}
+          yAxis={[
+            {
+              min: 0,
+              max: 3_000_000,
+              valueFormatter: (value: number) => `${(value / 1_000_000).toFixed(1)}m`,
+            },
+          ]}
+          series={chartData.map((line, index) => ({
+            id: teamNames[index],
+            label: teamNames[index],
+            data: line.map((point) => point.y),
+            color: teamColors[index],
+            curve: 'natural',
+            showMark: true,
+          }))}
+          grid={{ horizontal: true }}
+          sx={{
+            '& .MuiChartsAxis-tickLabel': { fill: 'rgba(255,255,255,0.7)' },
+            '& .MuiChartsAxis-line': { stroke: 'rgba(255,255,255,0.23)' },
+            '& .MuiChartsAxis-tick': { stroke: 'rgba(255,255,255,0.23)' },
+            '& .MuiChartsLegend-series text': { fill: '#fff' },
+            '& .MuiChartsGrid-line': { stroke: 'rgba(255,255,255,0.08)' },
+          }}
+        />
       </Box>
     </PageLayout>
   );

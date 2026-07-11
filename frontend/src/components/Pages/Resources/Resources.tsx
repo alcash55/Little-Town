@@ -62,16 +62,18 @@ const Resources = () => {
         size="small"
         fullWidth
         sx={{ maxWidth: 480, ...searchInputSx }}
-        inputProps={{ 'aria-label': 'Search resources by title or description' }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon sx={{ color: textSecondary }} />
-            </InputAdornment>
-          ),
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ color: textSecondary }} />
+              </InputAdornment>
+            ),
+          },
+
+          htmlInput: { 'aria-label': 'Search resources by title or description' },
         }}
       />
-
       <Box
         sx={{
           display: 'flex',
@@ -89,10 +91,17 @@ const Resources = () => {
 
         <Box sx={{ flexGrow: 1, minWidth: 0, width: '100%' }}>
           {isSearching ? (
-            <SearchResults results={searchResults} query={searchQuery.trim()} onJumpToCategory={handleJumpToCategory} />
+            <SearchResults
+              results={searchResults}
+              query={searchQuery.trim()}
+              onJumpToCategory={handleJumpToCategory}
+            />
           ) : selectedCategory ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <Typography variant="h6" sx={{ fontFamily: "'Inter', sans-serif", fontWeight: 700, color: textPrimary }}>
+              <Typography
+                variant="h6"
+                sx={{ fontFamily: "'Inter', sans-serif", fontWeight: 700, color: textPrimary }}
+              >
                 {selectedCategory.name}
               </Typography>
               {selectedCategory.sections.length === 0 ? (
@@ -101,7 +110,10 @@ const Resources = () => {
                 </Typography>
               ) : (
                 selectedCategory.sections.map((section) => (
-                  <SectionGroup key={`${selectedCategory.id}-${section.kind}-${section.title}`} section={section} />
+                  <SectionGroup
+                    key={`${selectedCategory.id}-${section.kind}-${section.title}`}
+                    section={section}
+                  />
                 ))
               )}
             </Box>

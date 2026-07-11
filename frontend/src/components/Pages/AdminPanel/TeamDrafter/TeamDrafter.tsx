@@ -10,17 +10,17 @@ export default function TeamDrafter() {
 
   return (
     <PageLayout title="Team Drafter" maxWidth="full" contentSx={{ alignItems: 'stretch' }}>
-      <Tabs
-        value={hook.activeTab}
-        onChange={(_, v) => hook.setActiveTab(v)}
-        sx={teamDrafterTabsSx}
-      >
+      <Tabs value={hook.activeTab} onChange={(_, v) => hook.setActiveTab(v)} sx={teamDrafterTabsSx}>
         <Tab label="Drafter" />
         <Tab label="Player Management" />
       </Tabs>
-
       {hook.activeTab === 0 && (
-        <Stack spacing={2} width="100%">
+        <Stack
+          spacing={2}
+          sx={{
+            width: '100%',
+          }}
+        >
           <Typography variant="body1" sx={{ color: textSecondary, fontSize: 14 }}>
             Drag players from the pool into a team. Once the pool is empty you can submit to save
             assignments.
@@ -44,7 +44,6 @@ export default function TeamDrafter() {
           />
         </Stack>
       )}
-
       {hook.activeTab === 1 && <PlayerManagementTab {...hook} />}
     </PageLayout>
   );
