@@ -27,10 +27,30 @@ import { useLoginModal } from '../../LoginModal/useLoginModal';
 type Role = 'user' | 'admin' | 'moderator';
 
 const playerButtons = [
-  { label: 'Bingo Rules', to: '/BingoRules', icon: <Gavel />, roles: ['user', 'admin', 'moderator'] as Role[] },
-  { label: 'Bingo Board', to: '/BingoBoard', icon: <BoardGame />, roles: ['user', 'admin', 'moderator'] as Role[] },
-  { label: 'Team Data', to: '/TeamData', icon: <BarChart />, roles: ['user', 'admin', 'moderator'] as Role[] },
-  { label: 'Bingo Scores', to: '/BingoScores', icon: <EmojiEvents />, roles: ['user', 'admin', 'moderator'] as Role[] },
+  {
+    label: 'Bingo Rules',
+    to: '/BingoRules',
+    icon: <Gavel />,
+    roles: ['user', 'admin', 'moderator'] as Role[],
+  },
+  {
+    label: 'Bingo Board',
+    to: '/BingoBoard',
+    icon: <BoardGame />,
+    roles: ['user', 'admin', 'moderator'] as Role[],
+  },
+  {
+    label: 'Team Data',
+    to: '/TeamData',
+    icon: <BarChart />,
+    roles: ['user', 'admin', 'moderator'] as Role[],
+  },
+  {
+    label: 'Bingo Scores',
+    to: '/BingoScores',
+    icon: <EmojiEvents />,
+    roles: ['user', 'admin', 'moderator'] as Role[],
+  },
 ];
 
 const Home = () => {
@@ -108,14 +128,31 @@ const Home = () => {
         xOverflow: 'hidden',
       }}
     >
-      <Stack height={'100%'} justifyContent={'center'} spacing={3}>
-        <Typography variant="h1" fontSize={48}>
+      <Stack
+        spacing={3}
+        sx={{
+          height: '100%',
+          justifyContent: 'center',
+        }}
+      >
+        <Typography
+          variant="h1"
+          sx={{
+            fontSize: 48,
+          }}
+        >
           Welcome to Little Town!
         </Typography>
 
         {Gangs}
 
-        <Stack justifyContent={'space-evenly'} direction={'row'} spacing={2}>
+        <Stack
+          direction={'row'}
+          spacing={2}
+          sx={{
+            justifyContent: 'space-evenly',
+          }}
+        >
           {NavButtons}
         </Stack>
       </Stack>

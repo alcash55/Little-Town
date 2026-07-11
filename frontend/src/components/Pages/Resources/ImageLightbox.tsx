@@ -35,15 +35,25 @@ const ImageLightbox = ({ images, index, onClose, onIndexChange }: ImageLightboxP
         if (e.key === 'ArrowLeft' && hasMultiple) goPrev();
         if (e.key === 'ArrowRight' && hasMultiple) goNext();
       }}
-      PaperProps={{
-        sx: {
-          bgcolor: 'rgba(10,10,10,0.96)',
-          boxShadow: 'none',
-          overflow: 'hidden',
+      slotProps={{
+        paper: {
+          sx: {
+            bgcolor: 'rgba(10,10,10,0.96)',
+            boxShadow: 'none',
+            overflow: 'hidden',
+          },
         },
       }}
     >
-      <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 320 }}>
+      <Box
+        sx={{
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 320,
+        }}
+      >
         <IconButton
           aria-label="Close image preview"
           onClick={onClose}

@@ -14,15 +14,33 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { BingoPlayer, BingoTeam } from '../TeamDrafter/useTeamDrafter';
-import { selectSx, subtleBorder, textPrimary, textSecondary } from '../TeamDrafter/teamDrafterStyles';
+import {
+  selectSx,
+  subtleBorder,
+  textPrimary,
+  textSecondary,
+} from '../TeamDrafter/teamDrafterStyles';
+import { appColors } from '../../../../layout/Theme';
 import { BoardTile, PendingScreenshotSubmission } from './useScreenshotSubmission';
 
+// `timeZoneName: 'short'` appends an explicit zone abbreviation (e.g. "EST",
+// "GMT+1") — the admin team spans multiple timezones, so a bare local time
+// is ambiguous (Story: screenshot review follow-ups). `Intl.DateTimeFormat`
+// rejects `timeZoneName` combined with `dateStyle`/`timeStyle`, so this
+// spells out the equivalent individual components instead.
 const fmt = (iso: string) =>
-  new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  new Date(iso).toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  });
 
 const tileLabel = (tile: BoardTile) => `${tile.task} — ${tile.type}, ${tile.points}pts`;
 
@@ -90,54 +108,63 @@ export function ScreenshotCard({
   return (
     <Card sx={{ width: '100%', maxWidth: 380, display: 'flex', flexDirection: 'column' }}>
       {submission.imageUrl && !imgFailed ? (
-      <Box
-        component="a"
-        href={submission.imageUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={`Open full-size screenshot submitted by ${submission.submittedBy}`}
-        sx={{ position: 'relative', display: 'block', '&:hover .zoomHint': { opacity: 1 } }}
-      >
-        <CardMedia
-          component="img"
-          image={submission.imageUrl}
-          alt={`Screenshot submitted by ${submission.submittedBy}`}
-          loading="lazy"
-          onError={() => setImgFailed(true)}
-          sx={{ height: 200, objectFit: 'cover', bgcolor: 'rgba(255,255,255,0.04)' }}
-        />
         <Box
-          className="zoomHint"
+          component="a"
+          href={submission.imageUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Open full-size screenshot submitted by ${submission.submittedBy}`}
           sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            display: 'flex',
-            alignItems: 'center',
-            bgcolor: 'rgba(0,0,0,0.6)',
-            borderRadius: 1,
-            p: 0.5,
-            opacity: 0.7,
-            transition: 'opacity 0.15s',
+            position: 'relative',
+            display: 'block',
+            '&:hover .zoomHint': { opacity: 1 },
+            // Keyboard users tabbing to the link get the same zoom affordance
+            // hover-only users see, plus a visible focus ring (Story: screenshot
+            // review follow-ups — zoom hint didn't appear on keyboard focus).
+            '&:focus-visible .zoomHint': { opacity: 1 },
+            '&:focus-visible': { outline: `2px solid ${appColors.accent}`, outlineOffset: 2 },
           }}
         >
-          <OpenInNewIcon sx={{ fontSize: 16, color: textPrimary }} />
+          <CardMedia
+            component="img"
+            image={submission.imageUrl}
+            alt={`Screenshot submitted by ${submission.submittedBy}`}
+            loading="lazy"
+            onError={() => setImgFailed(true)}
+            sx={{ height: 200, objectFit: 'cover', bgcolor: 'rgba(255,255,255,0.04)' }}
+          />
+          <Box
+            className="zoomHint"
+            sx={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              display: 'flex',
+              alignItems: 'center',
+              bgcolor: 'rgba(0,0,0,0.6)',
+              borderRadius: 1,
+              p: 0.5,
+              opacity: 0.7,
+              transition: 'opacity 0.15s',
+            }}
+          >
+            <OpenInNewIcon sx={{ fontSize: 16, color: textPrimary }} />
+          </Box>
         </Box>
-      </Box>
       ) : (
-      <Box
-        sx={{
-          height: 200,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          bgcolor: 'rgba(255,255,255,0.04)',
-        }}
-      >
-        <Typography variant="caption" sx={{ color: textSecondary }}>
-          Image unavailable
-        </Typography>
-      </Box>
+        <Box
+          sx={{
+            height: 200,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: 'rgba(255,255,255,0.04)',
+          }}
+        >
+          <Typography variant="caption" sx={{ color: textSecondary }}>
+            Image unavailable
+          </Typography>
+        </Box>
       )}
 
       <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, flexGrow: 1 }}>
@@ -169,7 +196,7 @@ export function ScreenshotCard({
           </Select>
         </FormControl>
         {boardMissingTileIds && (
-          <Typography variant="caption" sx={{ color: '#f44336' }}>
+          <Typography variant="caption" sx={{ color: 'error.main' }}>
             No tile options available — the board endpoint isn&apos;t returning tile ids yet.
           </Typography>
         )}
@@ -230,7 +257,11 @@ export function ScreenshotCard({
           </Alert>
         )}
 
-        <Stack direction="row" spacing={1} sx={{ mt: 'auto', pt: 1, borderTop: `1px solid ${subtleBorder}` }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{ mt: 'auto', pt: 1, borderTop: `1px solid ${subtleBorder}` }}
+        >
           <Button
             variant="outlined"
             color="success"
@@ -256,7 +287,11 @@ export function ScreenshotCard({
             onClick={onDeny}
             sx={disabledOutlinedSx}
             startIcon={
-              isDenying ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : <HighlightOffIcon />
+              isDenying ? (
+                <CircularProgress size={16} sx={{ color: 'inherit' }} />
+              ) : (
+                <HighlightOffIcon />
+              )
             }
           >
             Deny

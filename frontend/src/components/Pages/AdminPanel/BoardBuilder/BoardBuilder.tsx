@@ -20,7 +20,7 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
-import Grid from '@mui/material/Unstable_Grid2';
+import Grid from '@mui/material/Grid';
 import { useBoardBuilder, Tile } from './useBoardBuilder';
 import Close from '@mui/icons-material/Close';
 import Edit from '@mui/icons-material/Edit';
@@ -34,11 +34,7 @@ import {
   useSensors,
   DragEndEvent,
 } from '@dnd-kit/core';
-import {
-  SortableContext,
-  rectSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
+import { SortableContext, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 // Sortable tile card
@@ -53,7 +49,9 @@ const SortableTileCard = ({
   onRemove: () => void;
   onEdit: () => void;
 }) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: idx });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: idx,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -66,16 +64,37 @@ const SortableTileCard = ({
     <Grid
       ref={setNodeRef}
       style={style}
-      xs={12} sm={6} md={4} lg={3}
-      width="220px"
-      height="200px"
-      sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+      sx={{
+        width: '220px',
+        height: '200px',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+      size={{
+        xs: 12,
+        sm: 6,
+        md: 4,
+        lg: 3,
+      }}
     >
-      <Card sx={{ width: '100%', height: '100%', backgroundImage: 'linear-gradient(to bottom, #2A9D8F, rgba(13, 13, 13, 0.86))', cursor: 'default' }}>
+      <Card
+        sx={{
+          width: '100%',
+          height: '100%',
+          backgroundImage: 'linear-gradient(to bottom, #2A9D8F, rgba(13, 13, 13, 0.86))',
+          cursor: 'default',
+        }}
+      >
         <CardHeader
           title={tile.task}
           avatar={
-            <IconButton size="small" {...listeners} {...attributes} sx={{ cursor: 'grab', color: 'black', touchAction: 'none' }}>
+            <IconButton
+              size="small"
+              {...listeners}
+              {...attributes}
+              sx={{ cursor: 'grab', color: 'black', touchAction: 'none' }}
+            >
               <DragIndicator />
             </IconButton>
           }
@@ -100,8 +119,8 @@ const SortableTileCard = ({
               {tile.type === 'Kill Count'
                 ? `Kill ${tile.killCount}`
                 : tile.type === 'Experience'
-                  ? `Gain ${tile.experience} xp`
-                  : `Get ${tile.dropsAmount} ${tile.task}s`}
+                ? `Gain ${tile.experience} xp`
+                : `Get ${tile.dropsAmount} ${tile.task}s`}
             </Typography>
           </Stack>
         </CardContent>
@@ -113,20 +132,40 @@ const SortableTileCard = ({
 const BoardBuilder = () => {
   const {
     tilesTypeOptions,
-    tileType, setTileType,
-    tileTask, setTileTask,
-    tilePoints, setTilePoints,
-    tileKillCount, setTileKillCount,
-    tileExperience, setTileExperience,
-    tileDropsAmount, setTileDropsAmount,
-    activities, skills, items, loading,
-    board, boardSize,
+    tileType,
+    setTileType,
+    tileTask,
+    setTileTask,
+    tilePoints,
+    setTilePoints,
+    tileKillCount,
+    setTileKillCount,
+    tileExperience,
+    setTileExperience,
+    tileDropsAmount,
+    setTileDropsAmount,
+    activities,
+    skills,
+    items,
+    loading,
+    board,
+    boardSize,
     submitted,
     submitError,
-    isTileValid, isBoardComplete, isExistingBoard,
-    addTile, removeTile, reorderTiles,
-    editingTile, startEditingTile, updateEditingTile, saveEditingTile, cancelEditingTile,
-    clearTileForm, clearBoard, submitBoard,
+    isTileValid,
+    isBoardComplete,
+    isExistingBoard,
+    addTile,
+    removeTile,
+    reorderTiles,
+    editingTile,
+    startEditingTile,
+    updateEditingTile,
+    saveEditingTile,
+    cancelEditingTile,
+    clearTileForm,
+    clearBoard,
+    submitBoard,
   } = useBoardBuilder();
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -148,7 +187,15 @@ const BoardBuilder = () => {
       submitted={submitted}
       successMessage={isExistingBoard ? 'Board updated!' : 'Board created!'}
     >
-      <Stack spacing={3} justifyContent="center" alignItems="center" sx={{ maxWidth: 500, width: '100%' }}>
+      <Stack
+        spacing={3}
+        sx={{
+          justifyContent: 'center',
+          alignItems: 'center',
+          maxWidth: 500,
+          width: '100%',
+        }}
+      >
         <FormControl variant="outlined" sx={{ m: 1, minWidth: 120, width: '100%' }} required>
           <InputLabel id="tile-type-select-label">Tile Type</InputLabel>
           <Select
@@ -184,14 +231,18 @@ const BoardBuilder = () => {
               <TextField
                 {...params}
                 label="Boss / Monster / Mini Game"
-                InputProps={{
-                  ...params.InputProps,
-                  endAdornment: (
-                    <>
-                      {loading && <CircularProgress sx={{ color: '#2A9D8F' }} size={20} />}
-                      {params.InputProps.endAdornment}
-                    </>
-                  ),
+                slotProps={{
+                  ...params.slotProps,
+
+                  input: {
+                    ...params.slotProps.input,
+                    endAdornment: (
+                      <>
+                        {loading && <CircularProgress sx={{ color: '#2A9D8F' }} size={20} />}
+                        {params.slotProps.input.endAdornment}
+                      </>
+                    ),
+                  },
                 }}
               />
             )}
@@ -210,14 +261,18 @@ const BoardBuilder = () => {
               <TextField
                 {...params}
                 label="Skill"
-                InputProps={{
-                  ...params.InputProps,
-                  endAdornment: (
-                    <>
-                      {loading && <CircularProgress sx={{ color: '#2A9D8F' }} size={20} />}
-                      {params.InputProps.endAdornment}
-                    </>
-                  ),
+                slotProps={{
+                  ...params.slotProps,
+
+                  input: {
+                    ...params.slotProps.input,
+                    endAdornment: (
+                      <>
+                        {loading && <CircularProgress sx={{ color: '#2A9D8F' }} size={20} />}
+                        {params.slotProps.input.endAdornment}
+                      </>
+                    ),
+                  },
                 }}
               />
             )}
@@ -236,14 +291,18 @@ const BoardBuilder = () => {
               <TextField
                 {...params}
                 label="Item Name"
-                InputProps={{
-                  ...params.InputProps,
-                  endAdornment: (
-                    <>
-                      {loading && <CircularProgress sx={{ color: '#2A9D8F' }} size={20} />}
-                      {params.InputProps.endAdornment}
-                    </>
-                  ),
+                slotProps={{
+                  ...params.slotProps,
+
+                  input: {
+                    ...params.slotProps.input,
+                    endAdornment: (
+                      <>
+                        {loading && <CircularProgress sx={{ color: '#2A9D8F' }} size={20} />}
+                        {params.slotProps.input.endAdornment}
+                      </>
+                    ),
+                  },
                 }}
               />
             )}
@@ -293,7 +352,13 @@ const BoardBuilder = () => {
           />
         )}
 
-        <Stack spacing={2} direction="row" width="100%">
+        <Stack
+          spacing={2}
+          direction="row"
+          sx={{
+            width: '100%',
+          }}
+        >
           <Button
             variant="outlined"
             color="success"
@@ -303,12 +368,7 @@ const BoardBuilder = () => {
           >
             Add Tile
           </Button>
-          <Button
-            variant="outlined"
-            color="error"
-            onClick={clearTileForm}
-            sx={{ width: '50%' }}
-          >
+          <Button variant="outlined" color="error" onClick={clearTileForm} sx={{ width: '50%' }}>
             Clear
           </Button>
         </Stack>
@@ -318,7 +378,12 @@ const BoardBuilder = () => {
         </Typography>
 
         {isBoardComplete && (
-          <Button variant="outlined" color={isExistingBoard ? 'info' : 'success'} onClick={submitBoard} fullWidth>
+          <Button
+            variant="outlined"
+            color={isExistingBoard ? 'info' : 'success'}
+            onClick={submitBoard}
+            fullWidth
+          >
             {isExistingBoard ? 'Update Board' : 'Submit Board'}
           </Button>
         )}
@@ -329,11 +394,10 @@ const BoardBuilder = () => {
           </Button>
         )}
       </Stack>
-
       <Box sx={{ width: '100%', boxSizing: 'border-box', pb: 8 }}>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={board.map((_, i) => i)} strategy={rectSortingStrategy}>
-            <Grid container spacing={2} width="100%" sx={{ p: 0 }}>
+            <Grid container spacing={2} sx={{ width: '100%', p: 0 }}>
               {board.map((tile, idx) => (
                 <SortableTileCard
                   key={idx}
@@ -347,7 +411,6 @@ const BoardBuilder = () => {
           </SortableContext>
         </DndContext>
       </Box>
-
       {/* Inline edit dialog */}
       <Dialog open={!!editingTile} onClose={cancelEditingTile} maxWidth="xs" fullWidth>
         <DialogTitle>Edit Tile</DialogTitle>
@@ -391,15 +454,21 @@ const BoardBuilder = () => {
                   type="number"
                   fullWidth
                   value={(editingTile.tile as any).dropsAmount}
-                  onChange={(e) => updateEditingTile({ dropsAmount: Number(e.target.value) } as any)}
+                  onChange={(e) =>
+                    updateEditingTile({ dropsAmount: Number(e.target.value) } as any)
+                  }
                 />
               )}
             </Stack>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={cancelEditingTile} color="error">Cancel</Button>
-          <Button onClick={saveEditingTile} color="success" variant="outlined">Save</Button>
+          <Button onClick={cancelEditingTile} color="error">
+            Cancel
+          </Button>
+          <Button onClick={saveEditingTile} color="success" variant="outlined">
+            Save
+          </Button>
         </DialogActions>
       </Dialog>
     </PageLayout>
