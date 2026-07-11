@@ -66,7 +66,13 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
             alignItems: 'center',
           }}
         >
-          <Typography variant={'h1'} fontSize={24} sx={{ color: 'white' }}>
+          <Typography
+            variant={'h1'}
+            sx={{
+              fontSize: 24,
+              color: 'white',
+            }}
+          >
             Little Town
           </Typography>
           <IconButton
@@ -201,12 +207,14 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
       anchor={'left'}
       open={openSidebar}
       onClose={closeSideBar}
-      PaperProps={{
-        sx: {
-          width: drawerWidth,
-          overflowX: 'hidden',
-          overflowY: 'hidden',
-          bgcolor: darkTheme.palette.secondary.main,
+      slotProps={{
+        paper: {
+          sx: {
+            width: drawerWidth,
+            overflowX: 'hidden',
+            overflowY: 'hidden',
+            bgcolor: darkTheme.palette.secondary.main,
+          },
         },
       }}
     >

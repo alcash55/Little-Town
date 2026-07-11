@@ -29,7 +29,16 @@ interface Props {
   onSubmit?: (username: string, password: string, rememberMe: boolean) => void | Promise<void>;
 }
 
-const LoginModal = ({ open, onClose, isSubmitting = false, errorMessage, sessionExpired, savedUsername = '', rememberMe: initialRememberMe = false, onSubmit }: Props) => {
+const LoginModal = ({
+  open,
+  onClose,
+  isSubmitting = false,
+  errorMessage,
+  sessionExpired,
+  savedUsername = '',
+  rememberMe: initialRememberMe = false,
+  onSubmit,
+}: Props) => {
   const [username, setUsername] = useState(savedUsername);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -48,17 +57,20 @@ const LoginModal = ({ open, onClose, isSubmitting = false, errorMessage, session
       fullWidth
       disableScrollLock
       keepMounted
-      PaperProps={{
-        sx: (theme) => ({
-          bgcolor: theme.palette.secondary.main,
-          border: `1px solid ${theme.palette.primary.main}`,
-          color: 'white',
-          borderRadius: 2,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-        }),
-      }}
-      BackdropProps={{
-        sx: { backgroundColor: 'rgba(0,0,0,0.7)' },
+      slotProps={{
+        backdrop: {
+          sx: { backgroundColor: 'rgba(0,0,0,0.7)' },
+        },
+
+        paper: {
+          sx: (theme) => ({
+            bgcolor: theme.palette.secondary.main,
+            border: `1px solid ${theme.palette.primary.main}`,
+            color: 'white',
+            borderRadius: 2,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+          }),
+        },
       }}
     >
       <DialogTitle>
@@ -67,9 +79,25 @@ const LoginModal = ({ open, onClose, isSubmitting = false, errorMessage, session
         </Typography>
       </DialogTitle>
       <DialogContent>
-        <Box component="form" onSubmit={handleSubmit} display="flex" flexDirection="column" gap={2}>
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+          }}
+        >
           {sessionExpired && (
-            <Alert severity="warning" variant="outlined" sx={{ color: 'warning.light', borderColor: 'warning.light', '& .MuiAlert-icon': { color: 'warning.light' } }}>
+            <Alert
+              severity="warning"
+              variant="outlined"
+              sx={{
+                color: 'warning.light',
+                borderColor: 'warning.light',
+                '& .MuiAlert-icon': { color: 'warning.light' },
+              }}
+            >
               Your session has expired. Please log in again.
             </Alert>
           )}
@@ -82,12 +110,6 @@ const LoginModal = ({ open, onClose, isSubmitting = false, errorMessage, session
             fullWidth
             size="small"
             autoFocus
-            InputLabelProps={{
-              sx: {
-                color: 'rgba(255,255,255,0.7)',
-                '&.Mui-focused': { color: 'rgba(255,255,255,0.85)' },
-              },
-            }}
             sx={{
               '& .MuiOutlinedInput-root': {
                 color: 'white',
@@ -95,6 +117,14 @@ const LoginModal = ({ open, onClose, isSubmitting = false, errorMessage, session
                 '& fieldset': { borderColor: '#424242' },
                 '&:hover fieldset': { borderColor: '#5a5a5a' },
                 '&.Mui-focused fieldset': { borderColor: '#7a7a7a' },
+              },
+            }}
+            slotProps={{
+              inputLabel: {
+                sx: {
+                  color: 'rgba(255,255,255,0.7)',
+                  '&.Mui-focused': { color: 'rgba(255,255,255,0.85)' },
+                },
               },
             }}
           />
@@ -106,27 +136,6 @@ const LoginModal = ({ open, onClose, isSubmitting = false, errorMessage, session
             onChange={(e) => setPassword(e.target.value)}
             fullWidth
             size="small"
-            InputLabelProps={{
-              sx: {
-                color: 'rgba(255,255,255,0.7)',
-                '&.Mui-focused': { color: 'rgba(255,255,255,0.85)' },
-              },
-            }}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    onClick={() => setShowPassword((v) => !v)}
-                    edge="end"
-                    size="small"
-                    sx={{ color: 'rgba(255,255,255,0.5)', '&:hover': { color: 'white' } }}
-                  >
-                    {showPassword ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
             sx={{
               '& .MuiOutlinedInput-root': {
                 color: 'white',
@@ -134,6 +143,34 @@ const LoginModal = ({ open, onClose, isSubmitting = false, errorMessage, session
                 '& fieldset': { borderColor: '#424242' },
                 '&:hover fieldset': { borderColor: '#5a5a5a' },
                 '&.Mui-focused fieldset': { borderColor: '#7a7a7a' },
+              },
+            }}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      onClick={() => setShowPassword((v) => !v)}
+                      edge="end"
+                      size="small"
+                      sx={{ color: 'rgba(255,255,255,0.5)', '&:hover': { color: 'white' } }}
+                    >
+                      {showPassword ? (
+                        <VisibilityOffIcon fontSize="small" />
+                      ) : (
+                        <VisibilityIcon fontSize="small" />
+                      )}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+
+              inputLabel: {
+                sx: {
+                  color: 'rgba(255,255,255,0.7)',
+                  '&.Mui-focused': { color: 'rgba(255,255,255,0.85)' },
+                },
               },
             }}
           />
@@ -162,7 +199,14 @@ const LoginModal = ({ open, onClose, isSubmitting = false, errorMessage, session
               {errorMessage}
             </Typography>
           ) : null}
-          <Box display="flex" justifyContent="flex-end" gap={1} mt={1}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: 1,
+              mt: 1,
+            }}
+          >
             <Button onClick={onClose} color="inherit" disabled={isSubmitting}>
               Cancel
             </Button>
@@ -170,7 +214,11 @@ const LoginModal = ({ open, onClose, isSubmitting = false, errorMessage, session
               type="submit"
               variant="contained"
               disabled={isSubmitting}
-              startIcon={isSubmitting ? <CircularProgress size={16} sx={{ color: 'rgba(255,255,255,0.7)' }} /> : null}
+              startIcon={
+                isSubmitting ? (
+                  <CircularProgress size={16} sx={{ color: 'rgba(255,255,255,0.7)' }} />
+                ) : null
+              }
               sx={{
                 bgcolor: (theme) => theme.palette.primary.main,
                 color: 'white',

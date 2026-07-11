@@ -20,16 +20,10 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import { BingoPlayer, BingoTeam, SideAccount } from './useTeamDrafter';
-import {
-  mutedText,
-  selectSx,
-  tableCellSx,
-  textPrimary,
-  textSecondary,
-} from './teamDrafterStyles';
+import { mutedText, selectSx, tableCellSx, textPrimary, textSecondary } from './teamDrafterStyles';
 
 export type TrackedPlayersListProps = {
   players: BingoPlayer[];
@@ -108,7 +102,13 @@ function SideAccountsCell({ sideAccounts }: { sideAccounts: SideAccount[] }) {
   }
 
   return (
-    <Stack direction="row" flexWrap="wrap" gap={0.5}>
+    <Stack
+      direction="row"
+      sx={{
+        flexWrap: 'wrap',
+        gap: 0.5,
+      }}
+    >
       {sideAccounts.map((sa) => (
         <Chip
           key={sa.id}
@@ -138,7 +138,13 @@ function PlayerActions({
   onOpenSideAccountDialog: (player: BingoPlayer) => void;
 }) {
   return (
-    <Stack direction="row" spacing={0.5} justifyContent={{ xs: 'flex-start', md: 'center' }}>
+    <Stack
+      direction="row"
+      spacing={0.5}
+      sx={{
+        justifyContent: { xs: 'flex-start', md: 'center' },
+      }}
+    >
       <Tooltip title="Add side account">
         <IconButton
           size="small"
@@ -204,8 +210,19 @@ function MobilePlayerCard({
       }}
     >
       <CardContent sx={{ '&:last-child': { pb: 2 } }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" gap={1} mb={1.5}>
-          <Typography variant="subtitle1" sx={{ color: textPrimary, fontWeight: 600, wordBreak: 'break-word' }}>
+        <Stack
+          direction="row"
+          sx={{
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: 1,
+            mb: 1.5,
+          }}
+        >
+          <Typography
+            variant="subtitle1"
+            sx={{ color: textPrimary, fontWeight: 600, wordBreak: 'break-word' }}
+          >
             {player.rsn}
           </Typography>
           <PlayerActions
@@ -273,7 +290,12 @@ export function TrackedPlayersList({
 
   if (isMobile) {
     return (
-      <Stack spacing={1.5} width="100%">
+      <Stack
+        spacing={1.5}
+        sx={{
+          width: '100%',
+        }}
+      >
         {players.map((player) => (
           <MobilePlayerCard
             key={player.id}
