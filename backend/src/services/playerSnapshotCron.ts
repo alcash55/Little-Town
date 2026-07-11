@@ -4,6 +4,7 @@ import { activateBingoWithSnapshots, HISCORE_CONCURRENCY } from "./bingoActivati
 import { mapWithConcurrency } from "../lib/concurrency.js";
 import { hiscores } from "./hiscores.js";
 import { checkRsnChange } from "./rsnChangeDetection.js";
+import { snapshotAllSideAccounts } from "./sideAccountSnapshots.js";
 
 const INTERVAL_MS = 20 * 60 * 1000; // 20 minutes
 
@@ -11,9 +12,18 @@ let cronTimer: ReturnType<typeof setTimeout> | null = null;
 let stopped = false;
 
 /**
- * Fetches the latest hiscores for every player in the active bingo
- * and saves them as 'current' snapshots. Called by the cron and by
- * the manual "Refresh Stats" button via the admin API.
+ * Fetches the latest hiscores for every player in the active bingo (and, as
+ * a separate capped phase, every one of their side accounts) and saves them
+ * as 'current' snapshots. Called by the cron and by the manual "Refresh
+ * Stats" button via the admin API.
+ *
+ * Side accounts only ever get a 'current' refresh here, never 'start' —
+ * same as main accounts, whose 'start' snapshot is only ever taken once, at
+ * registration or activation (see services/sideAccountSnapshots.ts and
+ * services/bingoActivation.ts). A side account added after activation with
+ * no 'start' snapshot yet won't get one from the cron; it needs a manual
+ * retake (POST /bingo/:bingoId/retake-start-snapshots) or a future
+ * dedicated action — known limitation, not in this pass's scope.
  */
 export async function refreshAllPlayerSnapshots(): Promise<{
   succeeded: number;
@@ -47,9 +57,23 @@ export async function refreshAllPlayerSnapshots(): Promise<{
 
   const succeeded = results.filter((r) => r.status === "fulfilled").length;
 
+  // Separate phase, strictly after the main-account pass above (see
+  // sideAccountSnapshots.ts for why this keeps peak in-flight OSRS requests
+  // capped at HISCORE_CONCURRENCY rather than doubling it). A failed side
+  // lookup never affects `succeeded`/`failed` above.
+  const sideResults = await snapshotAllSideAccounts(players, ["current"]);
+  const sideFailed = sideResults.filter((r) => !r.ok);
+
   console.log(
-    `[playerSnapshotCron] Refreshed ${succeeded} player(s)${failed.length ? `; ${failed.length} failed` : ""}.`,
+    `[playerSnapshotCron] Refreshed ${succeeded} player(s)${failed.length ? `; ${failed.length} failed` : ""}` +
+      `${sideResults.length ? `; ${sideResults.length - sideFailed.length}/${sideResults.length} side account(s) refreshed` : ""}.`,
   );
+  if (sideFailed.length) {
+    console.warn(
+      `[playerSnapshotCron] ${sideFailed.length} side-account snapshot(s) failed: ` +
+        sideFailed.map((r) => `"${r.rsn}"`).join(", "),
+    );
+  }
 
   return { succeeded, failed };
 }
