@@ -57,7 +57,12 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
     <Box sx={{ flexGrow: 1 }}>
       <AppBar position="static" sx={{ bgcolor: darkTheme.palette.secondary.main }}>
         <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box display="flex" gap={2}>
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 2,
+            }}
+          >
             <IconButton
               aria-label="Toggle Sidebar"
               size="large"
@@ -76,26 +81,34 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
               component={'a'}
               variant="h1"
               tabIndex={0}
+              noWrap
               sx={{
+                fontSize: 18,
+
                 '&:hover': {
                   transform: 'scale(1.1)',
                   animationName: 'hover',
                 },
+
                 width: '100px',
                 height: '44px',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
               }}
-              noWrap
-              fontSize={18}
             >
               Little Town
             </Typography>
           </Box>
 
           {user ? (
-            <Box display="flex" alignItems="center" gap={1}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
               <IconButton
                 size="large"
                 aria-label="User menu"
@@ -120,11 +133,13 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
                 onClose={handleMenuClose}
-                PaperProps={{
-                  sx: {
-                    bgcolor: darkTheme.palette.secondary.main,
-                    border: `1px solid ${darkTheme.palette.primary.main}`,
-                    color: 'white',
+                slotProps={{
+                  paper: {
+                    sx: {
+                      bgcolor: darkTheme.palette.secondary.main,
+                      border: `1px solid ${darkTheme.palette.primary.main}`,
+                      color: 'white',
+                    },
                   },
                 }}
               >

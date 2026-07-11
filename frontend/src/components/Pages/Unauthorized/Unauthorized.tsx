@@ -21,18 +21,28 @@ const Unauthorized = () => {
       <Box sx={{ color: darkTheme.palette.text.secondary, fontSize: 64 }}>
         <LockOutlined fontSize="inherit" />
       </Box>
-      <Typography variant="body1" sx={{ textAlign: 'center', color: darkTheme.palette.text.secondary }}>
+      <Typography
+        variant="body1"
+        sx={{ textAlign: 'center', color: darkTheme.palette.text.secondary }}
+      >
         {isForbidden
           ? "You don't have permission to view this page."
           : 'You need to log in to access this page.'}
       </Typography>
-      <Stack direction="row" spacing={2} justifyContent="center" alignItems="center">
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
         {!user ? (
           <Button variant="outlined" color="success" onClick={openLogin}>
             Log In
           </Button>
         ) : null}
-        <Button variant="outlined" color='success' onClick={() => navigate('/')}>
+        <Button variant="outlined" color="success" onClick={() => navigate('/')}>
           Go Home
         </Button>
       </Stack>
