@@ -16,7 +16,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import { darkTheme } from '../../../../layout/Theme/theme';
 import { BingoPlayer, SideAccount } from './useTeamDrafter';
 import {
@@ -63,12 +63,13 @@ export function SideAccountsDialog({
       onClose={onClose}
       maxWidth="sm"
       fullWidth
-      PaperProps={{ sx: { backgroundColor: darkTheme.palette.primary.main, color: textPrimary } }}
+      slotProps={{
+        paper: { sx: { backgroundColor: darkTheme.palette.primary.main, color: textPrimary } },
+      }}
     >
       <DialogTitle sx={{ fontFamily: "'pacifico', cursive", color: textPrimary }}>
         Side Accounts - {player.rsn}
       </DialogTitle>
-
       <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.12)' }}>
         {sideAccountError && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -145,7 +146,6 @@ export function SideAccountsDialog({
           </Table>
         )}
       </DialogContent>
-
       <DialogActions sx={{ borderTop: '1px solid rgba(255,255,255,0.12)' }}>
         <Button
           variant="outlined"

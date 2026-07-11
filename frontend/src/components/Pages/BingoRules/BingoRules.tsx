@@ -25,10 +25,19 @@ const BingoRules = () => {
       >
         <img src={daRules} alt="bingo rules" width="10%" height="auto" />
       </Box>
-
-      <Stack spacing={4} width="100%">
+      <Stack
+        spacing={4}
+        sx={{
+          width: '100%',
+        }}
+      >
         <Stack spacing={2}>
-          <Typography variant="h1" fontSize={48}>
+          <Typography
+            variant="h1"
+            sx={{
+              fontSize: 48,
+            }}
+          >
             Objective
           </Typography>
           <List sx={{ listStyleType: 'disc', pl: 4 }}>
@@ -42,7 +51,12 @@ const BingoRules = () => {
           </List>
         </Stack>
         <Stack spacing={2}>
-          <Typography variant="h1" fontSize={48}>
+          <Typography
+            variant="h1"
+            sx={{
+              fontSize: 48,
+            }}
+          >
             Setup
           </Typography>
           <List sx={{ listStyleType: 'disc', pl: 4 }}>
@@ -88,10 +102,12 @@ const BingoRules = () => {
                     screenshots:{' '}
                     <Stack
                       spacing={2}
-                      justifyContent="center"
-                      width="100%"
-                      alignItems="center"
-                      sx={{ py: 2 }}
+                      sx={{
+                        justifyContent: 'center',
+                        width: '100%',
+                        alignItems: 'center',
+                        py: 2,
+                      }}
                     >
                       <img
                         src={untradeableLootNotifications}
@@ -114,7 +130,12 @@ const BingoRules = () => {
         </Stack>
 
         <Stack spacing={1}>
-          <Typography variant="h1" fontSize={48}>
+          <Typography
+            variant="h1"
+            sx={{
+              fontSize: 48,
+            }}
+          >
             Screenshots
           </Typography>
           <List sx={{ listStyleType: 'disc', pl: 4 }}>
@@ -200,7 +221,12 @@ const BingoRules = () => {
           </List>
         </Stack>
         <Stack spacing={1}>
-          <Typography variant="h1" fontSize={48}>
+          <Typography
+            variant="h1"
+            sx={{
+              fontSize: 48,
+            }}
+          >
             Tie Breakers
           </Typography>
           <List sx={{ listStyleType: 'disc', pl: 4 }}>

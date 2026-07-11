@@ -4,7 +4,7 @@ import { SidebarProvider } from '../../components/AppShell/InternalComponent/Sid
 import { AppShell } from '../../components/AppShell/AppShell';
 import { LoadingContainer } from '../../components/LoadingContainer/LoadingContainer';
 import { LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LoginModalProvider } from '../../components/LoginModal/useLoginModal';
 
 export function Providers() {
