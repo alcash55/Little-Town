@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://alcash55.github.io/Little-Town/",
+  "homepage": "https://littletown.gay/",
   "scripts": {
     "dev": "bunx --bun vite",
     "build": "tsc && vite build --mode production",
