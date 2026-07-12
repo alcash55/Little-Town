@@ -68,6 +68,7 @@
 # Action items (Alex) — unblock the shipped pipeline
 
 - [x] Apply the two Sprint 5 migrations to the hosted prod Supabase project (`faqivcgrhrvuwpistivp`): `20260711000000_hiscore_conflict_history.sql` then `20260711143000_rsn_change_log.sql` — *applied by Alex 2026-07-12; verified live: both tables, both triggers, deny-all policies, both functions, 12 backfilled history rows. Same caveat as the 2026-07-08 batch: remote migration history won't know these versions, so `supabase migration repair` before any future CLI `db push`.*
+- [ ] Apply `20260712000000_rsn_change_log_wom.sql` to prod (same SQL-editor route) — adds `new_rsn`/`resolution`/`side_account_id` to `rsn_change_log` for the WOM auto-rename feature. After applying, ask Claude to reload the PostgREST schema cache. First cron tick after deploy should auto-rename "Tzhaar Chud" → "DogGirlAlly" — watch the logs.
 
 - [x] ~~Reset the Supabase DB password and run `db push` for~~ the three pending prod migrations (audit fixes, service-role grants, screenshot submissions) — *applied 2026-07-08 via the Supabase management API instead; password reset not needed. Verified live: new columns, indexes, 4 RPCs, private `screenshots` bucket. Note: remote migration history recorded auto-timestamped versions, so a future CLI `db push` would still see the local files as unapplied — `supabase migration repair` first if that route is ever used.*
 - [x] Create the Discord bot and set `DISCORD_BOT_TOKEN` + `DISCORD_SCREENSHOT_CHANNEL_ID` in `backend/.env` — *done 2026-07-08; Bingo-Bot#9861 logs in.*
