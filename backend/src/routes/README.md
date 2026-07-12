@@ -37,3 +37,18 @@ OSRS hiscores routes at `/api/hiscores`:
 - `GET /skills/list` — scrape the RuneScape wiki for the current list of skills
 - `GET /activities/list` — scrape the RuneScape wiki for the current list of activities
 - `PUT /:player` — refresh hiscore data for a player (requires `protect`)
+
+### `invites.ts`
+Admin invite links (Sprint 6, Track A item 1). Exports two routers, both mounted in `index.ts`
+**before** `adminRoutes` — see the mount-order comment there:
+- `adminInviteRoutes` at `/api/admin/invites` (`protect` + `authorize("admin")`): `POST /`, `GET /`,
+  `DELETE /:id`
+- `publicInviteRoutes` at `/api/invites` (no auth — this IS the pre-auth flow, rate-limited in
+  `index.ts` like login): `GET /:token` (validate), `POST /:token/accept` (create the account and
+  log the new user in)
+
+### `adminUsers.ts`
+`GET /api/admin/users` — the impersonation-target picker (Sprint 6, Track A item 2). A separate
+router (not folded into `admin.ts`) so it can use `authorizeReal("admin")` instead of `authorize`,
+staying reachable by an admin who is currently impersonating someone else. Mounted before
+`adminRoutes` for the same reason as `invites.ts`.
