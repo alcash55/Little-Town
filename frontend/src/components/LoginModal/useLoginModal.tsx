@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LoadingContainer } from '../LoadingContainer/LoadingContainer';
+import { clearImpersonationTarget } from '../../utils/impersonation';
 
 type LoginModalContextValue = {
   openLogin: () => void;
@@ -110,6 +111,7 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
 
       const path = (e as CustomEvent<{ returnTo: string }>).detail?.returnTo ?? null;
       localStorage.removeItem('authToken');
+      clearImpersonationTarget();
       setUser(null);
       returnToRef.current = path;
       setSessionExpired(true);
@@ -190,6 +192,10 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
 
   const logout = useCallback(() => {
     localStorage.removeItem('authToken');
+    // Override survives a refresh but never a logout (TEAM-BRIEF.md Track C
+    // item 1) — clear it before the auth state flips so no further request
+    // can go out carrying a stale X-Impersonate-User-Id.
+    clearImpersonationTarget();
     setUser(null);
 
     // Trigger global auth state update

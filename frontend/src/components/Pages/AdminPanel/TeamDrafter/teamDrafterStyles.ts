@@ -1,9 +1,15 @@
 import { darkTheme } from '../../../../layout/Theme/theme';
+import { appColors } from '../../../../layout/Theme/appColors';
 
-export const textPrimary = '#fff';
-export const textSecondary = 'rgba(255,255,255,0.72)';
-export const mutedText = 'rgba(255,255,255,0.52)';
-export const subtleBorder = 'rgba(255,255,255,0.23)';
+// Sprint 6: these used to be page-local copies of the same design tokens
+// layout/Theme/appColors.ts defines app-wide — re-exported from there now so
+// there's a single source of truth. Kept as named exports (rather than
+// switching every consumer to `appColors.*` directly) to avoid a mechanical
+// rename across the ~17 files that import these.
+export const textPrimary = appColors.textPrimary;
+export const textSecondary = appColors.textSecondary;
+export const mutedText = appColors.mutedText;
+export const subtleBorder = appColors.cardBorder;
 
 /** Mirrors useBingoDetails inputSx */
 export const inputSx = {
