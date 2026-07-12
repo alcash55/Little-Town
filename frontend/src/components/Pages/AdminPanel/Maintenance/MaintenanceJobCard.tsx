@@ -1,5 +1,6 @@
-import { Alert, Button, Card, CardContent, CircularProgress, Typography } from '@mui/material';
+import { Alert, Button, Card, CardContent, CircularProgress, Tooltip, Typography } from '@mui/material';
 import SyncIcon from '@mui/icons-material/Sync';
+import { appColors } from '../../../../layout/Theme';
 import { textPrimary, textSecondary } from '../TeamDrafter/teamDrafterStyles';
 import { MaintenanceJob, MaintenanceJobResult } from './useMaintenance';
 
@@ -21,9 +22,21 @@ export type MaintenanceJobCardProps = {
   result?: MaintenanceJobResult;
   onRun: () => void;
   onDismissResult: () => void;
+  /** Set when the job can't be run right now (e.g. no active bingo) — the
+   * button stays disabled and the reason shows on hover/focus. */
+  disabledReason?: string;
 };
 
-export function MaintenanceJobCard({ job, running, result, onRun, onDismissResult }: MaintenanceJobCardProps) {
+export function MaintenanceJobCard({
+  job,
+  running,
+  result,
+  onRun,
+  onDismissResult,
+  disabledReason,
+}: MaintenanceJobCardProps) {
+  const isDisabled = running || !!disabledReason;
+
   return (
     <Card sx={{ width: '100%', maxWidth: 420, display: 'flex', flexDirection: 'column' }}>
       <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, flexGrow: 1 }}>
@@ -34,24 +47,27 @@ export function MaintenanceJobCard({ job, running, result, onRun, onDismissResul
           {job.description}
         </Typography>
 
-        <Button
-          variant="outlined"
-          disabled={running}
-          onClick={onRun}
-          aria-busy={running}
-          startIcon={
-            running ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : <SyncIcon />
-          }
-          sx={{
-            alignSelf: 'flex-start',
-            color: '#2A9D8F',
-            borderColor: '#2A9D8F',
-            '&:hover': { borderColor: '#2A9D8F', bgcolor: 'rgba(42,157,143,0.08)' },
-            ...disabledOutlinedSx,
-          }}
-        >
-          {running ? 'Running…' : 'Run'}
-        </Button>
+        <Tooltip title={disabledReason ?? ''} disableHoverListener={!disabledReason} arrow>
+          <span style={{ alignSelf: 'flex-start' }}>
+            <Button
+              variant="outlined"
+              disabled={isDisabled}
+              onClick={onRun}
+              aria-busy={running}
+              startIcon={
+                running ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : <SyncIcon />
+              }
+              sx={{
+                color: appColors.accent,
+                borderColor: appColors.accent,
+                '&:hover': { borderColor: appColors.accent, bgcolor: 'rgba(42,157,143,0.08)' },
+                ...disabledOutlinedSx,
+              }}
+            >
+              {running ? 'Running…' : 'Run'}
+            </Button>
+          </span>
+        </Tooltip>
 
         {result && (
           <Alert severity={result.status === 'success' ? 'success' : 'error'} onClose={onDismissResult}>
