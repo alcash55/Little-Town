@@ -827,13 +827,6 @@
               "images": [
                 "slayer-general-pvm/alchemical-hydra-sound-effect-ids-to-mute.png"
               ]
-            },
-            {
-              "id": "slayer-general-pvm-hunter-task-block-reference",
-              "title": "Hunter task block reference",
-              "images": [
-                "slayer-general-pvm/hunter-task-block-reference.png"
-              ]
             }
           ]
         }
@@ -864,6 +857,13 @@
               ]
             },
             {
+              "id": "skilling-utility-hunter-task-block-reference",
+              "title": "Hunter task block reference",
+              "images": [
+                "skilling-utility/hunter-task-block-reference.png"
+              ]
+            },
+            {
               "id": "skilling-utility-these-plugins-makes-zmi-afk-osrs-runecrafting-easy",
               "title": "These Plugins Makes ZMI AFK - OSRS Runecrafting EASY",
               "images": [
@@ -873,6 +873,17 @@
                 {
                   "label": "YouTube",
                   "url": "https://www.youtube.com/watch?v=ahPL_wk6xzU&t=201s",
+                  "kind": "youtube"
+                }
+              ]
+            },
+            {
+              "id": "skilling-utility-black-jacking",
+              "title": "Zero mouse moving black jacking",
+              "links": [
+                {
+                  "label": "YouTube",
+                  "url": "https://www.youtube.com/shorts/xkdwSXI2Twc?feature=share",
                   "kind": "youtube"
                 }
               ]
