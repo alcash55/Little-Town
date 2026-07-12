@@ -14,11 +14,6 @@ import {
   DialogTitle,
   Divider,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   TextField,
   Tooltip,
   Typography,
@@ -30,16 +25,54 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import StarIcon from '@mui/icons-material/Star';
 import SyncIcon from '@mui/icons-material/Sync';
+import PeopleIcon from '@mui/icons-material/People';
+import GridViewIcon from '@mui/icons-material/GridView';
+import PaidIcon from '@mui/icons-material/Paid';
+import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
+import GppMaybeIcon from '@mui/icons-material/GppMaybe';
 import PageLayout from '../../../../layout/PageLayout/PageLayout';
+import { appColors } from '../../../../layout/Theme';
 import { Countdown } from '../../../Countdown/Countdown';
 import { useBingoOverview } from './useBingoOverview';
 import { BingoTeam, BingoPlayer } from '../TeamDrafter/useTeamDrafter';
 import { Tile } from '../BoardBuilder/useBoardBuilder';
+import { StatTile } from './StatTile';
+import { TeamPointsChart } from './TeamPointsChart';
+import { BoardProgressGauge } from './BoardProgressGauge';
+import { PlayerStatsTable } from './PlayerStatsTable';
+import { DependencyHealthSection } from './DependencyHealthSection';
+import { ConflictsSection } from './ConflictsSection';
 
 const fmt = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 
-// ─── Info Row ────────────────────────────────────────────────────────────────
+// ─── Section wrapper ───────────────────────────────────────────────────────
+const Section = ({
+  icon,
+  title,
+  action,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) => (
+  <Card sx={{ width: '100%' }}>
+    <CardHeader
+      avatar={<Box sx={{ color: appColors.accent, display: 'flex' }}>{icon}</Box>}
+      title={
+        <Typography variant="h3" sx={{ fontSize: 18 }}>
+          {title}
+        </Typography>
+      }
+      action={action}
+    />
+    <CardContent sx={{ pt: 0 }}>{children}</CardContent>
+  </Card>
+);
+
+// ─── Info Row (Planned view) ────────────────────────────────────────────────
 const InfoRow = ({
   icon,
   label,
@@ -49,14 +82,8 @@ const InfoRow = ({
   label: string;
   value: string;
 }) => (
-  <Stack
-    direction="row"
-    spacing={1.5}
-    sx={{
-      alignItems: 'center',
-    }}
-  >
-    <Box sx={{ color: '#2A9D8F', display: 'flex' }}>{icon}</Box>
+  <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+    <Box sx={{ color: appColors.accent, display: 'flex' }}>{icon}</Box>
     <Typography variant="body2" sx={{ minWidth: 110 }}>
       {label}
     </Typography>
@@ -66,30 +93,7 @@ const InfoRow = ({
   </Stack>
 );
 
-// ─── Stat Card ───────────────────────────────────────────────────────────────
-const StatCard = ({
-  label,
-  value,
-  sub,
-}: {
-  label: string;
-  value: string | number;
-  sub?: string;
-}) => (
-  <Card sx={{ flex: 1, minWidth: 130 }}>
-    <CardContent sx={{ pb: '12px !important' }}>
-      <Typography variant="body2" sx={{ mb: 0.5 }}>
-        {label}
-      </Typography>
-      <Typography variant="h5" sx={{ fontFamily: "'pacifico', cursive" }}>
-        {value}
-      </Typography>
-      {sub && <Typography variant="caption">{sub}</Typography>}
-    </CardContent>
-  </Card>
-);
-
-// ─── Team Roster ─────────────────────────────────────────────────────────────
+// ─── Team Roster (Planned view) ─────────────────────────────────────────────
 const TeamRoster = ({ teams, players }: { teams: BingoTeam[]; players: BingoPlayer[] }) => {
   if (teams.length === 0) return <Typography variant="body2">No teams assigned yet.</Typography>;
   return (
@@ -118,14 +122,7 @@ const TeamRoster = ({ teams, players }: { teams: BingoTeam[]; players: BingoPlay
                   {members.map((p) => {
                     const isCaptain = p.captain_team_id === team.id;
                     return (
-                      <Stack
-                        key={p.rsn}
-                        direction="row"
-                        spacing={0.75}
-                        sx={{
-                          alignItems: 'center',
-                        }}
-                      >
+                      <Stack key={p.rsn} direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
                         {isCaptain && (
                           <Tooltip title="Captain">
                             <StarIcon sx={{ fontSize: 13, color: '#FFD700' }} />
@@ -133,10 +130,7 @@ const TeamRoster = ({ teams, players }: { teams: BingoTeam[]; players: BingoPlay
                         )}
                         <Typography
                           variant="body2"
-                          sx={{
-                            // color: isCaptain ? textPrimary : textSecondary,
-                            fontWeight: isCaptain ? 600 : 400,
-                          }}
+                          sx={{ fontWeight: isCaptain ? 600 : 400 }}
                         >
                           {p.rsn}
                         </Typography>
@@ -153,7 +147,7 @@ const TeamRoster = ({ teams, players }: { teams: BingoTeam[]; players: BingoPlay
   );
 };
 
-// ─── Compact Board ───────────────────────────────────────────────────────────
+// ─── Compact Board (Planned view) ───────────────────────────────────────────
 const tileObjective = (tile: Tile): string => {
   if (tile.type === 'Kill Count') return `Kill ${tile.killCount}×`;
   if (tile.type === 'Experience') return `${tile.experience.toLocaleString()} xp`;
@@ -189,7 +183,7 @@ const CompactBoard = ({ tiles, boardSize }: { tiles: Tile[]; boardSize: number }
         >
           <Box
             sx={{
-              background: 'linear-gradient(135deg, #2A9D8F 0%, rgba(13,13,13,0.86) 100%)',
+              background: `linear-gradient(135deg, ${appColors.accent} 0%, rgba(13,13,13,0.86) 100%)`,
               borderRadius: 1,
               p: 0.75,
               cursor: 'default',
@@ -203,7 +197,6 @@ const CompactBoard = ({ tiles, boardSize }: { tiles: Tile[]; boardSize: number }
             <Typography
               variant="caption"
               sx={{
-                // color: textPrimary,
                 fontSize: 10,
                 fontWeight: 600,
                 lineHeight: 1.2,
@@ -234,9 +227,12 @@ const BingoOverview = () => {
     playerStats,
     playerStatsError,
     pendingScreenshots,
+    health,
+    healthError,
+    conflicts,
+    conflictsError,
     loading,
     error,
-    isActive,
     isPlanned,
     startingNow,
     startError,
@@ -270,7 +266,7 @@ const BingoOverview = () => {
   if (loading) {
     return (
       <PageLayout title="Bingo Overview" align="center">
-        <CircularProgress sx={{ color: '#2A9D8F' }} />
+        <CircularProgress sx={{ color: appColors.accent }} />
       </PageLayout>
     );
   }
@@ -296,6 +292,8 @@ const BingoOverview = () => {
     bingo.boardSize === 16 ? '4×4' : bingo.boardSize === 35 ? '5×5' : `${bingo.boardSize} tiles`;
   const totalPoints = playerStats.reduce((sum, p) => sum + p.totalPoints, 0);
   const tilesCompleted = playerStats.reduce((sum, p) => sum + p.tilesCompleted, 0);
+  const pointsPossible = board.reduce((sum, t) => sum + t.points, 0);
+  const staleCount = playerStats.filter((p) => p.rsnStale).length;
 
   // ── Planned (pre-start) view ─────────────────────────────────────────────
   if (isPlanned) {
@@ -324,7 +322,7 @@ const BingoOverview = () => {
                 }}
               />
             }
-            subheaderTypographyProps={{ py: 1.5 }}
+            slotProps={{ subheader: { sx: { py: 1.5 } } }}
           />
 
           <CardContent>
@@ -350,7 +348,7 @@ const BingoOverview = () => {
 
         <Card sx={{ width: '100%' }}>
           <CardHeader
-            avatar={<GroupsIcon sx={{ color: '#2A9D8F' }} />}
+            avatar={<GroupsIcon sx={{ color: appColors.accent }} />}
             title={
               <Typography variant="h3" sx={{ fontSize: 18 }}>
                 Teams
@@ -364,7 +362,7 @@ const BingoOverview = () => {
 
         <Card sx={{ width: '100%' }}>
           <CardHeader
-            avatar={<EmojiEventsIcon sx={{ color: '#2A9D8F' }} />}
+            avatar={<EmojiEventsIcon sx={{ color: appColors.accent }} />}
             title={
               <Typography variant="h3" sx={{ fontSize: 18 }}>
                 Planned Board
@@ -428,109 +426,66 @@ const BingoOverview = () => {
           review
         </Alert>
       )}
+      {/* ── RSN-stale alert ── */}
+      {staleCount > 0 && (
+        <Alert severity="warning" icon={<GppMaybeIcon />} sx={{ width: '100%' }}>
+          {staleCount} player{staleCount > 1 ? 's have' : ' has'} an RSN that may have changed —
+          see the flagged rows in Player Stats below.
+        </Alert>
+      )}
       {/* ── Player stats load failure (distinct from the fatal page error above) ── */}
       {playerStatsError && (
         <Alert severity="warning" sx={{ width: '100%' }}>
           {playerStatsError}
         </Alert>
       )}
-      {/* ── Summary stat cards ── */}
+
+      {/* ── Summary stat tiles (KPI row) ── */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, width: '100%' }}>
-        <StatCard label="Bingo" value={bingo.name} />
-        <StatCard label="Ends" value={fmt(bingo.endDate)} />
-        <StatCard label="Tiles Completed" value={tilesCompleted} />
-        <StatCard label="Total Points Scored" value={totalPoints} />
-        <StatCard label="Players" value={players.length} />
+        <StatTile icon={<EmojiEventsIcon />} label="Bingo" value={bingo.name} sub={fmt(bingo.endDate)} />
+        <StatTile icon={<PaidIcon />} label="Total Points Scored" value={totalPoints.toLocaleString()} />
+        <StatTile icon={<GridViewIcon />} label="Tiles Completed" value={tilesCompleted} />
+        <StatTile icon={<PeopleIcon />} label="Players" value={players.length} />
       </Box>
+
+      {/* ── Team standings: points chart + board progress meter ── */}
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 2,
+          width: '100%',
+          '& > *': { flex: '1 1 380px', minWidth: 300 },
+        }}
+      >
+        <Section icon={<EmojiEventsIcon />} title="Points by Team">
+          <TeamPointsChart playerStats={playerStats} />
+        </Section>
+        <Section icon={<GridViewIcon />} title="Board Progress">
+          <BoardProgressGauge pointsScored={totalPoints} pointsPossible={pointsPossible} />
+        </Section>
+      </Box>
+
+      {/* ── Dependency health ── */}
+      <Section icon={<MonitorHeartIcon />} title="Dependency Health">
+        <DependencyHealthSection health={health} healthError={healthError} />
+      </Section>
+
+      {/* ── Side-account conflicts ── */}
+      <Section icon={<GppMaybeIcon />} title="Side-Account Conflicts">
+        <ConflictsSection conflicts={conflicts} conflictsError={conflictsError} />
+      </Section>
+
       {/* ── Player stats table ── */}
-      <Card sx={{ width: '100%' }}>
-        <CardHeader
-          title={
-            <Typography variant="h3" sx={{ fontSize: 18 }}>
-              Player Stats
-            </Typography>
-          }
-        />
-        <CardContent sx={{ p: 0 }}>
-          {playerStats.length === 0 ? (
-            <Typography sx={{ p: 2 }}>No player data yet.</Typography>
-          ) : (
-            <Box sx={{ overflowX: 'auto' }}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    {['Player', 'Team', 'Tiles', 'Points', 'Last Seen', 'Side Accounts'].map(
-                      (h) => (
-                        <TableCell
-                          key={h}
-                          sx={{ fontWeight: 600, fontSize: 12, textTransform: 'uppercase' }}
-                        >
-                          {h}
-                        </TableCell>
-                      ),
-                    )}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {playerStats.map((p) => (
-                    <TableRow key={p.rsn}>
-                      <TableCell>
-                        <Typography variant="body2">{p.rsn}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">{p.teamName}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">{p.tilesCompleted}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">{p.totalPoints}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">{fmt(p.lastSeen)}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        {p.sideAccounts.length > 0 ? (
-                          <Stack
-                            direction="row"
-                            spacing={0.5}
-                            sx={{
-                              flexWrap: 'wrap',
-                            }}
-                          >
-                            {p.sideAccounts.map((acc) => (
-                              <Chip
-                                key={acc}
-                                label={acc}
-                                size="small"
-                                sx={{ bgcolor: 'rgba(255,255,255,0.08)' }}
-                              />
-                            ))}
-                          </Stack>
-                        ) : (
-                          <Typography variant="body2">—</Typography>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Box>
-          )}
-        </CardContent>
-      </Card>
+      <Section icon={<PeopleIcon />} title="Player Stats">
+        <PlayerStatsTable playerStats={playerStats} />
+      </Section>
+
       {/* ── Time remaining ── */}
       <Card sx={{ width: '100%' }}>
         <CardContent>
-          <Stack
-            direction="row"
-            spacing={1}
-            sx={{
-              alignItems: 'center',
-              mb: 2,
-            }}
-          >
-            <AccessTimeIcon sx={{ color: '#2A9D8F' }} />
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 2 }}>
+            <AccessTimeIcon sx={{ color: appColors.accent }} />
             <Typography variant="h3" sx={{ fontSize: 18 }}>
               Time Remaining
             </Typography>
@@ -538,14 +493,9 @@ const BingoOverview = () => {
           <Countdown targetDate={endDateObj} label="" />
         </CardContent>
       </Card>
+
       {/* ── End bingo button ── */}
-      <Stack
-        direction="row"
-        spacing={2}
-        sx={{
-          alignSelf: 'flex-end',
-        }}
-      >
+      <Stack direction="row" spacing={2} sx={{ alignSelf: 'flex-end' }}>
         <Button
           variant="outlined"
           disabled={refreshingStats}
@@ -558,9 +508,9 @@ const BingoOverview = () => {
           }
           onClick={refreshAllStats}
           sx={{
-            color: '#2A9D8F',
-            borderColor: '#2A9D8F',
-            '&:hover': { borderColor: '#2A9D8F', bgcolor: 'rgba(42,157,143,0.08)' },
+            color: appColors.accent,
+            borderColor: appColors.accent,
+            '&:hover': { borderColor: appColors.accent, bgcolor: 'rgba(42,157,143,0.08)' },
           }}
         >
           {refreshingStats ? 'Refreshing…' : 'Refresh Player Stats'}
@@ -569,6 +519,7 @@ const BingoOverview = () => {
           End Bingo Early
         </Button>
       </Stack>
+
       {/* ── End bingo confirmation dialog ── */}
       <Dialog
         open={endDialogOpen}
@@ -583,7 +534,7 @@ const BingoOverview = () => {
             sx: {
               backgroundColor: '#1a1a1a',
               backgroundImage: 'none',
-              border: '1px solid rgba(255,255,255,0.12)',
+              border: `1px solid ${appColors.subtleBorder}`,
             },
           },
         }}
