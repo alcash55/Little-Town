@@ -39,16 +39,20 @@ export async function refreshAllPlayerSnapshots(): Promise<{
 
   const results = await mapWithConcurrency(players, HISCORE_CONCURRENCY, async (player) => {
     const data = await hiscores(player.rsn);
-    // RSN-change detection (TEAM-BRIEF.md Track A item 1) — logs loudly and
-    // records rsn_change_log when a previously-resolving RSN 404s; clears
-    // the flag if it resolves again. Detection only, never an auto-rename.
-    await checkRsnChange(player, Boolean(data), "cron");
-    if (!data) {
+    // RSN-change detection (TEAM-BRIEF.md Track A item 1 + Sprint 6's WOM
+    // auto-rename) — logs loudly and records rsn_change_log when a
+    // previously-resolving RSN 404s. If Wise Old Man confirms an approved
+    // rename that resolves on the hiscores, bingo_players.rsn is updated and
+    // the returned hiscoreData lets this tick's snapshot proceed under the
+    // new name immediately, instead of waiting for the next tick.
+    const rsnCheck = await checkRsnChange(player, Boolean(data), "cron");
+    const effectiveData = data ?? rsnCheck.hiscoreData ?? null;
+    if (!effectiveData) {
       console.warn(`[playerSnapshotCron] Skipping "${player.rsn}" — not on hiscores (unranked).`);
       throw new Error(`Player "${player.rsn}" is not ranked on the OSRS hiscores`);
     }
-    await savePlayerSnapshot(player.id, "current", data);
-    return player.rsn;
+    await savePlayerSnapshot(player.id, "current", effectiveData);
+    return rsnCheck.renamed ? rsnCheck.newRsn! : player.rsn;
   });
 
   const failed = results
@@ -61,7 +65,7 @@ export async function refreshAllPlayerSnapshots(): Promise<{
   // sideAccountSnapshots.ts for why this keeps peak in-flight OSRS requests
   // capped at HISCORE_CONCURRENCY rather than doubling it). A failed side
   // lookup never affects `succeeded`/`failed` above.
-  const sideResults = await snapshotAllSideAccounts(players, ["current"]);
+  const sideResults = await snapshotAllSideAccounts(players, ["current"], "cron");
   const sideFailed = sideResults.filter((r) => !r.ok);
 
   console.log(
