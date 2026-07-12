@@ -117,3 +117,25 @@ export const screenshotApprovalSchema = z.object({
   teamId: z.string().min(1, "Team ID is required"),
   playerId: z.string().min(1).optional(),
 });
+
+// -------------------------------------------------------
+// Invites (POST /admin/invites, POST /invites/:token/accept)
+// -------------------------------------------------------
+
+export const inviteCreateSchema = z.object({
+  role: z.enum(["user", "admin", "moderator"]).optional(),
+  expiresInHours: z.number().int().positive().optional(),
+});
+
+export const inviteAcceptSchema = z.object({
+  username: z
+    .string()
+    .min(3, "Username must be at least 3 characters")
+    .max(32, "Username must be 32 characters or fewer")
+    .regex(
+      /^[a-zA-Z0-9_.-]+$/,
+      "Username may only contain letters, numbers, underscores, periods, and hyphens",
+    ),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  nickname: z.string().min(1).max(50).optional(),
+});
