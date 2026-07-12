@@ -7,7 +7,7 @@ to edit it — hand-edit the JSON directly and drop images into
 
 The original Discord export (`resources.md` + `resourcesMedia/`, previously
 at the repo root) was a one-time source used to generate the first version
-of this file via `scripts/build-resources.ts`, then deleted. Don't recreate
+of this file via `tools/build-resources.ts`, then deleted. Don't recreate
 it as the live data source — this JSON file is what the frontend reads and
 what Alex should keep editing.
 
@@ -82,7 +82,7 @@ resolves image paths via `import.meta.glob`) directly.
 
 ## Re-running the transformer
 
-`scripts/build-resources.ts` (repo root) is kept as a repeatable transformer
+`tools/build-resources.ts` (repo root) is kept as a repeatable transformer
 in case a future Discord re-dump needs processing the same way (parses a
 `resources.md` + `resourcesMedia/` export at the repo root into this
 contract). It is **not** part of the day-to-day edit workflow — running it
