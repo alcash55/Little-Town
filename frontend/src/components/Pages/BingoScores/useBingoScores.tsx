@@ -30,6 +30,13 @@ export const useBingoScores = () => {
     try {
       const res = await fetchWithAuth(`${BASE_URL}/team-xp-history`);
       if (!res.ok) {
+        // 404 = "no active bingo found" (see backend/src/routes/bingo.ts) —
+        // a real, documented state rather than a failure, and one the empty
+        // state below already covers ("Once the bingo is active…").
+        if (res.status === 404) {
+          setTeams([]);
+          return;
+        }
         throw new Error(`Failed to load team XP history (${res.status}).`);
       }
       const json: { teams?: TeamXpHistory[] } = await res.json();
