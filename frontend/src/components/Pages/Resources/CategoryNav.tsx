@@ -28,7 +28,13 @@ const CategoryNav = ({ groupedCategories, selectedCategoryId, onSelect }: Catego
         p: 1,
         width: { xs: '100%', sm: 240 },
         flexShrink: 0,
-        maxHeight: { sm: '100%' },
+        // Stays put while the content column scrolls, so the category list is
+        // always reachable — stacked/non-sticky on xs, where it's already a
+        // horizontal strip above the content instead of a side rail.
+        position: { xs: 'static', sm: 'sticky' },
+        top: { sm: 0 },
+        zIndex: 1,
+        maxHeight: { sm: 'calc(100dvh - 128px)' },
       }}
     >
       {groupedCategories.map(({ group, categories }) => (
