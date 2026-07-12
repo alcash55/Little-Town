@@ -1,6 +1,7 @@
 import { getSideAccounts, savePlayerSnapshot, type BingoPlayer } from "../db/players.js";
 import { mapWithConcurrency, HISCORE_CONCURRENCY } from "../lib/concurrency.js";
 import { hiscores } from "./hiscores.js";
+import { checkSideAccountRsnChange, RsnChangeSource } from "./rsnChangeDetection.js";
 import type { SideAccount } from "../types/index.js";
 
 // -------------------------------------------------------
@@ -16,6 +17,12 @@ import type { SideAccount } from "../types/index.js";
 // .sql), so simply writing side-account snapshot rows here is enough —
 // history and conflict detection follow automatically with no further
 // application code.
+//
+// Sprint 6: side accounts now go through the same RSN-change detection +
+// Wise Old Man auto-rename flow as primary accounts
+// (services/rsnChangeDetection.ts's checkSideAccountRsnChange), backed by
+// rsn_change_log's nullable side_account_id column
+// (20260712000000_rsn_change_log_wom.sql).
 // -------------------------------------------------------
 
 export interface SideSnapshotResult {
@@ -33,26 +40,27 @@ export interface SideSnapshotResult {
  * this as a separate best-effort phase), so every outcome is reported via
  * the returned `ok`/`error` instead of a rejection.
  *
- * RSN-change detection (checkRsnChange / rsn_change_log) intentionally does
- * NOT run here: rsn_change_log.player_id is a NOT NULL FK to
- * bingo_players.id with no side_account_id column, so a side account's own
- * id can't be logged there without a schema change (out of scope for this
- * pass — flagged for a future sprint rather than bolted on). A stale side
- * RSN is only surfaced via this console.warn today, not the rsnStale flag.
+ * Runs RSN-change detection (checkSideAccountRsnChange) on a 404: logs an
+ * unresolved rsn_change_log row keyed by side_account_id, attempts a Wise
+ * Old Man auto-rename same as primary accounts, and if confirmed, updates
+ * bingo_player_side_accounts.rsn and proceeds with the already-fetched
+ * hiscore data for the new name so this tick's snapshot isn't lost.
  */
 async function snapshotOneSideAccount(
   playerId: string,
   sideAccount: SideAccount,
   types: Array<"start" | "current">,
+  source: RsnChangeSource,
 ): Promise<SideSnapshotResult> {
   const base = { playerId, sideAccountId: sideAccount.id, rsn: sideAccount.rsn };
   try {
     const data = await hiscores(sideAccount.rsn);
-    if (!data) {
+    const rsnCheck = await checkSideAccountRsnChange(sideAccount, Boolean(data), source);
+    const effectiveData = data ?? rsnCheck.hiscoreData ?? null;
+    if (!effectiveData) {
       console.warn(
         `[sideAccountSnapshots] Side account "${sideAccount.rsn}" (of player ${playerId}) is not ranked ` +
-          "on the OSRS hiscores — skipping its snapshot. NOT logged to rsn_change_log: that table is keyed " +
-          "to bingo_players.id only and has no side-account support yet.",
+          "on the OSRS hiscores and no confirmed Wise Old Man rename resolved it — skipping its snapshot.",
       );
       return {
         ...base,
@@ -61,9 +69,10 @@ async function snapshotOneSideAccount(
       };
     }
     for (const type of types) {
-      await savePlayerSnapshot(playerId, type, data, sideAccount.id);
+      await savePlayerSnapshot(playerId, type, effectiveData, sideAccount.id);
     }
-    return { ...base, ok: true };
+    const effectiveRsn = rsnCheck.renamed ? rsnCheck.newRsn! : sideAccount.rsn;
+    return { ...base, rsn: effectiveRsn, ok: true };
   } catch (e) {
     console.error(`[sideAccountSnapshots] Failed to snapshot side account "${sideAccount.rsn}":`, e);
     return { ...base, ok: false, error: e instanceof Error ? e.message : String(e) };
@@ -90,6 +99,7 @@ async function snapshotOneSideAccount(
 export async function snapshotAllSideAccounts(
   players: Pick<BingoPlayer, "id">[],
   types: Array<"start" | "current">,
+  source: RsnChangeSource,
 ): Promise<SideSnapshotResult[]> {
   if (!players.length) return [];
 
@@ -103,7 +113,7 @@ export async function snapshotAllSideAccounts(
   if (!tasks.length) return [];
 
   const settled = await mapWithConcurrency(tasks, HISCORE_CONCURRENCY, ({ playerId, sideAccount }) =>
-    snapshotOneSideAccount(playerId, sideAccount, types),
+    snapshotOneSideAccount(playerId, sideAccount, types, source),
   );
 
   // snapshotOneSideAccount never throws, so every entry is fulfilled — this
