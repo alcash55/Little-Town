@@ -6,6 +6,7 @@ import { getActiveBingo, getActiveBingoBoard } from "../db/bingos.js";
 import { getAllPlayerSnapshots } from "../db/players.js";
 import { buildDropStatusByRsn, DropSubmissionAttribution } from "../db/bingoSubmissions.js";
 import { getBingoConflicts } from "../db/conflicts.js";
+import { getTeamXpHistory } from "../db/teamXpHistory.js";
 import { getDb } from "../db/client.js";
 
 const router = Router();
@@ -283,6 +284,30 @@ router.get(
         })),
       },
     });
+  }),
+);
+
+/**
+ * GET /api/bingo/team-xp-history
+ *
+ * Feeds the BingoScores line chart (TEAM-BRIEF.md Sprint 6, Track A item
+ * 3). Same auth level as the other bingo read endpoints on this router
+ * (any logged-in role, via the router-level `protect` above — no extra
+ * `authorize`). Frozen contract: a bare `{ teams: [...] }`, matching the
+ * `/:bingoId/conflicts` bare-object convention below rather than the usual
+ * ApiResponse envelope. Bucketing rules are documented in
+ * src/db/teamXpHistory.ts.
+ */
+router.get(
+  "/team-xp-history",
+  asyncHandler(async (req: Request, res: Response) => {
+    const bingo = await getActiveBingo();
+    if (!bingo?.id) {
+      return res.status(404).json({ success: false, error: "No active bingo found" });
+    }
+
+    const teams = await getTeamXpHistory(bingo.id, bingo.teamObjects ?? []);
+    res.status(200).json({ teams });
   }),
 );
 

@@ -1,8 +1,8 @@
 
 # Epics (Alex)
 
-- Create Admin page for sending or generating links to onboard new users
--   Create onboarding wizard for first time users
+- [ ] Create Admin page for sending or generating links to onboard new users
+- [ ] Create onboarding wizard for first time users
 - [x] Start the bingo submission page, have it pull images from the bucket that is in supabase or cloudflare *(shipped 2026-07-07 — admin review page pulls signed URLs from the private Supabase bucket; needs Discord credentials + prod migrations to go live, see action items)*
   - [x] Create an API that uses the discord api that pulls messages from a text channel in the littletown discord and POSTs them to the storage bucket
   - [x] If an admin approves the screenshot is will react to the image with a thumbs up and then add the points to that teams board and related stats
@@ -21,6 +21,14 @@
 - [x] Supabase issues on all tables: Detects cases where row level security (RLS) has been enabled on a table but no RLS policies have been created *(fixed 2026-07-09, Sprint 3 — explicit deny-all policies for anon/authenticated on all 10 public tables, applied to prod)*
 - [x] The team drafter and the cron jobs for updating stats needs to go in depth a little more. One thing they both do not check is if the user changed their runescape name. We only check that at the beggining of adding a user the team drafter/bingo after that they could change it many times over and we would never know. If the cron job finds a user who did change their name is should log that as well. *(shipped 2026-07-12, Sprint 5 — every hiscore lookup for an already-registered player (cron, activation, admin refresh) now checks whether the RSN still resolves; misses land in the new `rsn_change_log` table (one unresolved row per player, auto-resolves if the RSN comes back) and surface as rsnStale warnings in the overview player table. Detection + logging only, never auto-rename. Side accounts only get a console warning — proper logging needs a schema change, on the Sprint 6 list.)* *(extended 2026-07-12, Sprint 6 — a 404 now also queries Wise Old Man for an approved rename, verifies the candidate name resolves on the hiscores, and if so auto-updates `bingo_players.rsn`/`bingo_player_side_accounts.rsn` and resumes the current tick's snapshot under the new name; rsn_change_log gets `new_rsn`/`resolution` + a `side_account_id` column so side accounts get the same detect→resolve treatment as primary accounts. WOM re-checks for a still-stale RSN are throttled to at most once/hour per subject (in-memory, process-local — documented tradeoff). See `services/rsnChangeDetection.ts`.)*
 - [x] warning in the chrome dev tools: You are loading @emotion/react when it is already loaded. Running multiple instances may cause problems. This can happen if multiple versions are used, or if multiple builds of the same version are used. *(addressed 2026-07-09, Sprint 3 — only one physical @emotion copy exists and the warning never reproduced across ~20 scenarios; added the standard `resolve.dedupe` guard to vite.config.ts. Reopen if it reappears.)*
+- [ ] The file structure should be updated:
+  - [ ] Little-Town\scripts should not be standing alone top level
+- [ ] There needs to be a way I can mock users
+  - [ ] Add a way to see the app from a users perspecitve without logging in as them, a simple dropdown of all my users so I can select one to override as in order to re-create errors or perform other tests, then when done I can clear the override
+
+- [ ] The bingo board needs to be usable
+  - [ ] Populate the board with the current board that has been made and set for the active bingo, if there is not a bingo active then there should be a message that says something like "Error, no active bingo"
+  - [ ] When logged in as a user I should be able to see that my team and ONLY my team has finished a tile on the bingo board page because it will have a green background to show completed
 
 # Next sprint — carried over from the July 2026 audit sprint
 
