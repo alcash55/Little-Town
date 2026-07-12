@@ -82,3 +82,33 @@ export async function findUserById(id: string): Promise<User | null> {
   if (error || !data) return null;
   return toUser(data as UserRow);
 }
+
+export interface UserListItem {
+  id: string;
+  label: string;
+  role: "user" | "admin" | "moderator";
+}
+
+/**
+ * All users, for the impersonation picker (GET /api/admin/users — TEAM-
+ * BRIEF.md Sprint 6, Track A item 2). `label` is nickname-or-username, the
+ * same display-name fallback the app bar already uses (see
+ * frontend/AppShell/.../Bar.tsx's getInitials) — RSN isn't usable here since
+ * bingo_players has no unique, reliable FK back to the user who owns the
+ * account (registered_by is whoever ran the registration call, usually an
+ * admin registering someone else, not a self-service link).
+ */
+export async function listUsers(): Promise<UserListItem[]> {
+  const { data, error } = await getDb()
+    .from("users")
+    .select("id, username, nickname, role")
+    .order("username", { ascending: true });
+
+  if (error) throw new Error(`Failed to list users: ${error.message}`);
+
+  return ((data ?? []) as Array<Pick<UserRow, "id" | "username" | "nickname" | "role">>).map((row) => ({
+    id: row.id,
+    label: row.nickname?.trim() || row.username,
+    role: row.role,
+  }));
+}
