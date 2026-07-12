@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ResourceCategory, ResourceItem, ResourceManifest, ResourceSection } from './types';
 import resourcesManifest from '../../../data/resources.json';
 
@@ -14,17 +15,41 @@ export interface FlatSearchResult {
 }
 
 /**
+ * Pulls the category id out of a router location hash (`#tob` -> `tob`),
+ * tolerating a missing hash or a malformed percent-encoding without
+ * throwing.
+ */
+const readHashCategoryId = (hash: string): string | null => {
+  const raw = hash.replace(/^#/, '');
+  if (!raw) return null;
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+};
+
+/**
  * Data source for the Resource Library.
  *
  * Resolves the real `frontend/src/data/resources.json` manifest (statically
  * imported, `resolveJsonModule` is on). Search, category grouping, and image
  * resolution all run off the same DATA CONTRACT shape.
+ *
+ * The selected category is tracked as `/Resources#<category-id>` (category
+ * ids are STABLE, see `frontend/src/data/README.md`) so refresh, deep links,
+ * and browser back/forward all resolve to the right category instead of
+ * always resetting to the first one. `location.hash` (from react-router's
+ * own subscription via `useLocation`) is the single source of truth —
+ * `selectedCategoryId` is derived from it on every render rather than kept
+ * as separate state, so there's nothing that can desync from the URL.
  */
 export function useResources() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [manifest, setManifest] = useState<ResourceManifest | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -36,8 +61,6 @@ export function useResources() {
       .then((data) => {
         if (cancelled) return;
         setManifest(data);
-        const firstId = [...data.categories].sort((a, b) => a.order - b.order)[0]?.id ?? null;
-        setSelectedCategoryId((current) => current ?? firstId);
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -55,6 +78,30 @@ export function useResources() {
   const categories = useMemo(
     () => (manifest ? [...manifest.categories].sort((a, b) => a.order - b.order) : []),
     [manifest],
+  );
+
+  const defaultCategoryId = categories[0]?.id ?? null;
+
+  // Unknown or absent hash falls back to the default (first) category.
+  const selectedCategoryId = useMemo(() => {
+    if (categories.length === 0) return null;
+    const hashId = readHashCategoryId(location.hash);
+    const isValid = hashId !== null && categories.some((category) => category.id === hashId);
+    return isValid ? hashId : defaultCategoryId;
+  }, [categories, defaultCategoryId, location.hash]);
+
+  const selectCategory = useCallback(
+    (categoryId: string) => {
+      // REPLACE (not push) so clicking through categories doesn't bury the
+      // back button under every stop along the way. This goes through the
+      // router's history wrapper (not a raw `location.hash =` assignment),
+      // so it won't trigger the browser's native anchor-jump scroll.
+      navigate(
+        { pathname: location.pathname, search: location.search, hash: categoryId },
+        { replace: true },
+      );
+    },
+    [navigate, location.pathname, location.search],
   );
 
   const groupedCategories = useMemo<CategoryGroupEntry[]>(() => {
@@ -105,7 +152,7 @@ export function useResources() {
     groupedCategories,
     selectedCategory,
     selectedCategoryId,
-    selectCategory: setSelectedCategoryId,
+    selectCategory,
     searchQuery,
     setSearchQuery,
     isSearching,
