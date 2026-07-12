@@ -67,7 +67,7 @@
 
 # Action items (Alex) — unblock the shipped pipeline
 
-- [ ] Apply the two Sprint 5 migrations to the hosted prod Supabase project (`faqivcgrhrvuwpistivp`): `20260711000000_hiscore_conflict_history.sql` then `20260711143000_rsn_change_log.sql` (both purely additive, tested from fresh local reset). Until then, any backend pointed at prod 500s on `/api/admin/bingo/player-stats` and the conflicts endpoint has no table. Use the dashboard SQL editor or the management-API route from 2026-07-08 — Claude's session was (correctly) permission-blocked from doing prod DDL itself.
+- [x] Apply the two Sprint 5 migrations to the hosted prod Supabase project (`faqivcgrhrvuwpistivp`): `20260711000000_hiscore_conflict_history.sql` then `20260711143000_rsn_change_log.sql` — *applied by Alex 2026-07-12; verified live: both tables, both triggers, deny-all policies, both functions, 12 backfilled history rows. Same caveat as the 2026-07-08 batch: remote migration history won't know these versions, so `supabase migration repair` before any future CLI `db push`.*
 
 - [x] ~~Reset the Supabase DB password and run `db push` for~~ the three pending prod migrations (audit fixes, service-role grants, screenshot submissions) — *applied 2026-07-08 via the Supabase management API instead; password reset not needed. Verified live: new columns, indexes, 4 RPCs, private `screenshots` bucket. Note: remote migration history recorded auto-timestamped versions, so a future CLI `db push` would still see the local files as unapplied — `supabase migration repair` first if that route is ever used.*
 - [x] Create the Discord bot and set `DISCORD_BOT_TOKEN` + `DISCORD_SCREENSHOT_CHANNEL_ID` in `backend/.env` — *done 2026-07-08; Bingo-Bot#9861 logs in.*
