@@ -5,7 +5,8 @@ import { useMaintenance } from './useMaintenance';
 import { MaintenanceJobCard } from './MaintenanceJobCard';
 
 const Maintenance = () => {
-  const { jobs, running, results, runJob, dismissResult } = useMaintenance();
+  const { jobs, running, results, runJob, dismissResult, activeBingoId, activeBingoLoading } =
+    useMaintenance();
 
   return (
     <PageLayout title="Maintenance" maxWidth="full">
@@ -18,16 +19,23 @@ const Maintenance = () => {
         aria-label="Maintenance jobs"
         sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, width: '100%' }}
       >
-        {jobs.map((job) => (
-          <MaintenanceJobCard
-            key={job.id}
-            job={job}
-            running={running[job.id]}
-            result={results[job.id]}
-            onRun={() => runJob(job)}
-            onDismissResult={() => dismissResult(job.id)}
-          />
-        ))}
+        {jobs.map((job) => {
+          const disabledReason =
+            job.requiresActiveBingo && !activeBingoLoading && !activeBingoId
+              ? 'No active bingo found — this job needs one to run against.'
+              : undefined;
+          return (
+            <MaintenanceJobCard
+              key={job.id}
+              job={job}
+              running={running[job.id]}
+              result={results[job.id]}
+              onRun={() => runJob(job)}
+              onDismissResult={() => dismissResult(job.id)}
+              disabledReason={disabledReason}
+            />
+          );
+        })}
       </Box>
     </PageLayout>
   );
