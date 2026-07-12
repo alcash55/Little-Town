@@ -108,6 +108,20 @@
                   "kind": "streamable"
                 }
               ]
+            },
+            {
+              "id": "tob-maiden-room-layout-reference-numbered-position-markers",
+              "title": "Maiden layout reference (numbered position markers)",
+              "images": [
+                "tob/maiden-room-layout-reference-numbered-position-markers.png"
+              ]
+            },
+            {
+              "id": "tob-for-tomatoes",
+              "title": "For tomatoes",
+              "images": [
+                "tob/for-tomatoes.png"
+              ]
             }
           ]
         },
@@ -196,7 +210,7 @@
           "items": [
             {
               "id": "toa-easier-baba-quick-set-up",
-              "title": "Easier Baba, quick set-up",
+              "title": "Easier Baba red X setup",
               "images": [
                 "toa/easier-baba-quick-set-up.jpg"
               ],
@@ -279,13 +293,6 @@
                 "kind": "tileMarkers",
                 "json": "[{\"regionId\":14131,\"regionX\":35,\"regionY\":35,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":35,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":36,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":39,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":38,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":37,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":35,\"regionY\":34,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":35,\"regionY\":33,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":35,\"regionY\":32,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":35,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":36,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":37,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":38,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":39,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":39,\"regionY\":32,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":39,\"regionY\":33,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":39,\"regionY\":34,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":39,\"regionY\":35,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":42,\"regionY\":27,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":42,\"regionY\":28,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":28,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":44,\"regionY\":28,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":45,\"regionY\":28,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":46,\"regionY\":28,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":28,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":27,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":26,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":25,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":24,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":23,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":22,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":46,\"regionY\":22,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":45,\"regionY\":22,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":44,\"regionY\":22,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":22,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":42,\"regionY\":22,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":42,\"regionY\":23,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":42,\"regionY\":24,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":42,\"regionY\":25,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":42,\"regionY\":26,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":52,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":52,\"regionY\":32,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":53,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":54,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":55,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":56,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":31,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":32,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":33,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":34,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":35,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":56,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":55,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":54,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":53,\"regionY\":36,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":52,\"regionY\":35,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":52,\"regionY\":34,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":52,\"regionY\":33,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":55,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":54,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":54,\"regionY\":19,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":54,\"regionY\":18,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":54,\"regionY\":17,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":54,\"regionY\":16,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":55,\"regionY\":16,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":56,\"regionY\":16,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":16,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":58,\"regionY\":16,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":59,\"regionY\":16,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":60,\"regionY\":16,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":60,\"regionY\":17,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":60,\"regionY\":18,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":60,\"regionY\":19,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":60,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":59,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":58,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":57,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":56,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":36,\"regionY\":17,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":35,\"regionY\":17,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":36,\"regionY\":18,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":34,\"regionY\":17,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":33,\"regionY\":17,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":32,\"regionY\":17,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":32,\"regionY\":18,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":36,\"regionY\":19,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":35,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":34,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":33,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":32,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":32,\"regionY\":19,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":14,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":15,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":44,\"regionY\":15,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":45,\"regionY\":15,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":15,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":48,\"regionY\":15,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":49,\"regionY\":15,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":49,\"regionY\":14,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":49,\"regionY\":13,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":49,\"regionY\":12,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":49,\"regionY\":11,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":49,\"regionY\":10,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":49,\"regionY\":9,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":48,\"regionY\":9,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":47,\"regionY\":9,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":46,\"regionY\":9,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":45,\"regionY\":9,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":44,\"regionY\":9,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":9,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":10,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":11,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":12,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":43,\"regionY\":13,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":52,\"regionY\":36,\"z\":0,\"color\":\"#7EE8D9D9\"},{\"regionId\":14131,\"regionX\":36,\"regionY\":20,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14131,\"regionX\":46,\"regionY\":15,\"z\":0,\"color\":\"#55EFDDDD\",\"label\":\"Tunnel\"},{\"regionId\":14387,\"regionX\":47,\"regionY\":2,\"z\":0,\"color\":\"#55EFDDDD\"},{\"regionId\":14387,\"regionX\":47,\"regionY\":3,\"z\":0,\"color\":\"#55EFDDDD\"}]"
               }
-            },
-            {
-              "id": "toa-toa-room-layout-reference-numbered-position-markers",
-              "title": "ToA room layout reference (numbered position markers)",
-              "images": [
-                "toa/toa-room-layout-reference-numbered-position-markers.png"
-              ]
             }
           ]
         },
@@ -317,6 +324,14 @@
               "title": "Raid level vs unique drop rate table",
               "images": [
                 "toa/raid-level-vs-unique-drop-rate-table.webp"
+              ]
+            },
+            {
+              "id": "toa-kephri-dps-chart",
+              "title": "Kephri DPS chart by HP threshold",
+              "description": "DPS for Osmumten's Fang, Ghrazi Rapier, Zamorakian Hasta, Keris Partisan (regular and blue-charged), and Shadow of Tumeken against Kephri, broken down at HP thresholds from 580 down to 0 (accounting for its shrinking hitbox/defence as it takes damage).",
+              "images": [
+                "toa/kephriDpsChart.jpg"
               ]
             }
           ]
@@ -502,24 +517,14 @@
               ]
             },
             {
-              "id": "colosseum-sol-simulation-fight-2-0",
-              "title": "Sol Simulation Fight 2.0",
-              "images": [
-                "colosseum/sol-simulation-fight-2-0.webp"
-              ],
+              "id": "colosseum-colosim",
+              "title": "Sol Simulation",
               "links": [
                 {
-                  "label": "play.gxc.gg",
-                  "url": "https://play.gxc.gg/game/8fd8cd5e-21c8-4f7c-96e8-81ab70428634/cover/14ef2738-ac79-4c4d-ada7-34cef63c764b/webp-640x360?8f49c400191a28455cea7f242c2a4c1a",
+                  "label": "Sol Sim",
+                  "url": "https://colosim.com/",
                   "kind": "other"
                 }
-              ]
-            },
-            {
-              "id": "colosseum-solid-simulation",
-              "title": "Solid simulation",
-              "images": [
-                "colosseum/solid-simulation.png"
               ]
             }
           ]
@@ -539,14 +544,11 @@
             },
             {
               "id": "colosseum-from-the-2007scape-community-on-reddit-colosseum-spawn-mecha",
-              "title": "From the 2007scape community on Reddit: Colosseum Spawn Mechanics +...",
-              "images": [
-                "colosseum/from-the-2007scape-community-on-reddit-colosseum-spawn-mecha.jpg"
-              ],
+              "title": "Colosseum Spawn Mechanics",
               "links": [
                 {
                   "label": "Reddit",
-                  "url": "https://share.redd.it/preview/post/1bka2f6",
+                  "url": "https://www.reddit.com/r/2007scape/comments/1bka2f6/colosseum_spawn_mechanics_spawn_fixing_method_by/?solution=a27152b874beac3ca27152b874beac3c&js_challenge=1&token=7afd7253fec22262ff1c52b1703fe9ec044e3a2b0910e791f64f0d278c0fde9e&jsc_orig_r=",
                   "kind": "other"
                 }
               ]
@@ -594,17 +596,6 @@
               ]
             },
             {
-              "id": "inferno-fight-caves-inferno-guide-image",
-              "title": "Inferno guide image",
-              "links": [
-                {
-                  "label": "Image source",
-                  "url": "https://i.imgur.com/M4uFt74.png",
-                  "kind": "imgur"
-                }
-              ]
-            },
-            {
               "id": "inferno-fight-caves-solving-inferno-waves-for-5-hours",
               "title": "Solving Inferno Waves for 5 Hours",
               "images": [
@@ -632,17 +623,20 @@
               ]
             },
             {
+              "id": "inferno-fight-caves-jad-attack-tell-reference",
+              "title": "Jad attack tell reference (Magic vs Ranged)",
+              "description": "Hand-drawn mnemonic for telling Jad's two ranged-style attacks apart on sight: the Magic attack (\"whoosh\", a fireball lobbed from its head) needs Protect from Magic, the Ranged attack (\"stomp\") needs Protect from Missiles.",
+              "images": [
+                "inferno-fight-caves/jad.png"
+              ]
+            },
+            {
               "id": "inferno-fight-caves-inferno-trainer",
               "title": "Inferno Trainer",
               "links": [
                 {
                   "label": "Trainer",
                   "url": "https://www.infernotrainer.com/?wave=69",
-                  "kind": "other"
-                },
-                {
-                  "label": "Reddit",
-                  "url": "https://external-preview.redd.it/0TfBnIgA1ujZh5HJoP9WcBvqDM4_v-9eMyeMHdHtgDM.jpg?auto=webp&v=enabled&s=17e8b58d1c0c524266dd79fe0d2549d53c4fecea",
                   "kind": "other"
                 }
               ]
@@ -677,7 +671,7 @@
             },
             {
               "id": "dt2-bosses-for-people-that-would-want-multiple-rings-for-dying-at-dt2-b",
-              "title": "For people that would want multiple rings for dying at DT2 bosses",
+              "title": "Multiple rings for dying at DT2 bosses",
               "images": [
                 "dt2-bosses/for-people-that-would-want-multiple-rings-for-dying-at-dt2-b.jpg"
               ],
@@ -686,26 +680,16 @@
                   "label": "Twitch",
                   "url": "https://clips.twitch.tv/embed?clip=KindBoldDadCoolCat-yJd4G-Vc-i2fU_Qh&parent=meta.tag",
                   "kind": "other"
-                },
-                {
-                  "label": "Twitch",
-                  "url": "https://clips-media-assets2.twitch.tv/M9Hb48iXeBvlXPotn1P0IQ/AT-cm%7CM9Hb48iXeBvlXPotn1P0IQ-social-preview.jpg",
-                  "kind": "other"
                 }
               ]
             },
             {
               "id": "dt2-bosses-r-2007scape-whisperer-final-phase-walk-tech",
-              "title": "r/2007scape - Whisperer Final Phase walk Tech",
+              "title": "Whisperer Final Phase walk Tech",
               "images": [
                 "dt2-bosses/r-2007scape-whisperer-final-phase-walk-tech.png"
               ],
               "links": [
-                {
-                  "label": "Reddit",
-                  "url": "https://www.redditmedia.com/mediaembed/15b1sh8",
-                  "kind": "other"
-                },
                 {
                   "label": "Reddit",
                   "url": "https://external-preview.redd.it/OFhJatNDs47Wfk9MXGMzAh7MtWyPnrbG4W-7dv8-_ZY.png?format=pjpg&auto=webp&s=069c3ef7821f96fdd007a6764f48950055d28615",
@@ -803,47 +787,6 @@
               ]
             }
           ]
-        },
-        {
-          "kind": "dataSheets",
-          "title": "Data sheets & theory",
-          "items": [
-            {
-              "id": "gauntlet-gear-vs-hunllef-hp-swap-timing-table-no-sweet-before-crystal",
-              "title": "Gear vs Hunllef HP% swap-timing table (\"no sweet before crystal\")",
-              "images": [
-                "gauntlet/gear-vs-hunllef-hp-swap-timing-table-no-sweet-before-crystal.png"
-              ],
-              "links": [
-                {
-                  "label": "Image source",
-                  "url": "https://i.imgur.com/A8Q9IyL.png",
-                  "kind": "imgur"
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "nmz",
-      "name": "Nightmare Zone",
-      "group": "PvM & Slayer",
-      "order": 10,
-      "sections": [
-        {
-          "kind": "tileMarkers",
-          "title": "Tile markers & setups",
-          "items": [
-            {
-              "id": "nmz-nightmare-zone-afk-setup",
-              "title": "Nightmare Zone AFK setup",
-              "images": [
-                "nmz/nightmare-zone-afk-setup.png"
-              ]
-            }
-          ]
         }
       ]
     },
@@ -870,41 +813,7 @@
                   "kind": "youtube"
                 }
               ]
-            },
-            {
-              "id": "slayer-general-pvm-easy-chaos-elemental-alt-lure-guide-2022",
-              "title": "EASY Chaos Elemental Alt Lure Guide [2022]",
-              "images": [
-                "slayer-general-pvm/easy-chaos-elemental-alt-lure-guide-2022.jpg"
-              ],
-              "links": [
-                {
-                  "label": "YouTube",
-                  "url": "https://www.youtube.com/watch?v=1jMKvdsfF5g",
-                  "kind": "youtube"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "kind": "tools",
-          "title": "Tools & plugins",
-          "items": [
-            {
-              "id": "slayer-general-pvm-superior-slayer-monster",
-              "title": "Superior slayer monster",
-              "images": [
-                "slayer-general-pvm/superior-slayer-monster.png"
-              ],
-              "links": [
-                {
-                  "label": "OSRS Wiki",
-                  "url": "https://oldschool.runescape.wiki/images/Fighting_superior_slayer_monster.png?7bca3",
-                  "kind": "wiki"
-                }
-              ]
-            }
+            }            
           ]
         },
         {
@@ -967,6 +876,22 @@
                   "kind": "youtube"
                 }
               ]
+            },
+            {
+              "id": "unsorted-r-ironscape-psa-you-can-bring-3x-more-bones-without-extra-ri",
+              "title": "PSA: you can bring 3x more bones without extra risk",
+              "links": [
+                {
+                  "label": "YouTube",
+                  "url": "https://www.youtube.com/watch?v=cgZepwdI-FU",
+                  "kind": "youtube"
+                },
+                {
+                  "label": "Reddit",
+                  "url": "https://www.reddit.com/r/ironscape/comments/132yus0/psa_you_can_bring_3x_more_bones_without_extra/",
+                  "kind": "other"
+                }
+              ]
             }
           ]
         },
@@ -995,46 +920,16 @@
           "title": "Tools & plugins",
           "items": [
             {
-              "id": "skilling-utility-all-tasks",
-              "title": "All tasks",
-              "images": [
-                "skilling-utility/all-tasks.png"
-              ],
+              "id": "plugins-by-active-installs",
+              "title": "Plugins by Active Installs",
               "links": [
                 {
-                  "label": "OSRS Wiki",
-                  "url": "https://oldschool.runescape.wiki/images/Wiki.png",
-                  "kind": "wiki"
+                  "label": "RuneLite",
+                  "url": "https://runelite.net/plugin-hub",
+                  "kind": "other"
                 }
               ]
-            },
-            {
-              "id": "skilling-utility-guthix-rest",
-              "title": "Guthix rest",
-              "images": [
-                "skilling-utility/guthix-rest.png"
-              ],
-              "links": [
-                {
-                  "label": "OSRS Wiki",
-                  "url": "https://oldschool.runescape.wiki/images/thumb/Guthix_rest%281%29_detail.png/1200px-Guthix_rest%281%29_detail.png?fb141",
-                  "kind": "wiki"
-                }
-              ]
-            },
-            {
-              "id": "skilling-utility-lockbox",
-              "title": "Lockbox",
-              "images": [
-                "skilling-utility/lockbox.png"
-              ],
-              "links": [
-                {
-                  "label": "OSRS Wiki",
-                  "url": "https://oldschool.runescape.wiki/images/Wiki.png",
-                  "kind": "wiki"
-                }
-              ]
+
             },
             {
               "id": "skilling-utility-quick-way-to-search-osrs-wiki",
@@ -1042,32 +937,32 @@
               "images": [
                 "skilling-utility/quick-way-to-search-osrs-wiki.png"
               ]
-            },
-            {
-              "id": "skilling-utility-special-search",
-              "title": "Special:Search",
-              "images": [
-                "skilling-utility/special-search.png"
-              ],
-              "links": [
-                {
-                  "label": "OSRS Wiki",
-                  "url": "https://oldschool.runescape.wiki/images/Wiki.png",
-                  "kind": "wiki"
-                }
-              ]
             }
           ]
-        },
+        }
+      ]
+    },
+    {
+      "id": "wildy",
+      "name": "Wilderness Content",
+      "group": "Bosses",
+      "order": 13,
+      "sections": [
         {
-          "kind": "media",
-          "title": "Media",
-          "items": [
-            {
-              "id": "skilling-utility-how-to-get-easy-spellbook-swapping",
-              "title": "How to get easy Spellbook Swapping",
-              "images": [
-                "skilling-utility/how-to-get-easy-spellbook-swapping.png"
+          "kind": "guides",
+          "title": "Guides & videos",
+          "items": [{
+            "id": "slayer-general-pvm-easy-chaos-elemental-alt-lure-guide-2022",
+            "title": "EASY Chaos Elemental Alt Lure Guide [2022]",
+            "images": [
+              "slayer-general-pvm/easy-chaos-elemental-alt-lure-guide-2022.jpg"
+            ],
+            "links": [
+                {
+                "label": "YouTube",
+                "url": "https://www.youtube.com/watch?v=1jMKvdsfF5g",
+                "kind": "youtube"
+                }
               ]
             }
           ]
@@ -1078,7 +973,7 @@
       "id": "unsorted",
       "name": "Unsorted",
       "group": "Other",
-      "order": 13,
+      "order": 14,
       "sections": [
         {
           "kind": "tileMarkers",
@@ -1100,27 +995,6 @@
           "title": "Media",
           "items": [
             {
-              "id": "unsorted-00-embed-thumbnail-png",
-              "title": "00-embed-thumbnail.png",
-              "images": [
-                "unsorted/00-embed-thumbnail-png.png"
-              ],
-              "links": [
-                {
-                  "label": "Image source",
-                  "url": "https://i.imgur.com/6resKLZ.png",
-                  "kind": "imgur"
-                }
-              ]
-            },
-            {
-              "id": "unsorted-for-tomatoes",
-              "title": "For tomatoes",
-              "images": [
-                "unsorted/for-tomatoes.png"
-              ]
-            },
-            {
               "id": "unsorted-gyazo",
               "title": "Gyazo",
               "images": [
@@ -1131,41 +1005,6 @@
                   "label": "Image source",
                   "url": "https://i.gyazo.com/thumb/1200/2e17195edc7fb74d543597fcfbbac8b3-png.jpg",
                   "kind": "other"
-                }
-              ]
-            },
-            {
-              "id": "unsorted-r-ironscape-psa-you-can-bring-3x-more-bones-without-extra-ri",
-              "title": "r/ironscape - PSA: you can bring 3x more bones without extra risk",
-              "links": [
-                {
-                  "label": "YouTube",
-                  "url": "https://www.youtube.com/watch?v=cgZepwdI-FU",
-                  "kind": "youtube"
-                },
-                {
-                  "label": "Reddit",
-                  "url": "https://www.reddit.com/r/ironscape/comments/132yus0/psa_you_can_bring_3x_more_bones_without_extra/",
-                  "kind": "other"
-                },
-                {
-                  "label": "Reddit",
-                  "url": "https://external-preview.redd.it/-ErwAkJwSnYPFmjEN-TTnoG0q-0W41HuICK96gZOQog.jpg?auto=webp&v=enabled&s=aeccd61a89d154cfbae0f4d2cd9677d360936449",
-                  "kind": "other"
-                }
-              ]
-            },
-            {
-              "id": "unsorted-untitled-album",
-              "title": "Untitled Album",
-              "images": [
-                "unsorted/untitled-album.jpg"
-              ],
-              "links": [
-                {
-                  "label": "Image source",
-                  "url": "https://i.imgur.com/rCYni93h.jpg",
-                  "kind": "imgur"
                 }
               ]
             }
