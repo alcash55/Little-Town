@@ -163,6 +163,32 @@ export async function updatePlayerCaptain(
 }
 
 /**
+ * Update a player's on-file RSN. Used only by the automatic Wise Old Man
+ * rename resolution flow (services/rsnChangeDetection.ts) after a candidate
+ * new name has been confirmed to resolve on the OSRS hiscores — there is no
+ * manual "rename" admin action today (an admin fixes a bad RSN by removing
+ * and re-registering the player instead).
+ *
+ * Can fail with a 23505 if the new name collides with another player
+ * already registered in the same bingo (bingo_players' UNIQUE (bingo_id,
+ * rsn)) — callers should treat that as "rename couldn't be applied" rather
+ * than letting it bubble up as an unrelated 500 (see checkRsnChange, which
+ * catches this and falls back to the unresolved-log path).
+ */
+export async function updatePlayerRsn(playerId: string, newRsn: string): Promise<BingoPlayer> {
+  const db = getDb();
+  const { data, error } = await db
+    .from("bingo_players")
+    .update({ rsn: newRsn })
+    .eq("id", playerId)
+    .select()
+    .single();
+
+  if (error || !data) throw new Error(`Failed to update RSN for player ${playerId}: ${error?.message}`);
+  return data as BingoPlayer;
+}
+
+/**
  * Reset all player team assignments for a bingo (set team_id = NULL).
  */
 export async function resetPlayerTeams(bingoId: string): Promise<void> {
@@ -330,6 +356,27 @@ export async function addSideAccount(
     .single();
 
   if (error || !data) throw new Error(`Failed to add side account "${rsn}": ${error?.message}`);
+  return data as SideAccount;
+}
+
+/**
+ * Update a side account's on-file RSN. Side-account counterpart of
+ * updatePlayerRsn — same caller (checkSideAccountRsnChange), same
+ * "confirmed-by-hiscores WOM rename only" contract, same collision handling
+ * (bingo_player_side_accounts' UNIQUE (player_id, rsn)).
+ */
+export async function updateSideAccountRsn(sideAccountId: string, newRsn: string): Promise<SideAccount> {
+  const db = getDb();
+  const { data, error } = await db
+    .from("bingo_player_side_accounts")
+    .update({ rsn: newRsn })
+    .eq("id", sideAccountId)
+    .select()
+    .single();
+
+  if (error || !data) {
+    throw new Error(`Failed to update RSN for side account ${sideAccountId}: ${error?.message}`);
+  }
   return data as SideAccount;
 }
 

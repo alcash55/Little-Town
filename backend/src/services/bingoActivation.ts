@@ -50,16 +50,21 @@ export async function snapshotStartAndCurrent(
 
   const settled = await mapWithConcurrency(players, HISCORE_CONCURRENCY, async (player) => {
     const data = await hiscores(player.rsn);
-    await checkRsnChange(player, Boolean(data), source);
-    if (!data) {
+    // RSN-change detection + Sprint 6's WOM auto-rename (see
+    // services/rsnChangeDetection.ts) — a confirmed rename updates
+    // bingo_players.rsn and hands back hiscore data for the new name so
+    // this activation/retake attempt can proceed under it immediately.
+    const rsnCheck = await checkRsnChange(player, Boolean(data), source);
+    const effectiveData = data ?? rsnCheck.hiscoreData ?? null;
+    if (!effectiveData) {
       throw new Error(
         `Player "${player.rsn}" is not ranked on the OSRS hiscores — ensure the RSN is correct and the account has played enough to appear on the hiscores`,
       );
     }
     // start is idempotent — won't overwrite if already exists
-    await savePlayerSnapshot(player.id, "start", data);
-    await savePlayerSnapshot(player.id, "current", data);
-    return player.rsn;
+    await savePlayerSnapshot(player.id, "start", effectiveData);
+    await savePlayerSnapshot(player.id, "current", effectiveData);
+    return rsnCheck.renamed ? rsnCheck.newRsn! : player.rsn;
   });
 
   const results = toPlayerSnapshotResults(players, settled);
@@ -69,7 +74,7 @@ export async function snapshotStartAndCurrent(
   // Separate phase, strictly after the main-account pass above — keeps peak
   // in-flight OSRS requests capped at HISCORE_CONCURRENCY at any instant
   // rather than adding a second concurrent pool on top.
-  const sideResults = await snapshotAllSideAccounts(players, ["start", "current"]);
+  const sideResults = await snapshotAllSideAccounts(players, ["start", "current"], source);
 
   return { succeeded, failed, results, sideResults };
 }
@@ -94,7 +99,10 @@ function toPlayerSnapshotResults(
 ): PlayerSnapshotResult[] {
   return players.map((player, i) => {
     const r = settled[i];
-    if (r.status === "fulfilled") return { rsn: player.rsn, playerId: player.id, ok: true };
+    // r.value is the (possibly WOM-auto-renamed) rsn the snapshot actually
+    // succeeded under — prefer it over the stale players[] entry so callers
+    // reporting results see the current name, not the one that just 404'd.
+    if (r.status === "fulfilled") return { rsn: r.value, playerId: player.id, ok: true };
     return {
       rsn: player.rsn,
       playerId: player.id,
