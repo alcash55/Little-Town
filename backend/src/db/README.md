@@ -21,7 +21,24 @@ All database operations for user data. Exports:
 - `findUserByUsername` — look up a user by username, used during login
 - `loginUser` — verify credentials and return a safe user object (no password hash)
 - `findUserById` — look up a user by UUID, used by the auth middleware on every protected request
+  (and by impersonation to resolve `X-Impersonate-User-Id`)
 - `hashPassword` — hash a plain text password with bcrypt before storing
+- `listUsers` — every user as `{ id, label, role }` for the impersonation picker (`GET
+  /api/admin/users`); `label` is nickname-or-username, the same display-name fallback the app bar
+  uses
+
+### `invites.ts`
+Admin invite links (Sprint 6, Track A item 1). Only a SHA-256 hash of each token is stored — see
+the header comment for why `GET /api/admin/invites` can never return a usable `url` after creation.
+Exports `createInvite`, `listInvites`, `revokeInvite`, `validateInviteToken` (public lookup), and
+`acceptInvite` (creates the `users` row under the invite's role and burns the invite, atomically,
+via the `accept_invite` Postgres function).
+
+### `teamXpHistory.ts`
+`getTeamXpHistory(bingoId, teams)` — per-team daily XP-gained series for the BingoScores chart
+(`GET /api/bingo/team-xp-history`, Sprint 6, Track A item 3), sourced from
+`bingo_player_hiscore_history`. Bucketing/carry-forward rules are documented in the file's header
+comment.
 
 ### `bingoSubmissions.ts`
 All database operations for `bingo_submissions` (screenshot review queue), plus signed-URL
