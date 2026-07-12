@@ -439,16 +439,25 @@ router.put(
     const hiscoreData = await hiscores(rsn);
     // RSN-change detection (TEAM-BRIEF.md Track A item 1) — this player is
     // already registered, so a 404 here means their on-file RSN went stale,
-    // not that it was never validated.
-    await checkRsnChange(player, Boolean(hiscoreData), "drafter");
-    if (!hiscoreData) {
+    // not that it was never validated. Sprint 6: a confirmed Wise Old Man
+    // rename updates bingo_players.rsn and lets this refresh succeed under
+    // the new name immediately instead of returning a 404.
+    const rsnCheck = await checkRsnChange(player, Boolean(hiscoreData), "drafter");
+    const effectiveData = hiscoreData ?? rsnCheck.hiscoreData ?? null;
+    if (!effectiveData) {
       return res.status(404).json({
         success: false,
         error: `Player "${rsn}" is not ranked on the OSRS hiscores. The RSN may be incorrect or the account may be too new/inactive to appear.`,
       });
     }
-    const snapshot = await savePlayerSnapshot(player.id, "current", hiscoreData);
-    res.status(200).json({ success: true, data: snapshot });
+    const snapshot = await savePlayerSnapshot(player.id, "current", effectiveData);
+    res.status(200).json({
+      success: true,
+      data: snapshot,
+      ...(rsnCheck.renamed
+        ? { message: `RSN auto-updated via Wise Old Man: "${rsn}" -> "${rsnCheck.newRsn}"` }
+        : {}),
+    });
   }),
 );
 
@@ -467,11 +476,12 @@ router.put(
       const hiscoreData = await hiscores(player.rsn);
       // RSN-change detection (TEAM-BRIEF.md Track A item 1) — same rule as
       // the single-player refresh route above.
-      await checkRsnChange(player, Boolean(hiscoreData), "drafter");
-      if (!hiscoreData) {
+      const rsnCheck = await checkRsnChange(player, Boolean(hiscoreData), "drafter");
+      const effectiveData = hiscoreData ?? rsnCheck.hiscoreData ?? null;
+      if (!effectiveData) {
         throw new Error(`Player "${player.rsn}" is not ranked on the OSRS hiscores`);
       }
-      return savePlayerSnapshot(player.id, "current", hiscoreData);
+      return savePlayerSnapshot(player.id, "current", effectiveData);
     });
 
     const succeeded = results.filter((r) => r.status === "fulfilled").length;
