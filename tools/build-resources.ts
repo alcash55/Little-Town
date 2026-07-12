@@ -2,6 +2,16 @@
 /**
  * build-resources.ts — repeatable transformer for the OSRS Resource Library.
  *
+ * Lives in repo-root `tools/` rather than `backend/scripts/` (TEAM-BRIEF.md
+ * Sprint 6, Track A item 4 — repo hygiene: top-level scripts/ shouldn't
+ * stand alone): it has zero backend runtime dependencies (no Supabase, no
+ * Discord API, no backend env vars) and both reads and writes repo-root/
+ * frontend paths, so it doesn't belong inside backend/ either. Genuinely
+ * cross-cutting, hence `tools/` per the brief's own carve-out rather than
+ * `backend/scripts/` (where `dumpChannelToMarkdown.ts`, the actual Discord
+ * dump tool, already lives — that one needs backend's Discord bot
+ * credentials and is a true backend concern).
+ *
  * Parses the raw Discord #resources export (repo-root `resources.md` +
  * `resourcesMedia/<discordMessageId>/NN-<name>.ext`) into the app's data
  * contract:
@@ -14,14 +24,14 @@
  * overwrites the categories it processes, so don't run it over a manifest
  * that has since been hand-edited unless you mean to blow those edits away.
  *
- * Usage:
- *   bun run scripts/build-resources.ts                 # process every category
- *   bun run scripts/build-resources.ts --only tob,toa   # process a subset only
- *                                                       # (merges into any
- *                                                       # existing manifest;
- *                                                       # categories not
- *                                                       # listed are left
- *                                                       # untouched)
+ * Usage (run from the repo root):
+ *   bun run tools/build-resources.ts                 # process every category
+ *   bun run tools/build-resources.ts --only tob,toa   # process a subset only
+ *                                                      # (merges into any
+ *                                                      # existing manifest;
+ *                                                      # categories not
+ *                                                      # listed are left
+ *                                                      # untouched)
  *
  * Source docs read from repo root: resources.md, resourcesMedia/.
  * Both are deleted once the full manifest has been generated and verified
