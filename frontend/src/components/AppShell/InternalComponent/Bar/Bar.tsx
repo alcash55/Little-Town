@@ -13,10 +13,19 @@ import Login from '@mui/icons-material/Login';
 import Logout from '@mui/icons-material/Logout';
 
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { darkTheme } from '../../../../layout/Theme';
 import { useLoginModal } from '../../../../components/LoginModal/useLoginModal';
-import { ImpersonationControl, useImpersonationTarget } from '../Impersonation';
+import { useImpersonationTarget } from '../Impersonation';
+
+// Lazy: pulls in @mui/material's Autocomplete, which only ever renders for
+// admins (gated below). Splitting it out keeps Autocomplete's weight out of
+// the app shell chunk every visitor downloads on first paint.
+const ImpersonationControl = lazy(() =>
+  import('../Impersonation/ImpersonationControl').then((m) => ({
+    default: m.ImpersonationControl,
+  })),
+);
 
 const getInitials = (nickname?: string | null, username?: string): string => {
   const source = nickname?.trim() || username?.trim() || '?';
@@ -39,8 +48,11 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
 
   const navigate = useNavigate();
   const { openLogin, prefetchLoginModal, user, logout } = useLoginModal();
-  const { target: impersonationTarget, activate: activateImpersonation, clear: clearImpersonation } =
-    useImpersonationTarget();
+  const {
+    target: impersonationTarget,
+    activate: activateImpersonation,
+    clear: clearImpersonation,
+  } = useImpersonationTarget();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -113,11 +125,16 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
               }}
             >
               {user.role === 'admin' && (
-                <ImpersonationControl
-                  activeTarget={impersonationTarget}
-                  onActivate={activateImpersonation}
-                  onClear={clearImpersonation}
-                />
+                // fallback={null}: this is a single icon button in a fixed-size
+                // toolbar slot, not a page — a skeleton would just be layout
+                // noise for the split-second the chunk takes to load.
+                <Suspense fallback={null}>
+                  <ImpersonationControl
+                    activeTarget={impersonationTarget}
+                    onActivate={activateImpersonation}
+                    onClear={clearImpersonation}
+                  />
+                </Suspense>
               )}
               <IconButton
                 size="large"

@@ -1,6 +1,8 @@
 import {
   createContext,
+  lazy,
   PropsWithChildren,
+  Suspense,
   useCallback,
   useContext,
   useEffect,
@@ -8,7 +10,13 @@ import {
   useState,
 } from 'react';
 import { useLoginModal } from '../LoginModal/useLoginModal';
-import OnboardingWizard, { OnboardingStatus } from './OnboardingWizard';
+import type { OnboardingStatus } from './OnboardingWizard';
+
+// Lazy: only ever mounted for a signed-in user on their first visit (or via
+// "Show intro"), so its weight (Stepper + 4 step components) shouldn't be
+// part of the app shell chunk every visitor — including anonymous ones —
+// downloads on first paint.
+const OnboardingWizard = lazy(() => import('./OnboardingWizard'));
 
 const STORAGE_PREFIX = 'onboarding:v1:';
 
@@ -35,7 +43,7 @@ const readRecord = (key: string): OnboardingRecord | null => {
     if (
       parsed &&
       typeof parsed === 'object' &&
-      ('status' in parsed) &&
+      'status' in parsed &&
       ((parsed as { status: unknown }).status === 'completed' ||
         (parsed as { status: unknown }).status === 'skipped')
     ) {
@@ -98,7 +106,15 @@ export const OnboardingProvider = ({ children }: PropsWithChildren<{}>) => {
   return (
     <OnboardingContext.Provider value={value}>
       {children}
-      {open && <OnboardingWizard open={open} onFinish={finish} />}
+      {open && (
+        // fallback={null}: the wizard is a Dialog, not a page — there's
+        // nothing sensible to render as a "skeleton" for a dialog that
+        // hasn't opened yet, and the chunk is small enough that the delay
+        // is imperceptible.
+        <Suspense fallback={null}>
+          <OnboardingWizard open={open} onFinish={finish} />
+        </Suspense>
+      )}
     </OnboardingContext.Provider>
   );
 };
