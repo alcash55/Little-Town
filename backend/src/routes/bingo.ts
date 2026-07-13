@@ -302,7 +302,7 @@ router.get(
  *
  *   { active: false }
  *   { active: true, bingo: {id,name,boardSize}, myTeam: {id,name}|null,
- *     tiles: [{id,task,completedByMyTeam}] }
+ *     tiles: [{id,task,completedByMyTeam,type,points,targetValue}] }
  *
  * "active" deliberately means bingo.status === 'active' specifically (NOT
  * 'draft') — matches the status check playerSnapshotCron.ts and
@@ -316,6 +316,11 @@ router.get(
  * /my-team-data's own registered_by lookup above. completedByMyTeam only
  * ever reflects the caller's own team's approved submissions — other teams'
  * progress is never fetched, let alone exposed (contract 1).
+ *
+ * `type`/`points`/`targetValue` (TEAM-BRIEF.md Sprint 8, Track A item 4) are
+ * an ADDITIVE extension — every existing field/shape above is unchanged —
+ * feeding the board's tile artwork + points UI. `targetValue` is nullable
+ * (camelCase mirror of getActiveBingoBoard()'s `target_value`).
  */
 router.get(
   "/board",
@@ -349,6 +354,9 @@ router.get(
     const tiles = (await getActiveBingoBoard()).map((tile) => ({
       id: tile.id!,
       task: tile.task,
+      type: tile.type,
+      points: tile.points,
+      targetValue: tile.target_value ?? null,
     }));
 
     // Only fetch approved submissions for the caller's own team — never

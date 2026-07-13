@@ -252,12 +252,16 @@ export interface BingoBoardTileRow {
   type: "Kill Count" | "Experience" | "Drops";
   task: string;
   points: number;
+  target_value: number | null;
 }
 
 /**
  * Inserts a single board tile row directly (bypassing saveActiveBingoBoard,
  * which resolves "the active bingo" globally rather than taking an explicit
  * bingo id — unsafe for fixtures on a shared local stack).
+ *
+ * `targetValue` defaults to unset (column default: NULL) — only pass it when
+ * a test specifically asserts on it (TEAM-BRIEF.md Sprint 8, Track A item 4).
  */
 export async function insertTestTile(
   bingoId: string,
@@ -266,6 +270,7 @@ export async function insertTestTile(
     type: "Kill Count" | "Experience" | "Drops";
     task: string;
     points: number;
+    targetValue: number;
   }> = {},
 ): Promise<BingoBoardTileRow> {
   const { data, error } = await getDb()
@@ -276,8 +281,9 @@ export async function insertTestTile(
       type: overrides.type ?? "Drops",
       task: overrides.task ?? `Test Tile ${uniqueSuffix()}`,
       points: overrides.points ?? 10,
+      target_value: overrides.targetValue ?? null,
     })
-    .select("id, bingo_id, position, type, task, points")
+    .select("id, bingo_id, position, type, task, points, target_value")
     .single();
 
   if (error || !data) throw new Error(`Failed to insert test tile: ${error?.message}`);
