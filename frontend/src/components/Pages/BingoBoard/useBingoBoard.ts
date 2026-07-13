@@ -3,23 +3,32 @@ import { fetchWithAuth } from '../../../utils/fetchWithAuth';
 
 const BASE_URL = `${import.meta.env.VITE_BASEURL || 'http://localhost:8081'}/api/bingo`;
 
-// TEAM-BRIEF.md Sprint 7, Track A item 1 (frozen contract): GET /api/bingo/board
-// -> bare object (not the usual ApiResponse envelope), authed at the same
-// level as the other bingo read endpoints (`protect`, no admin/moderator
+// TEAM-BRIEF.md Sprint 7, Track A item 1 (frozen contract), EXTENDED
+// additively in Sprint 8, Track A item 4: GET /api/bingo/board -> bare
+// object (not the usual ApiResponse envelope), authed at the same level as
+// the other bingo read endpoints (`protect`, no admin/moderator
 // requirement):
 //
 //   { active: false }
 //   { active: true, bingo: {id,name,boardSize}, myTeam: {id,name}|null,
-//     tiles: [{id,task,completedByMyTeam}] }
+//     tiles: [{id,task,completedByMyTeam,type,points,targetValue}] }
 //
 // `active` reflects `bingo.status === 'active'` specifically (a draft bingo
 // reports `active: false` too, per Track A's report). `completedByMyTeam` is
 // only ever the caller's own team's approved-submission state — a caller
 // with no team gets `myTeam: null` and every tile `completedByMyTeam: false`.
+//
+// `type`/`points`/`targetValue` (Sprint 8, Track A item 4) are additive —
+// they were already selected server-side for other bingo endpoints, this
+// just exposes them here too, for the tile art/points UI. `targetValue` is
+// nullable (not every tile literal sets one).
 export interface BingoBoardTile {
   id: string;
   task: string;
   completedByMyTeam: boolean;
+  type: 'Kill Count' | 'Experience' | 'Drops';
+  points: number;
+  targetValue: number | null;
 }
 
 export interface BingoBoardInfo {
