@@ -79,19 +79,58 @@ async function snapshotOneSideAccount(
   }
 }
 
+export interface SideAccountSnapshotTask {
+  playerId: string;
+  sideAccount: SideAccount;
+}
+
+/**
+ * Snapshots an explicit list of (player, side account) pairs, for the given
+ * snapshot type(s). Shared worker behind both `snapshotAllSideAccounts`
+ * (derives the pair list from a player list) and the targeted
+ * "just these specific side accounts" callers (TEAM-BRIEF.md Sprint 7,
+ * Track A item 2 — POST .../side-accounts' immediate snapshot and
+ * retake-start-snapshots' extended missing-snapshot sweep, both in
+ * routes/admin.ts) that snapshot side accounts without re-deriving from
+ * their parent's full roster.
+ *
+ * OSRS lookups run through mapWithConcurrency at the same HISCORE_CONCURRENCY
+ * budget every other hiscore fan-out in this app uses (not a second,
+ * uncoordinated pool).
+ *
+ * Never throws: per-side-account failures are reported in the returned
+ * array, never as a rejection.
+ */
+export async function snapshotSideAccountTasks(
+  tasks: SideAccountSnapshotTask[],
+  types: Array<"start" | "current">,
+  source: RsnChangeSource,
+): Promise<SideSnapshotResult[]> {
+  if (!tasks.length) return [];
+
+  const settled = await mapWithConcurrency(tasks, HISCORE_CONCURRENCY, ({ playerId, sideAccount }) =>
+    snapshotOneSideAccount(playerId, sideAccount, types, source),
+  );
+
+  // snapshotOneSideAccount never throws, so every entry is fulfilled — this
+  // fallback only exists to satisfy the PromiseSettledResult type.
+  return settled.map((r) =>
+    r.status === "fulfilled"
+      ? r.value
+      : { playerId: "", sideAccountId: "", rsn: "", ok: false, error: "Unexpected rejection" },
+  );
+}
+
 /**
  * Snapshots every side account belonging to each of `players`, for the
  * given snapshot type(s) ("current" only for the cron's periodic refresh;
  * "start" + "current" for activation/retake, mirroring how main-account
  * snapshots are taken).
  *
- * OSRS lookups run through mapWithConcurrency at the same HISCORE_CONCURRENCY
- * budget every other hiscore fan-out in this app uses (not a second,
- * uncoordinated pool) — and because every caller here runs this as a
- * separate phase strictly after its own main-account pass (never
- * concurrently with it), the peak number of in-flight OSRS requests at any
- * instant never exceeds HISCORE_CONCURRENCY, regardless of how many side
- * accounts exist.
+ * Because every caller here runs this as a separate phase strictly after its
+ * own main-account pass (never concurrently with it), the peak number of
+ * in-flight OSRS requests at any instant never exceeds HISCORE_CONCURRENCY,
+ * regardless of how many side accounts exist.
  *
  * Never throws: per-side-account failures are reported in the returned
  * array, never as a rejection.
@@ -110,17 +149,6 @@ export async function snapshotAllSideAccounts(
   const tasks = perPlayerSideAccounts.flatMap(({ playerId, sideAccounts }) =>
     sideAccounts.map((sideAccount) => ({ playerId, sideAccount })),
   );
-  if (!tasks.length) return [];
 
-  const settled = await mapWithConcurrency(tasks, HISCORE_CONCURRENCY, ({ playerId, sideAccount }) =>
-    snapshotOneSideAccount(playerId, sideAccount, types, source),
-  );
-
-  // snapshotOneSideAccount never throws, so every entry is fulfilled — this
-  // fallback only exists to satisfy the PromiseSettledResult type.
-  return settled.map((r) =>
-    r.status === "fulfilled"
-      ? r.value
-      : { playerId: "", sideAccountId: "", rsn: "", ok: false, error: "Unexpected rejection" },
-  );
+  return snapshotSideAccountTasks(tasks, types, source);
 }

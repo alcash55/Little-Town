@@ -162,6 +162,30 @@ export function buildDropStatusByRsn(
   return dropStatus;
 }
 
+/**
+ * Builds the `tiles[].completedByMyTeam` list for `GET /api/bingo/board`
+ * (TEAM-BRIEF.md Track A item 1). `completedByMyTeam` is true when the tile
+ * id is present in `approvedTileIdsForMyTeam` — the set of `tile_id`s with
+ * an **approved** `bingo_submissions` row for the caller's team, computed by
+ * the caller (route handler) via a DB query scoped to `team_id = myTeamId`.
+ * Passing `null` (caller has no team) always yields `completedByMyTeam:
+ * false` for every tile, rather than requiring callers to special-case an
+ * empty team lookup into an empty Set. Pure over its inputs so it's
+ * unit-testable without a DB, mirroring buildDropStatusByRsn above. Only
+ * ever reflects the caller's own team — never other teams' — since the
+ * caller only ever passes in submissions already scoped to `myTeamId`.
+ */
+export function buildBoardTileCompletion(
+  tiles: Array<{ id: string; task: string }>,
+  approvedTileIdsForMyTeam: Set<string> | null,
+): Array<{ id: string; task: string; completedByMyTeam: boolean }> {
+  return tiles.map((tile) => ({
+    id: tile.id,
+    task: tile.task,
+    completedByMyTeam: approvedTileIdsForMyTeam?.has(tile.id) ?? false,
+  }));
+}
+
 export async function approveSubmission(
   id: string,
   input: { tileId: string; teamId: string; playerId?: string; reviewedBy?: string },
