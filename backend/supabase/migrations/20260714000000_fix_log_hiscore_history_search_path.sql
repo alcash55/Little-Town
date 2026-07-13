@@ -1,0 +1,24 @@
+-- Fix Supabase advisor warning: "Function `public.log_hiscore_history` has
+-- a role mutable search_path" (TEAM-BRIEF.md Sprint 7, Track A item 4).
+--
+-- log_hiscore_history() (20260711000000_hiscore_conflict_history.sql) is a
+-- plpgsql trigger function that references bingo_player_hiscore_history and
+-- calls hiscore_total_xp() unqualified, relying on the session's search_path
+-- to resolve them to the `public` schema. Without an explicit search_path
+-- pinned on the function itself, a role that can alter its own search_path
+-- (or a search_path manipulated ahead of the triggering statement) could
+-- redirect those unqualified references to a same-named object in another
+-- schema earlier in the path — the class of attack the advisor flags.
+--
+-- Fix: pin search_path to `public, pg_temp` on the function declaration
+-- (pg_temp kept, as Supabase's own advisor remediation recommends, so
+-- legitimate temp-table use elsewhere in the session is unaffected) rather
+-- than an empty search_path, since the function's unqualified references
+-- need `public` to resolve without rewriting every identifier.
+-- SECURITY INVOKER (the default, unchanged) — matches the "no SECURITY
+-- DEFINER in this schema" convention from 20260706000000_audit_fixes.sql.
+--
+-- No application code changes; behavior is identical, only search_path
+-- resolution is pinned. Reversible: ALTER FUNCTION public.log_hiscore_history()
+-- RESET search_path;
+ALTER FUNCTION public.log_hiscore_history() SET search_path = public, pg_temp;
