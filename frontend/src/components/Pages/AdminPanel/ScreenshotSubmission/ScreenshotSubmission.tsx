@@ -64,12 +64,14 @@ const ScreenshotSubmission = () => {
       <Box
         sx={{
           display: 'flex',
+          flexWrap: 'wrap',
           justifyContent: 'space-between',
           alignItems: 'center',
+          gap: 1,
           width: '100%',
         }}
       >
-        <Typography variant="body2" sx={{ color: textSecondary }}>
+        <Typography variant="body2" sx={{ color: textSecondary, minWidth: 0 }}>
           {pending.length === 0
             ? ' '
             : `${pending.length} screenshot${
@@ -89,6 +91,7 @@ const ScreenshotSubmission = () => {
           }
           onClick={refresh}
           sx={{
+            flexShrink: 0,
             color: appColors.accent,
             borderColor: appColors.accent,
             '&:hover': { borderColor: appColors.accent, bgcolor: alpha(appColors.accent, 0.08) },
