@@ -25,16 +25,16 @@
   - [x] Little-Town\scripts should not be standing alone top level *(done 2026-07-13, Sprint 6 — Discord dump tooling moved to backend/scripts/, build-resources to repo-root tools/; package.json scripts + docs updated, no stale references)*
 - [x] There needs to be a way I can mock users
   - [x] Add a way to see the app from a users perspecitve without logging in as them, a simple dropdown of all my users so I can select one to override as in order to re-create errors or perform other tests, then when done I can clear the override *(shipped 2026-07-13, Sprint 6 — admin-only app-bar picker → X-Impersonate-User-Id header on all authed calls via fetchWithAuth, "Viewing as X — Clear" banner, survives refresh (sessionStorage), cleared on logout; server-side: admin-only grant, admin-to-admin blocked, every impersonated request logged. NOTE: browser-verified against mocks only — Docker was down; real-backend pass carried to Sprint 7.)*
-- [ ] DeprecationWarning: The ready event has been renamed to clientReady to distinguish it from the gateway READY event and will only emit under that name in v15. Please use clientReady instead.
-- [ ] The bingo board needs to be usable
-  - [ ] Populate the board with the current board that has been made and set for the active bingo, if there is not a bingo active then there should be a message that says something like "Error, no active bingo"
-  - [ ] When logged in as a user I should be able to see that my team and ONLY my team has finished a tile on the bingo board page because it will have a green background to show completed
-- [ ] On mobile there are 3 different responsiveness bugs that occur
-  - [ ] The refresh button icon is outside of the button @refreshButton.png
-  - [ ] The Mobile side bar should scroll if there are enough children to where sidebar items are geting cut off This likely only happens to Admin roll @mobileSidebar.png
-  - [ ] The header on the Bingo Rules page has a gap between the app bar and the header when it shouldn't @mobileRulesHeader.png
-  - [ ] Issue: Function public.log_hiscore_history has a role mutable search_path
-  Description. Detects functions where the search_path parameter is not set.
+- [x] DeprecationWarning: The ready event has been renamed to clientReady to distinguish it from the gateway READY event and will only emit under that name in v15. Please use clientReady instead. *(fixed 2026-07-13, Sprint 7 — discordScreenshots.ts now listens on clientReady)*
+- [x] The bingo board needs to be usable *(shipped 2026-07-13, Sprint 7 — GET /api/bingo/board + real BingoBoard page replacing the static example PNG; loading/error/no-team states, responsive grid; QA browser-verified all four states)*
+  - [x] Populate the board with the current board that has been made and set for the active bingo, if there is not a bingo active then there should be a message that says something like "Error, no active bingo" *(done — "No active bingo" empty state matching the app's empty-state pattern; `active` = status "active" specifically, drafts count as inactive)*
+  - [x] When logged in as a user I should be able to see that my team and ONLY my team has finished a tile on the bingo board page because it will have a green background to show completed *(done — completion from my team's approved submissions only, never other teams'; green derived from theme success token, darkened to 5.98:1 AA contrast; impersonation-aware)*
+- [x] On mobile there are 3 different responsiveness bugs that occur *(all fixed 2026-07-13, Sprint 7 — QA-verified at 390×844 and desktop, no regressions)*
+  - [x] The refresh button icon is outside of the button @refreshButton.png *(header row let the button shrink under its content — flexWrap + minWidth/flexShrink fix)*
+  - [x] The Mobile side bar should scroll if there are enough children to where sidebar items are geting cut off This likely only happens to Admin roll @mobileSidebar.png *(Drawer paper height 100% → 100dvh + scrollable list region; root cause is mobile Safari's dynamic-toolbar viewport — verified in headless Chromium, worth one real-iPhone spot check)*
+  - [x] The header on the Bingo Rules page has a gap between the app bar and the header when it shouldn't @mobileRulesHeader.png *(sticky top now offsets PageLayout's padding; flush at both breakpoints)*
+  - [x] Issue: Function public.log_hiscore_history has a role mutable search_path
+  Description. Detects functions where the search_path parameter is not set. *(fixed 2026-07-13, Sprint 7 — migration `20260714000000_fix_log_hiscore_history_search_path.sql`; NEEDS PROD APPLICATION, see action items. `hiscore_total_xp()` likely has the same advisor finding — next sprint.)*
 
 # Next sprint — carried over from the July 2026 audit sprint
 
@@ -70,14 +70,24 @@
 - [x] **Onboarding epics** (deferred from Sprint 5, top of the epics list): admin page for generating/sending invite links + first-time-user onboarding wizard. *(shipped 2026-07-13, Sprint 6 — see the checked epics at the top)*
 - [x] Wire real team-XP data into the BingoScores line chart (it still renders mocked data; chart itself is done). *(shipped 2026-07-13, Sprint 6 — GET /api/bingo/team-xp-history from bingo_player_hiscore_history, daily buckets, main accounts only; chart has loading/error/empty states, 404 = empty)*
 - [x] Side-account RSN-change detection: needs a migration adding nullable `side_account_id` to `rsn_change_log` (exactly one of player_id/side_account_id set); today side-account misses only console-warn. *(shipped 2026-07-12, Sprint 6 — folded into the automatic RSN-rename resolution work below: `20260712000000_rsn_change_log_wom.sql` adds `side_account_id` + the player_id/side_account_id XOR check, and `checkSideAccountRsnChange` wires side accounts into the same detect→resolve flow as primary accounts.)*
-- Side accounts added to an already-active bingo never get a start snapshot — extend retake's "missing" filter to side accounts, or snapshot at `addSideAccount` time.
+- [x] Side accounts added to an already-active bingo never get a start snapshot — extend retake's "missing" filter to side accounts, or snapshot at `addSideAccount` time. *(shipped 2026-07-13, Sprint 7 — did both: immediate best-effort snapshot at addSideAccount when the bingo is active, plus retake-start-snapshots now sweeps side accounts missing a start snapshot)*
 - Board-progress semantics (product decision): summed player points can exceed board max because multiple players can complete the same tile; the overview gauge explains it in a caption for now — decide whether the backend should team-deduplicate "total points scored".
 - [x] Resources search TextField passes `slotProps` through to the DOM (console warning) — small MUI v9 leftover. *(closed 2026-07-13, Sprint 6 — turned out stale: already fixed by the Sprint 5 MUI v9 migration; browser-confirmed no warning on /Resources)*
 - [x] Fold `teamDrafterStyles.ts`'s duplicated color constants into `layout/Theme/appColors.ts`. *(done 2026-07-13, Sprint 6 — the four shared constants now re-export from appColors; some literal #2A9D8F hovers/focus states remain in inputSx/selectSx, noted below)*
-- Vite 4 → 5+/Rollup 4 bump — silences ~645 harmless "use client directive ignored" build notices from MUI v9. *(upgraded to load-bearing 2026-07-13: all 8 frontend `bun audit` findings (2 high) are vite/esbuild-transitive and only resolve with this major bump + @vitejs/plugin-react v4+; dev-server-only exposure, but do it soon)*
+- [x] Vite 4 → 5+/Rollup 4 bump — silences ~645 harmless "use client directive ignored" build notices from MUI v9. *(shipped 2026-07-13, Sprint 7 stretch — Vite 5.4.21 + @vitejs/plugin-react 4.7.0; build notices gone, full route walk clean. Correction to the earlier note: this cleared only 4 of the 8 audit findings — the remaining 4 (1 high, all dev-server-only) need Vite 6.4.3+, listed below.)*
 - `PUT /api/hiscores/:player` (authenticated variant) has no rate limit — fine today, revisit if exposed more broadly.
 - `bingo_player_hiscore_history` is append-only and grows forever — decide a retention/archive policy once real usage data exists.
 - Agent-infra: parallel worktree agents share one local Supabase stack; two auto-timestamped migrations collided this sprint (fixed by renaming). Adopt a convention (coordinate timestamps in the brief, or per-worktree stacks).
+
+# Sprint 8 candidates — collected during Sprint 7 (2026-07-13)
+
+- Vite 5.4.21 → 6.4.3+ — clears the 4 remaining `bun audit` findings (1 high; all dev-server-only, prod build unaffected).
+- `hiscore_total_xp()` likely trips the same mutable-search_path advisor as `log_hiscore_history` did — same one-line migration.
+- Real-device (iOS Safari) spot check of the mobile sidebar scroll fix — the 100dvh fix targets Safari's dynamic toolbar, which headless Chromium can't reproduce.
+- Home/Welcome page ships a 15MB `LittleTownAnimation` gif — real load-time cost, convert/compress or lazy-load it.
+- Delete the now-unused `frontend/src/assets/Images/BingoBoardExample.png`.
+- BingoRules: the pre-existing negative-`mx` on the sticky banner Box is a silent no-op (MUI Stack's child margin reset out-specifies it) — harmless, but know it if that layout changes.
+- `imageLinks.test.ts` prints an expected-but-noisy ECONNRESET stack trace mid-run — silence it so CI log greps for "error:" stay clean.
 
 # Sprint 7 candidates — collected during Sprint 6 close (2026-07-13)
 
@@ -88,6 +98,7 @@
 # Action items (Alex) — unblock the shipped pipeline
 
 - [x] Apply the two Sprint 5 migrations to the hosted prod Supabase project (`faqivcgrhrvuwpistivp`): `20260711000000_hiscore_conflict_history.sql` then `20260711143000_rsn_change_log.sql` — *applied by Alex 2026-07-12; verified live: both tables, both triggers, deny-all policies, both functions, 12 backfilled history rows. Same caveat as the 2026-07-08 batch: remote migration history won't know these versions, so `supabase migration repair` before any future CLI `db push`.*
+- [ ] Apply `20260714000000_fix_log_hiscore_history_search_path.sql` to prod (same SQL-editor route) — one-line `ALTER FUNCTION ... SET search_path`, clears the Supabase advisor warning.
 - [ ] Apply `20260712000000_rsn_change_log_wom.sql` to prod (same SQL-editor route) — adds `new_rsn`/`resolution`/`side_account_id` to `rsn_change_log` for the WOM auto-rename feature. After applying, ask Claude to reload the PostgREST schema cache. First cron tick after deploy should auto-rename "Tzhaar Chud" → "DogGirlAlly" — watch the logs.
 
 - [x] ~~Reset the Supabase DB password and run `db push` for~~ the three pending prod migrations (audit fixes, service-role grants, screenshot submissions) — *applied 2026-07-08 via the Supabase management API instead; password reset not needed. Verified live: new columns, indexes, 4 RPCs, private `screenshots` bucket. Note: remote migration history recorded auto-timestamped versions, so a future CLI `db push` would still see the local files as unapplied — `supabase migration repair` first if that route is ever used.*
