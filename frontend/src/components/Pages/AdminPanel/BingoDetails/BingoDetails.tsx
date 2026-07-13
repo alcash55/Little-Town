@@ -8,7 +8,8 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
-import { DateTimePicker } from '@mui/x-date-pickers';
+import { DateTimePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useBingoDetails } from './useBingoDetails';
 import PageLayout from '../../../../layout/PageLayout/PageLayout';
 
@@ -67,24 +68,26 @@ const BingoDetails = () => {
         />
 
         <Box sx={{ display: 'flex', justifyContent: 'start', alignItems: 'center', gap: 3 }}>
-          <DateTimePicker
-            label="Start"
-            views={['day', 'month', 'hours']}
-            showDaysOutsideCurrentMonth
-            minDate={minStartDate}
-            value={startDate ? new Date(startDate) : null}
-            onChange={handleStartDateChange}
-            slotProps={{ textField: { required: true, error: false } }}
-          />
-          <DateTimePicker
-            label="End"
-            views={['day', 'month', 'hours']}
-            showDaysOutsideCurrentMonth
-            minDate={minEndDate}
-            value={endDate ? new Date(endDate) : null}
-            onChange={handleEndDateChange}
-            slotProps={{ textField: { required: true, error: false } }}
-          />
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <DateTimePicker
+              label="Start"
+              views={['day', 'month', 'hours']}
+              showDaysOutsideCurrentMonth
+              minDate={minStartDate}
+              value={startDate ? new Date(startDate) : null}
+              onChange={handleStartDateChange}
+              slotProps={{ textField: { required: true, error: false } }}
+            />
+            <DateTimePicker
+              label="End"
+              views={['day', 'month', 'hours']}
+              showDaysOutsideCurrentMonth
+              minDate={minEndDate}
+              value={endDate ? new Date(endDate) : null}
+              onChange={handleEndDateChange}
+              slotProps={{ textField: { required: true, error: false } }}
+            />
+          </LocalizationProvider>
         </Box>
 
         <FormControl variant="outlined" sx={{ m: 1, width: '100%' }} required>
