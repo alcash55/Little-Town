@@ -12,6 +12,14 @@ type Tile = Record<string, unknown> & {
   type: "Kill Count" | "Experience" | "Drops";
   task: string;
   points: number;
+  // Only ever present on tiles returned by getActiveBingoBoard() (TEAM-BRIEF.md
+  // Sprint 8, Track A item 4) — read from the row's own `target_value` column,
+  // NOT from `metadata` (metadata only carries the admin's original tile
+  // literal — killCount/experience/dropsAmount — which is what target_value
+  // is derived FROM at save time in saveActiveBingoBoard, not a duplicate of
+  // it). Absent (rather than `null`) on tile literals passed into
+  // saveActiveBingoBoard(), same optionality reasoning as `id` above.
+  target_value?: number | null;
 };
 
 const BINGO_WITH_TEAMS_SELECT =
@@ -225,11 +233,26 @@ export async function getActiveBingoBoard(): Promise<Tile[]> {
 
   const { data, error } = await getDb()
     .from("bingo_board_tiles")
-    .select("id, metadata")
+    .select("id, type, task, points, target_value, metadata")
     .eq("bingo_id", bingo.id)
     .order("position", { ascending: true });
 
   if (error) throw new Error(error.message);
   // Tiles carry their row id so the screenshot review UI can reference them.
-  return (data ?? []).map((row) => ({ ...(row.metadata as Tile), id: row.id }));
+  // `type`/`task`/`points`/`target_value` come from the row's own typed,
+  // NOT NULL-constrained columns (TEAM-BRIEF.md Sprint 8, Track A item 4) —
+  // the authoritative source — rather than `metadata`, which only carries
+  // the admin's original tile literal (killCount/experience/dropsAmount,
+  // used by other callers below) and doesn't itself contain a
+  // `target_value` key. `metadata` is spread first so its extra fields
+  // (killCount/experience/dropsAmount) still come through for existing
+  // callers, then overridden by the real columns for the fields both share.
+  return (data ?? []).map((row) => ({
+    ...(row.metadata as Tile),
+    id: row.id,
+    type: row.type,
+    task: row.task,
+    points: row.points,
+    target_value: row.target_value ?? null,
+  }));
 }

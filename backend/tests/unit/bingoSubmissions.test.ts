@@ -183,4 +183,20 @@ describe("buildBoardTileCompletion (GET /api/bingo/board tile completion)", () =
     expect(buildBoardTileCompletion([], new Set(["tile-1"]))).toEqual([]);
     expect(buildBoardTileCompletion([], null)).toEqual([]);
   });
+
+  // TEAM-BRIEF.md Sprint 8, Track A item 4: type/points/targetValue are an
+  // additive extension exposed via GET /api/bingo/board — the function must
+  // pass through whatever extra fields the caller's tile objects carry
+  // rather than only ever emitting {id, task, completedByMyTeam}.
+  test("passes through extra fields (type/points/targetValue) untouched, alongside completedByMyTeam", () => {
+    const extendedTiles = [
+      { id: "tile-1", task: "Vorkath", type: "Kill Count", points: 25, targetValue: 50 },
+      { id: "tile-2", task: "Zulrah", type: "Kill Count", points: 15, targetValue: null },
+    ];
+    const result = buildBoardTileCompletion(extendedTiles, new Set(["tile-1"]));
+    expect(result).toEqual([
+      { id: "tile-1", task: "Vorkath", type: "Kill Count", points: 25, targetValue: 50, completedByMyTeam: true },
+      { id: "tile-2", task: "Zulrah", type: "Kill Count", points: 15, targetValue: null, completedByMyTeam: false },
+    ]);
+  });
 });
