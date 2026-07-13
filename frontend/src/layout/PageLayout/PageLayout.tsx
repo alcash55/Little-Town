@@ -4,7 +4,13 @@ import { ReactNode } from 'react';
 
 const DEFAULT_TOOLBAR_OFFSET = '64px';
 
-/** Pages render below the AppShell toolbar — 100vh overflows by this amount. */
+/**
+ * Pages render below the AppShell toolbar — 100vh overflows by this amount.
+ * Also subtracts `--impersonation-banner-height` (0px unless the admin
+ * "view as user" banner is showing — see ImpersonationBanner.tsx), which
+ * sits between the toolbar and the page content, so the page's own scroll
+ * area doesn't get pushed past the bottom of the viewport while it's up.
+ */
 const getViewportHeightBelowAppBar = (toolbarMinHeight: unknown) => {
   let offset = DEFAULT_TOOLBAR_OFFSET;
 
@@ -14,7 +20,7 @@ const getViewportHeightBelowAppBar = (toolbarMinHeight: unknown) => {
     offset = toolbarMinHeight;
   }
 
-  return `calc(100dvh - ${offset})`;
+  return `calc(100dvh - ${offset} - var(--impersonation-banner-height, 0px))`;
 };
 
 interface PageLayoutProps {

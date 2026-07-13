@@ -1,19 +1,28 @@
+import { getImpersonationTarget } from './impersonation';
+
 /**
  * A wrapper around fetch that automatically handles 401 responses.
  * When a 401 is detected, it dispatches an 'auth:expired' event which
  * the LoginModalProvider listens to in order to log the user out and
  * redirect them to the home page, storing their current location so
  * they can be returned to it after re-login.
+ *
+ * Also the single place `X-Impersonate-User-Id` gets attached (see
+ * utils/impersonation.ts) — every caller that goes through fetchWithAuth
+ * picks up an active admin "view as user" override automatically, with no
+ * per-call wiring required.
  */
 export const fetchWithAuth = async (
   url: string,
   options: RequestInit = {}
 ): Promise<Response> => {
   const token = localStorage.getItem('authToken');
+  const impersonationTarget = getImpersonationTarget();
 
   const headers = {
     'Content-Type': 'application/json',
     ...(token && { Authorization: `Bearer ${token}` }),
+    ...(impersonationTarget && { 'X-Impersonate-User-Id': impersonationTarget.id }),
     ...(options.headers ?? {}),
   };
 

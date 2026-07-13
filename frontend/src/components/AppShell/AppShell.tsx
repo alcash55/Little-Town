@@ -3,6 +3,7 @@ import { useLocation, Outlet } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useSidebar } from './InternalComponent/SideBar/useSidebar';
 import { Bar, SideBar } from './InternalComponent';
+import { ImpersonationBannerHost } from './InternalComponent/Impersonation';
 
 /**
  *  AppShell component is the main component of the application. It contains the Bar component and the SideBar component.
@@ -29,6 +30,7 @@ export const AppShell = () => {
   return (
     <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Bar openSidebar={openSidebar} setOpenSidebar={setOpenSidebar} />
+      <ImpersonationBannerHost />
       <Outlet />
       <SideBar
         loading={loadSidebar}
