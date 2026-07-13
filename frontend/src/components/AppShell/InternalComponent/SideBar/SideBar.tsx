@@ -234,6 +234,17 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
         paper: {
           sx: {
             width: drawerWidth,
+            // `.MuiDrawer-paper` is `position: fixed; height: 100%` — for a
+            // fixed element, a `%` height resolves against the *large*
+            // viewport, which on mobile Safari includes the space the
+            // address/tab bar can occupy. That makes the paper taller than
+            // what's actually visible whenever the bar is showing, so the
+            // bottom of a long menu (e.g. the admin role's items) renders
+            // past the visible viewport with nothing left to scroll it into
+            // view. `100dvh` tracks the *actual* visible viewport instead —
+            // same fix PageLayout.tsx applies to page content below the app
+            // bar.
+            height: '100dvh',
             overflowX: 'hidden',
             overflowY: 'hidden',
             bgcolor: darkTheme.palette.secondary.main,
@@ -243,7 +254,7 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
     >
       <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
         <SideBarTopItem />
-        <Box sx={{ flexGrow: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+        <Box sx={{ flexGrow: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
           <LoadingContainer loading={loading} width={100} height={100}>
             <SideBarItems />
           </LoadingContainer>
