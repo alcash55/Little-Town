@@ -13,7 +13,23 @@ const BingoRules = () => {
         sx={{
           width: '100%',
           position: 'sticky',
-          top: 0,
+          // `top: 0` sticks flush with the *padding* edge of PageLayout's
+          // scrollport, which has its own p:{xs:3,sm:5} — that padding is
+          // still scrollable space above the stuck element, so on scroll the
+          // heading text underneath briefly shows through the gap before
+          // this bar catches up. A negative `top` (matching that padding)
+          // lets it stick flush with the scrollport's actual top edge
+          // instead, right under the app bar, closing the gap.
+          //
+          // Note: negative `margin` can't do this here — this Box is a
+          // direct child of an MUI Stack, whose own
+          // `& > :not(style):not(style) { margin: 0 }` child reset (two
+          // chained `:not()` pseudo-classes) out-specifies a plain
+          // single-class sx rule and always wins, silently zeroing any
+          // margin set here (that's *also* true of the pre-existing `mx`
+          // below — it's a no-op, left as-is since it doesn't cause a
+          // visible bug given the image is centered regardless).
+          top: { xs: -24, sm: -40 },
           zIndex: 1,
           display: 'flex',
           justifyContent: 'center',
