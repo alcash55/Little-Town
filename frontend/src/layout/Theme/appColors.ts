@@ -13,5 +13,14 @@ export const appColors = {
   textPrimary: '#ffffff',
   textSecondary: 'rgba(255,255,255,0.7)',
   mutedText: 'rgba(255,255,255,0.5)',
+  /** Faint dividers/grid lines (chart axes, section rules). */
   subtleBorder: 'rgba(255,255,255,0.12)',
+  /**
+   * More visible border used for card/table/input outlines. Sprint 6:
+   * folded in from the TeamDrafter page's page-local `subtleBorder` (same
+   * concept, different opacity than the one above — kept as a distinct
+   * token instead of collapsing the two, since several pages rely on the
+   * stronger contrast for outlined cards/tables). See teamDrafterStyles.ts.
+   */
+  cardBorder: 'rgba(255,255,255,0.23)',
 };

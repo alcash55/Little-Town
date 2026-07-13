@@ -1,47 +1,98 @@
-import { Box } from '@mui/material';
+import { useMemo } from 'react';
+import { Alert, Box, Button, CircularProgress, Typography } from '@mui/material';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { useBingoScores } from './useBingoScores';
 import PageLayout from '../../../layout/PageLayout/PageLayout';
+import { appColors } from '../../../layout/Theme';
 
-interface DataPoint {
-  x: Date;
-  y: number;
-}
+// Fixed-order categorical palette (dataviz skill's validated default, dark
+// steps — this app's dark surfaces are effectively the same #1a1a1a/#0d0d0d
+// pair the palette was validated against). Assigned by index in a stable
+// order, never re-cycled when a team drops out of view.
+const CATEGORICAL_SERIES_COLORS = [
+  '#3987e5', // blue
+  '#199e70', // aqua
+  '#c98500', // yellow
+  '#008300', // green
+  '#9085e9', // violet
+  '#e66767', // red
+  '#d55181', // magenta
+  '#d95926', // orange
+];
+
+const compactXp = new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 });
 
 const BingoScores = () => {
-  const teamColors = ['#39f76c', '#854cc2', '#d95f27'];
-  const teamNames = ['Team 1', 'Team 2', 'Team 3'];
-  const chartData: DataPoint[][] = [
-    [
-      { x: new Date(2023, 6, 23), y: 0 },
-      { x: new Date(2023, 6, 24), y: 100000 },
-      { x: new Date(2023, 6, 25), y: 500000 },
-      { x: new Date(2023, 6, 26), y: 950000 },
-      { x: new Date(2023, 6, 27), y: 1700000 },
-      { x: new Date(2023, 6, 28), y: 2700000 },
-    ],
-    [
-      { x: new Date(2023, 6, 23), y: 0 },
-      { x: new Date(2023, 6, 24), y: 75000 },
-      { x: new Date(2023, 6, 25), y: 800000 },
-      { x: new Date(2023, 6, 26), y: 1000500 },
-      { x: new Date(2023, 6, 27), y: 1300000 },
-      { x: new Date(2023, 6, 28), y: 2500000 },
-    ],
-    [
-      { x: new Date(2023, 6, 23), y: 0 },
-      { x: new Date(2023, 6, 24), y: 72000 },
-      { x: new Date(2023, 6, 25), y: 600000 },
-      { x: new Date(2023, 6, 26), y: 1000000 },
-      { x: new Date(2023, 6, 27), y: 1500000 },
-      { x: new Date(2023, 6, 28), y: 3000000 },
-    ],
-  ];
+  const { teams, loading, error, refetch } = useBingoScores();
 
-  // All three mock series share the same x-axis dates.
-  const dates = chartData[0].map((point) => point.x);
+  // Merge every team's series onto one shared, sorted set of dates so each
+  // line's `data` array lines up index-for-index with the x-axis (MUI
+  // x-charts' 'point' scale plots by position, not by value) — teams don't
+  // necessarily share identical snapshot dates (e.g. a team added mid-bingo
+  // has a shorter history), so a missing date becomes `null` (a gap in that
+  // team's line) rather than misaligning every point after it.
+  const { dates, series } = useMemo(() => {
+    const dateSet = new Set<string>();
+    for (const team of teams) {
+      for (const point of team.series) dateSet.add(point.date);
+    }
+    const sortedDates = Array.from(dateSet).sort();
+    const parsedDates = sortedDates.map((iso) => new Date(iso));
 
-  useBingoScores();
+    const chartSeries = teams.map((team, index) => {
+      const byDate = new Map(team.series.map((point) => [point.date, point.totalXpGained]));
+      return {
+        id: team.teamId,
+        label: team.teamName,
+        data: sortedDates.map((iso) => byDate.get(iso) ?? null),
+        color: CATEGORICAL_SERIES_COLORS[index % CATEGORICAL_SERIES_COLORS.length],
+        curve: 'natural' as const,
+        showMark: true,
+        connectNulls: true,
+      };
+    });
+
+    return { dates: parsedDates, series: chartSeries };
+  }, [teams]);
+
+  const hasHistory = dates.length > 0 && series.some((s) => s.data.some((v) => v !== null));
+
+  if (loading) {
+    return (
+      <PageLayout title="Total Team XP" align="center">
+        <CircularProgress sx={{ color: appColors.accent }} />
+      </PageLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <PageLayout title="Total Team XP" align="center">
+        <Alert severity="error" sx={{ width: '100%', maxWidth: 500 }}>
+          {error}
+        </Alert>
+        <Button variant="outlined" onClick={() => void refetch()} sx={{ mt: 2 }}>
+          Retry
+        </Button>
+      </PageLayout>
+    );
+  }
+
+  if (!hasHistory) {
+    return (
+      <PageLayout title="Total Team XP" align="center">
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5, py: 4 }}>
+          <ShowChartIcon sx={{ fontSize: 48, color: appColors.mutedText }} />
+          <Typography variant="h6">No team XP history yet</Typography>
+          <Typography variant="body2" sx={{ color: appColors.textSecondary, textAlign: 'center', maxWidth: 420 }}>
+            Once the bingo is active and player snapshots start rolling in, each team's total XP
+            gained will show up here.
+          </Typography>
+        </Box>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout title="Total Team XP" maxWidth="full">
@@ -62,24 +113,16 @@ const BingoScores = () => {
           yAxis={[
             {
               min: 0,
-              max: 3_000_000,
-              valueFormatter: (value: number) => `${(value / 1_000_000).toFixed(1)}m`,
+              valueFormatter: (value: number) => compactXp.format(value),
             },
           ]}
-          series={chartData.map((line, index) => ({
-            id: teamNames[index],
-            label: teamNames[index],
-            data: line.map((point) => point.y),
-            color: teamColors[index],
-            curve: 'natural',
-            showMark: true,
-          }))}
+          series={series}
           grid={{ horizontal: true }}
           sx={{
-            '& .MuiChartsAxis-tickLabel': { fill: 'rgba(255,255,255,0.7)' },
-            '& .MuiChartsAxis-line': { stroke: 'rgba(255,255,255,0.23)' },
-            '& .MuiChartsAxis-tick': { stroke: 'rgba(255,255,255,0.23)' },
-            '& .MuiChartsLegend-series text': { fill: '#fff' },
+            '& .MuiChartsAxis-tickLabel': { fill: appColors.textSecondary },
+            '& .MuiChartsAxis-line': { stroke: appColors.subtleBorder },
+            '& .MuiChartsAxis-tick': { stroke: appColors.subtleBorder },
+            '& .MuiChartsLegend-series text': { fill: appColors.textPrimary },
             '& .MuiChartsGrid-line': { stroke: 'rgba(255,255,255,0.08)' },
           }}
         />
