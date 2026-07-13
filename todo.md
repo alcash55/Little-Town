@@ -1,8 +1,8 @@
 
 # Epics (Alex)
 
-- [ ] Create Admin page for sending or generating links to onboard new users
-- [ ] Create onboarding wizard for first time users
+- [x] Create Admin page for sending or generating links to onboard new users *(shipped 2026-07-13, Sprint 6 — Track A invites API (single-use hashed tokens, 72h default expiry, revoke) + Track B /AdminPanel invites page (generate with role+expiry, list, copy, revoke))*
+- [x] Create onboarding wizard for first time users *(shipped 2026-07-13, Sprint 6 — dismissible MUI stepper on first authenticated visit: welcome → RSN confirm → team/scores → Resources pointer; completion persisted, re-openable via sidebar "Show intro")*
 - [x] Start the bingo submission page, have it pull images from the bucket that is in supabase or cloudflare *(shipped 2026-07-07 — admin review page pulls signed URLs from the private Supabase bucket; needs Discord credentials + prod migrations to go live, see action items)*
   - [x] Create an API that uses the discord api that pulls messages from a text channel in the littletown discord and POSTs them to the storage bucket
   - [x] If an admin approves the screenshot is will react to the image with a thumbs up and then add the points to that teams board and related stats
@@ -21,10 +21,10 @@
 - [x] Supabase issues on all tables: Detects cases where row level security (RLS) has been enabled on a table but no RLS policies have been created *(fixed 2026-07-09, Sprint 3 — explicit deny-all policies for anon/authenticated on all 10 public tables, applied to prod)*
 - [x] The team drafter and the cron jobs for updating stats needs to go in depth a little more. One thing they both do not check is if the user changed their runescape name. We only check that at the beggining of adding a user the team drafter/bingo after that they could change it many times over and we would never know. If the cron job finds a user who did change their name is should log that as well. *(shipped 2026-07-12, Sprint 5 — every hiscore lookup for an already-registered player (cron, activation, admin refresh) now checks whether the RSN still resolves; misses land in the new `rsn_change_log` table (one unresolved row per player, auto-resolves if the RSN comes back) and surface as rsnStale warnings in the overview player table. Detection + logging only, never auto-rename. Side accounts only get a console warning — proper logging needs a schema change, on the Sprint 6 list.)* *(extended 2026-07-12, Sprint 6 — a 404 now also queries Wise Old Man for an approved rename, verifies the candidate name resolves on the hiscores, and if so auto-updates `bingo_players.rsn`/`bingo_player_side_accounts.rsn` and resumes the current tick's snapshot under the new name; rsn_change_log gets `new_rsn`/`resolution` + a `side_account_id` column so side accounts get the same detect→resolve treatment as primary accounts. WOM re-checks for a still-stale RSN are throttled to at most once/hour per subject (in-memory, process-local — documented tradeoff). See `services/rsnChangeDetection.ts`.)*
 - [x] warning in the chrome dev tools: You are loading @emotion/react when it is already loaded. Running multiple instances may cause problems. This can happen if multiple versions are used, or if multiple builds of the same version are used. *(addressed 2026-07-09, Sprint 3 — only one physical @emotion copy exists and the warning never reproduced across ~20 scenarios; added the standard `resolve.dedupe` guard to vite.config.ts. Reopen if it reappears.)*
-- [ ] The file structure should be updated:
-  - [ ] Little-Town\scripts should not be standing alone top level
-- [ ] There needs to be a way I can mock users
-  - [ ] Add a way to see the app from a users perspecitve without logging in as them, a simple dropdown of all my users so I can select one to override as in order to re-create errors or perform other tests, then when done I can clear the override
+- [x] The file structure should be updated:
+  - [x] Little-Town\scripts should not be standing alone top level *(done 2026-07-13, Sprint 6 — Discord dump tooling moved to backend/scripts/, build-resources to repo-root tools/; package.json scripts + docs updated, no stale references)*
+- [x] There needs to be a way I can mock users
+  - [x] Add a way to see the app from a users perspecitve without logging in as them, a simple dropdown of all my users so I can select one to override as in order to re-create errors or perform other tests, then when done I can clear the override *(shipped 2026-07-13, Sprint 6 — admin-only app-bar picker → X-Impersonate-User-Id header on all authed calls via fetchWithAuth, "Viewing as X — Clear" banner, survives refresh (sessionStorage), cleared on logout; server-side: admin-only grant, admin-to-admin blocked, every impersonated request logged. NOTE: browser-verified against mocks only — Docker was down; real-backend pass carried to Sprint 7.)*
 - [ ] DeprecationWarning: The ready event has been renamed to clientReady to distinguish it from the gateway READY event and will only emit under that name in v15. Please use clientReady instead.
 - [ ] The bingo board needs to be usable
   - [ ] Populate the board with the current board that has been made and set for the active bingo, if there is not a bingo active then there should be a message that says something like "Error, no active bingo"
@@ -67,17 +67,23 @@
 
 # Sprint 6 candidates — collected during Sprint 5 (2026-07-12)
 
-- **Onboarding epics** (deferred from Sprint 5, top of the epics list): admin page for generating/sending invite links + first-time-user onboarding wizard. Note: a `Pages/AdminPanel/UserInvite/` component already exists — audit it as the starting point.
-- Wire real team-XP data into the BingoScores line chart (it still renders mocked data; chart itself is done).
+- [x] **Onboarding epics** (deferred from Sprint 5, top of the epics list): admin page for generating/sending invite links + first-time-user onboarding wizard. *(shipped 2026-07-13, Sprint 6 — see the checked epics at the top)*
+- [x] Wire real team-XP data into the BingoScores line chart (it still renders mocked data; chart itself is done). *(shipped 2026-07-13, Sprint 6 — GET /api/bingo/team-xp-history from bingo_player_hiscore_history, daily buckets, main accounts only; chart has loading/error/empty states, 404 = empty)*
 - [x] Side-account RSN-change detection: needs a migration adding nullable `side_account_id` to `rsn_change_log` (exactly one of player_id/side_account_id set); today side-account misses only console-warn. *(shipped 2026-07-12, Sprint 6 — folded into the automatic RSN-rename resolution work below: `20260712000000_rsn_change_log_wom.sql` adds `side_account_id` + the player_id/side_account_id XOR check, and `checkSideAccountRsnChange` wires side accounts into the same detect→resolve flow as primary accounts.)*
 - Side accounts added to an already-active bingo never get a start snapshot — extend retake's "missing" filter to side accounts, or snapshot at `addSideAccount` time.
 - Board-progress semantics (product decision): summed player points can exceed board max because multiple players can complete the same tile; the overview gauge explains it in a caption for now — decide whether the backend should team-deduplicate "total points scored".
-- Resources search TextField passes `slotProps` through to the DOM (console warning) — small MUI v9 leftover.
-- Fold `teamDrafterStyles.ts`'s duplicated color constants into `layout/Theme/appColors.ts`.
-- Vite 4 → 5+/Rollup 4 bump — silences ~645 harmless "use client directive ignored" build notices from MUI v9.
+- [x] Resources search TextField passes `slotProps` through to the DOM (console warning) — small MUI v9 leftover. *(closed 2026-07-13, Sprint 6 — turned out stale: already fixed by the Sprint 5 MUI v9 migration; browser-confirmed no warning on /Resources)*
+- [x] Fold `teamDrafterStyles.ts`'s duplicated color constants into `layout/Theme/appColors.ts`. *(done 2026-07-13, Sprint 6 — the four shared constants now re-export from appColors; some literal #2A9D8F hovers/focus states remain in inputSx/selectSx, noted below)*
+- Vite 4 → 5+/Rollup 4 bump — silences ~645 harmless "use client directive ignored" build notices from MUI v9. *(upgraded to load-bearing 2026-07-13: all 8 frontend `bun audit` findings (2 high) are vite/esbuild-transitive and only resolve with this major bump + @vitejs/plugin-react v4+; dev-server-only exposure, but do it soon)*
 - `PUT /api/hiscores/:player` (authenticated variant) has no rate limit — fine today, revisit if exposed more broadly.
 - `bingo_player_hiscore_history` is append-only and grows forever — decide a retention/archive policy once real usage data exists.
 - Agent-infra: parallel worktree agents share one local Supabase stack; two auto-timestamped migrations collided this sprint (fixed by renaming). Adopt a convention (coordinate timestamps in the brief, or per-worktree stacks).
+
+# Sprint 7 candidates — collected during Sprint 6 close (2026-07-13)
+
+- **Real-backend verification of the Sprint 6 flows** (invites end-to-end, impersonation, onboarding wizard, BingoScores data): Docker Desktop was down all sprint, so verification was mocked-browser + side-by-side code review only. One live pass against the local Supabase stack needed.
+- **`backend/.env` defaults to the hosted prod Supabase** (`faqivcgrhrvuwpistivp.supabase.co`) with the local URL commented out — a casually started dev backend talks to prod. Flip the default to local; make prod an explicit override. (This is also what blocked QA from live-testing.)
+- teamDrafterStyles.ts still has literal `#2A9D8F` hovers/focus states in `inputSx`/`selectSx`/`teamDrafterTabsSx` — fold into `appColors.accent` (cosmetic).
 
 # Action items (Alex) — unblock the shipped pipeline
 
