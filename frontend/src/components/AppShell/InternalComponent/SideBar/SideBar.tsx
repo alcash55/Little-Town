@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Close from '@mui/icons-material/Close';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
+import HelpOutline from '@mui/icons-material/HelpOutlineOutlined';
 import {
   Box,
   Collapse,
@@ -19,6 +20,7 @@ import { Link } from 'react-router-dom';
 import { SidebarItem } from './useSidebar';
 import { darkTheme } from '../../../../layout/Theme';
 import { LoadingContainer } from '../../../LoadingContainer/LoadingContainer';
+import { useOnboarding } from '../../../Onboarding';
 
 interface Props {
   loading: boolean;
@@ -201,6 +203,27 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
     );
   };
 
+  /**
+   * "Show intro" — re-opens the onboarding wizard on demand (TEAM-BRIEF.md
+   * Track B #2). Only rendered for a signed-in user, since the wizard's
+   * completion state is keyed by user id.
+   */
+  const SideBarFooter = () => {
+    const { showIntro, canShowIntro } = useOnboarding();
+    if (!canShowIntro) return null;
+    return (
+      <>
+        <Divider sx={{ bgcolor: 'white' }} />
+        <ListItemButton onClick={showIntro} color="inherit" sx={{ ...buttonStyles }}>
+          <ListItemIcon sx={{ color: 'white' }}>
+            <HelpOutline />
+          </ListItemIcon>
+          <ListItemText primary="Show intro" />
+        </ListItemButton>
+      </>
+    );
+  };
+
   return (
     <Drawer
       id="sidebar"
@@ -218,11 +241,16 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
         },
       }}
     >
-      <Box sx={{ width: '100%', height: '100%' }}>
+      <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
         <SideBarTopItem />
-        <LoadingContainer loading={loading} width={100} height={100}>
-          <SideBarItems />
-        </LoadingContainer>
+        <Box sx={{ flexGrow: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+          <LoadingContainer loading={loading} width={100} height={100}>
+            <SideBarItems />
+          </LoadingContainer>
+        </Box>
+        <Box sx={{ flexShrink: 0 }}>
+          <SideBarFooter />
+        </Box>
       </Box>
     </Drawer>
   );

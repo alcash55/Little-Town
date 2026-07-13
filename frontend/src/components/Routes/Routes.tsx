@@ -31,6 +31,7 @@ export const Routes = createBrowserRouter(
       <Route path="AdminPanel/ScreenshotSubmission" element={<ProtectedRoute allowedRoles={['admin']}><Pages.ScreenshotSubmission /></ProtectedRoute>} />
       <Route path="AdminPanel/BingoOverview" element={<ProtectedRoute allowedRoles={['admin']}><Pages.BingoOverview /></ProtectedRoute>} />
       <Route path="AdminPanel/Maintenance" element={<ProtectedRoute allowedRoles={['admin']}><Pages.Maintenance /></ProtectedRoute>} />
+      <Route path="AdminPanel/UserInvite" element={<ProtectedRoute allowedRoles={['admin']}><Pages.UserInvite /></ProtectedRoute>} />
 
       <Route path="*" element={<Pages.Error />} />
     </Route>,
