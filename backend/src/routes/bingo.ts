@@ -4,7 +4,11 @@ import { protect, authorize } from "../middleware/auth.js";
 import { ApiResponse } from "../types/index.js";
 import { getActiveBingo, getActiveBingoBoard } from "../db/bingos.js";
 import { getAllPlayerSnapshots } from "../db/players.js";
-import { buildDropStatusByRsn, DropSubmissionAttribution } from "../db/bingoSubmissions.js";
+import {
+  buildDropStatusByRsn,
+  buildBoardTileCompletion,
+  DropSubmissionAttribution,
+} from "../db/bingoSubmissions.js";
 import { getBingoConflicts } from "../db/conflicts.js";
 import { getTeamXpHistory } from "../db/teamXpHistory.js";
 import { getDb } from "../db/client.js";
@@ -283,6 +287,94 @@ router.get(
           dropStatus: dropStatus[rest.rsn] ?? {},
         })),
       },
+    });
+  }),
+);
+
+/**
+ * GET /api/bingo/board
+ *
+ * Feeds the real BingoBoard page (TEAM-BRIEF.md Sprint 7, Track A item 1 —
+ * frozen contract). Same auth level as the other bingo read endpoints on
+ * this router (any logged-in role via the router-level `protect` above — no
+ * extra `authorize`). Bare-object response (not the usual ApiResponse
+ * envelope), matching the team-xp-history / conflicts convention:
+ *
+ *   { active: false }
+ *   { active: true, bingo: {id,name,boardSize}, myTeam: {id,name}|null,
+ *     tiles: [{id,task,completedByMyTeam}] }
+ *
+ * "active" deliberately means bingo.status === 'active' specifically (NOT
+ * 'draft') — matches the status check playerSnapshotCron.ts and
+ * discordScreenshots.ts already use for "is a bingo actually running", and
+ * is stricter than getActiveBingo()'s own draft-or-active definition (which
+ * exists for admin drafting flows, not this public read).
+ *
+ * myTeam / completion resolution uses req.user (the EFFECTIVE, possibly
+ * impersonated caller — see middleware/auth.ts's applyImpersonation, which
+ * already swaps req.user before this handler runs) exactly like
+ * /my-team-data's own registered_by lookup above. completedByMyTeam only
+ * ever reflects the caller's own team's approved submissions — other teams'
+ * progress is never fetched, let alone exposed (contract 1).
+ */
+router.get(
+  "/board",
+  asyncHandler(async (req: Request, res: Response) => {
+    const bingo = await getActiveBingo();
+    if (!bingo?.id || bingo.status !== "active") {
+      return res.status(200).json({ active: false });
+    }
+
+    const db = getDb();
+
+    // Same "find the player row this user registered" lookup /my-team-data
+    // uses to discover their team — req.user is already the effective
+    // (post-impersonation) caller.
+    const { data: myPlayers, error: mpErr } = await db
+      .from("bingo_players")
+      .select("team_id")
+      .eq("bingo_id", bingo.id)
+      .eq("registered_by", req.user!.id)
+      .limit(1);
+    if (mpErr) throw new Error(mpErr.message);
+
+    const myTeamId: string | null = myPlayers?.[0]?.team_id ?? null;
+    const myTeam = myTeamId
+      ? (bingo.teamObjects ?? []).find((t) => t.id === myTeamId) ?? null
+      : null;
+
+    // getActiveBingoBoard() always attaches each row's id (its Tile type
+    // marks `id` optional only because the same type also describes tile
+    // literals passed INTO saveActiveBingoBoard(), which never have one).
+    const tiles = (await getActiveBingoBoard()).map((tile) => ({
+      id: tile.id!,
+      task: tile.task,
+    }));
+
+    // Only fetch approved submissions for the caller's own team — never
+    // other teams' (contract 1). No team -> skip the query entirely and
+    // pass null through so every tile comes back completedByMyTeam: false.
+    let approvedTileIdsForMyTeam: Set<string> | null = null;
+    if (myTeamId) {
+      const { data: subs, error: subsErr } = await db
+        .from("bingo_submissions")
+        .select("tile_id")
+        .eq("bingo_id", bingo.id)
+        .eq("team_id", myTeamId)
+        .eq("status", "approved");
+      if (subsErr) throw new Error(subsErr.message);
+      approvedTileIdsForMyTeam = new Set(
+        (subs ?? [])
+          .map((s: { tile_id: string | null }) => s.tile_id)
+          .filter((id: string | null): id is string => id !== null),
+      );
+    }
+
+    res.status(200).json({
+      active: true,
+      bingo: { id: bingo.id, name: bingo.name, boardSize: bingo.boardSize },
+      myTeam: myTeam ? { id: myTeam.id, name: myTeam.name } : null,
+      tiles: buildBoardTileCompletion(tiles, approvedTileIdsForMyTeam),
     });
   }),
 );
