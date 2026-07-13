@@ -101,6 +101,9 @@ const BingoBoard = () => {
             task={tile.task}
             completed={tile.completedByMyTeam}
             myTeamName={myTeam?.name}
+            points={tile.points}
+            type={tile.type}
+            targetValue={tile.targetValue}
           />
         ))}
       </Box>
