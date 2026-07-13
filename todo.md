@@ -25,10 +25,16 @@
   - [ ] Little-Town\scripts should not be standing alone top level
 - [ ] There needs to be a way I can mock users
   - [ ] Add a way to see the app from a users perspecitve without logging in as them, a simple dropdown of all my users so I can select one to override as in order to re-create errors or perform other tests, then when done I can clear the override
-
+- [ ] DeprecationWarning: The ready event has been renamed to clientReady to distinguish it from the gateway READY event and will only emit under that name in v15. Please use clientReady instead.
 - [ ] The bingo board needs to be usable
   - [ ] Populate the board with the current board that has been made and set for the active bingo, if there is not a bingo active then there should be a message that says something like "Error, no active bingo"
   - [ ] When logged in as a user I should be able to see that my team and ONLY my team has finished a tile on the bingo board page because it will have a green background to show completed
+- [ ] On mobile there are 3 different responsiveness bugs that occur
+  - [ ] The refresh button icon is outside of the button @refreshButton.png
+  - [ ] The Mobile side bar should scroll if there are enough children to where sidebar items are geting cut off This likely only happens to Admin roll @mobileSidebar.png
+  - [ ] The header on the Bingo Rules page has a gap between the app bar and the header when it shouldn't @mobileRulesHeader.png
+  - [ ] Issue: Function public.log_hiscore_history has a role mutable search_path
+  Description. Detects functions where the search_path parameter is not set.
 
 # Next sprint — carried over from the July 2026 audit sprint
 

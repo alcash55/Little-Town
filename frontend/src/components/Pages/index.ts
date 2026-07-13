@@ -17,4 +17,5 @@ export const Pages = {
   Resources: lazy(() => import('./Resources/Resources')),
   BingoOverview: lazy(() => import('./AdminPanel/BingoOverview/BingoOverview')),
   Maintenance: lazy(() => import('./AdminPanel/Maintenance/Maintenance')),
+  UserInvite: lazy(() => import('./AdminPanel/UserInvite/UserInvite')),
 };
