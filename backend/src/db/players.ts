@@ -426,3 +426,44 @@ export async function getAllSideAccounts(
   }
   return result;
 }
+
+/**
+ * Side accounts in a bingo that have never had a 'start' snapshot written —
+ * e.g. one added to a player after the bingo was already active, whose
+ * immediate best-effort snapshot (routes/admin.ts's POST
+ * .../side-accounts) failed (RSN not yet ranked) or, for bingos created
+ * before this fix shipped, was simply never attempted (TEAM-BRIEF.md
+ * Sprint 7, Track A item 2). Feeds the extended "missing" sweep in
+ * POST /bingo/:bingoId/retake-start-snapshots alongside its existing
+ * main-account check.
+ *
+ * Two bulk queries (all side accounts for the bingo, all side_account_ids
+ * with a 'start' row) diffed in memory — same shape as getAllPlayerSnapshots
+ * above — rather than a per-side-account round trip.
+ */
+export async function getSideAccountsMissingStartSnapshot(
+  bingoId: string,
+): Promise<Array<{ playerId: string; sideAccount: SideAccount }>> {
+  const byPlayer = await getAllSideAccounts(bingoId);
+  const allPairs = Object.entries(byPlayer).flatMap(([playerId, accounts]) =>
+    accounts.map((sideAccount) => ({ playerId, sideAccount })),
+  );
+  if (!allPairs.length) return [];
+
+  const db = getDb();
+  const { data, error } = await db
+    .from("bingo_player_hiscores")
+    .select("side_account_id")
+    .in(
+      "side_account_id",
+      allPairs.map((p) => p.sideAccount.id),
+    )
+    .eq("type", "start");
+
+  if (error) throw new Error(`Failed to check side account snapshots: ${error.message}`);
+
+  const haveStart = new Set(
+    ((data ?? []) as Array<{ side_account_id: string }>).map((r) => r.side_account_id),
+  );
+  return allPairs.filter((p) => !haveStart.has(p.sideAccount.id));
+}
