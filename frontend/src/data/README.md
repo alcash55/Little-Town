@@ -89,3 +89,22 @@ contract). It is **not** part of the day-to-day edit workflow — running it
 against a `resources.json` that has since been hand-edited will overwrite
 whatever categories it processes. See the header comment in that file for
 usage (`--only <category-id,...>` to limit which categories a run touches).
+
+## Bingo tile artwork (`bingoArtEntities.ts`)
+
+`bingoArtEntities.ts` is the hand-editable source of truth for the boss /
+skill / item renders shown on bingo tiles (`BingoTile.tsx`, via the
+`resolveBingoArt()` matcher in `bingoArt.ts`). Full instructions (how to
+find a wiki file, pick a slug, add aliases) are in the doc comment at the
+top of that file — short version:
+
+1. Add an entry to the `BINGO_ART_ENTITIES` array with a stable kebab-case
+   `slug`, the exact OSRS hiscores activity/skill/item name as `canonical`,
+   and any shorthand an admin might type as `aliases`.
+2. Run `bun run tools/download-bingo-art.ts --only <slug>` from the repo
+   root to fetch the image into
+   `frontend/src/assets/Images/bosses/<slug>.png` (committed to the repo —
+   the app never hotlinks the wiki at runtime).
+3. Unmapped tasks always degrade to the existing text-only tile design, so
+   there's no need to cover every possible task — only add what Alex's
+   boards actually use.
