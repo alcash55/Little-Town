@@ -2,6 +2,13 @@ import { getDb } from "./client.js";
 import { BingoConfig, BingoStatus } from "../types/index.js";
 
 type Tile = Record<string, unknown> & {
+  // Only ever present on tiles returned by getActiveBingoBoard() below (it
+  // attaches the bingo_board_tiles row id after spreading metadata) — not
+  // on the tile literals passed INTO saveActiveBingoBoard(), which strips
+  // any incoming id before insert. Optional here so both call shapes
+  // type-check; readers that need it (e.g. GET /api/bingo/board) go through
+  // getActiveBingoBoard(), where it's always populated.
+  id?: string;
   type: "Kill Count" | "Experience" | "Drops";
   task: string;
   points: number;

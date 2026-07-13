@@ -221,7 +221,10 @@ export function startDiscordScreenshotService(): void {
     ],
   });
 
-  client.once("ready", async (readyClient) => {
+  // discord.js v14.14+ renamed the "ready" event to "clientReady" ("ready"
+  // is deprecated and slated for removal in v15) — see TEAM-BRIEF.md Sprint
+  // 7, Track A item 3.
+  client.once("clientReady", async (readyClient) => {
     console.log(`[discordScreenshots] Logged in as ${readyClient.user.tag}`);
     try {
       const channel = await readyClient.channels.fetch(channelId);

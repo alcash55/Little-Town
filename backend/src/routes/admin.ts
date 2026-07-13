@@ -30,7 +30,7 @@ import {
   HISCORE_CONCURRENCY,
   PlayerSnapshotResult,
 } from "../services/bingoActivation.js";
-import type { SideSnapshotResult } from "../services/sideAccountSnapshots.js";
+import { snapshotSideAccountTasks, type SideSnapshotResult } from "../services/sideAccountSnapshots.js";
 import {
   registerBingoPlayer,
   getBingoPlayers,
@@ -44,6 +44,7 @@ import {
   resetPlayerTeams,
   getSideAccounts,
   getAllSideAccounts,
+  getSideAccountsMissingStartSnapshot,
   addSideAccount,
   removeSideAccount,
 } from "../db/players.js";
@@ -267,12 +268,24 @@ router.post(
 
     const rows = await getAllPlayerSnapshots(bingoId);
     const missing = rows.filter((row) => row.start === null).map((row) => row.player);
+    const missingPlayerIds = new Set(missing.map((p) => p.id));
 
-    if (!missing.length) {
+    // Side accounts missing a start snapshot whose PARENT player already
+    // has one — e.g. added after the bingo went active (TEAM-BRIEF.md
+    // Sprint 7, Track A item 2). Side accounts of a still-`missing` main
+    // player are excluded here since snapshotStartAndCurrent(missing, ...)
+    // below already retakes ALL of that player's side accounts as part of
+    // its own side-account phase — this avoids firing two OSRS lookups for
+    // the same side account in one request.
+    const extraSidePairs = (await getSideAccountsMissingStartSnapshot(bingoId)).filter(
+      (p) => !missingPlayerIds.has(p.playerId),
+    );
+
+    if (!missing.length && !extraSidePairs.length) {
       const response: ApiResponse<{ results: PlayerSnapshotResult[]; sideResults: SideSnapshotResult[] }> = {
         success: true,
         data: { results: [], sideResults: [] },
-        message: "No players are missing a start snapshot.",
+        message: "No players or side accounts are missing a start snapshot.",
       };
       return res.status(200).json(response);
     }
@@ -283,17 +296,28 @@ router.post(
     // no-op thanks to savePlayerSnapshot's "start" upsert-if-absent. Also
     // retakes those players' side accounts (best-effort — never affects
     // `succeeded`/`failed` below, which are main-account only).
-    const { succeeded, failed, results, sideResults } = await snapshotStartAndCurrent(missing, "drafter");
-    const sideFailed = sideResults.filter((r) => !r.ok);
+    const { succeeded, failed, results, sideResults } = missing.length
+      ? await snapshotStartAndCurrent(missing, "drafter")
+      : { succeeded: 0, failed: [] as string[], results: [] as PlayerSnapshotResult[], sideResults: [] as SideSnapshotResult[] };
+
+    // Extended sweep: side accounts missing a start snapshot on players
+    // whose own account was never "missing" above, so the main pass never
+    // touched them.
+    const extraSideResults = extraSidePairs.length
+      ? await snapshotSideAccountTasks(extraSidePairs, ["start", "current"], "drafter")
+      : [];
+
+    const allSideResults = [...sideResults, ...extraSideResults];
+    const sideFailed = allSideResults.filter((r) => !r.ok);
 
     const response: ApiResponse<{ results: PlayerSnapshotResult[]; sideResults: SideSnapshotResult[] }> = {
       success: true,
-      data: { results, sideResults },
+      data: { results, sideResults: allSideResults },
       message: `Retook start snapshots for ${succeeded} of ${missing.length} missing player${
         missing.length !== 1 ? "s" : ""
       }${failed.length ? `; ${failed.length} still failing` : ""}${
-        sideResults.length
-          ? `; ${sideResults.length - sideFailed.length}/${sideResults.length} side account(s) succeeded`
+        allSideResults.length
+          ? `; ${allSideResults.length - sideFailed.length}/${allSideResults.length} side account(s) succeeded`
           : ""
       }.`,
     };
@@ -608,7 +632,27 @@ router.post(
     if (!player) return res.status(404).json({ success: false, error: `Player "${rsn}" not found` });
 
     const sideAccount = await addSideAccount(player.id, sideRsn, notes, getAuditUserId(req));
-    res.status(201).json({ success: true, data: sideAccount });
+
+    // A side account added while the bingo is already 'active' would
+    // otherwise never get a start snapshot — every other account only ever
+    // gets one via activation/retake, neither of which run again on their
+    // own (TEAM-BRIEF.md Sprint 7, Track A item 2). Take it immediately,
+    // best-effort: a failed lookup (e.g. RSN not yet ranked) doesn't fail
+    // the add — retake-start-snapshots' extended missing-side-account sweep
+    // (below) catches it on a later admin retry. Bingos still in 'draft'
+    // get their side accounts' start snapshots the normal way, at
+    // activation, so nothing extra is needed here for that case.
+    let snapshot: SideSnapshotResult | undefined;
+    if (bingo.status === "active") {
+      const [result] = await snapshotSideAccountTasks(
+        [{ playerId: player.id, sideAccount }],
+        ["start", "current"],
+        "drafter",
+      );
+      snapshot = result;
+    }
+
+    res.status(201).json({ success: true, data: sideAccount, ...(snapshot ? { snapshot } : {}) });
   }),
 );
 
