@@ -88,6 +88,8 @@
 - Delete the now-unused `frontend/src/assets/Images/BingoBoardExample.png`.
 - BingoRules: the pre-existing negative-`mx` on the sticky banner Box is a silent no-op (MUI Stack's child margin reset out-specifies it) — harmless, but know it if that layout changes.
 - `imageLinks.test.ts` prints an expected-but-noisy ECONNRESET stack trace mid-run — silence it so CI log greps for "error:" stay clean.
+- Code-split the two largest frontend chunks (640KB / 421KB `index-*.js`) — Vite build warns; pre-existing, surfaced during the board redesign.
+- OnboardingWizard throws a `validateDOMNesting` dev warning (`<h6>` inside `<h2>`) — small Sprint 6 leftover.
 
 # Sprint 7 candidates — collected during Sprint 6 close (2026-07-13)
 
