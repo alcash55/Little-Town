@@ -163,25 +163,31 @@ export function buildDropStatusByRsn(
 }
 
 /**
- * Builds the `tiles[].completedByMyTeam` list for `GET /api/bingo/board`
- * (TEAM-BRIEF.md Track A item 1). `completedByMyTeam` is true when the tile
- * id is present in `approvedTileIdsForMyTeam` — the set of `tile_id`s with
- * an **approved** `bingo_submissions` row for the caller's team, computed by
- * the caller (route handler) via a DB query scoped to `team_id = myTeamId`.
- * Passing `null` (caller has no team) always yields `completedByMyTeam:
- * false` for every tile, rather than requiring callers to special-case an
- * empty team lookup into an empty Set. Pure over its inputs so it's
- * unit-testable without a DB, mirroring buildDropStatusByRsn above. Only
- * ever reflects the caller's own team — never other teams' — since the
- * caller only ever passes in submissions already scoped to `myTeamId`.
+ * Builds the `tiles[]` list for `GET /api/bingo/board` (TEAM-BRIEF.md
+ * Sprint 7, Track A item 1), attaching `completedByMyTeam`.
+ * `completedByMyTeam` is true when the tile id is present in
+ * `approvedTileIdsForMyTeam` — the set of `tile_id`s with an **approved**
+ * `bingo_submissions` row for the caller's team, computed by the caller
+ * (route handler) via a DB query scoped to `team_id = myTeamId`. Passing
+ * `null` (caller has no team) always yields `completedByMyTeam: false` for
+ * every tile, rather than requiring callers to special-case an empty team
+ * lookup into an empty Set. Pure over its inputs so it's unit-testable
+ * without a DB, mirroring buildDropStatusByRsn above. Only ever reflects the
+ * caller's own team — never other teams' — since the caller only ever
+ * passes in submissions already scoped to `myTeamId`.
+ *
+ * Generic over `T` (rather than a fixed `{id,task}` shape) so callers can
+ * pass in tiles already carrying extra fields — e.g. `type`/`points`/
+ * `targetValue` (Sprint 8, Track A item 4) — and get them back untouched,
+ * with `completedByMyTeam` merged in, instead of this function silently
+ * dropping any field it doesn't know about.
  */
-export function buildBoardTileCompletion(
-  tiles: Array<{ id: string; task: string }>,
+export function buildBoardTileCompletion<T extends { id: string; task: string }>(
+  tiles: T[],
   approvedTileIdsForMyTeam: Set<string> | null,
-): Array<{ id: string; task: string; completedByMyTeam: boolean }> {
+): Array<T & { completedByMyTeam: boolean }> {
   return tiles.map((tile) => ({
-    id: tile.id,
-    task: tile.task,
+    ...tile,
     completedByMyTeam: approvedTileIdsForMyTeam?.has(tile.id) ?? false,
   }));
 }

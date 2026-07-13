@@ -140,8 +140,8 @@ describe.skipIf(!suite)("GET /api/bingo/board", () => {
     let bingo: BingoRow;
     let teamA: BingoTeamRow;
     let teamB: BingoTeamRow;
-    let tile1: { id: string; task: string };
-    let tile2: { id: string; task: string };
+    let tile1: { id: string; task: string; type: string; points: number; targetValue: number | null };
+    let tile2: { id: string; task: string; type: string; points: number; targetValue: number | null };
     let userOnTeamA: TestUser;
     let userOnTeamB: TestUser;
     let userWithNoTeam: TestUser;
@@ -153,10 +153,16 @@ describe.skipIf(!suite)("GET /api/bingo/board", () => {
       teamA = await insertTestTeam(bingo.id, `TeamA ${uniqueSuffix()}`);
       teamB = await insertTestTeam(bingo.id, `TeamB ${uniqueSuffix()}`);
 
-      const t1 = await insertTestTile(bingo.id, { position: 0, task: "Vorkath", type: "Kill Count" });
-      const t2 = await insertTestTile(bingo.id, { position: 1, task: "Zulrah", type: "Kill Count" });
-      tile1 = { id: t1.id, task: t1.task };
-      tile2 = { id: t2.id, task: t2.task };
+      const t1 = await insertTestTile(bingo.id, {
+        position: 0,
+        task: "Vorkath",
+        type: "Kill Count",
+        points: 25,
+        targetValue: 50,
+      });
+      const t2 = await insertTestTile(bingo.id, { position: 1, task: "Zulrah", type: "Kill Count", points: 15 });
+      tile1 = { id: t1.id, task: t1.task, type: t1.type, points: t1.points, targetValue: t1.target_value };
+      tile2 = { id: t2.id, task: t2.task, type: t2.type, points: t2.points, targetValue: t2.target_value };
 
       userOnTeamA = await insertTestUser("user");
       userOnTeamB = await insertTestUser("user");
@@ -177,6 +183,19 @@ describe.skipIf(!suite)("GET /api/bingo/board", () => {
       expect(body.active).toBe(true);
       expect(body.bingo).toEqual({ id: bingo.id, name: bingo.name, boardSize: bingo.board_size });
       expect(body.tiles.map((t: { id: string }) => t.id)).toEqual([tile1.id, tile2.id]);
+    });
+
+    // TEAM-BRIEF.md Sprint 8, Track A item 4: type/points/targetValue are an
+    // ADDITIVE extension to the frozen Sprint 7 contract above.
+    test("tiles additionally expose type, points, and targetValue (Sprint 8, Track A item 4)", async () => {
+      const { body } = await request("/api/bingo/board", signToken(userOnTeamA));
+      const byId = Object.fromEntries(
+        body.tiles.map((t: { id: string }) => [t.id, t]),
+      ) as Record<string, { type: string; points: number; targetValue: number | null }>;
+
+      expect(byId[tile1.id]).toMatchObject({ type: "Kill Count", points: 25, targetValue: 50 });
+      // Tiles that never set a target_value expose null, not undefined/omitted.
+      expect(byId[tile2.id]).toMatchObject({ type: "Kill Count", points: 15, targetValue: null });
     });
 
     test("a user on team A sees myTeam=A and tile1 completed, tile2 not", async () => {
