@@ -6,6 +6,7 @@ import { LoadingContainer } from '../../components/LoadingContainer/LoadingConta
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LoginModalProvider } from '../../components/LoginModal/useLoginModal';
+import { OnboardingProvider } from '../../components/Onboarding';
 
 export function Providers() {
   return (
@@ -13,9 +14,11 @@ export function Providers() {
       <LocalizationProvider dateAdapter={AdapterDateFns}>
         <ThemeProvider>
           <LoginModalProvider>
-            <SidebarProvider>
-              <AppShell />
-            </SidebarProvider>
+            <OnboardingProvider>
+              <SidebarProvider>
+                <AppShell />
+              </SidebarProvider>
+            </OnboardingProvider>
           </LoginModalProvider>
         </ThemeProvider>
       </LocalizationProvider>
