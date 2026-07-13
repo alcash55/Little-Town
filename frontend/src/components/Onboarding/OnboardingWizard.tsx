@@ -78,7 +78,14 @@ const OnboardingWizard = ({ open, onFinish }: Props) => {
       }}
     >
       <DialogTitle id="onboarding-wizard-title">
-        <Typography variant="h6" sx={{ color: appColors.textPrimary }}>
+        {/* DialogTitle already wraps its children in its own <h2> (an
+            internal Typography variant="h6" component="h2"). Nesting a
+            second variant="h6" Typography here — which defaults to an
+            <h6> element — inside that <h2> is invalid HTML and triggers
+            React's validateDOMNesting warning. component="span" keeps the
+            h6 look (font size/weight/color from the variant's styles)
+            without emitting a second heading element. */}
+        <Typography variant="h6" component="span" sx={{ color: appColors.textPrimary }}>
           Welcome to Little Town Bingo
         </Typography>
       </DialogTitle>
@@ -117,13 +124,21 @@ const OnboardingWizard = ({ open, onFinish }: Props) => {
           Skip intro
         </Button>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button onClick={handleBack} disabled={activeStep === 0} sx={{ color: appColors.textSecondary }}>
+          <Button
+            onClick={handleBack}
+            disabled={activeStep === 0}
+            sx={{ color: appColors.textSecondary }}
+          >
             Back
           </Button>
           <Button
             onClick={handleNext}
             variant="contained"
-            sx={{ bgcolor: appColors.accent, color: appColors.textPrimary, '&:hover': { bgcolor: appColors.accent, opacity: 0.85 } }}
+            sx={{
+              bgcolor: appColors.accent,
+              color: appColors.textPrimary,
+              '&:hover': { bgcolor: appColors.accent, opacity: 0.85 },
+            }}
           >
             {isLastStep ? 'Finish' : 'Next'}
           </Button>
