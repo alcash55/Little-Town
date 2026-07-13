@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
+  Stack,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -15,7 +16,9 @@ import { alpha, darken } from '@mui/material/styles';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import CloseIcon from '@mui/icons-material/Close';
+import StarIcon from '@mui/icons-material/Star';
 import { appColors } from '../../../layout/Theme';
+import { resolveBingoArt } from '../../../data/bingoArt';
 
 // `theme.palette.success.dark` alone is only ~4.1:1 against white text — short
 // of WCAG AA's 4.5:1 at this tile text's size. Darken the token itself
@@ -31,11 +34,42 @@ import { appColors } from '../../../layout/Theme';
 const completedTileBg = (theme: { palette: { success: { dark: string } } }) =>
   darken(theme.palette.success.dark, 0.2);
 
+/**
+ * Compact number formatting for the points badge, matching the old Excel
+ * board's "1.5K Points" / "5M XP" style rather than raw digit strings.
+ */
+function formatCompact(n: number): string {
+  const abs = Math.abs(n);
+  if (abs >= 1_000_000) return `${trimDecimal(n / 1_000_000)}M`;
+  if (abs >= 1_000) return `${trimDecimal(n / 1_000)}K`;
+  return `${n}`;
+}
+function trimDecimal(n: number): string {
+  return n % 1 === 0 ? `${n}` : n.toFixed(1);
+}
+
+function targetLabel(
+  type: BingoTileProps['type'],
+  targetValue: number | null | undefined,
+): string | null {
+  if (targetValue == null) return null;
+  if (type === 'Kill Count') return `Target: ${targetValue.toLocaleString()} KC`;
+  if (type === 'Experience') return `Target: ${targetValue.toLocaleString()} XP`;
+  if (type === 'Drops') return `Target: ${targetValue.toLocaleString()}`;
+  return null;
+}
+
 export interface BingoTileProps {
   task: string;
   completed: boolean;
   /** Name of the caller's own team, for the completed-state detail dialog copy. */
   myTeamName?: string;
+  /** Point value of the tile — always shown (TEAM-BRIEF.md Sprint 8, Track A item 3). */
+  points: number;
+  /** Tile category, used for the detail dialog's target line and art fallback logic. */
+  type?: 'Kill Count' | 'Experience' | 'Drops';
+  /** The KC/XP/drop-count goal for the tile, if the board defines one. */
+  targetValue?: number | null;
 }
 
 /**
@@ -43,13 +77,31 @@ export interface BingoTileProps {
  * Tooltip surfaces the full task on desktop hover, and the tile itself is a
  * keyboard/tap-reachable button that opens a detail dialog with the full
  * text — the touch (and keyboard) equivalent of the tooltip.
+ *
+ * Visual anchor: tiles whose `task` resolves to a curated boss/skill/item
+ * render (see `data/bingoArt.ts`) show that artwork as the tile's backdrop,
+ * echoing the old Excel board's icon-per-square look. Tasks that don't
+ * resolve (most Drops tiles, any typo/one-off text) fall back to the
+ * original clean text-only tile — never a broken `<img>`.
  */
-export const BingoTile = ({ task, completed, myTeamName }: BingoTileProps) => {
+export const BingoTile = ({
+  task,
+  completed,
+  myTeamName,
+  points,
+  type,
+  targetValue,
+}: BingoTileProps) => {
   const [open, setOpen] = useState(false);
   const titleId = useId();
+  const artUrl = useMemo(() => resolveBingoArt(task), [task]);
+  const hasArt = Boolean(artUrl);
 
   const openDetail = () => setOpen(true);
   const closeDetail = () => setOpen(false);
+
+  const pointsLabel = `${formatCompact(points)} point${points === 1 ? '' : 's'}`;
+  const target = targetLabel(type, targetValue);
 
   return (
     <>
@@ -60,8 +112,8 @@ export const BingoTile = ({ task, completed, myTeamName }: BingoTileProps) => {
           aria-haspopup="dialog"
           aria-label={
             completed
-              ? `${task}. Completed by your team. Activate for details.`
-              : `${task}. Activate for details.`
+              ? `${task}. Worth ${pointsLabel}. Completed by your team. Activate for details.`
+              : `${task}. Worth ${pointsLabel}. Activate for details.`
           }
           onClick={openDetail}
           onKeyDown={(e) => {
@@ -77,7 +129,6 @@ export const BingoTile = ({ task, completed, myTeamName }: BingoTileProps) => {
             alignItems: 'center',
             justifyContent: 'center',
             textAlign: 'center',
-            p: { xs: 0.75, sm: 1.5 },
             borderRadius: 2,
             boxSizing: 'border-box',
             overflow: 'hidden',
@@ -86,22 +137,31 @@ export const BingoTile = ({ task, completed, myTeamName }: BingoTileProps) => {
             border: `1px solid ${
               completed ? alpha(theme.palette.success.light, 0.5) : alpha(appColors.accent, 0.22)
             }`,
-            backgroundColor: completed ? completedTileBg(theme) : theme.palette.background.paper,
-            // Completed tiles get a diagonal-hatch texture on top of the fill —
-            // a pattern cue (not just hue) so the state reads for color-blind
-            // users too, at an alpha low enough to keep text contrast intact.
-            // Incomplete tiles get a faint accent sheen instead of a flat
-            // fill, so an empty square still reads as an inviting, "playable"
-            // board slot rather than dead space.
-            backgroundImage: completed
-              ? `repeating-linear-gradient(135deg, ${alpha(
-                  theme.palette.common.white,
-                  0.05,
-                )} 0px, ${alpha(
-                  theme.palette.common.white,
-                  0.05,
-                )} 2px, transparent 2px, transparent 10px)`
-              : `linear-gradient(160deg, ${alpha(appColors.accent, 0.12)} 0%, transparent 70%)`,
+            // Solid completed fill only applies to text-only tiles — an art
+            // tile keeps its neutral paper base so the artwork stays
+            // visible; the completed cue there comes from the green wash +
+            // hatch overlay + bottom scrim + check badge layered on top
+            // instead (still non-color-only: pattern + icon either way).
+            backgroundColor:
+              completed && !hasArt ? completedTileBg(theme) : theme.palette.background.paper,
+            backgroundImage:
+              completed && !hasArt
+                ? // Completed, text-only: diagonal-hatch texture on the flat
+                  // fill — a pattern cue (not just hue) so the state reads
+                  // for color-blind users too.
+                  `repeating-linear-gradient(135deg, ${alpha(
+                    theme.palette.common.white,
+                    0.05,
+                  )} 0px, ${alpha(
+                    theme.palette.common.white,
+                    0.05,
+                  )} 2px, transparent 2px, transparent 10px)`
+                : !completed && !hasArt
+                ? // Incomplete, text-only: faint accent sheen so an empty
+                  // square still reads as an inviting, "playable" board
+                  // slot rather than dead space.
+                  `linear-gradient(160deg, ${alpha(appColors.accent, 0.12)} 0%, transparent 70%)`
+                : 'none',
             color: appColors.textPrimary,
             boxShadow: completed
               ? `0 2px 10px ${alpha(theme.palette.success.dark, 0.45)}, inset 0 1px 0 ${alpha(
@@ -132,6 +192,102 @@ export const BingoTile = ({ task, completed, myTeamName }: BingoTileProps) => {
             },
           })}
         >
+          {hasArt && (
+            <Box
+              component="img"
+              src={artUrl}
+              alt=""
+              aria-hidden
+              sx={{
+                position: 'absolute',
+                top: '4%',
+                left: '8%',
+                right: '8%',
+                height: '58%',
+                objectFit: 'contain',
+                objectPosition: 'center top',
+                pointerEvents: 'none',
+                opacity: completed ? 0.82 : 1,
+              }}
+            />
+          )}
+
+          {hasArt && (
+            <Box
+              aria-hidden
+              sx={(theme) => ({
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: '60%',
+                pointerEvents: 'none',
+                // Neutral black scrim on incomplete tiles (robust against
+                // any art hue); a green-tinted scrim on completed tiles
+                // doubles as a color cue on top of the hatch + check badge.
+                // Both reach ~0.9+ alpha at the bottom edge, where the task
+                // text sits, to hold the same ≥4.5:1 white-text contrast
+                // the text-only tiles rely on (see completedTileBg above).
+                background: completed
+                  ? `linear-gradient(to bottom, transparent 0%, ${alpha(
+                      completedTileBg(theme),
+                      0.6,
+                    )} 35%, ${alpha(completedTileBg(theme), 0.95)} 100%)`
+                  : `linear-gradient(to bottom, transparent 0%, ${alpha(
+                      theme.palette.common.black,
+                      0.6,
+                    )} 35%, ${alpha(theme.palette.common.black, 0.92)} 100%)`,
+              })}
+            />
+          )}
+
+          {/* Completed hatch texture over art, echoing the text-only tile's
+              pattern cue so the state is never color-only even here. */}
+          {completed && hasArt && (
+            <Box
+              aria-hidden
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                pointerEvents: 'none',
+                backgroundImage: `repeating-linear-gradient(135deg, ${alpha(
+                  '#ffffff',
+                  0.07,
+                )} 0px, ${alpha('#ffffff', 0.07)} 2px, transparent 2px, transparent 10px)`,
+              }}
+            />
+          )}
+
+          {/* Points badge — always shown, top-left. */}
+          <Box
+            aria-hidden
+            sx={{
+              position: 'absolute',
+              top: 6,
+              left: 6,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.4,
+              px: 0.7,
+              py: 0.2,
+              borderRadius: 4,
+              bgcolor: alpha('#000000', 0.45),
+              backdropFilter: hasArt ? 'blur(1px)' : undefined,
+            }}
+          >
+            <StarIcon sx={{ fontSize: { xs: 10, sm: 12 }, color: '#FFD700' }} />
+            <Typography
+              sx={{
+                fontSize: { xs: 9, sm: 10.5 },
+                fontWeight: 700,
+                lineHeight: 1,
+                color: appColors.textPrimary,
+              }}
+            >
+              {formatCompact(points)}
+            </Typography>
+          </Box>
+
           {completed && (
             <Box
               aria-hidden
@@ -145,7 +301,7 @@ export const BingoTile = ({ task, completed, myTeamName }: BingoTileProps) => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                bgcolor: alpha(theme.palette.common.black, 0.2),
+                bgcolor: alpha(theme.palette.common.black, 0.35),
                 transform: 'rotate(-8deg)',
               })}
             >
@@ -156,11 +312,18 @@ export const BingoTile = ({ task, completed, myTeamName }: BingoTileProps) => {
           <Typography
             variant="body2"
             sx={{
+              position: hasArt ? 'absolute' : 'static',
+              left: hasArt ? 0 : undefined,
+              right: hasArt ? 0 : undefined,
+              bottom: hasArt ? 0 : undefined,
+              px: hasArt ? { xs: 0.75, sm: 1.25 } : { xs: 0.75, sm: 1.5 },
+              pb: hasArt ? { xs: 0.6, sm: 1 } : { xs: 0.75, sm: 1.5 },
+              pt: hasArt ? 0 : { xs: 0.75, sm: 1.5 },
               fontSize: { xs: 11, sm: 13 },
               fontWeight: completed ? 600 : 400,
               lineHeight: 1.25,
               display: '-webkit-box',
-              WebkitLineClamp: { xs: 3, sm: 5 },
+              WebkitLineClamp: hasArt ? { xs: 2, sm: 3 } : { xs: 3, sm: 5 },
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
             }}
@@ -213,9 +376,49 @@ export const BingoTile = ({ task, completed, myTeamName }: BingoTileProps) => {
           </IconButton>
         </DialogTitle>
         <DialogContent>
+          {hasArt && (
+            <Box
+              component="img"
+              src={artUrl}
+              alt=""
+              aria-hidden
+              sx={{
+                display: 'block',
+                width: '100%',
+                maxHeight: 160,
+                objectFit: 'contain',
+                mb: 2,
+              }}
+            />
+          )}
           <Typography variant="body1" sx={{ mb: 2 }}>
             {task}
           </Typography>
+          <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
+            <Chip
+              icon={<StarIcon sx={{ color: '#FFD700 !important' }} />}
+              label={pointsLabel}
+              sx={{
+                bgcolor: alpha('#FFD700', 0.14),
+                color: appColors.textPrimary,
+                fontWeight: 600,
+              }}
+            />
+            {type && (
+              <Chip
+                label={type}
+                variant="outlined"
+                sx={{ borderColor: appColors.cardBorder, color: appColors.textSecondary }}
+              />
+            )}
+            {target && (
+              <Chip
+                label={target}
+                variant="outlined"
+                sx={{ borderColor: appColors.cardBorder, color: appColors.textSecondary }}
+              />
+            )}
+          </Stack>
           {completed ? (
             <Chip
               icon={<TaskAltIcon />}
