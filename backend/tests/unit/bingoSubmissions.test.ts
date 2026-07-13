@@ -3,6 +3,7 @@ import { describe, test, expect } from "bun:test";
 import {
   validateApprovalPlayerId,
   buildDropStatusByRsn,
+  buildBoardTileCompletion,
   type DropSubmissionAttribution,
 } from "../../src/db/bingoSubmissions.js";
 
@@ -124,5 +125,62 @@ describe("buildDropStatusByRsn (contract 5 — attribution via player_id, not su
       Zezima: { Vorkath: "approved" },
       Woox: { Zulrah: "pending" },
     });
+  });
+});
+
+// -------------------------------------------------------
+// buildBoardTileCompletion — GET /api/bingo/board (TEAM-BRIEF.md Sprint 7,
+// Track A item 1)
+// -------------------------------------------------------
+
+describe("buildBoardTileCompletion (GET /api/bingo/board tile completion)", () => {
+  const tiles = [
+    { id: "tile-1", task: "Vorkath" },
+    { id: "tile-2", task: "Zulrah" },
+    { id: "tile-3", task: "Cerberus" },
+  ];
+
+  test("marks only tiles present in the approved set as completed", () => {
+    const approved = new Set(["tile-2"]);
+    const result = buildBoardTileCompletion(tiles, approved);
+    expect(result).toEqual([
+      { id: "tile-1", task: "Vorkath", completedByMyTeam: false },
+      { id: "tile-2", task: "Zulrah", completedByMyTeam: true },
+      { id: "tile-3", task: "Cerberus", completedByMyTeam: false },
+    ]);
+  });
+
+  test("null (no team) yields completedByMyTeam: false for every tile", () => {
+    const result = buildBoardTileCompletion(tiles, null);
+    expect(result.every((t) => t.completedByMyTeam === false)).toBe(true);
+    expect(result).toHaveLength(3);
+  });
+
+  test("empty approved set behaves the same as null (nothing completed)", () => {
+    const result = buildBoardTileCompletion(tiles, new Set());
+    expect(result.every((t) => t.completedByMyTeam === false)).toBe(true);
+  });
+
+  test("every tile completed when all ids are in the approved set", () => {
+    const approved = new Set(["tile-1", "tile-2", "tile-3"]);
+    const result = buildBoardTileCompletion(tiles, approved);
+    expect(result.every((t) => t.completedByMyTeam === true)).toBe(true);
+  });
+
+  test("preserves input tile order (stable board order contract)", () => {
+    const result = buildBoardTileCompletion(tiles, new Set());
+    expect(result.map((t) => t.id)).toEqual(["tile-1", "tile-2", "tile-3"]);
+  });
+
+  test("an approved tile id absent from the tile list is silently ignored (never invents a tile)", () => {
+    const approved = new Set(["tile-1", "tile-not-on-board"]);
+    const result = buildBoardTileCompletion(tiles, approved);
+    expect(result).toHaveLength(3);
+    expect(result.find((t) => t.id === "tile-1")!.completedByMyTeam).toBe(true);
+  });
+
+  test("empty tile list returns an empty array regardless of approved set", () => {
+    expect(buildBoardTileCompletion([], new Set(["tile-1"]))).toEqual([]);
+    expect(buildBoardTileCompletion([], null)).toEqual([]);
   });
 });
