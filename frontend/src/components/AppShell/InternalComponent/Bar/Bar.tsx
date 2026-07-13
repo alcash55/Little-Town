@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { darkTheme } from '../../../../layout/Theme';
 import { useLoginModal } from '../../../../components/LoginModal/useLoginModal';
+import { ImpersonationControl, useImpersonationTarget } from '../Impersonation';
 
 const getInitials = (nickname?: string | null, username?: string): string => {
   const source = nickname?.trim() || username?.trim() || '?';
@@ -38,6 +39,8 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
 
   const navigate = useNavigate();
   const { openLogin, prefetchLoginModal, user, logout } = useLoginModal();
+  const { target: impersonationTarget, activate: activateImpersonation, clear: clearImpersonation } =
+    useImpersonationTarget();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -109,6 +112,13 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
                 gap: 1,
               }}
             >
+              {user.role === 'admin' && (
+                <ImpersonationControl
+                  activeTarget={impersonationTarget}
+                  onActivate={activateImpersonation}
+                  onClear={clearImpersonation}
+                />
+              )}
               <IconButton
                 size="large"
                 aria-label="User menu"
