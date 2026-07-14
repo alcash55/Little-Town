@@ -57,3 +57,13 @@ access to the private `screenshots` storage bucket. Exports:
 the admin overview page, attributed via `bingo_submissions.player_id`. Aggregates over a fixed set of
 bulk queries (players/teams/tiles/approved submissions/snapshots/side accounts) rather than querying
 per player.
+
+### `rsnClaims.ts`
+`rsn_claims` (Sprint 11, Track A) — which `users` row owns which OSRS account, independent of any
+single bingo cycle's player pool. Exports `findRsnClaim` (lookup by normalized/lowercased RSN, used
+for the 409 `RSN_TAKEN` conflict check), `findRsnClaimByUser`, and `upsertRsnClaim` (one claim per
+user — re-claiming under a different RSN moves the existing row). See the migration header
+(`supabase/migrations/20260715000000_rsn_claims.sql`) for the full design rationale.
+
+(`players.ts`'s `findBingoPlayerCaseInsensitive`, added the same sprint, also feeds
+`POST /api/onboarding/rsn` — see `routes/onboarding.ts`.)
