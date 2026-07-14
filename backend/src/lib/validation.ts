@@ -139,3 +139,17 @@ export const inviteAcceptSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
   nickname: z.string().min(1).max(50).optional(),
 });
+
+// -------------------------------------------------------
+// Onboarding RSN claim (POST /onboarding/rsn — TEAM-BRIEF.md Sprint 11,
+// Track A frozen contract). Loose length cap only — character-class shape
+// (letters/digits/spaces/hyphens after canonicalization) is checked
+// post-canonicalization in the route via lib/rsn.ts's isPlausibleRsn, since
+// canonicalization (trim/underscore-to-space) has to happen first. This
+// schema just keeps obviously-garbage bodies (empty, absurdly long) from
+// reaching that point.
+// -------------------------------------------------------
+
+export const rsnClaimSchema = z.object({
+  rsn: z.string().min(1, "RSN is required").max(40, "RSN is too long"),
+});
