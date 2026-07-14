@@ -15,12 +15,23 @@ import type { PropsWithChildren, ReactNode } from 'react';
 import { createContext, useState, useEffect, useContext, useMemo } from 'react';
 import BoardGame from '../../../../assets/Images/BoardGame';
 import Discord from '../../../../assets/Images/Discord';
-import { useLoginModal } from '../../../LoginModal/useLoginModal';
+import { useEffectiveRole } from '../../../../utils/useEffectiveRole';
+
+/** Includes 'public' (logged-out visitor) on top of the three session roles. */
+export type SidebarRole = 'public' | 'user' | 'admin' | 'moderator';
 
 export interface SidebarItem {
   title: string;
   href: string;
   icon: ReactNode;
+  /**
+   * Roles allowed to see this entry, checked against the effective role
+   * (utils/useEffectiveRole.ts — session role, or an active impersonation
+   * target's role for a real admin). Only set on top-level entries today —
+   * children inherit their parent's gating (e.g. every "Admin Panel" child
+   * is implicitly admin-only) and are never filtered individually.
+   */
+  roles?: SidebarRole[];
   children?: SidebarItem[];
 }
 
@@ -137,12 +148,17 @@ const allSidebarItems: SidebarItem[] = [
     icon: <Discord />,
     roles: ['public', 'user', 'admin', 'moderator'],
   },
-] as any[];
+];
 
 export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [sidebar, setSidebar] = useState<SidebarItem[]>([]);
-  const { user } = useLoginModal();
+  // Effective role, not the raw session role (TEAM-BRIEF.md Sprint 10, Track
+  // C item 3) — while a real admin is viewing-as a non-admin, this resolves
+  // to the impersonated user's role so admin entries disappear exactly as
+  // they would for that user, but Clear/the banner (gated on the REAL role
+  // elsewhere) keep working since they don't go through this hook.
+  const { role: effectiveRole } = useEffectiveRole();
 
   useEffect(() => {
     setLoading(true);
@@ -152,13 +168,11 @@ export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
       setLoading(false);
       return;
     }
-    const userRole = user?.role ?? 'public';
-    const filtered = allSidebarItems.filter((item: any) =>
-      item.roles?.includes(userRole),
-    );
+    const roleForFilter: SidebarRole = effectiveRole ?? 'public';
+    const filtered = allSidebarItems.filter((item) => item.roles?.includes(roleForFilter));
     setSidebar(filtered);
     setLoading(false);
-  }, [user]);
+  }, [effectiveRole]);
 
   return (
     <SidebarContext.Provider
