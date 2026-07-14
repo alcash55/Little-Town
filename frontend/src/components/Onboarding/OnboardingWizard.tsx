@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { appColors } from '../../layout/Theme';
 import { useOnboardingProfile } from './useOnboardingProfile';
+import { useRsnConfirmation } from './useRsnConfirmation';
 import WelcomeStep from './steps/WelcomeStep';
 import RsnStep from './steps/RsnStep';
 import TeamStep from './steps/TeamStep';
@@ -22,19 +23,29 @@ export type OnboardingStatus = 'completed' | 'skipped';
 
 interface Props {
   open: boolean;
+  /**
+   * False on a first-time run: Escape/backdrop-close is disabled and the
+   * flow must be completed once (TEAM-BRIEF.md Track A #1). True when
+   * reopened via "Show intro".
+   */
+  dismissable: boolean;
   onFinish: (status: OnboardingStatus) => void;
 }
 
 const STEP_LABELS = ['Welcome', 'Your RSN', 'Your Team', 'Resources'];
+const RSN_STEP_INDEX = 1;
 
-const OnboardingWizard = ({ open, onFinish }: Props) => {
+const OnboardingWizard = ({ open, dismissable, onFinish }: Props) => {
   const [activeStep, setActiveStep] = useState(0);
   // Only fetches while the wizard is actually open.
   const profile = useOnboardingProfile(open);
+  const rsn = useRsnConfirmation(profile);
 
   const isLastStep = activeStep === STEP_LABELS.length - 1;
+  const nextDisabled = activeStep === RSN_STEP_INDEX && !rsn.confirmed;
 
   const handleNext = () => {
+    if (nextDisabled) return;
     if (isLastStep) {
       onFinish('completed');
       return;
@@ -44,17 +55,32 @@ const OnboardingWizard = ({ open, onFinish }: Props) => {
 
   const handleBack = () => setActiveStep((s) => Math.max(0, s - 1));
 
-  const handleSkip = () => onFinish('skipped');
+  // Clicking a step's "go to X" link mid-wizard closes it the same way
+  // dismissing does, except on the last step — following the Resources
+  // link there is functionally finishing the tour, not bailing early. On a
+  // first-time (non-dismissable) run, an early "go to X" link still
+  // navigates (nothing stops the user reading that page), but it no longer
+  // closes/persists the wizard — removing "Skip intro" would be cosmetic if
+  // this stayed an equivalent escape hatch. The dialog is mounted above the
+  // router outlet, so it simply stays open over the new page until the flow
+  // is actually finished.
+  const handleNavigateAway = () => {
+    if (isLastStep) {
+      onFinish('completed');
+      return;
+    }
+    if (dismissable) onFinish('skipped');
+  };
 
-  // Clicking a step's "go to X" link mid-wizard closes it the same way Skip
-  // does, except on the last step — following the Resources link there is
-  // functionally finishing the tour, not bailing early.
-  const handleNavigateAway = () => onFinish(isLastStep ? 'completed' : 'skipped');
-
-  // Any dismissal path (Escape, backdrop click) counts the same as Skip:
-  // completion is persisted either way, and it's reachable again via
-  // "Show intro" in the sidebar footer.
-  const handleClose = () => onFinish('skipped');
+  // Escape/backdrop click (MUI passes both through this same onClose, with
+  // `reason` distinguishing them — irrelevant here since both are blocked
+  // the same way). On a first-time run this is a no-op: the flow must be
+  // completed once. Reopened via "Show intro", it counts the same as
+  // walking away: nothing here is destructive, and it's reachable again any
+  // time via "Show intro".
+  const handleClose = () => {
+    if (dismissable) onFinish('skipped');
+  };
 
   return (
     <Dialog
@@ -113,16 +139,13 @@ const OnboardingWizard = ({ open, onFinish }: Props) => {
 
         <Box sx={{ minHeight: 220 }}>
           {activeStep === 0 && <WelcomeStep />}
-          {activeStep === 1 && <RsnStep profile={profile} />}
+          {activeStep === RSN_STEP_INDEX && <RsnStep profile={profile} rsn={rsn} />}
           {activeStep === 2 && <TeamStep profile={profile} onNavigateAway={handleNavigateAway} />}
           {activeStep === 3 && <ResourcesStep onNavigateAway={handleNavigateAway} />}
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, pb: 2.5, justifyContent: 'space-between' }}>
-        <Button onClick={handleSkip} sx={{ color: appColors.mutedText }}>
-          Skip intro
-        </Button>
+      <DialogActions sx={{ px: 3, pb: 2.5, justifyContent: 'flex-end' }}>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
             onClick={handleBack}
@@ -133,11 +156,19 @@ const OnboardingWizard = ({ open, onFinish }: Props) => {
           </Button>
           <Button
             onClick={handleNext}
+            disabled={nextDisabled}
             variant="contained"
+            // Computed directly from `nextDisabled` rather than a
+            // `&.Mui-disabled` CSS selector — both work, but this reads
+            // unambiguously next to the `disabled` prop above without
+            // relying on MUI's disabled class landing in sync.
             sx={{
-              bgcolor: appColors.accent,
-              color: appColors.textPrimary,
-              '&:hover': { bgcolor: appColors.accent, opacity: 0.85 },
+              bgcolor: nextDisabled ? appColors.subtleBorder : appColors.accent,
+              color: nextDisabled ? appColors.mutedText : appColors.textPrimary,
+              '&:hover': {
+                bgcolor: nextDisabled ? appColors.subtleBorder : appColors.accent,
+                opacity: nextDisabled ? 1 : 0.85,
+              },
             }}
           >
             {isLastStep ? 'Finish' : 'Next'}
