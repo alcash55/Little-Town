@@ -139,7 +139,7 @@ export const ImpersonationControl = ({
           isOptionEqualToValue={(option, value) => option.id === value.id}
           onChange={(_event, value) => {
             if (value) {
-              onActivate({ id: value.id, label: value.label });
+              onActivate({ id: value.id, label: value.label, role: value.role });
               handleClose();
             }
           }}

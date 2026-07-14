@@ -19,16 +19,37 @@
 const STORAGE_KEY = 'impersonation:target';
 export const IMPERSONATION_CHANGE_EVENT = 'impersonation:change';
 
+export type ImpersonationRole = 'user' | 'admin' | 'moderator';
+
 export interface ImpersonationTarget {
   id: string;
   label: string;
+  /**
+   * The target's role at the moment the override was activated (from the
+   * `GET /api/admin/users` payload — TEAM-BRIEF.md Sprint 10, Track C item
+   * 1). Drives the frontend's "effective role" for route gating and the
+   * sidebar; see utils/useEffectiveRole.ts. A snapshot, not live — if the
+   * target user's role changes (or they're deleted) after activation, the
+   * override keeps using this cached value until the admin re-activates or
+   * clears it.
+   */
+  role: ImpersonationRole;
 }
 
+const isImpersonationRole = (value: unknown): value is ImpersonationRole =>
+  value === 'user' || value === 'admin' || value === 'moderator';
+
+// Adding `role` above changes the persisted shape — this guard doubles as a
+// migration: any pre-Sprint-10 target left in sessionStorage (id/label only,
+// no role) now fails validation and is dropped by getImpersonationTarget()
+// below instead of silently powering route/sidebar decisions with an
+// `undefined` role.
 const isImpersonationTarget = (value: unknown): value is ImpersonationTarget =>
   typeof value === 'object' &&
   value !== null &&
   typeof (value as { id?: unknown }).id === 'string' &&
-  typeof (value as { label?: unknown }).label === 'string';
+  typeof (value as { label?: unknown }).label === 'string' &&
+  isImpersonationRole((value as { role?: unknown }).role);
 
 export const getImpersonationTarget = (): ImpersonationTarget | null => {
   const raw = sessionStorage.getItem(STORAGE_KEY);
