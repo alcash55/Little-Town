@@ -11,6 +11,7 @@ import {
   playerRegistrationSchema,
   sideAccountSchema,
   screenshotApprovalSchema,
+  rsnClaimSchema,
 } from "../../src/lib/validation.js";
 
 // -------------------------------------------------------
@@ -244,6 +245,34 @@ describe("screenshotApprovalSchema (contract 2)", () => {
       teamId: "team-1",
       playerId: "",
     });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("rsnClaimSchema (POST /onboarding/rsn)", () => {
+  test("requires a non-empty rsn", () => {
+    const result = rsnClaimSchema.safeParse({ rsn: "" });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe("RSN is required");
+    }
+  });
+
+  test("accepts a normal rsn", () => {
+    const result = rsnClaimSchema.safeParse({ rsn: "Zezima" });
+    expect(result.success).toBe(true);
+  });
+
+  test("rejects an rsn over 40 characters", () => {
+    const result = rsnClaimSchema.safeParse({ rsn: "x".repeat(41) });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe("RSN is too long");
+    }
+  });
+
+  test("missing rsn key entirely is rejected", () => {
+    const result = rsnClaimSchema.safeParse({});
     expect(result.success).toBe(false);
   });
 });
