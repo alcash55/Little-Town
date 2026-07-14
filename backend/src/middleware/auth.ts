@@ -149,6 +149,68 @@ export const protect = async (
   next();
 };
 
+/**
+ * Optional-auth variant of `protect` for the small set of routes that must
+ * work for anonymous callers (today: only GET /api/bingo/board — TEAM-BRIEF.md
+ * Sprint 9, Track A, frozen contract). Populates `req.user`/`req.realUser`
+ * exactly like `protect` when a valid bearer token is present (impersonation
+ * included), but NEVER rejects the request — no token, a malformed token, an
+ * expired token, or a token for a user that no longer exists all fall through
+ * to `next()` with `req.user` left `undefined`, and the handler is expected
+ * to treat that as "anonymous" (contract: 200, `myTeam: null`, no
+ * completions — never 401, never 500).
+ *
+ * Deliberately does NOT apply the `ALLOW_DEV_AUTH` local-dev bypass that
+ * `protect` uses for a missing token. That bypass exists so local dev tools
+ * can skip logging in; wiring it into optionalAuth would mean a request with
+ * no token silently becomes `local-dev-admin` whenever a dev happens to have
+ * `ALLOW_DEV_AUTH=true` set, defeating the point of an anonymous-safe route
+ * (and making it impossible to locally test the actual anonymous path this
+ * route exists for). A missing token on an optionally-authenticated route is
+ * always anonymous, full stop — the dev bypass only ever applies to routes
+ * that hard-require a caller via `protect`.
+ */
+export const optionalAuth = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  let token: string | undefined;
+
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    token = req.headers.authorization.split(" ")[1];
+  }
+
+  if (!token) {
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, getJwtSecret()) as any;
+    const user = await findUserById(decoded.id);
+    if (!user) {
+      // Token is well-formed but no longer resolves to a real user
+      // (deleted account, etc.) — degrade to anonymous rather than 401.
+      return next();
+    }
+    req.user = user;
+  } catch (error) {
+    // Invalid or expired token — degrade to anonymous rather than 401/500.
+    return next();
+  }
+
+  try {
+    await applyImpersonation(req);
+  } catch (error) {
+    return next(error);
+  }
+
+  next();
+};
+
 export const authorize = (...roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
