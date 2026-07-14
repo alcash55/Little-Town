@@ -9,7 +9,8 @@
     "build": "tsc && vite build --mode production",
     "preview": "vite build && vite preview",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx}\"",
-    "art:bingo": "bun run src/components/Pages/BingoBoard/download-bingo-art.ts"
+    "art:bingo": "bun run src/components/Pages/BingoBoard/download-bingo-art.ts",
+    "test": "vitest run"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -29,11 +30,14 @@
     "react-router-dom": "^6.12.0"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.3.2",
     "@types/react": "^18.0.28",
     "@types/react-dom": "^18.0.11",
     "@vitejs/plugin-react": "^4.3.4",
+    "happy-dom": "^20.10.6",
     "prettier": "^2.8.8",
     "typescript": "^5.9.3",
-    "vite": "^5.4.20"
+    "vite": "^5.4.20",
+    "vitest": "^3.2.4"
   }
 }
