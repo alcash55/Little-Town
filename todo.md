@@ -86,6 +86,21 @@ _(Done 2026-07-08: Refresh button now disables and shows a spinner + "Refreshing
 - [x] Bingo tile boss artwork (Alex-assigned): `tools/download-bingo-art.ts` pulls curated OSRS-wiki renders (110 committed: bosses/raids incl. Zulrah/Barrows/Wintertodt/CoX/ToB edge cases, 24 skill capes, 21 drop items) into `frontend/src/assets/Images/bosses/`; hand-editable task→art mapping in `frontend/src/data/bingoArtEntities.ts` (see its doc comment to add entries) with alias + fallback resolution; BingoTile redesigned with art anchor + scrim + points badge, completed treatment still non-color-only; board contract additively extended with tile `type`/`points`/`targetValue`. Live-verified against the local stack. NOTE: drops coverage is intentionally shallow — add entries as real boards surface items.
 - [x] `/invite/:token` accept page — QA's first live E2E pass caught that invite links 404'd (the page never existed; Sprint 6 only verified against mocks). Built with per-reason invalid states (expired/used/revoked/unknown), race-safe accept, auto-login into the app; live-verified 16/16 incl. full invite→accept→authenticated journey. Sprint 6/7 live-verification caveat CLOSED.
 
+# Sprint 9 — shipped 2026-07-14 (Alex-assigned board follow-ups)
+
+- [x] Move `download-bingo-art.ts` into the BingoBoard folder — now at `frontend/src/components/Pages/BingoBoard/`, tsconfig-excluded from the app build, runnable via `bun run art:bingo`; all doc references updated.
+- [x] Item images on Drops tiles — general mechanism: task name → item id via the prices.runescape.wiki mapping (sessionStorage-cached), then the official Jagex GE sprite endpoint at runtime with text fallback on error; curated committed art still wins. After Alex's localhost feedback, item sprites were unified with the boss/activity full-bleed treatment (`image-rendering: pixelated` for crisp upscales) instead of the initial bordered-badge look.
+- [x] Activity art — Leagues, Deadman, all 7 clue tiers, Bounty Hunter (x3), LMS, Soul Wars, Guardians of the Rift, Colosseum Glory added to the curated pipeline (committed `_detail`/`_icon` wiki renders) with aliases (dmm, gotr, per-tier clues); two alias-collision bugs caught pre-ship.
+- [x] Bingo board page public — GET /api/bingo/board is optionally authenticated (anonymous → 200, `myTeam: null`, zero completions, never 401; invalid/expired tokens degrade to anonymous; ALLOW_DEV_AUTH bypass deliberately not applied); route out of ProtectedRoute; anonymous visitors get the full art board, a guest chip + "Log in to see your team's progress" CTA, and Bingo Board in the sidebar. QA-verified live incl. impersonation regression; security assessment: anonymous callers see board layout/tasks/points/bingo name only — no team names, rosters, or completions.
+
+# Sprint 10 candidates — collected during Sprint 9 (2026-07-14)
+
+- `bingoArtEntities.ts` `calvarion` entry: canonical is `Calvar'ion` but the real hiscores name is `Cal'varion` (apostrophe position) — pre-existing Sprint 8 typo, boss art won't exact-match until fixed.
+- `useSidebar.tsx` `SidebarItem` doesn't declare the `roles` field the array actually uses (`as any[]` casts, lines ~140/156) — pre-existing loose typing, wants its own small pass.
+- Deadman/Soul Wars activity art was hand-downsized from 2–3MB source logos — a bare `art:bingo` re-run refetches full size for those two slugs (documented inline in bingoArtEntities.ts).
+- Backend README doesn't document the bingo routes (`/board` incl. its optional-auth behavior, `team-data`, `my-team-data`, `team-xp-history`, `conflicts`) — add a route table.
+- If more public-read endpoints appear, consider merging `protect`/`optionalAuth`'s shared logic (near-duplicates today, kept separate deliberately for low risk).
+
 # Sprint 9 candidates — collected during Sprint 8 (2026-07-13)
 
 - Backend: duplicate-username error via `accept_invite` RPC reads "field already exists" instead of "username already exists" — `errorHandler.ts`'s Postgres-detail regex doesn't match the RPC's error shape.
