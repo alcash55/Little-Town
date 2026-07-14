@@ -60,7 +60,10 @@ export const BingoBoardSkeleton = () => (
         gridTemplateColumns: `repeat(${SKELETON_COLUMNS}, 1fr)`,
         gap: { xs: 1, sm: 1.5 },
         width: '100%',
-        maxWidth: 900,
+        // Matches BingoBoard's own widened column (see BOARD_MAX_WIDTH in
+        // BingoBoard.tsx) so the skeleton-to-real-board handoff doesn't
+        // visibly resize.
+        maxWidth: 1100,
       }}
     >
       {Array.from({ length: SKELETON_TILES }).map((_, i) => (
