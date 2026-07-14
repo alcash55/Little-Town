@@ -1,9 +1,11 @@
 /**
- * Curated boss/skill/item -> wiki-art mapping for bingo tiles (TEAM-BRIEF.md
- * Sprint 8, Track A items 1-2).
+ * Curated boss/skill/item/activity -> wiki-art mapping for bingo tiles
+ * (TEAM-BRIEF.md Sprint 8, Track A items 1-2; extended with hiscores
+ * "activity" entries — Leagues, Deadman Mode, clue scroll tiers,
+ * minigames — in Sprint 9, Track B item 2b).
  *
  * This is the SINGLE hand-editable source of truth for bingo tile artwork:
- *  - `tools/download-bingo-art.ts` reads `wikiFile` from every entry to
+ *  - `../components/Pages/BingoBoard/download-bingo-art.ts` reads `wikiFile` from every entry to
  *    (re)download the actual image into
  *    `frontend/src/assets/Images/bosses/<slug>.png` (committed to the repo —
  *    the running app never hotlinks the OSRS wiki at runtime).
@@ -33,16 +35,21 @@
  *    board builder's autocomplete) — so a board-builder-picked tile always
  *    resolves without relying on an alias. For Drops tiles, `canonical` is
  *    the exact OSRS item name. Add any shorthand an admin might hand-type
- *    instead (e.g. "cox", "bandos") to `aliases`.
- * 4. Run `bun run tools/download-bingo-art.ts --only <slug>` (or with no
- *    `--only` to refresh everything) from the repo root to fetch the file.
+ *    instead (e.g. "cox", "bandos") to `aliases` — but check it doesn't
+ *    already belong to another entry (a longer alias always wins the
+ *    substring match in `bingoArt.ts`, so a generic word borrowed from one
+ *    entity can silently steal matches meant for a more specific one; see
+ *    the `clue-scrolls-all`/`colosseum-glory` entries below for two examples
+ *    of alias picks we deliberately avoided).
+ * 4. Run `bun run art:bingo -- --only <slug>` (or with no `--only` to
+ *    refresh everything) from `frontend/` to fetch the file.
  * 5. Unmatched tasks are NOT an error — BingoTile just falls back to the
  *    existing text-only tile design (see `resolveBingoArt` in
  *    `bingoArt.ts`). There's no need to cover every possible task; only
  *    add entries for things Alex's teams actually put on boards.
  */
 
-export type BingoArtKind = 'boss' | 'skill' | 'item';
+export type BingoArtKind = 'boss' | 'skill' | 'item' | 'activity';
 
 export interface BingoArtEntity {
   /** Asset filename (without extension) under assets/Images/bosses/. Stable — don't rename casually. */
@@ -507,6 +514,146 @@ export const BINGO_ART_ENTITIES: BingoArtEntity[] = [
   { slug: 'yama', kind: 'boss', canonical: 'Yama', wikiFile: 'Yama.png' },
   { slug: 'zalcano', kind: 'boss', canonical: 'Zalcano', wikiFile: 'Zalcano_(weakened).png' },
   { slug: 'zulrah', kind: 'boss', canonical: 'Zulrah', wikiFile: 'Zulrah_(serpentine).png' },
+
+  // ---------------------------------------------------------------------
+  // Activities (Kill Count-style tiles whose `task` is a non-boss hiscores
+  // "activity" — see GET /api/hiscores/activities/list): Leagues, Deadman
+  // Mode, the seven Clue Scroll tiers, and the other PvP/minigame trackers.
+  // A bounded, deterministic set like the bosses above, not a curation
+  // free-for-all — `canonical` matches the exact hiscores activity name
+  // (see `backend/src/services/scrapeWiki.ts`'s scraped list) so a
+  // board-builder-picked activity tile always resolves.
+  // ---------------------------------------------------------------------
+  {
+    slug: 'league-points',
+    kind: 'activity',
+    canonical: 'League Points',
+    aliases: ['leagues', 'league', 'trailblazer'],
+    wikiFile: 'Leagues_icon.png',
+  },
+  // NOTE: the wiki source for this one (a promo wordmark, not a compact
+  // "detail" render like the others) is an unusually large PNG (~2MB at
+  // native 1828x1074) — downsized to 640px-max-dimension by hand after
+  // downloading, same as `soul-wars-zeal` below. `download-bingo-art.ts`
+  // itself does no resizing, so re-running it for this slug will re-fetch
+  // the full-size original; downsize it again before committing.
+  {
+    slug: 'deadman-points',
+    kind: 'activity',
+    canonical: 'Deadman Points',
+    aliases: ['deadman', 'deadman mode', 'dmm'],
+    wikiFile: 'Deadman_Mode_logo.png',
+  },
+  // Hunter/Rogue are the same minigame, just which side of the kill you
+  // were on — one shared render for both hiscore rows (and their (Legacy)
+  // predecessors, which are the same activity under an old ranking system).
+  {
+    slug: 'bounty-hunter',
+    kind: 'activity',
+    canonical: 'Bounty Hunter - Hunter',
+    aliases: [
+      'bounty hunter',
+      'bh',
+      'bounty hunter - rogue',
+      'bounty hunter (legacy) - hunter',
+      'bounty hunter (legacy) - rogue',
+    ],
+    wikiFile: 'Bounty_hunter_hat_(tier_6)_detail.png',
+  },
+  {
+    slug: 'lms-rank',
+    kind: 'activity',
+    canonical: 'LMS - Rank',
+    aliases: ['lms', 'last man standing'],
+    wikiFile: 'Last_Man_Standing_logo.png',
+  },
+  // Same oversized-source note as `deadman-points` above (~3.3MB native
+  // 2687x1562) — downsized by hand to 640px-max-dimension after fetching.
+  {
+    slug: 'soul-wars-zeal',
+    kind: 'activity',
+    canonical: 'Soul Wars Zeal',
+    aliases: ['soul wars', 'zeal'],
+    wikiFile: 'Soul_Wars_logo.png',
+  },
+  {
+    slug: 'guardians-of-the-rift',
+    kind: 'activity',
+    canonical: 'Rifts closed',
+    aliases: ['guardians of the rift', 'gotr', 'rifts', 'rifts closed'],
+    wikiFile: 'Guardian_essence_detail.png',
+  },
+  {
+    slug: 'colosseum-glory',
+    kind: 'activity',
+    canonical: 'Colosseum Glory',
+    // NOT bare 'colosseum' — the `sol-heredit` boss entity above already
+    // owns that alias (Fortis Colosseum's boss), and this activity is
+    // near-always referenced by its full hiscores name anyway.
+    aliases: ['glory', 'colosseum glory', 'fortis colosseum glory'],
+    wikiFile: 'Colosseum_scoreboard_glory_detail.png',
+  },
+  // Generic "any tier" clue tile, then the seven individual tiers — every
+  // `canonical` here is the exact hiscores name (`Clue Scrolls (all)`
+  // through `Clue Scrolls (master)`), matched independently of the boss
+  // list's substring fallback so "master clue" etc. still finds the right
+  // tier via aliases rather than the generic entry.
+  {
+    slug: 'clue-scrolls-all',
+    kind: 'activity',
+    canonical: 'Clue Scrolls (all)',
+    // Deliberately NOT 'clue scroll(s)' bare — every tier alias below also
+    // contains that phrase (e.g. "elite clue scroll"), and the substring
+    // resolver in `bingoArt.ts` prefers the longest matching key, so a
+    // generic 11-char "clue scroll" alias would out-rank a shorter
+    // tier-specific one like "elite clue" and silently steal the match.
+    // 'clue'/'clues' stay under the resolver's 5-char substring floor, so
+    // they only ever fire on an exact match, not a tier phrase's substring.
+    aliases: ['clue', 'clues', 'all clues'],
+    wikiFile: 'Clue_scroll_detail.png',
+  },
+  {
+    slug: 'clue-scrolls-beginner',
+    kind: 'activity',
+    canonical: 'Clue Scrolls (beginner)',
+    aliases: ['beginner clue', 'beginner clues', 'clue scroll (beginner)'],
+    wikiFile: 'Clue_scroll_(beginner)_detail.png',
+  },
+  {
+    slug: 'clue-scrolls-easy',
+    kind: 'activity',
+    canonical: 'Clue Scrolls (easy)',
+    aliases: ['easy clue', 'easy clues', 'clue scroll (easy)'],
+    wikiFile: 'Clue_scroll_(easy)_detail.png',
+  },
+  {
+    slug: 'clue-scrolls-medium',
+    kind: 'activity',
+    canonical: 'Clue Scrolls (medium)',
+    aliases: ['medium clue', 'medium clues', 'clue scroll (medium)'],
+    wikiFile: 'Clue_scroll_(medium)_detail.png',
+  },
+  {
+    slug: 'clue-scrolls-hard',
+    kind: 'activity',
+    canonical: 'Clue Scrolls (hard)',
+    aliases: ['hard clue', 'hard clues', 'clue scroll (hard)'],
+    wikiFile: 'Clue_scroll_(hard)_detail.png',
+  },
+  {
+    slug: 'clue-scrolls-elite',
+    kind: 'activity',
+    canonical: 'Clue Scrolls (elite)',
+    aliases: ['elite clue', 'elite clues', 'clue scroll (elite)'],
+    wikiFile: 'Clue_scroll_(elite)_detail.png',
+  },
+  {
+    slug: 'clue-scrolls-master',
+    kind: 'activity',
+    canonical: 'Clue Scrolls (master)',
+    aliases: ['master clue', 'master clues', 'clue scroll (master)'],
+    wikiFile: 'Clue_scroll_(master)_detail.png',
+  },
 
   // ---------------------------------------------------------------------
   // Notable drop items (Drops tiles) — the wiki's "detail" render, matching

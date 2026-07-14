@@ -100,10 +100,17 @@ const allSidebarItems: SidebarItem[] = [
     roles: ['user', 'admin', 'moderator'],
   },
   {
+    // Sprint 9, Track B item 3 (TEAM-BRIEF.md): the route itself is public
+    // now (see Routes.tsx) — 'public' added here deliberately so a
+    // logged-out visitor can actually find the board via navigation, not
+    // just a deep link. It's still the only public sidebar entry pointing
+    // at gameplay (vs. Home/Resources/Discord above), by design: it's the
+    // one page built to make sense un-authed (art + tasks, no highlights,
+    // with its own "log in to see your progress" affordance).
     title: 'Bingo Board',
     href: '/BingoBoard',
     icon: <BoardGame />,
-    roles: ['user', 'admin', 'moderator'],
+    roles: ['public', 'user', 'admin', 'moderator'],
   },
   {
     title: 'Team Data',

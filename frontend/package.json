@@ -8,7 +8,8 @@
     "dev": "bunx --bun vite",
     "build": "tsc && vite build --mode production",
     "preview": "vite build && vite preview",
-    "format": "prettier --write \"**/*.{js,jsx,ts,tsx}\""
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx}\"",
+    "art:bingo": "bun run src/components/Pages/BingoBoard/download-bingo-art.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
