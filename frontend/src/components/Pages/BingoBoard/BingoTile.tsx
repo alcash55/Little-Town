@@ -83,11 +83,15 @@ export interface BingoTileProps {
  * activity render (see `data/bingoArt.ts`) show that artwork as the tile's
  * backdrop, echoing the old Excel board's icon-per-square look. A Drops
  * tile with no curated match instead tries the general item-icon fallback
- * (see `data/osrsItemIcons.ts`) — a small, centered sprite badge, styled
- * deliberately differently from the full-bleed art anchor so it never
- * looks like a stretched-blur upscale of a boss render. Tasks that don't
- * resolve either way (any typo/one-off text, or a curated match with a
- * failed sprite load) fall back to the original clean text-only tile —
+ * (see `data/osrsItemIcons.ts`) — Jagex's tiny (32x32) GE sprite — rendered
+ * in the SAME full-bleed art-anchor slot as curated art, so every tile type
+ * shares one visual language (Alex's feedback: items previously read as a
+ * small bordered badge, visibly different from boss/activity tiles). The
+ * sprite is native pixel art, so it's upscaled with `image-rendering:
+ * pixelated` rather than smoothed — a crisp blocky enlargement reads as
+ * on-brand OSRS pixel art instead of a blurry stretch. Tasks that don't
+ * resolve either way (any typo/one-off text, or a resolved match with a
+ * failed image load) fall back to the original clean text-only tile —
  * never a broken `<img>`.
  */
 export const BingoTile = ({
@@ -115,6 +119,13 @@ export const BingoTile = ({
   );
   useEffect(() => setIconFailed(false), [itemIconUrl]);
   const hasIcon = Boolean(itemIconUrl) && !iconFailed;
+
+  // Unified "this tile has a visual anchor" flag — curated art and the
+  // GE-sprite fallback are mutually exclusive (see `needsItemIcon` above)
+  // and share the same full-bleed slot/background treatment, differing
+  // only in `imageRendering` (see the art `<img>` below).
+  const hasVisual = hasArt || hasIcon;
+  const visualSrc = artUrl ?? itemIconUrl;
 
   const openDetail = () => setOpen(true);
   const closeDetail = () => setOpen(false);
@@ -162,9 +173,9 @@ export const BingoTile = ({
             // hatch overlay + bottom scrim + check badge layered on top
             // instead (still non-color-only: pattern + icon either way).
             backgroundColor:
-              completed && !hasArt ? completedTileBg(theme) : theme.palette.background.paper,
+              completed && !hasVisual ? completedTileBg(theme) : theme.palette.background.paper,
             backgroundImage:
-              completed && !hasArt
+              completed && !hasVisual
                 ? // Completed, text-only: diagonal-hatch texture on the flat
                   // fill — a pattern cue (not just hue) so the state reads
                   // for color-blind users too.
@@ -175,7 +186,7 @@ export const BingoTile = ({
                     theme.palette.common.white,
                     0.05,
                   )} 2px, transparent 2px, transparent 10px)`
-                : !completed && !hasArt
+                : !completed && !hasVisual
                 ? // Incomplete, text-only: faint accent sheen so an empty
                   // square still reads as an inviting, "playable" board
                   // slot rather than dead space.
@@ -211,12 +222,17 @@ export const BingoTile = ({
             },
           })}
         >
-          {hasArt && (
+          {hasVisual && (
             <Box
               component="img"
-              src={artUrl}
+              src={visualSrc}
               alt=""
               aria-hidden
+              // Only the GE-sprite fallback can 404/error at runtime
+              // (curated art is a bundled build asset); hasArt already
+              // implies hasIcon is false, so this only ever wires up for
+              // the sprite path.
+              onError={!hasArt ? () => setIconFailed(true) : undefined}
               sx={{
                 position: 'absolute',
                 top: '4%',
@@ -227,11 +243,16 @@ export const BingoTile = ({
                 objectPosition: 'center top',
                 pointerEvents: 'none',
                 opacity: completed ? 0.82 : 1,
+                // GE sprites are native 32x32 pixel art — a smoothed
+                // upscale blurs them, so force a crisp blocky enlargement
+                // instead (curated renders are already high-res, so this
+                // is a no-op there).
+                imageRendering: hasArt ? undefined : 'pixelated',
               }}
             />
           )}
 
-          {hasArt && (
+          {hasVisual && (
             <Box
               aria-hidden
               sx={(theme) => ({
@@ -262,7 +283,7 @@ export const BingoTile = ({
 
           {/* Completed hatch texture over art, echoing the text-only tile's
               pattern cue so the state is never color-only even here. */}
-          {completed && hasArt && (
+          {completed && hasVisual && (
             <Box
               aria-hidden
               sx={{
@@ -275,48 +296,6 @@ export const BingoTile = ({
                 )} 0px, ${alpha('#ffffff', 0.07)} 2px, transparent 2px, transparent 10px)`,
               }}
             />
-          )}
-
-          {/* Fallback item-icon badge (no curated art, Drops tile that
-              resolved via the general OSRS GE-sprite mechanism — see
-              osrsItemIcons.ts). Deliberately its own small, centered
-              treatment rather than reusing the curated-art anchor slot
-              above: these are native ~36x32 sprites, and stretching one to
-              fill the same top-anchored box a boss render uses would just
-              look like a blurry upscale. A fixed-size padded badge keeps it
-              reading as a deliberate icon at native-ish resolution instead. */}
-          {hasIcon && (
-            <Box
-              aria-hidden
-              sx={{
-                position: 'absolute',
-                top: { xs: 8, sm: 10 },
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: { xs: 34, sm: 42 },
-                height: { xs: 34, sm: 42 },
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: 1.5,
-                bgcolor: alpha(appColors.accent, 0.1),
-                border: `1px solid ${alpha(appColors.accent, 0.28)}`,
-              }}
-            >
-              <Box
-                component="img"
-                src={itemIconUrl}
-                alt=""
-                aria-hidden
-                onError={() => setIconFailed(true)}
-                sx={{
-                  maxWidth: '78%',
-                  maxHeight: '78%',
-                  objectFit: 'contain',
-                  opacity: completed ? 0.82 : 1,
-                }}
-              />
-            </Box>
           )}
 
           {/* Points badge — always shown, top-left. */}
@@ -333,7 +312,7 @@ export const BingoTile = ({
               py: 0.2,
               borderRadius: 4,
               bgcolor: alpha('#000000', 0.45),
-              backdropFilter: hasArt ? 'blur(1px)' : undefined,
+              backdropFilter: hasVisual ? 'blur(1px)' : undefined,
             }}
           >
             <StarIcon sx={{ fontSize: { xs: 10, sm: 12 }, color: '#FFD700' }} />
@@ -373,20 +352,18 @@ export const BingoTile = ({
           <Typography
             variant="body2"
             sx={{
-              position: hasArt ? 'absolute' : 'static',
-              left: hasArt ? 0 : undefined,
-              right: hasArt ? 0 : undefined,
-              bottom: hasArt ? 0 : undefined,
-              px: hasArt ? { xs: 0.75, sm: 1.25 } : { xs: 0.75, sm: 1.5 },
-              pb: hasArt ? { xs: 0.6, sm: 1 } : { xs: 0.75, sm: 1.5 },
-              // Icon badge sits at the top of the tile (see above) — push
-              // the text down clear of it rather than overlapping.
-              pt: hasArt ? 0 : hasIcon ? { xs: 5.5, sm: 6.5 } : { xs: 0.75, sm: 1.5 },
+              position: hasVisual ? 'absolute' : 'static',
+              left: hasVisual ? 0 : undefined,
+              right: hasVisual ? 0 : undefined,
+              bottom: hasVisual ? 0 : undefined,
+              px: hasVisual ? { xs: 0.75, sm: 1.25 } : { xs: 0.75, sm: 1.5 },
+              pb: hasVisual ? { xs: 0.6, sm: 1 } : { xs: 0.75, sm: 1.5 },
+              pt: hasVisual ? 0 : { xs: 0.75, sm: 1.5 },
               fontSize: { xs: 11, sm: 13 },
               fontWeight: completed ? 600 : 400,
               lineHeight: 1.25,
               display: '-webkit-box',
-              WebkitLineClamp: hasArt || hasIcon ? { xs: 2, sm: 3 } : { xs: 3, sm: 5 },
+              WebkitLineClamp: hasVisual ? { xs: 2, sm: 3 } : { xs: 3, sm: 5 },
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
             }}
@@ -439,54 +416,24 @@ export const BingoTile = ({
           </IconButton>
         </DialogTitle>
         <DialogContent>
-          {hasArt && (
+          {hasVisual && (
             <Box
               component="img"
-              src={artUrl}
+              src={visualSrc}
               alt=""
               aria-hidden
+              onError={!hasArt ? () => setIconFailed(true) : undefined}
               sx={{
                 display: 'block',
                 width: '100%',
                 maxHeight: 160,
                 objectFit: 'contain',
                 mb: 2,
+                // Same crisp-upscale treatment as the tile itself for the
+                // GE-sprite fallback — see the tile art `<img>` above.
+                imageRendering: hasArt ? undefined : 'pixelated',
               }}
             />
-          )}
-          {/* Same small-badge treatment as the tile itself — the sprite is
-              tiny, blowing it up to the dialog's full width would just be a
-              blurry upscale of a boss render's full-bleed treatment. */}
-          {!hasArt && hasIcon && (
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                mb: 2,
-              }}
-            >
-              <Box
-                sx={{
-                  width: 72,
-                  height: 72,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: 2,
-                  bgcolor: alpha(appColors.accent, 0.1),
-                  border: `1px solid ${alpha(appColors.accent, 0.28)}`,
-                }}
-              >
-                <Box
-                  component="img"
-                  src={itemIconUrl}
-                  alt=""
-                  aria-hidden
-                  onError={() => setIconFailed(true)}
-                  sx={{ maxWidth: '78%', maxHeight: '78%', objectFit: 'contain' }}
-                />
-              </Box>
-            </Box>
           )}
           <Typography variant="body1" sx={{ mb: 2 }}>
             {task}
