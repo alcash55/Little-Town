@@ -1,7 +1,8 @@
 /**
  * GET /api/bingo/board (TEAM-BRIEF.md Sprint 7, Track A item 1 — frozen
- * contract). Spins up a real Express app with the actual `protect`
- * middleware and the real bingo.ts router (same technique as
+ * contract; made optionally-authenticated in Sprint 9, Track A). Spins up a
+ * real Express app with the actual `optionalAuth`/`protect` middleware and
+ * the real bingo.ts router (same technique as
  * tests/integration/impersonation.test.ts / adminRouteMounting.test.ts) so
  * JWT auth, impersonation, and the route handler's DB access all run
  * end-to-end against the local stack's real tables.
@@ -91,17 +92,25 @@ async function insertApprovedSubmission(bingoId: string, tileId: string, teamId:
 let server: http.Server;
 let port: number;
 
-function request(path: string, token: string): Promise<{ status: number; body: any }> {
+// `token` omitted (or undefined) sends no Authorization header at all —
+// the real "anonymous browser" case, distinct from a garbage/expired
+// bearer token, which optionalAuth must also degrade to anonymous rather
+// than reject.
+function request(
+  path: string,
+  token?: string,
+  impersonateId?: string,
+): Promise<{ status: number; body: any }> {
   return new Promise((resolve, reject) => {
+    const headers: Record<string, string> = {};
+    if (token !== undefined) headers.Authorization = `Bearer ${token}`;
+    if (impersonateId !== undefined) headers["X-Impersonate-User-Id"] = impersonateId;
     http
-      .get(
-        { host: "127.0.0.1", port, path, headers: { Authorization: `Bearer ${token}` } },
-        (res) => {
-          let body = "";
-          res.on("data", (chunk) => (body += chunk));
-          res.on("end", () => resolve({ status: res.statusCode ?? 0, body: JSON.parse(body) }));
-        },
-      )
+      .get({ host: "127.0.0.1", port, path, headers }, (res) => {
+        let body = "";
+        res.on("data", (chunk) => (body += chunk));
+        res.on("end", () => resolve({ status: res.statusCode ?? 0, body: JSON.parse(body) }));
+      })
       .on("error", reject);
   });
 }
@@ -136,6 +145,12 @@ describe.skipIf(!suite)("GET /api/bingo/board", () => {
     expect(body).toEqual({ active: false });
   });
 
+  test("no active bingo, anonymous caller -> 200 { active: false }, never 401", async () => {
+    const { status, body } = await request("/api/bingo/board");
+    expect(status).toBe(200);
+    expect(body).toEqual({ active: false });
+  });
+
   describe("with an active bingo", () => {
     let bingo: BingoRow;
     let teamA: BingoTeamRow;
@@ -146,6 +161,7 @@ describe.skipIf(!suite)("GET /api/bingo/board", () => {
     let userOnTeamB: TestUser;
     let userWithNoTeam: TestUser;
     let userNotRegistered: TestUser;
+    let adminUser: TestUser;
 
     test("fixtures: active bingo, two teams, two tiles, one approved submission for team A", async () => {
       bingo = await insertTestBingo(`test-board-${uniqueSuffix()}`, { status: "active" });
@@ -168,6 +184,7 @@ describe.skipIf(!suite)("GET /api/bingo/board", () => {
       userOnTeamB = await insertTestUser("user");
       userWithNoTeam = await insertTestUser("user");
       userNotRegistered = await insertTestUser("user");
+      adminUser = await insertTestUser("admin");
 
       await insertTestPlayer(bingo.id, teamA.id, `BoardPlayerA${uniqueSuffix()}`, userOnTeamA.id);
       await insertTestPlayer(bingo.id, teamB.id, `BoardPlayerB${uniqueSuffix()}`, userOnTeamB.id);
@@ -227,9 +244,70 @@ describe.skipIf(!suite)("GET /api/bingo/board", () => {
       expect(body.tiles.every((t: any) => t.completedByMyTeam === false)).toBe(true);
     });
 
-    test("an unauthenticated request is rejected (401), not silently treated as no-team", async () => {
-      const { status } = await request("/api/bingo/board", "not-a-real-token");
-      expect(status).toBe(401);
+    // TEAM-BRIEF.md Sprint 9, Track A frozen contract change: /board is now
+    // optionally authenticated. Anonymous callers get the full board (same
+    // layout/tasks/points any authenticated caller sees), myTeam: null, and
+    // every tile completedByMyTeam: false — never a 401, and never another
+    // team's completion data.
+    test("anonymous caller (no Authorization header) -> 200, full board, myTeam: null, nothing completed", async () => {
+      const { status, body } = await request("/api/bingo/board");
+      expect(status).toBe(200);
+      expect(body.active).toBe(true);
+      expect(body.bingo).toEqual({ id: bingo.id, name: bingo.name, boardSize: bingo.board_size });
+      expect(body.myTeam).toBeNull();
+      expect(body.tiles.map((t: { id: string }) => t.id)).toEqual([tile1.id, tile2.id]);
+      // Team A's approved submission on tile1 must never leak to an
+      // anonymous caller.
+      expect(body.tiles.every((t: any) => t.completedByMyTeam === false)).toBe(true);
+    });
+
+    test("malformed/garbage token -> degrades to anonymous (200), not 401/500", async () => {
+      const { status, body } = await request("/api/bingo/board", "not-a-real-token");
+      expect(status).toBe(200);
+      expect(body.active).toBe(true);
+      expect(body.myTeam).toBeNull();
+      expect(body.tiles.every((t: any) => t.completedByMyTeam === false)).toBe(true);
+    });
+
+    test("expired token -> degrades to anonymous (200), not 401/500", async () => {
+      const expired = jwt.sign(
+        { id: userOnTeamA.id, username: userOnTeamA.username, role: userOnTeamA.role },
+        getJwtSecret(),
+        { expiresIn: -10 },
+      );
+      const { status, body } = await request("/api/bingo/board", expired);
+      expect(status).toBe(200);
+      expect(body.active).toBe(true);
+      // Must NOT resolve to userOnTeamA's team just because the token's
+      // payload was well-formed before it expired.
+      expect(body.myTeam).toBeNull();
+      expect(body.tiles.every((t: any) => t.completedByMyTeam === false)).toBe(true);
+    });
+
+    test("token for a since-deleted user -> degrades to anonymous (200), not 401/500", async () => {
+      const ghost = { id: "00000000-0000-0000-0000-00000000dead", username: "ghost", role: "user" as const };
+      const { status, body } = await request("/api/bingo/board", signToken(ghost));
+      expect(status).toBe(200);
+      expect(body.active).toBe(true);
+      expect(body.myTeam).toBeNull();
+      expect(body.tiles.every((t: any) => t.completedByMyTeam === false)).toBe(true);
+    });
+
+    // Impersonation (TEAM-BRIEF.md Sprint 6, Track A item 2) must keep
+    // working for authenticated callers on this route — optionalAuth only
+    // changes what happens when there's NO usable token.
+    test("admin impersonating a user on team B sees myTeam=B (impersonation still works)", async () => {
+      const { status, body } = await request("/api/bingo/board", signToken(adminUser), userOnTeamB.id);
+      expect(status).toBe(200);
+      expect(body.myTeam).toEqual({ id: teamB.id, name: teamB.name });
+    });
+
+    // A non-admin sending the impersonation header is silently ignored by
+    // applyImpersonation — the request proceeds as their own (team A).
+    test("non-admin sending the impersonation header is ignored, sees their own team", async () => {
+      const { status, body } = await request("/api/bingo/board", signToken(userOnTeamA), userOnTeamB.id);
+      expect(status).toBe(200);
+      expect(body.myTeam).toEqual({ id: teamA.id, name: teamA.name });
     });
   });
 });
