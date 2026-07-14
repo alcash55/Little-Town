@@ -48,7 +48,16 @@
   - [x] When viewing as a user, they should not be able to view any admin page _(admin routes show Access Denied while impersonating; activating the override while ON an admin page redirects; refresh stays denied; Clear fully restores admin access)_
   - [x] If a user (overriding or not) navigates to an admin page they should be shown an access denied page _(authed users get "Access Denied" — distinct from "Login Required" — with a way home)_
   - [x] When viewing as a user, they should not be able to view any admin page in the sidebar _(sidebar renders exactly what the impersonated user would see; the "Viewing as X — Clear" banner keeps working everywhere, incl. on the denied page. NOTE: role gating is bypassed in `bun dev` by design — verify via built app/preview or the deployed site.)_
-
+- [x] Mobile responsiveness _(fixed 2026-07-14, Sprint 11 — both verified at 390×844 + desktop on a production build)_
+  - [x] In the Bingo details page on mobile the date pickers get cut off the screen @bingoDetails.png _(pickers stack full-width on mobile, side-by-side on sm+; zero horizontal overflow)_
+  - [x] On the Team stats page the content in the table does not fit the whole width of the table @teamStats.png _(removed the hard player-column width cap — few-player tables now split the full container; many-player scroll unchanged)_
+- [x] Bingo Board bingo tile edit/update _(fixed 2026-07-14, Sprint 11)_
+  - [x] When editing a tile on the bingo builder page it should show the same auto complete component that is showen when initially making the tiles @bingoBoard.png _(extracted shared TileTaskAutocomplete used by both create and edit — net simplification, deduplicated three copies)_
+- [x] Bingo overview page _(fixed 2026-07-14, Sprint 11)_
+  - [x] Find a better icon for total points scored @changeIcon.png _(PaidIcon ($, read as money) → ScoreboardIcon)_
+- [x] on mobile the hgome page <BoardGame /> icon needs the color fixed @homePageIcon.png _(fixed 2026-07-14, Sprint 11 — the SVG had no fill so it rendered spec-default black; fill="currentColor" like the Discord icon, theme-correct at all breakpoints)_
+- [x] Onboarding wizard _(shipped 2026-07-14, Sprint 11)_
+  - [x] When creating an account from the generated link, the user is asked for a username and nickname (optional) neither of those names should be used for the RSN for step 2 on the onboarding wizard. Instead it should be a textbox that they type their name in and then that user should be added to the team drafter if they are not already on there/being tracked @onboardingwizard.png. I have tested this twice and one time used the username/nickname and the other gave me a textbox. Ensure that the username is not used as the RSN and create tests around this so that we can prevent issues in the future _(ROOT CAUSE of the sometimes/sometimes: suggestions came from bingo_players rows with no link to your account — any stray row matching a username (admin typo, or created while impersonating) leaked in; data-dependent, hence intermittent. FIX: step 2 is a typed textbox (roster suggestions filtered so username/nickname can never appear), confirm calls the new POST /api/onboarding/rsn — server-side hiscores validation + new rsn_claims table (one changeable claim per account, case-insensitive conflicts → 409) + create-or-find in the drafter pool, so finishing the wizard genuinely lands you in Team Drafter. TESTS: new rsn.test/validation/onboarding-rsn suites (backend, 297 total) + the repo's FIRST frontend test harness (vitest + happy-dom, 19 tests) proving username/nickname never survive the filter. QA re-verified the exact leak vector adversarially: seeded a player row exactly matching the username — wizard shows nothing. NOTE: migration 20260715000000_rsn_claims.sql needs prod application, see action items.)_
 
 # Next sprint — carried over from the July 2026 audit sprint
 
@@ -106,6 +115,17 @@ _(Done 2026-07-08: Refresh button now disables and shows a spinner + "Refreshing
 - [x] Bingo board page public — GET /api/bingo/board is optionally authenticated (anonymous → 200, `myTeam: null`, zero completions, never 401; invalid/expired tokens degrade to anonymous; ALLOW_DEV_AUTH bypass deliberately not applied); route out of ProtectedRoute; anonymous visitors get the full art board, a guest chip + "Log in to see your team's progress" CTA, and Bingo Board in the sidebar. QA-verified live incl. impersonation regression; security assessment: anonymous callers see board layout/tasks/points/bingo name only — no team names, rosters, or completions.
 
 - [x] Board polish (Alex, 2026-07-14): tile detail dialog keeps only the X close control (CLOSE button removed); tiles now size from viewport height so 16/25-tile boards fit desktop screens without scrolling (`useFitTileSize.ts`, 80px legibility floor → falls back to the scrolling grid for oversized boards; board column widened 900→1100px; mobile unchanged). Verified at 1920×1080/1536×864/1280×800/390×844.
+
+# Sprint 12 candidates — collected during Sprint 11 (2026-07-14)
+
+- No way to RELEASE a claimed RSN (fat-fingered claim locks the name to that account short of a DB fix) — decide: user self-release, admin override in the panel, or both.
+- Rate-limit CHANGING claims too, not just creating them (current guard: one changeable claim per account + 10/min per IP).
+- Team Drafter could surface which pool entries were self-claimed vs admin-entered (helps admins spot typos).
+- `bingo_players`' UNIQUE(bingo_id, rsn) is case-sensitive — the claim route works around it with a case-insensitive find; a citext/normalized-index fix would remove the workaround everywhere.
+- Fresh pulls of main need `bun install` in frontend/ before typecheck/tests work (vitest deps) — README note or CI would catch it.
+- `useBoardBuilder.ts` edit-tile handlers cast through `any` for killCount/experience/dropsAmount — a discriminated-union-aware update fn would drop the casts.
+- Several untouched files have drifted from prettier — one dedicated `prettier --write .` pass beats incidental per-ticket reformats.
+- RsnStep's Autocomplete DOM isn't unit-tested (happy-dom + MUI Popper fragility) — jsdom + ResizeObserver polyfill if full DOM coverage is ever wanted.
 
 # Sprint 11 candidates — collected during Sprint 10 (2026-07-14)
 
@@ -167,5 +187,6 @@ _(Done 2026-07-08: Refresh button now disables and shows a spinner + "Refreshing
   - [x] Grant Bingo-Bot access to the test channel #portfolio-interactions — _done 2026-07-08; backfill scanned the channel and ingested a test image end-to-end (bucket upload → pending submission → working signed URL)._
   - [x] Add the two Discord env vars to Render — _done 2026-07-08; prod deploy verified live (new endpoint 401s, health 200)._
   - [ ] After testing wraps: switch `DISCORD_SCREENSHOT_CHANNEL_ID` (local + Render) from #portfolio-interactions to the real screenshots channel, and make sure Bingo-Bot can view it.
+- [ ] Apply `20260715000000_rsn_claims.sql` to prod (same SQL-editor route) — new `rsn_claims` table for the onboarding RSN-claim flow (Sprint 11). Same `supabase migration repair` caveat as the earlier hand-applied batches.
 - [ ] Cloudflare Insights beacon console errors (Sprint 10 root-cause): the snippet is edge-injected by Cloudflare on the deployed domain — nothing in the repo to fix. In the Cloudflare dashboard: Pages project (or zone → Speed) → Web Analytics → toggle it OFF, or re-enable it fresh if you want analytics (the current injected snippet pins a stale version whose fetch is being blocked).
 - [ ] Fix WSL SSH for good: `~/.ssh` lives on the Windows mount so permissions are permanently broken and every push needs a temp-key workaround. Move keys to real ext4 (or set `core.sshCommand` to a wrapper).
