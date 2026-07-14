@@ -17,6 +17,7 @@ export const Routes = createBrowserRouter(
       <Route index element={<Pages.Home />} />
       <Route path="unauthorized" element={<Pages.Unauthorized />} />
       <Route path="Resources" element={<Pages.Resources />} />
+      <Route path="invite/:token" element={<Pages.InviteAccept />} />
 
       {/* Player routes */}
       <Route path="BingoRules" element={<ProtectedRoute allowedRoles={['user', 'admin', 'moderator']}><Pages.BingoRules /></ProtectedRoute>} />
