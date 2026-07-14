@@ -52,3 +52,14 @@ Admin invite links (Sprint 6, Track A item 1). Exports two routers, both mounted
 router (not folded into `admin.ts`) so it can use `authorizeReal("admin")` instead of `authorize`,
 staying reachable by an admin who is currently impersonating someone else. Mounted before
 `adminRoutes` for the same reason as `invites.ts`.
+
+### `onboarding.ts`
+`POST /api/onboarding/rsn` — the onboarding wizard's RSN claim (Sprint 11, Track A frozen
+contract). `protect`-gated (effective-user aware — impersonation applies) plus a per-IP rate
+limit (same posture as `hiscores.ts`'s public proxy limiter, since this route also drives a
+server-side hiscores lookup). Validates the RSN against the OSRS hiscores server-side, records
+the caller's ownership in `db/rsnClaims.ts`, and create-or-finds the corresponding
+`bingo_players` row in the current active/draft bingo's pool (case-insensitively, via
+`db/players.ts`'s `findBingoPlayerCaseInsensitive`, so an admin-pre-registered RSN gets linked
+rather than duplicated). See the route file's header comment and
+`supabase/migrations/20260715000000_rsn_claims.sql` for the full design writeup.

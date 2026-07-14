@@ -10,6 +10,7 @@ import adminRoutes from "./routes/admin.js";
 import bingoRoutes from "./routes/bingo.js";
 import { adminInviteRoutes, publicInviteRoutes } from "./routes/invites.js";
 import { adminUsersRoutes } from "./routes/adminUsers.js";
+import onboardingRoutes from "./routes/onboarding.js";
 import { startStaticDataCron, stopStaticDataCron, refreshStaticData } from "./services/staticDataCron.js";
 import { startPlayerSnapshotCron, stopPlayerSnapshotCron } from "./services/playerSnapshotCron.js";
 import { startDiscordScreenshotService, stopDiscordScreenshotService } from "./services/discordScreenshots.js";
@@ -122,6 +123,7 @@ app.use("/api/admin/users", adminUsersRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/bingo", bingoRoutes);
 app.use("/api/invites", publicInviteRoutes);
+app.use("/api/onboarding", onboardingRoutes);
 
 // 404 handler
 app.use("*", (req: Request, res: Response) => {
