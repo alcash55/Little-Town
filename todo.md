@@ -93,7 +93,12 @@ _(Done 2026-07-08: Refresh button now disables and shows a spinner + "Refreshing
 - [x] Activity art — Leagues, Deadman, all 7 clue tiers, Bounty Hunter (x3), LMS, Soul Wars, Guardians of the Rift, Colosseum Glory added to the curated pipeline (committed `_detail`/`_icon` wiki renders) with aliases (dmm, gotr, per-tier clues); two alias-collision bugs caught pre-ship.
 - [x] Bingo board page public — GET /api/bingo/board is optionally authenticated (anonymous → 200, `myTeam: null`, zero completions, never 401; invalid/expired tokens degrade to anonymous; ALLOW_DEV_AUTH bypass deliberately not applied); route out of ProtectedRoute; anonymous visitors get the full art board, a guest chip + "Log in to see your team's progress" CTA, and Bingo Board in the sidebar. QA-verified live incl. impersonation regression; security assessment: anonymous callers see board layout/tasks/points/bingo name only — no team names, rosters, or completions.
 
+- [x] Board polish (Alex, 2026-07-14): tile detail dialog keeps only the X close control (CLOSE button removed); tiles now size from viewport height so 16/25-tile boards fit desktop screens without scrolling (`useFitTileSize.ts`, 80px legibility floor → falls back to the scrolling grid for oversized boards; board column widened 900→1100px; mobile unchanged). Verified at 1920×1080/1536×864/1280×800/390×844.
+
 # Sprint 10 candidates — collected during Sprint 9 (2026-07-14)
+
+- Onboarding wizard auto-opens on a fresh user's first authenticated load of ANY route (not just Home) — confirm intentional.
+- Login rate limit (10/15min per IP) has no env override — add a documented local-dev bypass for scripted E2E work.
 
 - `bingoArtEntities.ts` `calvarion` entry: canonical is `Calvar'ion` but the real hiscores name is `Cal'varion` (apostrophe position) — pre-existing Sprint 8 typo, boss art won't exact-match until fixed.
 - `useSidebar.tsx` `SidebarItem` doesn't declare the `roles` field the array actually uses (`as any[]` casts, lines ~140/156) — pre-existing loose typing, wants its own small pass.
