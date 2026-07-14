@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import { asyncHandler, AppError } from "../middleware/errorHandler.js";
-import { protect } from "../middleware/auth.js";
+import { protect, LOCAL_DEV_USER_ID } from "../middleware/auth.js";
 import { validateBody, rsnClaimSchema } from "../lib/validation.js";
 import { canonicalizeRsn, normalizeRsn, isPlausibleRsn } from "../lib/rsn.js";
 import { hiscores } from "../services/hiscores.js";
@@ -62,6 +62,20 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const { rsn } = req.body as { rsn: string };
     const userId = req.user!.id;
+
+    // The ALLOW_DEV_AUTH no-token bypass resolves to a synthetic user that
+    // has no `users` row, so the rsn_claims FK insert below can never
+    // succeed for it — without this guard a token-less local-dev request
+    // 500s on the constraint instead of failing cleanly. (admin.ts handles
+    // the same situation by dropping the id via getAuditUserId; here the
+    // claim IS the point of the route, so it's a hard reject.)
+    if (userId === LOCAL_DEV_USER_ID) {
+      throw new AppError(
+        "RSN claims require a real signed-in account (the local-dev bypass user cannot claim)",
+        403,
+        "DEV_USER_CANNOT_CLAIM",
+      );
+    }
 
     const canonical = canonicalizeRsn(rsn);
     if (!isPlausibleRsn(canonical)) {
