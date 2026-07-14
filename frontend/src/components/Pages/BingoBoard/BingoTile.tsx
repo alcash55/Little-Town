@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -19,6 +19,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import StarIcon from '@mui/icons-material/Star';
 import { appColors } from '../../../layout/Theme';
 import { resolveBingoArt } from '../../../data/bingoArt';
+import { resolveItemIconUrl, useOsrsItemIdByName } from '../../../data/osrsItemIcons';
 
 // `theme.palette.success.dark` alone is only ~4.1:1 against white text — short
 // of WCAG AA's 4.5:1 at this tile text's size. Darken the token itself
@@ -78,11 +79,16 @@ export interface BingoTileProps {
  * keyboard/tap-reachable button that opens a detail dialog with the full
  * text — the touch (and keyboard) equivalent of the tooltip.
  *
- * Visual anchor: tiles whose `task` resolves to a curated boss/skill/item
- * render (see `data/bingoArt.ts`) show that artwork as the tile's backdrop,
- * echoing the old Excel board's icon-per-square look. Tasks that don't
- * resolve (most Drops tiles, any typo/one-off text) fall back to the
- * original clean text-only tile — never a broken `<img>`.
+ * Visual anchor: tiles whose `task` resolves to a curated boss/skill/item/
+ * activity render (see `data/bingoArt.ts`) show that artwork as the tile's
+ * backdrop, echoing the old Excel board's icon-per-square look. A Drops
+ * tile with no curated match instead tries the general item-icon fallback
+ * (see `data/osrsItemIcons.ts`) — a small, centered sprite badge, styled
+ * deliberately differently from the full-bleed art anchor so it never
+ * looks like a stretched-blur upscale of a boss render. Tasks that don't
+ * resolve either way (any typo/one-off text, or a curated match with a
+ * failed sprite load) fall back to the original clean text-only tile —
+ * never a broken `<img>`.
  */
 export const BingoTile = ({
   task,
@@ -93,9 +99,22 @@ export const BingoTile = ({
   targetValue,
 }: BingoTileProps) => {
   const [open, setOpen] = useState(false);
+  const [iconFailed, setIconFailed] = useState(false);
   const titleId = useId();
   const artUrl = useMemo(() => resolveBingoArt(task), [task]);
   const hasArt = Boolean(artUrl);
+
+  // Fallback item-icon lookup (TEAM-BRIEF.md Sprint 9, Track B item 2):
+  // only Drops tiles that didn't already resolve curated art need it, so
+  // boards with no such tiles never pay for the item-mapping fetch at all.
+  const needsItemIcon = !hasArt && type === 'Drops';
+  const itemIdByName = useOsrsItemIdByName(needsItemIcon);
+  const itemIconUrl = useMemo(
+    () => (needsItemIcon ? resolveItemIconUrl(task, itemIdByName) : undefined),
+    [needsItemIcon, task, itemIdByName],
+  );
+  useEffect(() => setIconFailed(false), [itemIconUrl]);
+  const hasIcon = Boolean(itemIconUrl) && !iconFailed;
 
   const openDetail = () => setOpen(true);
   const closeDetail = () => setOpen(false);
@@ -258,6 +277,48 @@ export const BingoTile = ({
             />
           )}
 
+          {/* Fallback item-icon badge (no curated art, Drops tile that
+              resolved via the general OSRS GE-sprite mechanism — see
+              osrsItemIcons.ts). Deliberately its own small, centered
+              treatment rather than reusing the curated-art anchor slot
+              above: these are native ~36x32 sprites, and stretching one to
+              fill the same top-anchored box a boss render uses would just
+              look like a blurry upscale. A fixed-size padded badge keeps it
+              reading as a deliberate icon at native-ish resolution instead. */}
+          {hasIcon && (
+            <Box
+              aria-hidden
+              sx={{
+                position: 'absolute',
+                top: { xs: 8, sm: 10 },
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: { xs: 34, sm: 42 },
+                height: { xs: 34, sm: 42 },
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 1.5,
+                bgcolor: alpha(appColors.accent, 0.1),
+                border: `1px solid ${alpha(appColors.accent, 0.28)}`,
+              }}
+            >
+              <Box
+                component="img"
+                src={itemIconUrl}
+                alt=""
+                aria-hidden
+                onError={() => setIconFailed(true)}
+                sx={{
+                  maxWidth: '78%',
+                  maxHeight: '78%',
+                  objectFit: 'contain',
+                  opacity: completed ? 0.82 : 1,
+                }}
+              />
+            </Box>
+          )}
+
           {/* Points badge — always shown, top-left. */}
           <Box
             aria-hidden
@@ -318,12 +379,14 @@ export const BingoTile = ({
               bottom: hasArt ? 0 : undefined,
               px: hasArt ? { xs: 0.75, sm: 1.25 } : { xs: 0.75, sm: 1.5 },
               pb: hasArt ? { xs: 0.6, sm: 1 } : { xs: 0.75, sm: 1.5 },
-              pt: hasArt ? 0 : { xs: 0.75, sm: 1.5 },
+              // Icon badge sits at the top of the tile (see above) — push
+              // the text down clear of it rather than overlapping.
+              pt: hasArt ? 0 : hasIcon ? { xs: 5.5, sm: 6.5 } : { xs: 0.75, sm: 1.5 },
               fontSize: { xs: 11, sm: 13 },
               fontWeight: completed ? 600 : 400,
               lineHeight: 1.25,
               display: '-webkit-box',
-              WebkitLineClamp: hasArt ? { xs: 2, sm: 3 } : { xs: 3, sm: 5 },
+              WebkitLineClamp: hasArt || hasIcon ? { xs: 2, sm: 3 } : { xs: 3, sm: 5 },
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
             }}
@@ -390,6 +453,40 @@ export const BingoTile = ({
                 mb: 2,
               }}
             />
+          )}
+          {/* Same small-badge treatment as the tile itself — the sprite is
+              tiny, blowing it up to the dialog's full width would just be a
+              blurry upscale of a boss render's full-bleed treatment. */}
+          {!hasArt && hasIcon && (
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                mb: 2,
+              }}
+            >
+              <Box
+                sx={{
+                  width: 72,
+                  height: 72,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 2,
+                  bgcolor: alpha(appColors.accent, 0.1),
+                  border: `1px solid ${alpha(appColors.accent, 0.28)}`,
+                }}
+              >
+                <Box
+                  component="img"
+                  src={itemIconUrl}
+                  alt=""
+                  aria-hidden
+                  onError={() => setIconFailed(true)}
+                  sx={{ maxWidth: '78%', maxHeight: '78%', objectFit: 'contain' }}
+                />
+              </Box>
+            </Box>
           )}
           <Typography variant="body1" sx={{ mb: 2 }}>
             {task}
