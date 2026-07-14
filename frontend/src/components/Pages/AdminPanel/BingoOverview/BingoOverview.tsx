@@ -27,7 +27,7 @@ import StarIcon from '@mui/icons-material/Star';
 import SyncIcon from '@mui/icons-material/Sync';
 import PeopleIcon from '@mui/icons-material/People';
 import GridViewIcon from '@mui/icons-material/GridView';
-import PaidIcon from '@mui/icons-material/Paid';
+import ScoreboardIcon from '@mui/icons-material/Scoreboard';
 import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
 import GppMaybeIcon from '@mui/icons-material/GppMaybe';
 import PageLayout from '../../../../layout/PageLayout/PageLayout';
@@ -443,7 +443,7 @@ const BingoOverview = () => {
       {/* ── Summary stat tiles (KPI row) ── */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, width: '100%' }}>
         <StatTile icon={<EmojiEventsIcon />} label="Bingo" value={bingo.name} sub={fmt(bingo.endDate)} />
-        <StatTile icon={<PaidIcon />} label="Total Points Scored" value={totalPoints.toLocaleString()} />
+        <StatTile icon={<ScoreboardIcon />} label="Total Points Scored" value={totalPoints.toLocaleString()} />
         <StatTile icon={<GridViewIcon />} label="Tiles Completed" value={tilesCompleted} />
         <StatTile icon={<PeopleIcon />} label="Players" value={players.length} />
       </Box>
