@@ -1,9 +1,11 @@
-import { Alert, Box, Chip, LinearProgress, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, Chip, LinearProgress, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import GroupsIcon from '@mui/icons-material/Groups';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import LoginIcon from '@mui/icons-material/Login';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import { appColors } from '../../../layout/Theme';
+import { useLoginModal } from '../../LoginModal/useLoginModal';
 import { BingoBoardInfo, BingoBoardTeam } from './useBingoBoard';
 
 export interface BingoBoardHeaderProps {
@@ -19,6 +21,13 @@ export interface BingoBoardHeaderProps {
  * Meter form (see BoardProgressGauge.tsx), just in a header-sized bar rather
  * than a radial gauge since this needs to sit inline at a glance, not anchor
  * its own dashboard section.
+ *
+ * `myTeam: null` covers two different visitors post-Sprint 9 (TEAM-BRIEF.md
+ * Track B item 3, the board going public) — a logged-in user just not on a
+ * team for this bingo, vs. an anonymous visitor who was never in the
+ * running for one. Reads `useLoginModal()` itself (rather than taking an
+ * `isAuthenticated` prop) to tell the two apart and show the right gentle
+ * nudge for each, same pattern `Bar.tsx` uses for its own logged-out state.
  */
 export const BingoBoardHeader = ({
   bingo,
@@ -26,6 +35,8 @@ export const BingoBoardHeader = ({
   completedCount,
   totalCount,
 }: BingoBoardHeaderProps) => {
+  const { user, openLogin, prefetchLoginModal } = useLoginModal();
+  const isAuthenticated = Boolean(user);
   const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
@@ -72,7 +83,7 @@ export const BingoBoardHeader = ({
             ) : (
               <Chip
                 icon={<InfoOutlinedIcon />}
-                label="No team assigned"
+                label={isAuthenticated ? 'No team assigned' : 'Viewing as a guest'}
                 variant="outlined"
                 sx={{ borderColor: appColors.cardBorder, color: appColors.textSecondary }}
               />
@@ -116,7 +127,7 @@ export const BingoBoardHeader = ({
         </Stack>
       </Box>
 
-      {!myTeam && (
+      {!myTeam && isAuthenticated && (
         <Alert
           severity="info"
           icon={<InfoOutlinedIcon fontSize="inherit" />}
@@ -124,6 +135,31 @@ export const BingoBoardHeader = ({
         >
           You&apos;re not on a team for this bingo yet — the board below is here to explore, but
           nothing will be highlighted for you.
+        </Alert>
+      )}
+
+      {/* Anonymous visitor: a gentle nudge, not a blocking banner — the
+          board underneath is already fully usable (art, tasks, points),
+          this is just a pointer at what logging in adds (team highlights). */}
+      {!myTeam && !isAuthenticated && (
+        <Alert
+          severity="info"
+          icon={<InfoOutlinedIcon fontSize="inherit" />}
+          sx={{ width: '100%' }}
+          action={
+            <Button
+              size="small"
+              startIcon={<LoginIcon fontSize="small" />}
+              onClick={openLogin}
+              onMouseEnter={prefetchLoginModal}
+              sx={{ color: appColors.accent, whiteSpace: 'nowrap' }}
+            >
+              Log in
+            </Button>
+          }
+        >
+          You&apos;re viewing this board as a guest — log in to see your team&apos;s progress
+          highlighted.
         </Alert>
       )}
 

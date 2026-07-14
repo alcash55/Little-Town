@@ -4,7 +4,7 @@
  *
  * The curated entity list (canonical names + aliases + which asset file
  * backs each) lives in `bingoArtEntities.ts` — hand-edit that file to add
- * or fix a mapping, then `bun run tools/download-bingo-art.ts` to fetch the
+ * or fix a mapping, then `bun run art:bingo` (from `frontend/`) to fetch the
  * image. This file only does matching + asset resolution.
  *
  * Never hotlinks the OSRS wiki: images are pre-downloaded, committed assets

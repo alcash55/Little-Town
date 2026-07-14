@@ -18,10 +18,20 @@ export const Routes = createBrowserRouter(
       <Route path="unauthorized" element={<Pages.Unauthorized />} />
       <Route path="Resources" element={<Pages.Resources />} />
       <Route path="invite/:token" element={<Pages.InviteAccept />} />
+      {/*
+        Public since Sprint 9, Track B item 3 (TEAM-BRIEF.md): un-authed
+        visitors see the full board (art + item icons) with no team
+        highlighted — GET /api/bingo/board is optionally authenticated
+        (Sprint 9, Track A) and never redirects/401s for a no-token
+        request. Left out of ProtectedRoute entirely, same pattern as
+        `invite/:token` above, rather than an allowedRoles bypass — there's
+        no role check to skip, anonymous callers just get a degraded (no
+        team/no highlights) view of the same page.
+      */}
+      <Route path="BingoBoard" element={<Pages.BingoBoard />} />
 
       {/* Player routes */}
       <Route path="BingoRules" element={<ProtectedRoute allowedRoles={['user', 'admin', 'moderator']}><Pages.BingoRules /></ProtectedRoute>} />
-      <Route path="BingoBoard" element={<ProtectedRoute allowedRoles={['user', 'admin', 'moderator']}><Pages.BingoBoard /></ProtectedRoute>} />
       <Route path="TeamData" element={<ProtectedRoute allowedRoles={['user', 'admin', 'moderator']}><Pages.TeamData /></ProtectedRoute>} />
       <Route path="BingoScores" element={<ProtectedRoute allowedRoles={['user', 'admin', 'moderator']}><Pages.BingoScores /></ProtectedRoute>} />
 
