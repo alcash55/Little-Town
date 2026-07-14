@@ -1,15 +1,23 @@
 #!/usr/bin/env bun
 /**
- * download-bingo-art.ts — fetches the curated boss/skill/item renders for
- * bingo tile artwork (TEAM-BRIEF.md Sprint 8, Track A item 1) from the OSRS
- * wiki into `frontend/src/assets/Images/bosses/`, where they're committed
- * to the repo and bundled at build time. The running app NEVER hotlinks
+ * download-bingo-art.ts — fetches the curated boss/skill/item/activity
+ * renders for bingo tile artwork (TEAM-BRIEF.md Sprint 8, Track A item 1;
+ * relocated here in Sprint 9, Track B item 1) from the OSRS wiki into
+ * `frontend/src/assets/Images/bosses/`, where they're committed to the repo
+ * and bundled at build time. The running app NEVER hotlinks
  * `oldschool.runescape.wiki` — this script is the only thing that talks to
  * it, and only when Alex re-runs it by hand.
  *
+ * Colocated with the BingoBoard feature rather than living in repo-root
+ * `tools/` (unlike `build-resources.ts`, which is genuinely cross-cutting —
+ * see that file's header) since this one only ever touches BingoBoard's own
+ * art pipeline. It's excluded from the app's `tsc`/`vite build` (see
+ * `frontend/tsconfig.json`) since it's a standalone Bun CLI script, not
+ * part of the shipped app bundle.
+ *
  * The curated entity -> wiki-file mapping lives in
- * `frontend/src/data/bingoArtEntities.ts` (a plain data module, hand-edited
- * — see the README note at the top of that file for how to add an entry).
+ * `../../../data/bingoArtEntities.ts` (a plain data module, hand-edited —
+ * see the README note at the top of that file for how to add an entry).
  * This script is just the fetch step; it does no image sourcing decisions
  * of its own.
  *
@@ -21,22 +29,24 @@
  * delay and a descriptive User-Agent, per the wiki's fair-use expectations
  * for scripted access.
  *
- * Usage (run from the repo root):
- *   bun run tools/download-bingo-art.ts                  # (re)download everything
- *   bun run tools/download-bingo-art.ts --only zulrah,cox # only these slugs
- *   bun run tools/download-bingo-art.ts --skip-existing   # don't re-fetch files already on disk
+ * Usage (run from anywhere — paths resolve off this file's own location):
+ *   bun frontend/src/components/Pages/BingoBoard/download-bingo-art.ts                  # (re)download everything
+ *   bun frontend/src/components/Pages/BingoBoard/download-bingo-art.ts --only zulrah,cox # only these slugs
+ *   bun frontend/src/components/Pages/BingoBoard/download-bingo-art.ts --skip-existing   # don't re-fetch files already on disk
+ * or, from `frontend/`, the equivalent package.json script:
+ *   bun run art:bingo -- --only zulrah,cox
  */
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { BINGO_ART_ENTITIES } from "../frontend/src/data/bingoArtEntities.ts";
+import { BINGO_ART_ENTITIES } from "../../../data/bingoArtEntities.ts";
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../../..");
 const OUT_DIR = path.join(REPO_ROOT, "frontend/src/assets/Images/bosses");
 
 const WIKI_BASE = "https://oldschool.runescape.wiki/images/";
 const USER_AGENT =
-  "LittleTown-BingoArtBot/1.0 (https://littletown.gay/; contact: erikawilt3@gmail.com) - one-time curated asset fetch, see tools/download-bingo-art.ts";
+  "LittleTown-BingoArtBot/1.0 (https://littletown.gay/; contact: erikawilt3@gmail.com) - one-time curated asset fetch, see frontend/src/components/Pages/BingoBoard/download-bingo-art.ts";
 const REQUEST_DELAY_MS = 350; // polite: sequential, small gap between requests
 
 function sleep(ms: number): Promise<void> {

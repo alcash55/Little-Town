@@ -93,18 +93,36 @@ usage (`--only <category-id,...>` to limit which categories a run touches).
 ## Bingo tile artwork (`bingoArtEntities.ts`)
 
 `bingoArtEntities.ts` is the hand-editable source of truth for the boss /
-skill / item renders shown on bingo tiles (`BingoTile.tsx`, via the
-`resolveBingoArt()` matcher in `bingoArt.ts`). Full instructions (how to
+skill / item / activity renders shown on bingo tiles (`BingoTile.tsx`, via
+the `resolveBingoArt()` matcher in `bingoArt.ts`). Full instructions (how to
 find a wiki file, pick a slug, add aliases) are in the doc comment at the
 top of that file — short version:
 
 1. Add an entry to the `BINGO_ART_ENTITIES` array with a stable kebab-case
    `slug`, the exact OSRS hiscores activity/skill/item name as `canonical`,
    and any shorthand an admin might type as `aliases`.
-2. Run `bun run tools/download-bingo-art.ts --only <slug>` from the repo
-   root to fetch the image into
+2. Run `bun run art:bingo -- --only <slug>` from `frontend/` (the download
+   script itself lives at
+   `frontend/src/components/Pages/BingoBoard/download-bingo-art.ts`,
+   colocated with the BingoBoard feature) to fetch the image into
    `frontend/src/assets/Images/bosses/<slug>.png` (committed to the repo —
    the app never hotlinks the wiki at runtime).
 3. Unmapped tasks always degrade to the existing text-only tile design, so
    there's no need to cover every possible task — only add what Alex's
    boards actually use.
+4. Drops tasks that don't match a curated entry here still get an icon: see
+   "Item icons on Drops tiles (general mechanism)" below.
+
+### Item icons on Drops tiles (general mechanism)
+
+Most Drops tasks are one of ~4,000 OSRS items, not a bounded set worth
+hand-curating one-by-one. `frontend/src/data/osrsItemIcons.ts` resolves a
+Drops tile's exact item-name `task` to its item id via the same
+`prices.runescape.wiki/api/v1/osrs/mapping` list `BoardBuilder` already
+fetches, then points at Jagex's own official Grand Exchange sprite CDN
+(`secure.runescape.com/m=itemdb_oldschool/obj_sprite.gif?id=<id>`) at
+runtime — no additional committed assets, no additional curation. Curated
+`BINGO_ART_ENTITIES` art still wins when a task matches one; this is purely
+the fallback for everything else. `BingoTile.tsx` treats a failed/missing
+sprite load as "no icon" and falls back to the plain text tile — never a
+broken `<img>`.
