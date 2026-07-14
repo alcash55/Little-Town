@@ -13,8 +13,6 @@ import {
   Stack,
   TextField,
   Typography,
-  Autocomplete,
-  CircularProgress,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -26,6 +24,7 @@ import Close from '@mui/icons-material/Close';
 import Edit from '@mui/icons-material/Edit';
 import DragIndicator from '@mui/icons-material/DragIndicator';
 import PageLayout from '../../../../layout/PageLayout/PageLayout';
+import { TileTaskAutocomplete } from './TileTaskAutocomplete';
 import {
   DndContext,
   closestCenter,
@@ -220,92 +219,35 @@ const BoardBuilder = () => {
         </FormControl>
 
         {tileType.value === 1 && (
-          <Autocomplete
+          <TileTaskAutocomplete
             id="tile-task-kc"
-            inputValue={tileTask}
-            onInputChange={(_, value) => setTileTask(value)}
+            label="Boss / Monster / Mini Game"
+            value={tileTask}
+            onChange={setTileTask}
             options={activities}
             loading={loading}
-            sx={{ width: '100%' }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Boss / Monster / Mini Game"
-                slotProps={{
-                  ...params.slotProps,
-
-                  input: {
-                    ...params.slotProps.input,
-                    endAdornment: (
-                      <>
-                        {loading && <CircularProgress sx={{ color: '#2A9D8F' }} size={20} />}
-                        {params.slotProps.input.endAdornment}
-                      </>
-                    ),
-                  },
-                }}
-              />
-            )}
           />
         )}
 
         {tileType.value === 2 && (
-          <Autocomplete
+          <TileTaskAutocomplete
             id="tile-task-xp"
-            inputValue={tileTask}
-            onInputChange={(_, value) => setTileTask(value)}
+            label="Skill"
+            value={tileTask}
+            onChange={setTileTask}
             options={skills}
             loading={loading}
-            sx={{ width: '100%' }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Skill"
-                slotProps={{
-                  ...params.slotProps,
-
-                  input: {
-                    ...params.slotProps.input,
-                    endAdornment: (
-                      <>
-                        {loading && <CircularProgress sx={{ color: '#2A9D8F' }} size={20} />}
-                        {params.slotProps.input.endAdornment}
-                      </>
-                    ),
-                  },
-                }}
-              />
-            )}
           />
         )}
 
         {tileType.value === 3 && (
-          <Autocomplete
+          <TileTaskAutocomplete
             id="tile-task-drops"
-            inputValue={tileTask}
-            onInputChange={(_, value) => setTileTask(value)}
+            label="Item Name"
+            value={tileTask}
+            onChange={setTileTask}
             options={items}
             loading={loading}
-            sx={{ width: '100%' }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Item Name"
-                slotProps={{
-                  ...params.slotProps,
-
-                  input: {
-                    ...params.slotProps.input,
-                    endAdornment: (
-                      <>
-                        {loading && <CircularProgress sx={{ color: '#2A9D8F' }} size={20} />}
-                        {params.slotProps.input.endAdornment}
-                      </>
-                    ),
-                  },
-                }}
-              />
-            )}
           />
         )}
 
@@ -417,11 +359,25 @@ const BoardBuilder = () => {
         <DialogContent>
           {editingTile && (
             <Stack spacing={2} sx={{ pt: 1 }}>
-              <TextField
-                label="Task"
-                fullWidth
+              <TileTaskAutocomplete
+                id="edit-tile-task"
+                label={
+                  editingTile.tile.type === 'Kill Count'
+                    ? 'Boss / Monster / Mini Game'
+                    : editingTile.tile.type === 'Experience'
+                    ? 'Skill'
+                    : 'Item Name'
+                }
                 value={editingTile.tile.task}
-                onChange={(e) => updateEditingTile({ task: e.target.value })}
+                onChange={(value) => updateEditingTile({ task: value })}
+                options={
+                  editingTile.tile.type === 'Kill Count'
+                    ? activities
+                    : editingTile.tile.type === 'Experience'
+                    ? skills
+                    : items
+                }
+                loading={loading}
               />
               <TextField
                 label="Points"

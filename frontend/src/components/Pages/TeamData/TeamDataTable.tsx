@@ -64,7 +64,6 @@ const PlayerHeaderCell = ({ player }: { player: PlayerRow }) => (
       top: 0,
       zIndex: 2,
       minWidth: PLAYER_COL_WIDTH,
-      maxWidth: PLAYER_COL_WIDTH,
       borderBottom: `1px solid ${appColors.subtleBorder}`,
     }}
   >
@@ -165,7 +164,7 @@ export function TeamDataTable({ tiles, players, maxHeight }: TeamDataTableProps)
         bgcolor: 'background.paper',
       }}
     >
-      <Table stickyHeader size="small" sx={{ borderCollapse: 'separate' }}>
+      <Table stickyHeader size="small" sx={{ borderCollapse: 'separate', width: '100%' }}>
         <TableHead>
           <TableRow>
             <CornerCell />
