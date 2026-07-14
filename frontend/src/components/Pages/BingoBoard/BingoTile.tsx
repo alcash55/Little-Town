@@ -1,10 +1,8 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import {
   Box,
-  Button,
   Chip,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
   IconButton,
@@ -60,6 +58,32 @@ function targetLabel(
   return null;
 }
 
+// Below this JS-computed pixel size (see BingoBoard's `useFitTileSize`),
+// text/badges switch to the more compact ('xs') tier instead of the roomier
+// one — see `tierValue` below.
+const COMPACT_TILE_THRESHOLD = 125;
+
+type SizeTier = 'xs' | 'sm';
+
+/**
+ * Resolves one of this file's `{ xs, sm }` responsive-size constants to a
+ * single concrete value for `tier`, or passes the object straight through
+ * for MUI's own viewport-breakpoint responsiveness when `tier` is `null`.
+ *
+ * Two different things drive tile "compactness" here: on mobile (no `size`
+ * prop, `tier` stays `null`) it's the viewport width, exactly as before this
+ * change — MUI's `{ xs, sm } sx` object already does that. On desktop, once
+ * `BingoBoard` starts sizing tiles itself from available screen space (see
+ * `useFitTileSize.ts`), tile size no longer tracks the viewport breakpoint
+ * at all (a "sm"-viewport tile could render larger than one on a "xl"
+ * viewport with a big board), so compactness there needs to be driven by
+ * the actual computed pixel size instead — reusing the same proven
+ * mobile-tuned ('xs') values rather than inventing a third tier.
+ */
+function tierValue<T>(value: { xs: T; sm: T }, tier: SizeTier | null): { xs: T; sm: T } | T {
+  return tier ? value[tier] : value;
+}
+
 export interface BingoTileProps {
   task: string;
   completed: boolean;
@@ -71,6 +95,13 @@ export interface BingoTileProps {
   type?: 'Kill Count' | 'Experience' | 'Drops';
   /** The KC/XP/drop-count goal for the tile, if the board defines one. */
   targetValue?: number | null;
+  /**
+   * The tile's JS-computed square size in px, from BingoBoard's desktop
+   * fit-to-viewport sizing (see `useFitTileSize.ts`). Omitted on mobile,
+   * where the tile keeps sizing itself from the grid column (`1fr`) and
+   * MUI's viewport-breakpoint `{ xs, sm }` responsive values as before.
+   */
+  size?: number;
 }
 
 /**
@@ -101,12 +132,17 @@ export const BingoTile = ({
   points,
   type,
   targetValue,
+  size,
 }: BingoTileProps) => {
   const [open, setOpen] = useState(false);
   const [iconFailed, setIconFailed] = useState(false);
   const titleId = useId();
   const artUrl = useMemo(() => resolveBingoArt(task), [task]);
   const hasArt = Boolean(artUrl);
+  // See `tierValue` above: `null` preserves the original viewport-driven
+  // {xs, sm} responsiveness (mobile, or desktop before the fit-to-viewport
+  // hook has measured); a concrete tier applies once `size` is JS-computed.
+  const sizeTier: SizeTier | null = size == null ? null : size < COMPACT_TILE_THRESHOLD ? 'xs' : 'sm';
 
   // Fallback item-icon lookup (TEAM-BRIEF.md Sprint 9, Track B item 2):
   // only Drops tiles that didn't already resolve curated art need it, so
@@ -315,10 +351,10 @@ export const BingoTile = ({
               backdropFilter: hasVisual ? 'blur(1px)' : undefined,
             }}
           >
-            <StarIcon sx={{ fontSize: { xs: 10, sm: 12 }, color: '#FFD700' }} />
+            <StarIcon sx={{ fontSize: tierValue({ xs: 10, sm: 12 }, sizeTier), color: '#FFD700' }} />
             <Typography
               sx={{
-                fontSize: { xs: 9, sm: 10.5 },
+                fontSize: tierValue({ xs: 9, sm: 10.5 }, sizeTier),
                 fontWeight: 700,
                 lineHeight: 1,
                 color: appColors.textPrimary,
@@ -335,8 +371,8 @@ export const BingoTile = ({
                 position: 'absolute',
                 top: 6,
                 right: 6,
-                width: { xs: 20, sm: 26 },
-                height: { xs: 20, sm: 26 },
+                width: tierValue({ xs: 20, sm: 26 }, sizeTier),
+                height: tierValue({ xs: 20, sm: 26 }, sizeTier),
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
@@ -345,7 +381,9 @@ export const BingoTile = ({
                 transform: 'rotate(-8deg)',
               })}
             >
-              <TaskAltIcon sx={{ fontSize: { xs: 14, sm: 18 }, color: appColors.textPrimary }} />
+              <TaskAltIcon
+                sx={{ fontSize: tierValue({ xs: 14, sm: 18 }, sizeTier), color: appColors.textPrimary }}
+              />
             </Box>
           )}
 
@@ -356,14 +394,20 @@ export const BingoTile = ({
               left: hasVisual ? 0 : undefined,
               right: hasVisual ? 0 : undefined,
               bottom: hasVisual ? 0 : undefined,
-              px: hasVisual ? { xs: 0.75, sm: 1.25 } : { xs: 0.75, sm: 1.5 },
-              pb: hasVisual ? { xs: 0.6, sm: 1 } : { xs: 0.75, sm: 1.5 },
-              pt: hasVisual ? 0 : { xs: 0.75, sm: 1.5 },
-              fontSize: { xs: 11, sm: 13 },
+              px: hasVisual
+                ? tierValue({ xs: 0.75, sm: 1.25 }, sizeTier)
+                : tierValue({ xs: 0.75, sm: 1.5 }, sizeTier),
+              pb: hasVisual
+                ? tierValue({ xs: 0.6, sm: 1 }, sizeTier)
+                : tierValue({ xs: 0.75, sm: 1.5 }, sizeTier),
+              pt: hasVisual ? 0 : tierValue({ xs: 0.75, sm: 1.5 }, sizeTier),
+              fontSize: tierValue({ xs: 11, sm: 13 }, sizeTier),
               fontWeight: completed ? 600 : 400,
               lineHeight: 1.25,
               display: '-webkit-box',
-              WebkitLineClamp: hasVisual ? { xs: 2, sm: 3 } : { xs: 3, sm: 5 },
+              WebkitLineClamp: hasVisual
+                ? tierValue({ xs: 2, sm: 3 }, sizeTier)
+                : tierValue({ xs: 3, sm: 5 }, sizeTier),
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
             }}
@@ -415,7 +459,7 @@ export const BingoTile = ({
             <CloseIcon fontSize="small" />
           </IconButton>
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ pb: 3 }}>
           {hasVisual && (
             <Box
               component="img"
@@ -482,11 +526,6 @@ export const BingoTile = ({
             />
           )}
         </DialogContent>
-        <DialogActions sx={{ borderTop: `1px solid ${appColors.subtleBorder}`, px: 3, pb: 2 }}>
-          <Button onClick={closeDetail} sx={{ color: appColors.accent }}>
-            Close
-          </Button>
-        </DialogActions>
       </Dialog>
     </>
   );
