@@ -17,6 +17,13 @@
     "jsx": "react-jsx"
   },
   "include": ["src"],
-  "exclude": ["node_modules", "build"],
+  "exclude": [
+    "node_modules",
+    "build",
+    // Standalone Bun CLI script (node:fs/node:path, no @types/node in this
+    // app's deps) — not part of the shipped app bundle, run directly with
+    // `bun` instead of going through tsc/vite. See its own header comment.
+    "src/components/Pages/BingoBoard/download-bingo-art.ts"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
