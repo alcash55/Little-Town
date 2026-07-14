@@ -1,0 +1,7 @@
+# `bun test` from the repo root must only run the backend suite.
+# frontend/ uses Vitest (frontend/vitest.config.ts, `bun run test` in that
+# dir) — bun's test runner ships a partial `vi` shim and fails on real
+# Vitest files (e.g. vi.mocked), so the two runners must never see each
+# other's tests.
+[test]
+root = "backend"
