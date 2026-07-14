@@ -11,13 +11,21 @@ type LoginModalContextValue = {
   isSubmitting: boolean;
   errorMessage: string | null;
   loginWithCredentials: (username: string, password: string, rememberMe: boolean) => Promise<void>;
+  /**
+   * Drops a fully-formed session (user + token) straight into state without
+   * hitting /api/auth/login — used by the invite-accept flow, whose
+   * POST /api/invites/:token/accept response is shaped identically to a
+   * login response (same JWT-signing code path server-side) so the new user
+   * lands signed in immediately instead of being bounced to a login step.
+   */
+  completeSession: (session: { user: User; token: string }) => void;
   user: User | null;
   logout: () => void;
   /** False until the mount-time /me rehydration has settled (or immediately true when there's no stored token). */
   authReady: boolean;
 };
 
-interface User {
+export interface User {
   id: string;
   username: string;
   nickname?: string | null;
@@ -190,6 +198,16 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
     }
   }, [navigate]);
 
+  const completeSession = useCallback((session: { user: User; token: string }) => {
+    localStorage.setItem('authToken', session.token);
+    setUser(session.user);
+    setIsOpen(false);
+    setSessionExpired(false);
+    setErrorMessage(null);
+
+    window.dispatchEvent(new CustomEvent('auth:login', { detail: session }));
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem('authToken');
     // Override survives a refresh but never a logout (TEAM-BRIEF.md Track C
@@ -211,6 +229,7 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
       isSubmitting,
       errorMessage,
       loginWithCredentials,
+      completeSession,
       user,
       logout,
       authReady,
@@ -223,6 +242,7 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
       isSubmitting,
       errorMessage,
       loginWithCredentials,
+      completeSession,
       user,
       logout,
       authReady,
