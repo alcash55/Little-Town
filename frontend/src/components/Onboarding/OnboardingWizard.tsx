@@ -39,7 +39,7 @@ const OnboardingWizard = ({ open, dismissable, onFinish }: Props) => {
   const [activeStep, setActiveStep] = useState(0);
   // Only fetches while the wizard is actually open.
   const profile = useOnboardingProfile(open);
-  const rsn = useRsnConfirmation(profile);
+  const rsn = useRsnConfirmation();
 
   const isLastStep = activeStep === STEP_LABELS.length - 1;
   const nextDisabled = activeStep === RSN_STEP_INDEX && !rsn.confirmed;
