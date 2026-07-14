@@ -1,5 +1,4 @@
 import {
-  Box,
   Button,
   FormControl,
   InputLabel,
@@ -67,7 +66,7 @@ const BingoDetails = () => {
           autoFocus
         />
 
-        <Box sx={{ display: 'flex', justifyContent: 'start', alignItems: 'center', gap: 3 }}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ width: '100%' }}>
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             <DateTimePicker
               label="Start"
@@ -76,7 +75,8 @@ const BingoDetails = () => {
               minDate={minStartDate}
               value={startDate ? new Date(startDate) : null}
               onChange={handleStartDateChange}
-              slotProps={{ textField: { required: true, error: false } }}
+              slotProps={{ textField: { required: true, error: false, fullWidth: true } }}
+              sx={{ flex: 1, minWidth: 0 }}
             />
             <DateTimePicker
               label="End"
@@ -85,10 +85,11 @@ const BingoDetails = () => {
               minDate={minEndDate}
               value={endDate ? new Date(endDate) : null}
               onChange={handleEndDateChange}
-              slotProps={{ textField: { required: true, error: false } }}
+              slotProps={{ textField: { required: true, error: false, fullWidth: true } }}
+              sx={{ flex: 1, minWidth: 0 }}
             />
           </LocalizationProvider>
-        </Box>
+        </Stack>
 
         <FormControl variant="outlined" sx={{ m: 1, width: '100%' }} required>
           <InputLabel id="board-size-label">Board Size</InputLabel>
