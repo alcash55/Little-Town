@@ -14,6 +14,7 @@ export const Pages = {
     () => import('./AdminPanel/ScreenshotSubmission/ScreenshotSubmission'),
   ),
   Unauthorized: lazy(() => import('./Unauthorized/Unauthorized')),
+  InviteAccept: lazy(() => import('./InviteAccept/InviteAccept')),
   Resources: lazy(() => import('./Resources/Resources')),
   BingoOverview: lazy(() => import('./AdminPanel/BingoOverview/BingoOverview')),
   Maintenance: lazy(() => import('./AdminPanel/Maintenance/Maintenance')),
