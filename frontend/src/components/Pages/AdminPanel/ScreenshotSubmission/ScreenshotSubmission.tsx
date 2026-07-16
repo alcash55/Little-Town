@@ -19,6 +19,7 @@ const ScreenshotSubmission = () => {
     players,
     tileOptions,
     boardMissingTileIds,
+    boardHasNoDropsTiles,
     loading,
     refreshing,
     error,
@@ -71,6 +72,18 @@ const ScreenshotSubmission = () => {
 
   return (
     <PageLayout title="Screenshot Submissions" maxWidth="full">
+      {/* ── Page reframing (TEAM-BRIEF.md Sprint 13, Track B item 2): Kill
+          Count/Experience tiles now auto-verify straight from the hiscores
+          — no admin step at all — so this page exists ONLY for Drops tiles,
+          which the hiscores can't see. Stated up front so an admin who
+          remembers the old all-tiles-need-review world isn't left wondering
+          why a KC/XP screenshot never shows up here. ── */}
+      <Alert severity="info" sx={{ width: '100%' }}>
+        KC/XP tiles verify automatically from the hiscores — no review needed. Screenshots
+        here are for <strong>Drops</strong> tiles only, and approving one now requires picking
+        the player who got the drop.
+      </Alert>
+
       <Box
         sx={{
           display: 'flex',
@@ -84,9 +97,9 @@ const ScreenshotSubmission = () => {
         <Typography variant="body2" sx={{ color: textSecondary, minWidth: 0 }}>
           {pending.length === 0
             ? ' '
-            : `${pending.length} screenshot${
+            : `${pending.length} drop screenshot${
                 pending.length > 1 ? 's' : ''
-              } pending review — assign a tile and team, then approve or deny.`}
+              } pending review — assign a tile, team, and player, then approve or deny.`}
         </Typography>
         <Button
           variant="outlined"
@@ -133,8 +146,8 @@ const ScreenshotSubmission = () => {
             All caught up
           </Typography>
           <Typography variant="body2" sx={{ color: textSecondary, maxWidth: 360 }}>
-            No screenshots are waiting for review right now. New submissions from Discord will show
-            up here automatically — this page polls every 45 seconds.
+            No drop screenshots are waiting for review right now. New submissions from Discord
+            will show up here automatically — this page polls every 45 seconds.
           </Typography>
         </Stack>
       ) : (
@@ -155,6 +168,7 @@ const ScreenshotSubmission = () => {
               teams={teams}
               players={players}
               boardMissingTileIds={boardMissingTileIds}
+              boardHasNoDropsTiles={boardHasNoDropsTiles}
               tileId={tileSelection[submission.id]}
               teamId={teamSelection[submission.id]}
               playerId={playerSelection[submission.id]}
@@ -196,9 +210,11 @@ const ScreenshotSubmission = () => {
             Needs Player Attribution
           </Typography>
           <Typography variant="body2" sx={{ color: textSecondary, width: '100%' }}>
-            {unattributed.length} approved submission{unattributed.length > 1 ? 's were' : ' was'}{' '}
-            approved without picking a player — already counted for the team, but won&apos;t show up
-            per-player until attributed here.
+            {unattributed.length} approved Drops submission
+            {unattributed.length > 1 ? 's were' : ' was'} approved without picking a player —
+            already counted for the team, but won&apos;t show up per-player until attributed
+            here. (KC/XP tiles auto-verify and never need attribution — this list is Drops
+            only.)
           </Typography>
           <Box
             sx={{
