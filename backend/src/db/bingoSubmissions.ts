@@ -97,6 +97,26 @@ export async function getPendingSubmissions(bingoId: string): Promise<BingoSubmi
   return (data ?? []) as BingoSubmission[];
 }
 
+/**
+ * Approved submissions with NO player attribution, oldest-approved first —
+ * the admin-facing worklist for the backfill path (bug-report investigation,
+ * H1). Feeds GET /bingo/screenshots/unattributed, which the ScreenshotSubmission
+ * page's "Needs Player Attribution" section lists alongside the pending
+ * queue, each with a player picker calling PATCH .../attribute.
+ */
+export async function getApprovedSubmissionsMissingAttribution(bingoId: string): Promise<BingoSubmission[]> {
+  const { data, error } = await getDb()
+    .from("bingo_submissions")
+    .select("*")
+    .eq("bingo_id", bingoId)
+    .eq("status", "approved")
+    .is("player_id", null)
+    .order("reviewed_at", { ascending: true });
+
+  if (error) throw new Error(`Failed to get unattributed approved submissions: ${error.message}`);
+  return (data ?? []) as BingoSubmission[];
+}
+
 export async function getSubmissionById(id: string): Promise<BingoSubmission | null> {
   const { data, error } = await getDb()
     .from("bingo_submissions")
@@ -214,6 +234,32 @@ export async function approveSubmission(
     .single();
 
   if (error || !data) throw new Error(`Failed to approve submission: ${error?.message}`);
+  return data as BingoSubmission;
+}
+
+/**
+ * Sets/changes player_id on an ALREADY-approved submission — the backfill
+ * path for the attribution gap (bug-report investigation, H1: player_id is
+ * optional at approval time, defaulting to "Unassigned" in the frontend
+ * picker, so a real approved completion can end up with no player-level
+ * attribution anywhere). Deliberately separate from approveSubmission,
+ * which only ever transitions a 'pending' row — this only ever touches an
+ * already-'approved' one, so the two can't be confused. Callers should
+ * validate playerId against the roster the same way approval does
+ * (validateApprovalPlayerId) before calling this.
+ */
+export async function attributeApprovedSubmission(
+  id: string,
+  playerId: string,
+): Promise<BingoSubmission> {
+  const { data, error } = await getDb()
+    .from("bingo_submissions")
+    .update({ player_id: playerId })
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  if (error || !data) throw new Error(`Failed to attribute submission: ${error?.message}`);
   return data as BingoSubmission;
 }
 
