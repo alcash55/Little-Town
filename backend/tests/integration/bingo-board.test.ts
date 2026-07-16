@@ -23,6 +23,9 @@ import { getDb } from "../../src/db/client.js";
 import { getJwtSecret } from "../../src/lib/jwt.js";
 import { errorHandler } from "../../src/middleware/errorHandler.js";
 import bingoRoutes from "../../src/routes/bingo.js";
+import { savePlayerSnapshot } from "../../src/db/players.js";
+import { insertPendingSubmission, getPendingSubmissions, tagPendingSubmission } from "../../src/db/bingoSubmissions.js";
+import type { HiscoreData } from "../../src/types/index.js";
 import {
   getLocalStackConfig,
   hasPreexistingActiveBingo,
@@ -34,6 +37,15 @@ import {
   type BingoRow,
   type BingoTeamRow,
 } from "./helpers.js";
+
+function buildHiscoreData(kc: number): HiscoreData {
+  return {
+    name: "test",
+    skills: [{ id: 0, name: "Overall", rank: 1, level: 1, xp: 0 }],
+    activities: [{ id: 1, name: "Vorkath", rank: 500, kc }],
+    updatedAt: new Date(),
+  };
+}
 
 const stack = await getLocalStackConfig();
 if (!stack.reachable) {
@@ -157,13 +169,19 @@ describe.skipIf(!suite)("GET /api/bingo/board", () => {
     let teamB: BingoTeamRow;
     let tile1: { id: string; task: string; type: string; points: number; targetValue: number | null };
     let tile2: { id: string; task: string; type: string; points: number; targetValue: number | null };
+    let tile3: { id: string; task: string; type: string; points: number; targetValue: number | null };
     let userOnTeamA: TestUser;
     let userOnTeamB: TestUser;
     let userWithNoTeam: TestUser;
     let userNotRegistered: TestUser;
     let adminUser: TestUser;
 
-    test("fixtures: active bingo, two teams, two tiles, one approved submission for team A", async () => {
+    // TEAM-BRIEF.md Sprint 13, Track A — tile1 is now Drops (screenshots
+    // only exist for Drops tiles going forward, product decision 2); tile3
+    // is a Kill Count tile that's genuinely auto-verified from real
+    // snapshot deltas, proving completedByMyTeam is now engine-driven
+    // rather than a raw approved-submission lookup.
+    test("fixtures: active bingo, two teams, a Drops tile with an approved submission, an auto-verified Kill Count tile", async () => {
       bingo = await insertTestBingo(`test-board-${uniqueSuffix()}`, { status: "active" });
       createdBingoIds.push(bingo.id);
       teamA = await insertTestTeam(bingo.id, `TeamA ${uniqueSuffix()}`);
@@ -171,14 +189,21 @@ describe.skipIf(!suite)("GET /api/bingo/board", () => {
 
       const t1 = await insertTestTile(bingo.id, {
         position: 0,
-        task: "Vorkath",
-        type: "Kill Count",
+        task: `Rare Drop ${uniqueSuffix()}`,
+        type: "Drops",
         points: 25,
-        targetValue: 50,
       });
       const t2 = await insertTestTile(bingo.id, { position: 1, task: "Zulrah", type: "Kill Count", points: 15 });
+      const t3 = await insertTestTile(bingo.id, {
+        position: 2,
+        task: "Vorkath",
+        type: "Kill Count",
+        points: 30,
+        targetValue: 10,
+      });
       tile1 = { id: t1.id, task: t1.task, type: t1.type, points: t1.points, targetValue: t1.target_value };
       tile2 = { id: t2.id, task: t2.task, type: t2.type, points: t2.points, targetValue: t2.target_value };
+      tile3 = { id: t3.id, task: t3.task, type: t3.type, points: t3.points, targetValue: t3.target_value };
 
       userOnTeamA = await insertTestUser("user");
       userOnTeamB = await insertTestUser("user");
@@ -186,12 +211,18 @@ describe.skipIf(!suite)("GET /api/bingo/board", () => {
       userNotRegistered = await insertTestUser("user");
       adminUser = await insertTestUser("admin");
 
-      await insertTestPlayer(bingo.id, teamA.id, `BoardPlayerA${uniqueSuffix()}`, userOnTeamA.id);
+      const playerAId = await insertTestPlayer(bingo.id, teamA.id, `BoardPlayerA${uniqueSuffix()}`, userOnTeamA.id);
       await insertTestPlayer(bingo.id, teamB.id, `BoardPlayerB${uniqueSuffix()}`, userOnTeamB.id);
       await insertTestPlayer(bingo.id, null, `BoardPlayerNoTeam${uniqueSuffix()}`, userWithNoTeam.id);
 
-      // Only team A has an approved submission, only for tile1.
+      // Only team A has an approved Drops submission, only for tile1.
       await insertApprovedSubmission(bingo.id, tile1.id, teamA.id);
+
+      // Team A's player genuinely gained 10 Vorkath KC (tile3's target) —
+      // the engine should auto-verify tile3 for team A from this alone, no
+      // submission involved.
+      await savePlayerSnapshot(playerAId, "start", buildHiscoreData(0));
+      await savePlayerSnapshot(playerAId, "current", buildHiscoreData(10));
     });
 
     test("active bingo -> full contract shape, tiles in stable board order", async () => {
@@ -199,7 +230,7 @@ describe.skipIf(!suite)("GET /api/bingo/board", () => {
       expect(status).toBe(200);
       expect(body.active).toBe(true);
       expect(body.bingo).toEqual({ id: bingo.id, name: bingo.name, boardSize: bingo.board_size });
-      expect(body.tiles.map((t: { id: string }) => t.id)).toEqual([tile1.id, tile2.id]);
+      expect(body.tiles.map((t: { id: string }) => t.id)).toEqual([tile1.id, tile2.id, tile3.id]);
     });
 
     // TEAM-BRIEF.md Sprint 8, Track A item 4: type/points/targetValue are an
@@ -210,17 +241,25 @@ describe.skipIf(!suite)("GET /api/bingo/board", () => {
         body.tiles.map((t: { id: string }) => [t.id, t]),
       ) as Record<string, { type: string; points: number; targetValue: number | null }>;
 
-      expect(byId[tile1.id]).toMatchObject({ type: "Kill Count", points: 25, targetValue: 50 });
+      expect(byId[tile1.id]).toMatchObject({ type: "Drops", points: 25, targetValue: null });
       // Tiles that never set a target_value expose null, not undefined/omitted.
       expect(byId[tile2.id]).toMatchObject({ type: "Kill Count", points: 15, targetValue: null });
+      expect(byId[tile3.id]).toMatchObject({ type: "Kill Count", points: 30, targetValue: 10 });
     });
 
-    test("a user on team A sees myTeam=A and tile1 completed, tile2 not", async () => {
+    // TEAM-BRIEF.md Sprint 13, Track A contract 1: completedByMyTeam
+    // broadens to auto-verified (Kill Count/Experience) OR approved Drops
+    // submission — tile1 (Drops, approved) and tile3 (Kill Count,
+    // auto-verified from real snapshot deltas) are BOTH complete for team A;
+    // tile2 (Kill Count, no snapshot data at all -> unmatched/no delta)
+    // stays incomplete.
+    test("a user on team A sees myTeam=A, tile1 (approved drop) + tile3 (auto-verified KC) completed, tile2 not", async () => {
       const { body } = await request("/api/bingo/board", signToken(userOnTeamA));
       expect(body.myTeam).toEqual({ id: teamA.id, name: teamA.name });
       const byId = Object.fromEntries(body.tiles.map((t: any) => [t.id, t.completedByMyTeam]));
       expect(byId[tile1.id]).toBe(true);
       expect(byId[tile2.id]).toBe(false);
+      expect(byId[tile3.id]).toBe(true);
     });
 
     test("a user on team B sees myTeam=B and NO tiles completed (team A's completion never leaks)", async () => {
@@ -240,7 +279,7 @@ describe.skipIf(!suite)("GET /api/bingo/board", () => {
       expect(status).toBe(200);
       expect(body.active).toBe(true);
       expect(body.myTeam).toBeNull();
-      expect(body.tiles).toHaveLength(2);
+      expect(body.tiles).toHaveLength(3);
       expect(body.tiles.every((t: any) => t.completedByMyTeam === false)).toBe(true);
     });
 
@@ -255,10 +294,31 @@ describe.skipIf(!suite)("GET /api/bingo/board", () => {
       expect(body.active).toBe(true);
       expect(body.bingo).toEqual({ id: bingo.id, name: bingo.name, boardSize: bingo.board_size });
       expect(body.myTeam).toBeNull();
-      expect(body.tiles.map((t: { id: string }) => t.id)).toEqual([tile1.id, tile2.id]);
-      // Team A's approved submission on tile1 must never leak to an
-      // anonymous caller.
+      expect(body.tiles.map((t: { id: string }) => t.id)).toEqual([tile1.id, tile2.id, tile3.id]);
+      // Team A's approved submission/auto-verified tile must never leak to
+      // an anonymous caller.
       expect(body.tiles.every((t: any) => t.completedByMyTeam === false)).toBe(true);
+    });
+
+    // TEAM-BRIEF.md Sprint 13, Track A contract 1 (NEW): pendingByMyTeam.
+    test("pendingByMyTeam: a pending submission tagged with tile2+teamA renders true for team A, false for team B and anonymous", async () => {
+      const discordMessageId = `board-pending-${uniqueSuffix()}`;
+      await insertPendingSubmission({ bingoId: bingo.id, discordMessageId, imagePath: `test/${discordMessageId}.png` });
+      const pending = await getPendingSubmissions(bingo.id);
+      const row = pending.find((s) => s.discord_message_id === discordMessageId)!;
+      await tagPendingSubmission(row.id, { tileId: tile2.id, teamId: teamA.id });
+
+      const teamAView = await request("/api/bingo/board", signToken(userOnTeamA));
+      const byIdA = Object.fromEntries(teamAView.body.tiles.map((t: any) => [t.id, t.pendingByMyTeam]));
+      expect(byIdA[tile2.id]).toBe(true);
+      // Never true for a tile with no pending submission for this team.
+      expect(byIdA[tile1.id]).toBe(false);
+
+      const teamBView = await request("/api/bingo/board", signToken(userOnTeamB));
+      expect(teamBView.body.tiles.every((t: any) => t.pendingByMyTeam === false)).toBe(true);
+
+      const anon = await request("/api/bingo/board");
+      expect(anon.body.tiles.every((t: any) => t.pendingByMyTeam === false)).toBe(true);
     });
 
     test("malformed/garbage token -> degrades to anonymous (200), not 401/500", async () => {

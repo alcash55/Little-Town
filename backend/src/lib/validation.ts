@@ -118,6 +118,31 @@ export const screenshotApprovalSchema = z.object({
   playerId: z.string().min(1).optional(),
 });
 
+// playerId is intentionally NOT required=true here in the zod schema — the
+// frozen contract (TEAM-BRIEF.md Sprint 13, Track A) requires approving
+// without one to fail with 422 specifically, and validateBody's own
+// zod-failure path always responds 400 (see lib/validation.ts's
+// validateBody above). The route handler enforces the 422 explicitly
+// instead (routes/admin.ts's POST .../approve) so the required-shape check
+// (this schema) and the required-field-with-a-specific-status-code check
+// stay decoupled.
+
+// -------------------------------------------------------
+// Tagging a still-pending submission with tile+team (PATCH
+// /bingo/screenshots/:id/tag) — NEW Sprint 13, Track A: lets an admin
+// associate a pending submission with a tile/team BEFORE approving/denying
+// it, so GET /api/bingo/board's pendingByMyTeam has something to key off of
+// (a pending row previously never carried tile_id/team_id at all — see
+// db/bingoSubmissions.ts's tagPendingSubmission doc comment). No playerId
+// here — attribution only ever happens at approval time or via the
+// separate backfill route.
+// -------------------------------------------------------
+
+export const screenshotTagSchema = z.object({
+  tileId: z.string().min(1, "Tile ID is required"),
+  teamId: z.string().min(1, "Team ID is required"),
+});
+
 // -------------------------------------------------------
 // Backfilling attribution on an already-approved submission
 // (PATCH /bingo/screenshots/:id/attribute) — playerId is REQUIRED here

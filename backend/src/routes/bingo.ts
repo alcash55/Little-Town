@@ -12,6 +12,7 @@ import {
 import { getBingoConflicts } from "../db/conflicts.js";
 import { getTeamXpHistory } from "../db/teamXpHistory.js";
 import { getDb } from "../db/client.js";
+import { computeBingoCompletion, type EngineTile } from "../services/completionEngine.js";
 
 const router = Router();
 
@@ -28,7 +29,7 @@ const router = Router();
  *
  *   { active: false }
  *   { active: true, bingo: {id,name,boardSize}, myTeam: {id,name}|null,
- *     tiles: [{id,task,completedByMyTeam,type,points,targetValue}] }
+ *     tiles: [{id,task,completedByMyTeam,pendingByMyTeam,type,points,targetValue}] }
  *
  * "active" deliberately means bingo.status === 'active' specifically (NOT
  * 'draft') — matches the status check playerSnapshotCron.ts and
@@ -41,25 +42,34 @@ const router = Router();
  * and leaves it undefined otherwise — no token, an invalid token, or an
  * expired token are all treated identically as "anonymous", never a 401/500
  * (contract). Anonymous callers always get myTeam: null and every tile's
- * completedByMyTeam: false — the team-lookup query below is skipped
- * entirely when req.user is absent, so there is no code path where an
- * anonymous caller's request can accidentally resolve to somebody's team.
+ * completedByMyTeam/pendingByMyTeam: false — the team-lookup query below is
+ * skipped entirely when req.user is absent, so there is no code path where
+ * an anonymous caller's request can accidentally resolve to somebody's team.
  *
  * myTeam / completion resolution for authenticated callers uses req.user
  * (the EFFECTIVE, possibly impersonated caller) exactly like
  * /my-team-data's own resolveMyBingoPlayer() call below (see its doc comment
  * in db/players.ts for the claim-first, registered_by-fallback resolution
- * order). completedByMyTeam only ever reflects the caller's own team's approved submissions — other teams'
- * progress is never fetched, let alone exposed (contract 1). Anonymous
- * callers see exactly the same board layout/tasks/points that any
- * authenticated non-team-member sees — this is the first intentionally
- * public bingo endpoint; see TEAM-BRIEF.md Sprint 9 Track A report for the
- * full security note on what that exposes.
+ * order). completedByMyTeam/pendingByMyTeam only ever reflect the caller's
+ * own team — other teams' progress is never fetched, let alone exposed
+ * (contract 1). Anonymous callers see exactly the same board layout/tasks/
+ * points that any authenticated non-team-member sees — this is the first
+ * intentionally public bingo endpoint; see TEAM-BRIEF.md Sprint 9 Track A
+ * report for the full security note on what that exposes.
  *
  * `type`/`points`/`targetValue` (TEAM-BRIEF.md Sprint 8, Track A item 4) are
  * an ADDITIVE extension — every existing field/shape above is unchanged —
  * feeding the board's tile artwork + points UI. `targetValue` is nullable
  * (camelCase mirror of getActiveBingoBoard()'s `target_value`).
+ *
+ * `completedByMyTeam` (Sprint 13, Track A — broadened per the frozen
+ * contract): auto-verified for my team (Kill Count/Experience, via
+ * services/completionEngine.ts's team-summed hiscore math) OR an approved
+ * Drops submission for my team — deduped by construction (see that
+ * module's header comment). `pendingByMyTeam` (NEW, Sprint 13): true when a
+ * still-PENDING submission has been tagged (PATCH .../tag — see
+ * routes/admin.ts) with this tile + my team, so the board can render a
+ * yellow "awaiting review" cue before an admin has approved/denied it.
  */
 router.get(
   "/board",
@@ -74,9 +84,10 @@ router.get(
 
     // Anonymous callers (req.user undefined) skip the team lookup entirely
     // — myTeamId stays null, so myTeam is null and every tile comes back
-    // completedByMyTeam: false below. Same resolveMyBingoPlayer() lookup
-    // /my-team-data uses to discover their team for authenticated callers —
-    // req.user is already the effective (post-impersonation) caller.
+    // completedByMyTeam/pendingByMyTeam: false below. Same
+    // resolveMyBingoPlayer() lookup /my-team-data uses to discover their
+    // team for authenticated callers — req.user is already the effective
+    // (post-impersonation) caller.
     let myTeamId: string | null = null;
     if (req.user) {
       const myPlayer = await resolveMyBingoPlayer(bingo.id, req.user.id);
@@ -90,7 +101,8 @@ router.get(
     // getActiveBingoBoard() always attaches each row's id (its Tile type
     // marks `id` optional only because the same type also describes tile
     // literals passed INTO saveActiveBingoBoard(), which never have one).
-    const tiles = (await getActiveBingoBoard()).map((tile) => ({
+    const rawTiles = await getActiveBingoBoard();
+    const tiles = rawTiles.map((tile) => ({
       id: tile.id!,
       task: tile.task,
       type: tile.type,
@@ -98,20 +110,37 @@ router.get(
       targetValue: tile.target_value ?? null,
     }));
 
-    // Only fetch approved submissions for the caller's own team — never
-    // other teams' (contract 1). No team -> skip the query entirely and
-    // pass null through so every tile comes back completedByMyTeam: false.
-    let approvedTileIdsForMyTeam: Set<string> | null = null;
+    // Engine + pending lookups only ever run for the caller's own team —
+    // never other teams' (contract 1). No team -> skip both entirely and
+    // pass null through so every tile comes back
+    // completedByMyTeam/pendingByMyTeam: false.
+    let completedTileIdsForMyTeam: Set<string> | null = null;
+    let pendingTileIdsForMyTeam: Set<string> | null = null;
     if (myTeamId) {
-      const { data: subs, error: subsErr } = await db
-        .from("bingo_submissions")
-        .select("tile_id")
-        .eq("bingo_id", bingo.id)
-        .eq("team_id", myTeamId)
-        .eq("status", "approved");
-      if (subsErr) throw new Error(subsErr.message);
-      approvedTileIdsForMyTeam = new Set(
-        (subs ?? [])
+      const engineTiles: EngineTile[] = tiles.map((t) => ({
+        id: t.id,
+        task: t.task,
+        type: t.type,
+        points: t.points,
+        targetValue: t.targetValue,
+      }));
+      const allTeamIds = (bingo.teamObjects ?? []).map((t) => t.id);
+
+      const [{ completedTileIdsByTeam }, pendingSubsRes] = await Promise.all([
+        computeBingoCompletion(bingo.id, engineTiles, allTeamIds),
+        db
+          .from("bingo_submissions")
+          .select("tile_id")
+          .eq("bingo_id", bingo.id)
+          .eq("team_id", myTeamId)
+          .eq("status", "pending")
+          .not("tile_id", "is", null),
+      ]);
+      if (pendingSubsRes.error) throw new Error(pendingSubsRes.error.message);
+
+      completedTileIdsForMyTeam = completedTileIdsByTeam.get(myTeamId) ?? new Set();
+      pendingTileIdsForMyTeam = new Set(
+        (pendingSubsRes.data ?? [])
           .map((s: { tile_id: string | null }) => s.tile_id)
           .filter((id: string | null): id is string => id !== null),
       );
@@ -121,7 +150,7 @@ router.get(
       active: true,
       bingo: { id: bingo.id, name: bingo.name, boardSize: bingo.boardSize },
       myTeam: myTeam ? { id: myTeam.id, name: myTeam.name } : null,
-      tiles: buildBoardTileCompletion(tiles, approvedTileIdsForMyTeam),
+      tiles: buildBoardTileCompletion(tiles, completedTileIdsForMyTeam, pendingTileIdsForMyTeam),
     });
   }),
 );
@@ -372,15 +401,52 @@ router.get(
     const tileTaskById = new Map(Array.from(tileIdByTask.entries()).map(([task, id]) => [id, task]));
     const dropStatus = buildDropStatusByRsn(submissionsData, teamPlayerIdToRsn, tileTaskById);
 
+    // Engine-driven completion/progress for this team (TEAM-BRIEF.md Sprint
+    // 13, Track A item 2 — "no second implementation": the frontend used to
+    // locally infer a Kill Count/Experience cell's completion from a single
+    // PLAYER's own delta >= target, which is simply wrong under this
+    // sprint's team-total semantics (contract 1) — a team can complete a
+    // tile via combined effort with no single member individually hitting
+    // the target. `completed`/`teamProgress` below are the authoritative
+    // per-tile values from services/completionEngine.ts; Drops tiles get
+    // `teamProgress: null` (progress isn't numeric for them — dropStatus
+    // above already covers their state) and `completed` mirrors whether the
+    // team has an approved submission for that tile. Computed over every
+    // team in the bingo (engine requirement — see computeBingoCompletion's
+    // doc comment on why vocab/matching needs the full player set), then
+    // this team's slice is picked out; skipped entirely when the caller has
+    // no team, matching every other team-scoped block on this route.
+    // getActiveBingoBoard() always attaches each row's id (same guarantee
+    // /board's handler above relies on).
+    const engineTiles: EngineTile[] = tiles.map((t) => ({
+      id: t.id!,
+      task: t.task,
+      type: t.type,
+      points: t.points,
+      targetValue: t.target_value ?? null,
+    }));
+
+    let completedTileIdsForMyTeam: Set<string> = new Set();
+    let progressForMyTeam: Map<string, number> = new Map();
+    if (myTeamId) {
+      const allTeamIds = (bingo.teamObjects ?? []).map((t) => t.id);
+      const { completedTileIdsByTeam, progressByTeamAndTile } = await computeBingoCompletion(
+        bingo.id,
+        engineTiles,
+        allTeamIds,
+      );
+      completedTileIdsForMyTeam = completedTileIdsByTeam.get(myTeamId) ?? new Set();
+      progressForMyTeam = progressByTeamAndTile.get(myTeamId) ?? new Map();
+    }
+
     // Shape the tile list for the frontend
     const tileList = tiles.map((tile) => ({
       task: tile.task,
       type: tile.type as "Kill Count" | "Experience" | "Drops",
       points: tile.points,
-      target:
-        tile.type === "Kill Count" ? ((tile as any).killCount ?? null)
-        : tile.type === "Experience" ? ((tile as any).experience ?? null)
-        : null,
+      target: tile.target_value ?? null,
+      completed: tile.id ? completedTileIdsForMyTeam.has(tile.id) : false,
+      teamProgress: tile.type === "Drops" || !tile.id ? null : progressForMyTeam.get(tile.id) ?? 0,
     }));
 
     const teamName = myTeamId ? (teamNameById[myTeamId] ?? "Unassigned") : "Unassigned";
