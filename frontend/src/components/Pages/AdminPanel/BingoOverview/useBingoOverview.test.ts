@@ -135,3 +135,57 @@ describe('useBingoOverview KPI totals — attribution-gap fallback', () => {
     expect(result.current.teamStats.reduce((sum, t) => sum + t.unattributedTiles, 0)).toBe(2);
   });
 });
+
+// TEAM-BRIEF.md Sprint 13, Track A item 1 (frozen contract) / Track B item
+// 3: team-stats additionally returns `unresolvableTiles` — trackable-type
+// tiles the completion engine couldn't map to a hiscore metric (Track A has
+// shipped this server-side — see backend/src/routes/admin.ts's team-stats
+// handler and services/completionEngine.ts). These tests fake the
+// fetchWithAuth response shape (standard mock-the-network-layer pattern
+// used throughout this file) to exercise the hook's parsing/fallback logic
+// in isolation.
+describe('useBingoOverview — unresolvable tiles warning (TEAM-BRIEF.md Sprint 13)', () => {
+  it('surfaces unresolvableTiles from team-stats', async () => {
+    installRouter({
+      '/bingo/team-stats': {
+        data: [],
+        unresolvableTiles: [
+          { id: 'tile-9', task: 'Kill the big boss thing', type: 'Kill Count' },
+        ],
+      },
+    });
+
+    const { result } = renderHook(() => useBingoOverview());
+    await vi.waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.unresolvableTiles).toEqual([
+      { id: 'tile-9', task: 'Kill the big boss thing', type: 'Kill Count' },
+    ]);
+  });
+
+  it('defaults to an empty list when the field is absent (today\'s pre-Track-A backend)', async () => {
+    installRouter({
+      '/bingo/team-stats': { data: [] },
+    });
+
+    const { result } = renderHook(() => useBingoOverview());
+    await vi.waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.unresolvableTiles).toEqual([]);
+  });
+
+  it('resets to empty when team-stats fails to load, rather than keeping a stale list', async () => {
+    installRouter();
+    // installRouter's suffix-router always returns 200 — override just
+    // team-stats here to a real failing Response for this one test.
+    mockedFetchWithAuth.mockImplementation(async (url: string) => {
+      if (url.includes('/bingo/team-stats')) return new Response('boom', { status: 500 });
+      return jsonResponse({ data: [] });
+    });
+
+    const { result } = renderHook(() => useBingoOverview());
+    await vi.waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.unresolvableTiles).toEqual([]);
+  });
+});
