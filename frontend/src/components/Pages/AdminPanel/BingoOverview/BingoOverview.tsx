@@ -30,6 +30,7 @@ import GridViewIcon from '@mui/icons-material/GridView';
 import ScoreboardIcon from '@mui/icons-material/Scoreboard';
 import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
 import GppMaybeIcon from '@mui/icons-material/GppMaybe';
+import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import PageLayout from '../../../../layout/PageLayout/PageLayout';
 import { appColors } from '../../../../layout/Theme';
 import { Countdown } from '../../../Countdown/Countdown';
@@ -227,6 +228,7 @@ const BingoOverview = () => {
     playerStats,
     playerStatsError,
     teamStats,
+    unresolvableTiles,
     pendingScreenshots,
     health,
     healthError,
@@ -423,7 +425,10 @@ const BingoOverview = () => {
           {refreshStatsMessage}
         </Alert>
       )}
-      {/* ── Pending screenshots alert ── */}
+      {/* ── Pending screenshots alert — Drops-specific copy (TEAM-BRIEF.md
+          Sprint 13, Track B item 3): the only screenshots left in this flow
+          are Drops-tile submissions, KC/XP tiles auto-verify from the
+          hiscores and never reach this queue. ── */}
       {pendingScreenshots.length > 0 && (
         <Alert
           severity="warning"
@@ -435,8 +440,8 @@ const BingoOverview = () => {
           }
           sx={{ width: '100%' }}
         >
-          {pendingScreenshots.length} screenshot{pendingScreenshots.length > 1 ? 's' : ''} pending
-          review
+          {pendingScreenshots.length} drop screenshot{pendingScreenshots.length > 1 ? 's' : ''}{' '}
+          pending review
         </Alert>
       )}
       {/* ── RSN-stale alert ── */}
@@ -452,16 +457,21 @@ const BingoOverview = () => {
           {playerStatsError}
         </Alert>
       )}
-      {/* ── Attribution gap: tiles a team completed with no player picked at
-          approval time. Points/tiles KPI totals above already account for
-          these (team-level ground truth); the Player Stats table below
-          cannot — it can only ever show what's attributed to someone.
-          Names the destination page correctly (it's "Screenshot Submissions"
-          in the sidebar/page title, not "Screenshot Review" — a prior version
-          of this banner used the wrong name) and links straight to its
-          "Needs Player Attribution" worklist, matching the pending-screenshots
-          alert's own Review button above, so an admin who lands here isn't
-          left to guess where "here" is. ── */}
+      {/* ── Attribution gap: Drops tiles a team completed with no player
+          picked at approval time. Points/tiles KPI totals above already
+          account for these (team-level ground truth); the Player Stats
+          table below cannot — it can only ever show what's attributed to
+          someone. Drops-specific copy (TEAM-BRIEF.md Sprint 13, Track B
+          item 3 / Track A item 3): KC/XP tiles auto-verify at the team
+          level and are never individually attributed — attribution only
+          ever concerns Drops-tile submissions now, so this banner (and the
+          count backing it) is scoped to those. Names the destination page
+          correctly (it's "Screenshot Submissions" in the sidebar/page
+          title, not "Screenshot Review" — a prior version of this banner
+          used the wrong name) and links straight to its "Needs Player
+          Attribution" worklist, matching the pending-screenshots alert's
+          own Review button above, so an admin who lands here isn't left to
+          guess where "here" is. ── */}
       {unattributedTiles > 0 && (
         <Alert
           severity="info"
@@ -473,10 +483,43 @@ const BingoOverview = () => {
           }
           sx={{ width: '100%' }}
         >
-          {unattributedTiles} tile completion{unattributedTiles > 1 ? 's are' : ' is'} not linked
-          to a specific player (approved without picking a player) — counted in the totals
+          {unattributedTiles} Drops tile completion{unattributedTiles > 1 ? 's are' : ' is'} not
+          linked to a specific player (approved without picking one) — counted in the totals
           above, but won&apos;t appear in the Player Stats table below until fixed on the
           Screenshot Submissions page&apos;s &quot;Needs Player Attribution&quot; list.
+        </Alert>
+      )}
+      {/* ── Unresolvable tiles: trackable-type (Kill Count/Experience) tiles
+          whose task text couldn't be mapped to a hiscore metric by the
+          completion engine (TEAM-BRIEF.md Sprint 13, Track A item 1 /
+          Track B item 3) — they will NEVER auto-complete as written. Points
+          to Board Builder, since the fix is almost always retyping the task
+          to exactly match the hiscores autocomplete vocabulary. ── */}
+      {unresolvableTiles.length > 0 && (
+        <Alert
+          severity="error"
+          icon={<ReportProblemIcon />}
+          action={
+            <Button size="small" color="inherit" href="/AdminPanel/BoardBuilder">
+              Fix in Board Builder
+            </Button>
+          }
+          sx={{ width: '100%' }}
+        >
+          <Stack spacing={0.5}>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              {unresolvableTiles.length} tile{unresolvableTiles.length > 1 ? 's' : ''} can&apos;t
+              auto-verify — task text doesn&apos;t match a hiscores metric.
+            </Typography>
+            <Typography variant="body2" component="span">
+              {unresolvableTiles.map((t, i) => (
+                <span key={t.id}>
+                  {i > 0 && ', '}
+                  &quot;{t.task}&quot; ({t.type})
+                </span>
+              ))}
+            </Typography>
+          </Stack>
         </Alert>
       )}
 
