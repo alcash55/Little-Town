@@ -116,7 +116,20 @@ _(Done 2026-07-08: Refresh button now disables and shows a spinner + "Refreshing
 
 - [x] Board polish (Alex, 2026-07-14): tile detail dialog keeps only the X close control (CLOSE button removed); tiles now size from viewport height so 16/25-tile boards fit desktop screens without scrolling (`useFitTileSize.ts`, 80px legibility floor → falls back to the scrolling grid for oversized boards; board column widened 900→1100px; mobile unchanged). Verified at 1920×1080/1536×864/1280×800/390×844.
 
+# Sprint 12 — shipped 2026-07-15 (Alex-assigned: player stats not loading/collected)
+
+- [x] Player stats not loading correctly / not collected — teams had visible progress and completed tiles that no dashboard showed. _(shipped 2026-07-15 — investigation confirmed THREE root causes against prod data (collection itself was healthy, 6/6 snapshots): (1) per-player stats counted only approved submissions WITH player_id, and 2 of 3 prod approvals had none — overview KPIs/points-by-team now compute from attribution-independent team stats, an info banner flags unattributed completions, and a new "Needs Player Attribution" worklist on /AdminPanel/ScreenshotSubmission backfills them via a picker (approve flow now nudges too); (2) "who am I" resolved via bingo_players.registered_by, which is the ADMIN's id for every drafter-registered player (all 6 in prod) — now resolves via rsn_claims first, registered_by only when unambiguous, so users see their real team once they confirm their RSN via "Show intro" and a clean "Unassigned" state until then; (3) the dropStatus tile-task casing bug fixed at the source, frontend workaround removed; (4) bonus: claiming an RSN into an already-active bingo now snapshots immediately. Backend 324/0 + frontend 24/24 tests; QA live-verified all scenarios incl. impersonation and the cross-team attribution guard. No migrations.)_
+
+# Action items (Alex) — after this deploys
+
+- [ ] Fix the 2 unattributed prod submissions via the new "Needs Player Attribution" section on /AdminPanel/ScreenshotSubmission (picker, two clicks each).
+- [ ] Tell users: open "Show intro" (sidebar) and confirm your RSN once — that's what links your account to your player and lights up My Team/board highlights. Until then those pages show "Unassigned".
+
 # Sprint 12 candidates — collected during Sprint 11 (2026-07-14)
+
+- /TeamData's "Unassigned" empty state should CTA to "Show intro" when the user has no rsn_claim (collected during the player-stats fix).
+- Team Drafter: flag players registered but never claimed by a real user — surfaces the account↔player gap proactively.
+- ScreenshotSubmission page grew during the attribution work — small refactor pass once the flow settles.
 
 - No way to RELEASE a claimed RSN (fat-fingered claim locks the name to that account short of a DB fix) — decide: user self-release, admin override in the panel, or both.
 - Rate-limit CHANGING claims too, not just creating them (current guard: one changeable claim per account + 10/min per IP).
