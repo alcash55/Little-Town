@@ -87,6 +87,20 @@ export const useScreenshotSubmission = () => {
    * distinct from the fatal page-level `error` above. */
   const [teamsBoardError, setTeamsBoardError] = useState<string | null>(null);
 
+  /**
+   * Non-fatal: fetchUnattributed failures, surfaced as a dismissible Alert.
+   * Previously this fetch swallowed any non-ok/thrown response entirely (the
+   * worklist just stayed at its last-known rows, indistinguishable from "no
+   * unattributed submissions right now") — a real backend failure here (e.g.
+   * a 5xx, or an unexpected 403) would silently hide the ENTIRE "Needs Player
+   * Attribution" section with no indication anything went wrong, which is
+   * exactly the kind of silently-broken state the attribution-gap
+   * investigation flagged (bug-report investigation, H1 follow-up). Surfaced
+   * the same way teamsBoardError is above so a failed worklist load is never
+   * indistinguishable from an empty one.
+   */
+  const [unattributedError, setUnattributedError] = useState<string | null>(null);
+
   /** Per-submission tile/team/player selections, keyed by submission id. */
   const [tileSelection, setTileSelection] = useState<Record<string, string>>({});
   const [teamSelection, setTeamSelection] = useState<Record<string, string>>({});
@@ -121,11 +135,22 @@ export const useScreenshotSubmission = () => {
   const fetchUnattributed = useCallback(async () => {
     try {
       const res = await fetchWithAuth(`${BASE_URL}/bingo/screenshots/unattributed`);
-      if (!res.ok) return; // non-fatal: the section just stays at its last-known rows
+      if (!res.ok) {
+        // Non-fatal to the whole page, but no longer silent: the worklist
+        // section just staying at its last-known rows (previously empty on
+        // the very first failed load) was indistinguishable from "nothing
+        // to attribute" — surfaced the same dismissible-Alert way as
+        // teamsBoardError below instead.
+        setUnattributedError(`Failed to load the attribution worklist (${res.status}).`);
+        return;
+      }
       const json = await res.json();
       setUnattributed(Array.isArray(json.data) ? json.data : []);
-    } catch {
-      /* non-fatal */
+      setUnattributedError(null);
+    } catch (e) {
+      setUnattributedError(
+        e instanceof Error ? e.message : 'Failed to load the attribution worklist.',
+      );
     }
   }, []);
 
@@ -209,6 +234,7 @@ export const useScreenshotSubmission = () => {
   }, [fetchPending, fetchUnattributed]);
 
   const dismissTeamsBoardError = useCallback(() => setTeamsBoardError(null), []);
+  const dismissUnattributedError = useCallback(() => setUnattributedError(null), []);
 
   const setTileForSubmission = useCallback((submissionId: string, tileId: string) => {
     setTileSelection((prev) => ({ ...prev, [submissionId]: tileId }));
@@ -322,6 +348,8 @@ export const useScreenshotSubmission = () => {
   return {
     pending,
     unattributed,
+    unattributedError,
+    dismissUnattributedError,
     teams,
     players,
     tileOptions,

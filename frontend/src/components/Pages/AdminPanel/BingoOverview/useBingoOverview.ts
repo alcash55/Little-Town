@@ -273,12 +273,21 @@ export const useBingoOverview = () => {
     fetchConflicts,
   ]);
 
-  // Contract 6: poll pending screenshots, dependency health, and conflicts every 45s
-  // while the page is visible, so the "N screenshots pending review" banner and the
-  // health/conflicts cards stay fresh without a manual refresh. Paused while the tab
-  // is hidden, or while a previous tick's requests are still in flight (a slow
-  // dependency-health check — up to a 5s timeout per upstream, five upstreams — must
-  // not stack overlapping polls), and always cleaned up on unmount.
+  // Contract 6: poll pending screenshots, dependency health, conflicts, and both
+  // stats views every 45s while the page is visible, so the "N screenshots pending
+  // review" banner, the health/conflicts cards, and the Player Stats table all stay
+  // fresh without a manual refresh or hard reload. Paused while the tab is hidden, or
+  // while a previous tick's requests are still in flight (a slow dependency-health
+  // check — up to a 5s timeout per upstream, five upstreams — must not stack
+  // overlapping polls), and always cleaned up on unmount.
+  //
+  // fetchPlayerStats was missing from this list until the attribution-gap
+  // investigation (bug-report investigation, H1 follow-up): an admin who backfills a
+  // submission's player_id via the ScreenshotSubmission page's "Needs Player
+  // Attribution" worklist, then flips back to an ALREADY-OPEN BingoOverview tab,
+  // would see the Player Stats table stay stale for up to 45s longer than every other
+  // card on this page (teamStats was already polled; playerStats was not) — the fix
+  // below makes it match teamStats' freshness instead of silently lagging behind it.
   const pollingRef = useRef(false);
   const pollTick = useCallback(async () => {
     if (pollingRef.current) return;
@@ -289,11 +298,12 @@ export const useBingoOverview = () => {
         fetchHealth(),
         fetchConflicts(bingoIdRef.current),
         fetchTeamStats(),
+        fetchPlayerStats(),
       ]);
     } finally {
       pollingRef.current = false;
     }
-  }, [fetchPendingScreenshots, fetchHealth, fetchConflicts, fetchTeamStats]);
+  }, [fetchPendingScreenshots, fetchHealth, fetchConflicts, fetchTeamStats, fetchPlayerStats]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
