@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { alpha, darken } from '@mui/material/styles';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
+import HourglassTopIcon from '@mui/icons-material/HourglassTop';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import CloseIcon from '@mui/icons-material/Close';
 import StarIcon from '@mui/icons-material/Star';
@@ -32,6 +33,16 @@ import { resolveItemIconUrl, useOsrsItemIdByName } from '../../../data/osrsItemI
 // had. See DESIGN NOTES in the sprint report.
 const completedTileBg = (theme: { palette: { success: { dark: string } } }) =>
   darken(theme.palette.success.dark, 0.2);
+
+// Same reasoning as `completedTileBg` above, applied to the warning palette
+// for the pending-review state (TEAM-BRIEF.md Sprint 13, Track B item 1):
+// `theme.palette.warning.dark` alone (MUI's default dark-mode amber,
+// #f57c00) is only ~2.7:1 against white text — well short of AA. Darkening
+// it ~5.2:1 (verified against MUI's own `getContrastRatio`) keeps it
+// unmistakably warm/amber (never reading as the completed-tile green or the
+// incomplete tile's near-black) while passing AA for the tile's white text.
+const pendingTileBg = (theme: { palette: { warning: { dark: string } } }) =>
+  darken(theme.palette.warning.dark, 0.3);
 
 /**
  * Compact number formatting for the points badge, matching the old Excel
@@ -87,6 +98,17 @@ function tierValue<T>(value: { xs: T; sm: T }, tier: SizeTier | null): { xs: T; 
 export interface BingoTileProps {
   task: string;
   completed: boolean;
+  /**
+   * TEAM-BRIEF.md Sprint 13, Track A item 1 (frozen contract) / Track B item
+   * 1: true when a screenshot submission for this tile, from the caller's
+   * own team, is awaiting admin review (Drops tiles only — KC/XP tiles
+   * auto-verify from the hiscores and never go through this state). Ignored
+   * whenever `completed` is also true — a completed tile always renders as
+   * completed, never pending, even if the caller passes both (defensive;
+   * shouldn't happen once a submission is approved, since approval clears
+   * the pending state server-side).
+   */
+  pendingByMyTeam?: boolean;
   /** Name of the caller's own team, for the completed-state detail dialog copy. */
   myTeamName?: string;
   /** Point value of the tile — always shown (TEAM-BRIEF.md Sprint 8, Track A item 3). */
@@ -128,6 +150,7 @@ export interface BingoTileProps {
 export const BingoTile = ({
   task,
   completed,
+  pendingByMyTeam,
   myTeamName,
   points,
   type,
@@ -137,6 +160,11 @@ export const BingoTile = ({
   const [open, setOpen] = useState(false);
   const [iconFailed, setIconFailed] = useState(false);
   const titleId = useId();
+  // Completed always wins over pending (see the prop doc comment above) —
+  // a single boolean rather than a three-state enum keeps every existing
+  // `completed` check below correct as-is; only the NEW pending-only
+  // branches need this.
+  const pending = !completed && Boolean(pendingByMyTeam);
   const artUrl = useMemo(() => resolveBingoArt(task), [task]);
   const hasArt = Boolean(artUrl);
   // See `tierValue` above: `null` preserves the original viewport-driven
@@ -179,6 +207,8 @@ export const BingoTile = ({
           aria-label={
             completed
               ? `${task}. Worth ${pointsLabel}. Completed by your team. Activate for details.`
+              : pending
+              ? `${task}. Worth ${pointsLabel}. Pending review for your team. Activate for details.`
               : `${task}. Worth ${pointsLabel}. Activate for details.`
           }
           onClick={openDetail}
@@ -201,15 +231,23 @@ export const BingoTile = ({
             cursor: 'pointer',
             outline: 'none',
             border: `1px solid ${
-              completed ? alpha(theme.palette.success.light, 0.5) : alpha(appColors.accent, 0.22)
+              completed
+                ? alpha(theme.palette.success.light, 0.5)
+                : pending
+                ? alpha(theme.palette.warning.light, 0.6)
+                : alpha(appColors.accent, 0.22)
             }`,
-            // Solid completed fill only applies to text-only tiles — an art
-            // tile keeps its neutral paper base so the artwork stays
-            // visible; the completed cue there comes from the green wash +
-            // hatch overlay + bottom scrim + check badge layered on top
-            // instead (still non-color-only: pattern + icon either way).
+            // Solid completed/pending fill only applies to text-only tiles —
+            // an art tile keeps its neutral paper base so the artwork stays
+            // visible; the state cue there comes from the tinted wash +
+            // bottom scrim + badge layered on top instead (still
+            // non-color-only: badge/pattern + icon either way).
             backgroundColor:
-              completed && !hasVisual ? completedTileBg(theme) : theme.palette.background.paper,
+              completed && !hasVisual
+                ? completedTileBg(theme)
+                : pending && !hasVisual
+                ? pendingTileBg(theme)
+                : theme.palette.background.paper,
             backgroundImage:
               completed && !hasVisual
                 ? // Completed, text-only: diagonal-hatch texture on the flat
@@ -222,7 +260,7 @@ export const BingoTile = ({
                     theme.palette.common.white,
                     0.05,
                   )} 2px, transparent 2px, transparent 10px)`
-                : !completed && !hasVisual
+                : !completed && !pending && !hasVisual
                 ? // Incomplete, text-only: faint accent sheen so an empty
                   // square still reads as an inviting, "playable" board
                   // slot rather than dead space.
@@ -234,27 +272,41 @@ export const BingoTile = ({
                   theme.palette.common.white,
                   0.06,
                 )}`
+              : pending
+              ? `0 2px 10px ${alpha(theme.palette.warning.dark, 0.45)}, inset 0 1px 0 ${alpha(
+                  theme.palette.common.white,
+                  0.06,
+                )}`
               : `0 1px 3px ${alpha(theme.palette.common.black, 0.4)}`,
             transition: 'transform .15s ease, box-shadow .15s ease, border-color .15s ease',
             '&:hover': {
               transform: 'translateY(-3px)',
-              borderColor: completed ? theme.palette.success.light : appColors.accent,
+              borderColor: completed
+                ? theme.palette.success.light
+                : pending
+                ? theme.palette.warning.light
+                : appColors.accent,
               boxShadow: completed
                 ? `0 6px 16px ${alpha(theme.palette.success.dark, 0.55)}`
+                : pending
+                ? `0 6px 16px ${alpha(theme.palette.warning.dark, 0.55)}`
                 : `0 6px 16px ${alpha(appColors.accent, 0.25)}`,
               '& .bingo-tile-expand-hint': { opacity: 0.85 },
             },
             // The accent teal ring reads clearly against incomplete tiles' near-black
             // background (~5.2:1), but the same ring at the same alpha only hits ~1.8:1
             // against a *completed* tile's mid-green fill — under WCAG's 3:1 non-text
-            // contrast guidance for focus indicators (SC 1.4.11). Completed tiles get a
-            // white ring instead (~6:1 against the green fill) so the keyboard-focus
+            // contrast guidance for focus indicators (SC 1.4.11), and ~1.6:1 against
+            // the pending tile's amber fill. Completed AND pending tiles both get a
+            // white ring instead (~6:1 / ~5.2:1 respectively) so the keyboard-focus
             // state stays legible on every tile, not just empty ones.
             '&:focus-visible': {
-              borderColor: completed ? theme.palette.common.white : appColors.accent,
-              boxShadow: completed
-                ? `0 0 0 3px ${alpha(theme.palette.common.white, 0.75)}`
-                : `0 0 0 3px ${alpha(appColors.accent, 0.45)}`,
+              borderColor:
+                completed || pending ? theme.palette.common.white : appColors.accent,
+              boxShadow:
+                completed || pending
+                  ? `0 0 0 3px ${alpha(theme.palette.common.white, 0.75)}`
+                  : `0 0 0 3px ${alpha(appColors.accent, 0.45)}`,
             },
           })}
         >
@@ -278,7 +330,7 @@ export const BingoTile = ({
                 objectFit: 'contain',
                 objectPosition: 'center top',
                 pointerEvents: 'none',
-                opacity: completed ? 0.82 : 1,
+                opacity: completed || pending ? 0.82 : 1,
                 // GE sprites are native 32x32 pixel art — a smoothed
                 // upscale blurs them, so force a crisp blocky enlargement
                 // instead (curated renders are already high-res, so this
@@ -299,16 +351,22 @@ export const BingoTile = ({
                 height: '60%',
                 pointerEvents: 'none',
                 // Neutral black scrim on incomplete tiles (robust against
-                // any art hue); a green-tinted scrim on completed tiles
-                // doubles as a color cue on top of the hatch + check badge.
-                // Both reach ~0.9+ alpha at the bottom edge, where the task
-                // text sits, to hold the same ≥4.5:1 white-text contrast
-                // the text-only tiles rely on (see completedTileBg above).
+                // any art hue); a green-tinted scrim on completed tiles, or
+                // an amber-tinted one on pending tiles, doubles as a color
+                // cue on top of the hatch/badge. All reach ~0.9+ alpha at
+                // the bottom edge, where the task text sits, to hold the
+                // same ≥4.5:1 white-text contrast the text-only tiles rely
+                // on (see completedTileBg/pendingTileBg above).
                 background: completed
                   ? `linear-gradient(to bottom, transparent 0%, ${alpha(
                       completedTileBg(theme),
                       0.6,
                     )} 35%, ${alpha(completedTileBg(theme), 0.95)} 100%)`
+                  : pending
+                  ? `linear-gradient(to bottom, transparent 0%, ${alpha(
+                      pendingTileBg(theme),
+                      0.6,
+                    )} 35%, ${alpha(pendingTileBg(theme), 0.95)} 100%)`
                   : `linear-gradient(to bottom, transparent 0%, ${alpha(
                       theme.palette.common.black,
                       0.6,
@@ -318,7 +376,11 @@ export const BingoTile = ({
           )}
 
           {/* Completed hatch texture over art, echoing the text-only tile's
-              pattern cue so the state is never color-only even here. */}
+              pattern cue so the state is never color-only even here. Pending
+              tiles intentionally skip this pattern — the hourglass badge
+              below is their non-color cue, and reusing the same hatch here
+              would make pending read as a variant of completed rather than
+              its own distinct state. */}
           {completed && hasVisual && (
             <Box
               aria-hidden
@@ -382,6 +444,36 @@ export const BingoTile = ({
               })}
             >
               <TaskAltIcon
+                sx={{ fontSize: tierValue({ xs: 14, sm: 18 }, sizeTier), color: appColors.textPrimary }}
+              />
+            </Box>
+          )}
+
+          {/* Pending-review badge — the tile's non-color cue (TEAM-BRIEF.md
+              Sprint 13, Track B item 1): an hourglass rather than the
+              completed tile's checkmark, so the two "achieved something"
+              states never rely on hue alone to tell apart, even for a
+              color-blind viewer. Same corner/size/rotation as the completed
+              badge for visual consistency, distinguished by icon + the
+              tile's amber (vs. green) fill. */}
+          {pending && (
+            <Box
+              aria-hidden
+              sx={(theme) => ({
+                position: 'absolute',
+                top: 6,
+                right: 6,
+                width: tierValue({ xs: 20, sm: 26 }, sizeTier),
+                height: tierValue({ xs: 20, sm: 26 }, sizeTier),
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: alpha(theme.palette.common.black, 0.35),
+                transform: 'rotate(-8deg)',
+              })}
+            >
+              <HourglassTopIcon
                 sx={{ fontSize: tierValue({ xs: 14, sm: 18 }, sizeTier), color: appColors.textPrimary }}
               />
             </Box>
@@ -516,6 +608,21 @@ export const BingoTile = ({
                 color: theme.palette.success.light,
                 fontWeight: 600,
                 '& .MuiChip-icon': { color: theme.palette.success.light },
+              })}
+            />
+          ) : pending ? (
+            // TEAM-BRIEF.md Sprint 13, Track B item 1: the board tile's
+            // yellow/hourglass treatment needs a matching "Pending review"
+            // state in this detail dialog too — a screenshot has been
+            // submitted for this Drops tile and is awaiting admin approval.
+            <Chip
+              icon={<HourglassTopIcon />}
+              label={`Pending review for ${myTeamName ?? 'your team'}`}
+              sx={(theme) => ({
+                bgcolor: alpha(theme.palette.warning.main, 0.18),
+                color: theme.palette.warning.light,
+                fontWeight: 600,
+                '& .MuiChip-icon': { color: theme.palette.warning.light },
               })}
             />
           ) : (
