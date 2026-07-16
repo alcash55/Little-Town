@@ -7,10 +7,12 @@ import { textSecondary } from '../TeamDrafter/teamDrafterStyles';
 import { appColors } from '../../../../layout/Theme';
 import { useScreenshotSubmission } from './useScreenshotSubmission';
 import { ScreenshotCard } from './ScreenshotCard';
+import { UnattributedCard } from './UnattributedCard';
 
 const ScreenshotSubmission = () => {
   const {
     pending,
+    unattributed,
     teams,
     players,
     tileOptions,
@@ -32,6 +34,12 @@ const ScreenshotSubmission = () => {
     dismissReviewError,
     approve,
     deny,
+    attributionSelection,
+    setPlayerForAttribution,
+    attributing,
+    attributionError,
+    dismissAttributionError,
+    attribute,
   } = useScreenshotSubmission();
 
   if (loading) {
@@ -160,6 +168,45 @@ const ScreenshotSubmission = () => {
             />
           ))}
         </Box>
+      )}
+
+      {/* ── Attribution backfill (bug-report investigation, H1): approved
+          submissions with no player picked. Already counted at the team
+          level (BingoOverview's team totals); this is how an admin fills in
+          the per-player link after the fact. ── */}
+      {unattributed.length > 0 && (
+        <>
+          <Typography variant="h3" sx={{ fontSize: 18, width: '100%', mt: 2 }}>
+            Needs Player Attribution
+          </Typography>
+          <Typography variant="body2" sx={{ color: textSecondary, width: '100%' }}>
+            {unattributed.length} approved submission{unattributed.length > 1 ? 's were' : ' was'}{' '}
+            approved without picking a player — already counted for the team, but won&apos;t show up
+            per-player until attributed here.
+          </Typography>
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 2,
+              width: '100%',
+            }}
+          >
+            {unattributed.map((submission) => (
+              <UnattributedCard
+                key={submission.id}
+                submission={submission}
+                players={players}
+                playerId={attributionSelection[submission.id]}
+                onPlayerChange={(playerId) => setPlayerForAttribution(submission.id, playerId)}
+                onAttribute={() => attribute(submission.id)}
+                isAttributing={attributing === submission.id}
+                error={attributionError[submission.id]}
+                onDismissError={() => dismissAttributionError(submission.id)}
+              />
+            ))}
+          </Box>
+        </>
       )}
     </PageLayout>
   );

@@ -3,7 +3,7 @@ import { asyncHandler } from "../middleware/errorHandler.js";
 import { protect, authorize, optionalAuth } from "../middleware/auth.js";
 import { ApiResponse } from "../types/index.js";
 import { getActiveBingo, getActiveBingoBoard } from "../db/bingos.js";
-import { getAllPlayerSnapshots } from "../db/players.js";
+import { getAllPlayerSnapshots, resolveMyBingoPlayer } from "../db/players.js";
 import {
   buildDropStatusByRsn,
   buildBoardTileCompletion,
@@ -47,8 +47,9 @@ const router = Router();
  *
  * myTeam / completion resolution for authenticated callers uses req.user
  * (the EFFECTIVE, possibly impersonated caller) exactly like
- * /my-team-data's own registered_by lookup below. completedByMyTeam only
- * ever reflects the caller's own team's approved submissions — other teams'
+ * /my-team-data's own resolveMyBingoPlayer() call below (see its doc comment
+ * in db/players.ts for the claim-first, registered_by-fallback resolution
+ * order). completedByMyTeam only ever reflects the caller's own team's approved submissions — other teams'
  * progress is never fetched, let alone exposed (contract 1). Anonymous
  * callers see exactly the same board layout/tasks/points that any
  * authenticated non-team-member sees — this is the first intentionally
@@ -73,20 +74,13 @@ router.get(
 
     // Anonymous callers (req.user undefined) skip the team lookup entirely
     // — myTeamId stays null, so myTeam is null and every tile comes back
-    // completedByMyTeam: false below. Same "find the player row this user
-    // registered" lookup /my-team-data uses to discover their team for
-    // authenticated callers — req.user is already the effective
-    // (post-impersonation) caller.
+    // completedByMyTeam: false below. Same resolveMyBingoPlayer() lookup
+    // /my-team-data uses to discover their team for authenticated callers —
+    // req.user is already the effective (post-impersonation) caller.
     let myTeamId: string | null = null;
     if (req.user) {
-      const { data: myPlayers, error: mpErr } = await db
-        .from("bingo_players")
-        .select("team_id")
-        .eq("bingo_id", bingo.id)
-        .eq("registered_by", req.user.id)
-        .limit(1);
-      if (mpErr) throw new Error(mpErr.message);
-      myTeamId = myPlayers?.[0]?.team_id ?? null;
+      const myPlayer = await resolveMyBingoPlayer(bingo.id, req.user.id);
+      myTeamId = myPlayer?.team_id ?? null;
     }
 
     const myTeam = myTeamId
@@ -257,7 +251,12 @@ router.get(
  *   - For KC/XP tiles: playerProgress[rsn][tileIndex] = numeric delta
  *   - For Drops tiles: playerDrops[rsn][tileIndex] = 'approved' | 'pending' | null
  *
- * Players are matched by registered_by = req.user.id.
+ * The caller's own player row is resolved via resolveMyBingoPlayer()
+ * (db/players.ts) — rsn_claims first, falling back to an unambiguous
+ * registered_by match. See that function's doc comment for why a bare
+ * registered_by lookup isn't reliable on its own (most players are
+ * admin-registered via the Team Drafter, which sets registered_by to the
+ * ADMIN, not the player).
  */
 router.get(
   "/my-team-data",
@@ -267,17 +266,8 @@ router.get(
       return res.status(404).json({ success: false, error: "No active bingo found" });
     }
 
-    // Find the player record registered by this user to discover their team
     const db = getDb();
-    const { data: myPlayers, error: mpErr } = await db
-      .from("bingo_players")
-      .select("*")
-      .eq("bingo_id", bingo.id)
-      .eq("registered_by", req.user!.id)
-      .limit(1);
-    if (mpErr) throw new Error(mpErr.message);
-
-    const myPlayer = myPlayers?.[0] ?? null;
+    const myPlayer = await resolveMyBingoPlayer(bingo.id, req.user!.id);
     const myTeamId = myPlayer?.team_id ?? null;
 
     // Load ordered board tiles
@@ -345,9 +335,16 @@ router.get(
       .order("position", { ascending: true });
     if (tileErr) throw new Error(tileErr.message);
 
+    // Keyed by the tile's real-cased task (matches tileList's tile.task
+    // below and buildDropStatusByRsn's output) — this used to lowercase the
+    // key, which made dropStatus lookups miss on any task with uppercase
+    // characters (nearly all of them: "Zulrah", "General Graardor", ...).
+    // TeamData/helpers.ts carried a frontend lowercase-fallback workaround
+    // for this; fixed at the source here, so that workaround is removed too
+    // (Sprint 11 candidates list, todo.md ~line 132).
     const tileIdByTask = new Map<string, string>();
     for (const row of (tileRows ?? []) as Array<{ id: string; task: string; type: string; position: number }>) {
-      if (row.type === "Drops") tileIdByTask.set(row.task.toLowerCase(), row.id);
+      if (row.type === "Drops") tileIdByTask.set(row.task, row.id);
     }
 
     // Build set of team player IDs for submission lookup

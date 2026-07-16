@@ -6,7 +6,11 @@ import { validateBody, rsnClaimSchema } from "../lib/validation.js";
 import { canonicalizeRsn, normalizeRsn, isPlausibleRsn } from "../lib/rsn.js";
 import { hiscores } from "../services/hiscores.js";
 import { getActiveBingo } from "../db/bingos.js";
-import { registerBingoPlayer, findBingoPlayerCaseInsensitive } from "../db/players.js";
+import {
+  registerBingoPlayer,
+  findBingoPlayerCaseInsensitive,
+  savePlayerSnapshot,
+} from "../db/players.js";
 import { findRsnClaim, upsertRsnClaim } from "../db/rsnClaims.js";
 
 const router = Router();
@@ -115,7 +119,28 @@ router.post(
 
     const existingPoolEntry = await findBingoPlayerCaseInsensitive(bingo.id, canonical);
     const rsnForPool = existingPoolEntry?.rsn ?? canonical;
-    await registerBingoPlayer(bingo.id, rsnForPool, undefined, userId);
+    const player = await registerBingoPlayer(bingo.id, rsnForPool, undefined, userId);
+
+    // A player claiming into a bingo that's already 'active' would otherwise
+    // never get a start snapshot — every other main account only gets one at
+    // registration (routes/admin.ts POST /bingo/players) or activation
+    // (services/bingoActivation.ts); neither of those runs again on their
+    // own for a player who joins mid-bingo through this route. Same "take it
+    // immediately, best-effort" pattern as addSideAccount's active-bingo
+    // case (routes/admin.ts POST .../side-accounts). Draft bingos get this
+    // player's start snapshot the normal way, at activation, so nothing
+    // extra is needed there. Reuses the hiscoreData already fetched above
+    // for validation instead of a second OSRS lookup; savePlayerSnapshot's
+    // "start" write is upsert-if-absent, so this is a safe no-op if the
+    // player already has one (e.g. re-claiming an already-tracked RSN).
+    if (bingo.status === "active") {
+      try {
+        await savePlayerSnapshot(player.id, "start", hiscoreData);
+        await savePlayerSnapshot(player.id, "current", hiscoreData);
+      } catch (e) {
+        console.warn(`[onboarding] Failed to save start snapshot for "${rsnForPool}":`, e);
+      }
+    }
 
     res.status(200).json({
       rsn: canonical,
