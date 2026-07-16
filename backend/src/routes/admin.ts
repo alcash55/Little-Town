@@ -11,6 +11,7 @@ import {
   playerRegistrationSchema,
   sideAccountSchema,
   screenshotApprovalSchema,
+  screenshotAttributionSchema,
 } from "../lib/validation.js";
 import { mapWithConcurrency } from "../lib/concurrency.js";
 import {
@@ -57,8 +58,10 @@ import {
   denySubmission,
   getSignedScreenshotUrl,
   validateApprovalPlayerId,
+  attributeApprovedSubmission,
+  getApprovedSubmissionsMissingAttribution,
 } from "../db/bingoSubmissions.js";
-import { getPlayerStats, PlayerStat } from "../db/playerStats.js";
+import { getPlayerStats, PlayerStat, getTeamStats, TeamStat } from "../db/playerStats.js";
 import { reactToSubmissionMessage } from "../services/discordScreenshots.js";
 import { getDependencyHealth } from "../services/dependencyHealth.js";
 
@@ -699,6 +702,48 @@ router.get(
   }),
 );
 
+/**
+ * GET /bingo/screenshots/unattributed
+ *
+ * Approved submissions with no player_id — the admin worklist for the
+ * attribution-gap backfill (bug-report investigation, H1). Each of these
+ * already counts toward its team's total (GET /bingo/team-stats), it just
+ * isn't attributed to any one player yet. Same signed-URL/enrichment shape
+ * as the pending-queue list above, plus tileTask/teamName so the admin can
+ * tell WHAT they're attributing without cross-referencing another page.
+ */
+router.get(
+  "/bingo/screenshots/unattributed",
+  asyncHandler(async (req: Request, res: Response) => {
+    const bingo = await getActiveBingo();
+    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+
+    const [submissions, tiles] = await Promise.all([
+      getApprovedSubmissionsMissingAttribution(bingo.id),
+      getActiveBingoBoard(),
+    ]);
+    const tileTaskById = new Map(tiles.map((t) => [t.id, t.task]));
+    const teamNameById = new Map((bingo.teamObjects ?? []).map((t) => [t.id, t.name]));
+
+    const data = await Promise.all(
+      submissions.map(async (submission) => ({
+        id: submission.id,
+        tileId: submission.tile_id,
+        tileTask: submission.tile_id ? (tileTaskById.get(submission.tile_id) ?? null) : null,
+        teamId: submission.team_id,
+        teamName: submission.team_id ? (teamNameById.get(submission.team_id) ?? null) : null,
+        notes: submission.notes,
+        submittedBy:
+          submission.notes?.match(/Submitted via Discord by (.+?) \(/)?.[1] ?? "Discord",
+        approvedAt: submission.reviewed_at,
+        imageUrl: submission.image_path ? await getSignedScreenshotUrl(submission.image_path) : null,
+      })),
+    );
+
+    res.status(200).json({ success: true, data });
+  }),
+);
+
 // Approve a pending submission — admin assigns the tile + team it counts for.
 router.post(
   "/bingo/screenshots/:id/approve",
@@ -749,6 +794,53 @@ router.post(
   }),
 );
 
+/**
+ * PATCH /bingo/screenshots/:id/attribute
+ *
+ * Backfill path for the attribution gap (bug-report investigation, H1):
+ * player_id is optional at approval time, so a real approved tile
+ * completion can end up with no player-level attribution anywhere (it still
+ * counts at the TEAM level via GET /bingo/team-stats, just not per-player).
+ * This lets an admin go back and fill it in on an ALREADY-approved
+ * submission — deliberately admin-only (not moderator, unlike approve/deny)
+ * since it's a correction to history rather than routine review triage.
+ * Rejects a submission that isn't 'approved' yet (use the approve route for
+ * that) or one with no team_id (shouldn't happen for an approved row, but
+ * validateApprovalPlayerId needs a teamId to check against).
+ */
+router.patch(
+  "/bingo/screenshots/:id/attribute",
+  authorize("admin"),
+  validateBody(screenshotAttributionSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    if (!id) return res.status(400).json({ success: false, error: "Submission ID is required" });
+
+    const { playerId } = req.body as { playerId: string };
+
+    const submission = await getSubmissionById(id);
+    if (!submission) return res.status(404).json({ success: false, error: "Submission not found" });
+    if (submission.status !== "approved") {
+      return res.status(409).json({
+        success: false,
+        error: `Only approved submissions can be attributed after the fact (this one is ${submission.status})`,
+      });
+    }
+    if (!submission.team_id) {
+      return res.status(400).json({ success: false, error: "Submission has no team to attribute a player against" });
+    }
+
+    const rosterPlayers = await getBingoPlayers(submission.bingo_id);
+    const validationError = validateApprovalPlayerId(playerId, submission.team_id, rosterPlayers);
+    if (validationError) {
+      return res.status(400).json({ success: false, error: validationError });
+    }
+
+    const updated = await attributeApprovedSubmission(id, playerId);
+    res.status(200).json({ success: true, data: updated, message: "Submission attributed" });
+  }),
+);
+
 // Deny a pending submission.
 router.post(
   "/bingo/screenshots/:id/deny",
@@ -790,6 +882,31 @@ router.get(
     const response: ApiResponse<PlayerStat[]> = {
       success: true,
       data: await getPlayerStats(bingo.id),
+    };
+    res.status(200).json(response);
+  }),
+);
+
+/**
+ * GET /api/admin/bingo/team-stats
+ *
+ * Additive sibling to player-stats — team-level completion computed
+ * straight from approved submissions' team_id, independent of the optional
+ * player_id attribution. Exists so the overview can show a team's true
+ * completion (and how much of it isn't attributed to any specific player)
+ * even when player-stats under-reports due to missing attribution. See
+ * getTeamStats()'s doc comment (src/db/playerStats.ts) for the full
+ * rationale.
+ */
+router.get(
+  "/bingo/team-stats",
+  asyncHandler(async (req: Request, res: Response) => {
+    const bingo = await getActiveBingo();
+    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+
+    const response: ApiResponse<TeamStat[]> = {
+      success: true,
+      data: await getTeamStats(bingo.id),
     };
     res.status(200).json(response);
   }),

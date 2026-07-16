@@ -226,6 +226,7 @@ const BingoOverview = () => {
     board,
     playerStats,
     playerStatsError,
+    teamStats,
     pendingScreenshots,
     health,
     healthError,
@@ -290,10 +291,22 @@ const BingoOverview = () => {
   // ── Derived display values ───────────────────────────────────────────────
   const boardLabel =
     bingo.boardSize === 16 ? '4×4' : bingo.boardSize === 35 ? '5×5' : `${bingo.boardSize} tiles`;
-  const totalPoints = playerStats.reduce((sum, p) => sum + p.totalPoints, 0);
-  const tilesCompleted = playerStats.reduce((sum, p) => sum + p.tilesCompleted, 0);
+  // Prefer team-level ground truth (team-stats, computed straight from
+  // team_id — never depends on the optional per-submission player
+  // attribution) for the headline KPIs; falls back to summing playerStats
+  // if team-stats hasn't loaded. Player-level totals alone under-report
+  // whenever an admin approved a screenshot without picking a player (see
+  // TeamStat's doc comment in useBingoOverview.ts) — using the team total
+  // here means these top-line numbers always reflect real completions.
+  const totalPoints = teamStats.length
+    ? teamStats.reduce((sum, t) => sum + t.totalPoints, 0)
+    : playerStats.reduce((sum, p) => sum + p.totalPoints, 0);
+  const tilesCompleted = teamStats.length
+    ? teamStats.reduce((sum, t) => sum + t.tilesCompleted, 0)
+    : playerStats.reduce((sum, p) => sum + p.tilesCompleted, 0);
   const pointsPossible = board.reduce((sum, t) => sum + t.points, 0);
   const staleCount = playerStats.filter((p) => p.rsnStale).length;
+  const unattributedTiles = teamStats.reduce((sum, t) => sum + t.unattributedTiles, 0);
 
   // ── Planned (pre-start) view ─────────────────────────────────────────────
   if (isPlanned) {
@@ -439,6 +452,18 @@ const BingoOverview = () => {
           {playerStatsError}
         </Alert>
       )}
+      {/* ── Attribution gap: tiles a team completed with no player picked at
+          approval time. Points/tiles KPI totals above already account for
+          these (team-level ground truth); the Player Stats table below
+          cannot — it can only ever show what's attributed to someone. ── */}
+      {unattributedTiles > 0 && (
+        <Alert severity="info" icon={<GppMaybeIcon />} sx={{ width: '100%' }}>
+          {unattributedTiles} tile completion{unattributedTiles > 1 ? 's are' : ' is'} not linked
+          to a specific player (approved without picking a player on the Screenshot Review page)
+          — counted in the totals above, but won&apos;t appear in the Player Stats table below.
+          Pick a player when approving to keep per-player stats accurate.
+        </Alert>
+      )}
 
       {/* ── Summary stat tiles (KPI row) ── */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, width: '100%' }}>
@@ -459,7 +484,7 @@ const BingoOverview = () => {
         }}
       >
         <Section icon={<EmojiEventsIcon />} title="Points by Team">
-          <TeamPointsChart playerStats={playerStats} />
+          <TeamPointsChart playerStats={playerStats} teamStats={teamStats} />
         </Section>
         <Section icon={<GridViewIcon />} title="Board Progress">
           <BoardProgressGauge pointsScored={totalPoints} pointsPossible={pointsPossible} />
