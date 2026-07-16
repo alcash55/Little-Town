@@ -11,6 +11,7 @@ import {
   playerRegistrationSchema,
   sideAccountSchema,
   screenshotApprovalSchema,
+  screenshotTagSchema,
   screenshotAttributionSchema,
 } from "../lib/validation.js";
 import { mapWithConcurrency } from "../lib/concurrency.js";
@@ -55,13 +56,14 @@ import {
   getPendingSubmissions,
   getSubmissionById,
   approveSubmission,
+  tagPendingSubmission,
   denySubmission,
   getSignedScreenshotUrl,
   validateApprovalPlayerId,
   attributeApprovedSubmission,
   getApprovedSubmissionsMissingAttribution,
 } from "../db/bingoSubmissions.js";
-import { getPlayerStats, PlayerStat, getTeamStats, TeamStat } from "../db/playerStats.js";
+import { getPlayerStats, PlayerStat, getTeamStatsWithUnresolvable } from "../db/playerStats.js";
 import { reactToSubmissionMessage } from "../services/discordScreenshots.js";
 import { getDependencyHealth } from "../services/dependencyHealth.js";
 
@@ -745,6 +747,20 @@ router.get(
 );
 
 // Approve a pending submission — admin assigns the tile + team it counts for.
+//
+// playerId is now REQUIRED (TEAM-BRIEF.md Sprint 13, Track A contract 3 —
+// "approving now 422s without playerId"; deny is unchanged). Screenshot
+// submissions exist ONLY for Drops tiles under the new hiscores-auto-verify
+// model (product decision 2), and a Drops approval without attribution is
+// no longer an acceptable "counts for the team but nobody knows who did it"
+// state — every new approval must name a player. The tile picker itself is
+// left server-side as-is (item 4 — Track B restricts it to Drops-type tiles
+// in the UI; this route doesn't enforce tile type, matching the frozen
+// note that "the review flow's tile picker data can stay as-is
+// server-side"). 422, not 400, deliberately: this is a well-formed request
+// that's semantically incomplete under the current rules, not a shape
+// error — same distinction the zod-validated 400s elsewhere in this file
+// draw against genuinely malformed bodies.
 router.post(
   "/bingo/screenshots/:id/approve",
   validateBody(screenshotApprovalSchema),
@@ -758,6 +774,13 @@ router.post(
       playerId?: string;
     };
 
+    if (playerId === undefined) {
+      return res.status(422).json({
+        success: false,
+        error: "playerId is required to approve a submission — pick the player who got the drop.",
+      });
+    }
+
     const submission = await getSubmissionById(id);
     if (!submission) return res.status(404).json({ success: false, error: "Submission not found" });
     if (submission.status !== "pending") {
@@ -766,14 +789,11 @@ router.post(
         .json({ success: false, error: `Submission has already been ${submission.status}` });
     }
 
-    // playerId is optional, but per contract 2 must resolve to a
-    // bingo_players.id on `teamId` within the submission's bingo when present.
-    if (playerId !== undefined) {
-      const rosterPlayers = await getBingoPlayers(submission.bingo_id);
-      const validationError = validateApprovalPlayerId(playerId, teamId, rosterPlayers);
-      if (validationError) {
-        return res.status(400).json({ success: false, error: validationError });
-      }
+    // Must resolve to a bingo_players.id on `teamId` within the submission's bingo (contract 2).
+    const rosterPlayers = await getBingoPlayers(submission.bingo_id);
+    const validationError = validateApprovalPlayerId(playerId, teamId, rosterPlayers);
+    if (validationError) {
+      return res.status(400).json({ success: false, error: validationError });
     }
 
     const updated = await approveSubmission(id, {
@@ -791,6 +811,45 @@ router.post(
     }
 
     res.status(200).json({ success: true, data: updated, message: "Screenshot approved" });
+  }),
+);
+
+/**
+ * PATCH /bingo/screenshots/:id/tag
+ *
+ * NEW this sprint (TEAM-BRIEF.md Sprint 13, Track A — added to make the
+ * frozen `pendingByMyTeam` board contract real). Previously a submission's
+ * tile_id/team_id were only ever written at the moment it transitioned
+ * pending -> approved; there was no way to associate a still-pending row
+ * with a tile/team at all, so GET /api/bingo/board had nothing to key
+ * `pendingByMyTeam` off of. This route lets an admin tag a pending
+ * submission with its tile+team as soon as they've picked them in the
+ * review UI (before deciding approve/deny), without touching status —
+ * POST .../approve and .../deny remain the only routes that change status.
+ * Same authz level as approve/deny (router-level admin+moderator — routine
+ * triage, not a correction to history like .../attribute). Safe to call
+ * repeatedly (e.g. an admin changing the tile picker before approving) —
+ * always overwrites, same as approveSubmission's own tile_id/team_id write.
+ */
+router.patch(
+  "/bingo/screenshots/:id/tag",
+  validateBody(screenshotTagSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    if (!id) return res.status(400).json({ success: false, error: "Submission ID is required" });
+
+    const { tileId, teamId } = req.body as { tileId: string; teamId: string };
+
+    const submission = await getSubmissionById(id);
+    if (!submission) return res.status(404).json({ success: false, error: "Submission not found" });
+    if (submission.status !== "pending") {
+      return res
+        .status(409)
+        .json({ success: false, error: `Only pending submissions can be tagged (this one is ${submission.status})` });
+    }
+
+    const updated = await tagPendingSubmission(id, { tileId, teamId });
+    res.status(200).json({ success: true, data: updated, message: "Submission tagged" });
   }),
 );
 
@@ -894,13 +953,19 @@ router.get(
 /**
  * GET /api/admin/bingo/team-stats
  *
- * Additive sibling to player-stats — team-level completion computed
- * straight from approved submissions' team_id, independent of the optional
- * player_id attribution. Exists so the overview can show a team's true
- * completion (and how much of it isn't attributed to any specific player)
- * even when player-stats under-reports due to missing attribution. See
- * getTeamStats()'s doc comment (src/db/playerStats.ts) for the full
- * rationale.
+ * Additive sibling to player-stats — team-level completion, now computed by
+ * the completion engine (TEAM-BRIEF.md Sprint 13, Track A frozen contract):
+ * auto-verified Kill Count/Experience tiles + approved Drops submissions,
+ * each tile counted ONCE per team even if (for a legacy tile) both a
+ * numeric auto-verify AND an old approved submission would otherwise apply
+ * (see services/completionEngine.ts's header comment for the dedupe
+ * rationale). `unattributedTiles`/`unattributedPoints` remain Drops-only —
+ * KC/XP tiles are team-level achievements now and never need player
+ * attribution at all (item 3). Response is additively extended with a
+ * top-level `unresolvableTiles` (contract): trackable tiles whose task text
+ * doesn't map to a hiscore metric, so an admin can see why a tile isn't
+ * auto-completing instead of it silently never happening. `data` itself
+ * stays `TeamStat[]`, unchanged shape, for existing consumers.
  */
 router.get(
   "/bingo/team-stats",
@@ -908,11 +973,8 @@ router.get(
     const bingo = await getActiveBingo();
     if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
 
-    const response: ApiResponse<TeamStat[]> = {
-      success: true,
-      data: await getTeamStats(bingo.id),
-    };
-    res.status(200).json(response);
+    const { teams, unresolvableTiles } = await getTeamStatsWithUnresolvable(bingo.id);
+    res.status(200).json({ success: true, data: teams, unresolvableTiles });
   }),
 );
 

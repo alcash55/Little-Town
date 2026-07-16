@@ -1,6 +1,11 @@
 import { getDb } from "./client.js";
 import { getAllSideAccounts } from "./players.js";
 import { getUnresolvedRsnChangesByPlayer } from "./rsnChangeLog.js";
+import {
+  computeBingoCompletion,
+  type EngineTile,
+  type UnresolvableTile,
+} from "../services/completionEngine.js";
 
 // -------------------------------------------------------
 // Types (contract 3, TEAM-BRIEF.md)
@@ -9,7 +14,16 @@ import { getUnresolvedRsnChangesByPlayer } from "./rsnChangeLog.js";
 export interface PlayerStat {
   rsn: string;
   teamName: string; // '' if unassigned
-  tilesCompleted: number; // distinct tiles with an approved submission attributed via player_id
+  // Distinct Drops tiles with an approved submission attributed via
+  // player_id (TEAM-BRIEF.md Sprint 13, Track A item 3): under the new
+  // hiscores-auto-verify model, Kill Count/Experience tiles are TEAM-level
+  // achievements computed entirely by services/completionEngine.ts and
+  // never read player_id at all, so they can never contribute here — only
+  // an admin-attributed Drops approval can. A player who single-handedly
+  // pushed their team over a Kill Count target shows 0 here; that's
+  // expected, not a bug (their contribution shows up in the team's
+  // tilesCompleted via GET /api/admin/bingo/team-stats instead).
+  tilesCompleted: number;
   totalPoints: number; // sum of those tiles' points
   lastSeen: string | null; // ISO: latest approved submission (fallback: latest snapshot) for the player
   sideAccounts: string[];
@@ -36,7 +50,7 @@ export async function getPlayerStats(bingoId: string): Promise<PlayerStat[]> {
   const [playersRes, teamsRes, tilesRes] = await Promise.all([
     db.from("bingo_players").select("id, rsn, team_id").eq("bingo_id", bingoId),
     db.from("bingo_teams").select("id, name").eq("bingo_id", bingoId),
-    db.from("bingo_board_tiles").select("id, points").eq("bingo_id", bingoId),
+    db.from("bingo_board_tiles").select("id, type, points").eq("bingo_id", bingoId),
   ]);
 
   if (playersRes.error) throw new Error(`Failed to get players: ${playersRes.error.message}`);
@@ -53,9 +67,12 @@ export async function getPlayerStats(bingoId: string): Promise<PlayerStat[]> {
   const teamNameById = new Map(
     ((teamsRes.data ?? []) as Array<{ id: string; name: string }>).map((t) => [t.id, t.name]),
   );
-  const tilePointsById = new Map(
-    ((tilesRes.data ?? []) as Array<{ id: string; points: number }>).map((t) => [t.id, t.points]),
-  );
+  const tileRows = (tilesRes.data ?? []) as Array<{ id: string; type: string; points: number }>;
+  const tilePointsById = new Map(tileRows.map((t) => [t.id, t.points]));
+  // Player-level attribution only ever matters for Drops tiles now (item 3)
+  // — a submission sitting on a Kill Count/Experience tile (legacy or
+  // otherwise) is scoring-irrelevant at the player level.
+  const dropsTileIds = new Set(tileRows.filter((t) => t.type === "Drops").map((t) => t.id));
 
   const playerIds = playerRows.map((p) => p.id);
 
@@ -96,6 +113,7 @@ export async function getPlayerStats(bingoId: string): Promise<PlayerStat[]> {
     created_at: string;
   }>) {
     if (!sub.player_id || !sub.tile_id) continue;
+    if (!dropsTileIds.has(sub.tile_id)) continue; // Kill Count/Experience — scoring-irrelevant per-player (item 3)
     if (!tilesByPlayer.has(sub.player_id)) tilesByPlayer.set(sub.player_id, new Set());
     tilesByPlayer.get(sub.player_id)!.add(sub.tile_id);
 
@@ -133,103 +151,137 @@ export async function getPlayerStats(bingoId: string): Promise<PlayerStat[]> {
 }
 
 // -------------------------------------------------------
-// Team-level stats (attribution-independent ground truth)
+// Team-level stats — now engine-computed (TEAM-BRIEF.md Sprint 13, Track A)
 // -------------------------------------------------------
 
 export interface TeamStat {
   teamId: string;
   teamName: string;
-  // Distinct tiles with >=1 APPROVED submission for this team — counted
-  // regardless of player_id, unlike PlayerStat.tilesCompleted above. This is
-  // the same "did the team complete this tile" signal GET /api/bingo/board
-  // uses for completedByMyTeam (team_id-scoped, no player_id involved).
+  // Distinct tiles counted complete for this team by
+  // services/completionEngine.ts: auto-verified Kill Count/Experience tiles
+  // (team-summed hiscore deltas >= target_value) PLUS Drops tiles with >=1
+  // APPROVED submission for this team — each tile counted at most once,
+  // regardless of player_id. This is the same set GET /api/bingo/board's
+  // completedByMyTeam is drawn from for the caller's own team.
   tilesCompleted: number;
   totalPoints: number;
-  // Of the above, tiles where EVERY approved submission is missing
-  // player_id — i.e. the team demonstrably completed the tile, but no
-  // player-level stat anywhere reflects it (playerStats' tilesByPlayer only
-  // counts submissions WITH player_id). Surfaces the attribution gap
-  // instead of letting real progress silently vanish from the per-player
-  // table (root cause: player_id is an optional admin-filled field at
-  // approval time — routes/admin.ts's POST /bingo/screenshots/:id/approve,
-  // frontend ScreenshotCard's "Player (optional)" picker, defaults to
-  // unassigned).
+  // Of the above, DROPS tiles only, where EVERY approved submission is
+  // missing player_id — i.e. the team demonstrably completed the tile, but
+  // no player-level stat anywhere reflects it (playerStats' tilesByPlayer
+  // only counts Drops submissions WITH player_id). Kill Count/Experience
+  // tiles never appear here (item 3 — they're team-level achievements,
+  // attribution is meaningless for them under the new model). Root cause of
+  // a Drops gap: player_id is an optional admin-filled field at approval
+  // time — routes/admin.ts's POST /bingo/screenshots/:id/approve now
+  // REQUIRES it for NEW approvals (contract 3), but older rows can still
+  // predate that.
   unattributedTiles: number;
   unattributedPoints: number;
 }
 
 /**
- * Team-level completion, computed straight from approved submissions'
- * team_id (never player_id). Exists specifically as a degrade-gracefully
- * fallback for the attribution gap above: BingoOverview's player-level table
- * can under-report a team's real progress when approvals weren't attributed
- * to a specific player, but a team's OWN total is always accurate here — it
- * doesn't depend on player_id at all. Pairs with getPlayerStats(); GET
- * /api/admin/bingo/team-stats exposes this separately rather than folding it
- * into PlayerStat[] (an additive, non-breaking sibling endpoint).
+ * Team-level completion + the engine's unresolvable-tile list in one pass
+ * (both need the same tiles/players/submissions data, so this runs the
+ * engine exactly once). `unattributedTiles`/`unattributedPoints` are
+ * computed alongside from a second, Drops-scoped submissions query — the
+ * engine itself doesn't track attribution (that's a Drops-only, player-
+ * level concern, not part of "is this tile complete").
  */
-export async function getTeamStats(bingoId: string): Promise<TeamStat[]> {
+export async function getTeamStatsWithUnresolvable(
+  bingoId: string,
+): Promise<{ teams: TeamStat[]; unresolvableTiles: UnresolvableTile[] }> {
   const db = getDb();
 
-  const [teamsRes, tilesRes, submissionsRes] = await Promise.all([
+  const [teamsRes, tilesRes] = await Promise.all([
     db.from("bingo_teams").select("id, name").eq("bingo_id", bingoId),
-    db.from("bingo_board_tiles").select("id, points").eq("bingo_id", bingoId),
-    db
-      .from("bingo_submissions")
-      .select("team_id, tile_id, player_id")
-      .eq("bingo_id", bingoId)
-      .eq("status", "approved")
-      .not("team_id", "is", null)
-      .not("tile_id", "is", null),
+    db.from("bingo_board_tiles").select("id, task, type, points, target_value").eq("bingo_id", bingoId),
   ]);
 
   if (teamsRes.error) throw new Error(`Failed to get teams: ${teamsRes.error.message}`);
   if (tilesRes.error) throw new Error(`Failed to get tiles: ${tilesRes.error.message}`);
-  if (submissionsRes.error) {
-    throw new Error(`Failed to get approved submissions: ${submissionsRes.error.message}`);
-  }
 
   const teamRows = (teamsRes.data ?? []) as Array<{ id: string; name: string }>;
-  const tilePointsById = new Map(
-    ((tilesRes.data ?? []) as Array<{ id: string; points: number }>).map((t) => [t.id, t.points]),
-  );
+  if (!teamRows.length) return { teams: [], unresolvableTiles: [] };
 
-  // teamId -> tileId -> "has at least one approved submission WITH player_id"
-  const tilesByTeam = new Map<string, Map<string, boolean>>();
-  for (const sub of (submissionsRes.data ?? []) as Array<{
+  const tileRows = (tilesRes.data ?? []) as Array<{
+    id: string;
+    task: string;
+    type: "Kill Count" | "Experience" | "Drops";
+    points: number;
+    target_value: number | null;
+  }>;
+  const tilePointsById = new Map(tileRows.map((t) => [t.id, t.points]));
+  const dropsTileIds = tileRows.filter((t) => t.type === "Drops").map((t) => t.id);
+
+  const engineTiles: EngineTile[] = tileRows.map((t) => ({
+    id: t.id,
+    task: t.task,
+    type: t.type,
+    points: t.points,
+    targetValue: t.target_value,
+  }));
+  const teamIds = teamRows.map((t) => t.id);
+
+  const [{ completedTileIdsByTeam, totalPointsByTeam, unresolvableTiles }, dropsSubmissionsRes] =
+    await Promise.all([
+      computeBingoCompletion(bingoId, engineTiles, teamIds),
+      dropsTileIds.length
+        ? db
+            .from("bingo_submissions")
+            .select("team_id, tile_id, player_id")
+            .eq("bingo_id", bingoId)
+            .eq("status", "approved")
+            .in("tile_id", dropsTileIds)
+            .not("team_id", "is", null)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+  if (dropsSubmissionsRes.error) {
+    throw new Error(`Failed to get approved drop submissions: ${dropsSubmissionsRes.error.message}`);
+  }
+
+  // teamId -> tileId -> "has at least one approved Drops submission WITH player_id"
+  const dropsAttributionByTeam = new Map<string, Map<string, boolean>>();
+  for (const sub of (dropsSubmissionsRes.data ?? []) as Array<{
     team_id: string | null;
     tile_id: string | null;
     player_id: string | null;
   }>) {
     if (!sub.team_id || !sub.tile_id) continue;
-    let teamTiles = tilesByTeam.get(sub.team_id);
+    let teamTiles = dropsAttributionByTeam.get(sub.team_id);
     if (!teamTiles) {
       teamTiles = new Map();
-      tilesByTeam.set(sub.team_id, teamTiles);
+      dropsAttributionByTeam.set(sub.team_id, teamTiles);
     }
     teamTiles.set(sub.tile_id, (teamTiles.get(sub.tile_id) ?? false) || sub.player_id !== null);
   }
 
-  return teamRows.map((team): TeamStat => {
-    const tileMap = tilesByTeam.get(team.id) ?? new Map<string, boolean>();
-    let totalPoints = 0;
+  const teams = teamRows.map((team): TeamStat => {
+    const completedTiles = completedTileIdsByTeam.get(team.id) ?? new Set<string>();
+    const attributionMap = dropsAttributionByTeam.get(team.id) ?? new Map<string, boolean>();
+
     let unattributedTiles = 0;
     let unattributedPoints = 0;
-    for (const [tileId, attributed] of tileMap) {
-      const points = tilePointsById.get(tileId) ?? 0;
-      totalPoints += points;
-      if (!attributed) {
-        unattributedTiles += 1;
-        unattributedPoints += points;
-      }
+    for (const [tileId, attributed] of attributionMap) {
+      if (!completedTiles.has(tileId) || attributed) continue;
+      unattributedTiles += 1;
+      unattributedPoints += tilePointsById.get(tileId) ?? 0;
     }
+
     return {
       teamId: team.id,
       teamName: team.name,
-      tilesCompleted: tileMap.size,
-      totalPoints,
+      tilesCompleted: completedTiles.size,
+      totalPoints: totalPointsByTeam.get(team.id) ?? 0,
       unattributedTiles,
       unattributedPoints,
     };
   });
+
+  return { teams, unresolvableTiles };
+}
+
+/** Thin wrapper over getTeamStatsWithUnresolvable for callers that only need the per-team array. */
+export async function getTeamStats(bingoId: string): Promise<TeamStat[]> {
+  return (await getTeamStatsWithUnresolvable(bingoId)).teams;
 }

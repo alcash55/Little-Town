@@ -18,10 +18,11 @@
  */
 import { afterAll, describe, expect, test } from "bun:test";
 
-import { registerBingoPlayer } from "../../src/db/players.js";
+import { registerBingoPlayer, savePlayerSnapshot } from "../../src/db/players.js";
 import { insertPendingSubmission, getPendingSubmissions, approveSubmission } from "../../src/db/bingoSubmissions.js";
 import { getPlayerStats } from "../../src/db/playerStats.js";
-import { getTeamStats } from "../../src/db/playerStats.js";
+import { getTeamStats, getTeamStatsWithUnresolvable } from "../../src/db/playerStats.js";
+import type { HiscoreData } from "../../src/types/index.js";
 import {
   getLocalStackConfig,
   columnExists,
@@ -33,6 +34,15 @@ import {
   type BingoRow,
   type BingoTeamRow,
 } from "./helpers.js";
+
+function buildHiscoreData(kc: number, activityName = "Tombs of Amascut"): HiscoreData {
+  return {
+    name: "test",
+    skills: [{ id: 0, name: "Overall", rank: 1, level: 1, xp: 0 }],
+    activities: [{ id: 2, name: activityName, rank: 500, kc }],
+    updatedAt: new Date(),
+  };
+}
 
 const stack = await getLocalStackConfig();
 if (!stack.reachable) {
@@ -131,6 +141,93 @@ describe.skipIf(!suite)("getTeamStats (attribution-independent team completion)"
     createdBingoIds.push(emptyBingo.id);
     const stats = await getTeamStats(emptyBingo.id);
     expect(stats).toEqual([]);
+  });
+});
+
+// -------------------------------------------------------
+// TEAM-BRIEF.md Sprint 13, Track A — engine-driven team-stats: dedupe rule
+// (legacy ToA scenario) + unresolvableTiles.
+// -------------------------------------------------------
+
+describe.skipIf(!suite)("getTeamStatsWithUnresolvable (Sprint 13, Track A — completion engine)", () => {
+  let bingo: BingoRow;
+  let team: BingoTeamRow;
+  let killCountTile: { id: string; points: number };
+  let unmatchedTile: { id: string; task: string; points: number };
+  let playerId: string;
+
+  test("fixtures: a Kill Count tile with real auto-verifying snapshot deltas PLUS two legacy approved submissions on it (prod's exact ToA scenario), and an unmatched trackable tile", async () => {
+    bingo = await insertTestBingo(`test-team-stats-engine-${uniqueSuffix()}`);
+    createdBingoIds.push(bingo.id);
+    team = await insertTestTeam(bingo.id, `EngineTeam ${uniqueSuffix()}`);
+
+    killCountTile = await insertTestTile(bingo.id, {
+      position: 0,
+      type: "Kill Count",
+      task: "Tombs of Amascut",
+      points: 40,
+      targetValue: 5,
+    });
+    const unmatched = await insertTestTile(bingo.id, {
+      position: 1,
+      type: "Kill Count",
+      task: `Definitely Not A Real Boss ${uniqueSuffix()}`,
+      points: 10,
+      targetValue: 1,
+    });
+    unmatchedTile = { id: unmatched.id, task: unmatched.task, points: unmatched.points };
+
+    const player = await registerBingoPlayer(bingo.id, `EngineTeamPlayer${uniqueSuffix()}`, team.id);
+    playerId = player.id;
+
+    // Real snapshot deltas: 5 KC, meeting the tile's target_value exactly.
+    await savePlayerSnapshot(playerId, "start", buildHiscoreData(0));
+    await savePlayerSnapshot(playerId, "current", buildHiscoreData(5));
+
+    // Two legacy approved submissions sitting on the SAME (now-trackable)
+    // tile id — exactly prod's reported state ("two legacy ToA submissions
+    // ... must not double-count once ToA auto-verifies").
+    await approveWithAttribution(bingo.id, team.id, killCountTile.id, playerId);
+    await approveWithAttribution(bingo.id, team.id, killCountTile.id, playerId);
+  });
+
+  test("dedupe: the Kill Count tile counts ONCE toward the team total, from the engine — not tripled by the two legacy submissions", async () => {
+    const { teams } = await getTeamStatsWithUnresolvable(bingo.id);
+    const teamStat = teams.find((t) => t.teamId === team.id)!;
+    expect(teamStat.tilesCompleted).toBe(1);
+    expect(teamStat.totalPoints).toBe(killCountTile.points); // 40, not 80/120
+  });
+
+  test("dedupe: getPlayerStats never counts the legacy Kill Count submissions either (Drops-only per item 3)", async () => {
+    const playerStats = await getPlayerStats(bingo.id);
+    const stat = playerStats.find((s) => s.rsn.startsWith("EngineTeamPlayer"))!;
+    expect(stat.tilesCompleted).toBe(0);
+    expect(stat.totalPoints).toBe(0);
+  });
+
+  test("unresolvableTiles lists the unmatched trackable tile so an admin can fix its task text", async () => {
+    const { unresolvableTiles } = await getTeamStatsWithUnresolvable(bingo.id);
+    expect(unresolvableTiles).toContainEqual({
+      id: unmatchedTile.id,
+      task: unmatchedTile.task,
+      type: "Kill Count",
+    });
+    // The matched, auto-verified tile is never reported as unresolvable.
+    expect(unresolvableTiles.some((t) => t.id === killCountTile.id)).toBe(false);
+  });
+
+  test("the unmatched tile never completes for the team, regardless of the legacy submissions sitting elsewhere on the board", async () => {
+    const { teams } = await getTeamStatsWithUnresolvable(bingo.id);
+    const teamStat = teams.find((t) => t.teamId === team.id)!;
+    // tilesCompleted is still exactly 1 (only the auto-verified KC tile) —
+    // the unmatched tile contributes nothing.
+    expect(teamStat.tilesCompleted).toBe(1);
+  });
+
+  test("getTeamStats() (the thin wrapper) returns the same per-team array as the .teams field", async () => {
+    const viaWrapper = await getTeamStats(bingo.id);
+    const { teams } = await getTeamStatsWithUnresolvable(bingo.id);
+    expect(viaWrapper).toEqual(teams);
   });
 });
 
