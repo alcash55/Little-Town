@@ -247,14 +247,31 @@ export async function approveSubmission(
  * already-'approved' one, so the two can't be confused. Callers should
  * validate playerId against the roster the same way approval does
  * (validateApprovalPlayerId) before calling this.
+ *
+ * `backfillReviewedBy` (tech-lead follow-up, same investigation): fills in
+ * `reviewed_by` too, but ONLY as a gap-fill — the caller should pass it when
+ * (and only when) the submission's current `reviewed_by` is already null,
+ * never to overwrite a real reviewer on a normally-approved row. Exists
+ * because prod turned up approved submissions with `reviewed_by` NULL (no
+ * approve/deny code path can produce that for an authenticated prod caller —
+ * `getAuditUserId` only omits it for the local-dev bypass user, which is
+ * inert outside `NODE_ENV !== 'production'` — so those rows most likely
+ * predate/bypassed the review API entirely). Since those same rows are
+ * exactly the ones this backfill endpoint touches, this is a low-risk place
+ * to also close the "who's accountable for this row" gap going forward,
+ * without a schema change.
  */
 export async function attributeApprovedSubmission(
   id: string,
   playerId: string,
+  backfillReviewedBy?: string,
 ): Promise<BingoSubmission> {
   const { data, error } = await getDb()
     .from("bingo_submissions")
-    .update({ player_id: playerId })
+    .update({
+      player_id: playerId,
+      ...(backfillReviewedBy !== undefined ? { reviewed_by: backfillReviewedBy } : {}),
+    })
     .eq("id", id)
     .select("*")
     .single();
