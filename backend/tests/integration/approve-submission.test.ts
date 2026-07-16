@@ -3,6 +3,8 @@ import { describe, test, expect, afterAll } from "bun:test";
 import { registerBingoPlayer } from "../../src/db/players.js";
 import {
   approveSubmission,
+  attributeApprovedSubmission,
+  getApprovedSubmissionsMissingAttribution,
   getPendingSubmissions,
   insertPendingSubmission,
 } from "../../src/db/bingoSubmissions.js";
@@ -82,6 +84,67 @@ describe.skipIf(!suite)("approveSubmission persists player_id (contract 2)", () 
     });
     expect(updated.status).toBe("approved");
     expect(updated.player_id).toBeNull();
+  });
+});
+
+// -------------------------------------------------------
+// attributeApprovedSubmission / getApprovedSubmissionsMissingAttribution —
+// the backfill path for H1 (bug-report investigation): an admin filling in
+// player_id AFTER the fact on a submission that's already approved.
+// -------------------------------------------------------
+
+describe.skipIf(!suite)("attribution backfill (H1)", () => {
+  let bingo: BingoRow;
+  let team: BingoTeamRow;
+  let playerId: string;
+  let tileId: string;
+
+  test("fixtures: bingo, team, tile, registered player", async () => {
+    bingo = await insertTestBingo(`test-attribute-${uniqueSuffix()}`);
+    createdBingoIds.push(bingo.id);
+    team = await insertTestTeam(bingo.id, `Team ${uniqueSuffix()}`);
+    const tile = await insertTestTile(bingo.id, { type: "Drops", task: "Test Attribute Drop" });
+    tileId = tile.id;
+    const player = await registerBingoPlayer(bingo.id, `AttributePlayer${uniqueSuffix()}`, team.id);
+    playerId = player.id;
+  });
+
+  test("an approved-without-attribution submission shows up in the missing-attribution worklist", async () => {
+    const submission = await insertAndFetchPendingSubmission(bingo.id);
+    await approveSubmission(submission.id, { tileId, teamId: team.id });
+
+    const missing = await getApprovedSubmissionsMissingAttribution(bingo.id);
+    expect(missing.some((s) => s.id === submission.id)).toBe(true);
+  });
+
+  test("a submission approved WITH attribution never shows up in the worklist", async () => {
+    const submission = await insertAndFetchPendingSubmission(bingo.id);
+    await approveSubmission(submission.id, { tileId, teamId: team.id, playerId });
+
+    const missing = await getApprovedSubmissionsMissingAttribution(bingo.id);
+    expect(missing.some((s) => s.id === submission.id)).toBe(false);
+  });
+
+  test("a still-pending submission never shows up in the worklist (approved-only)", async () => {
+    const submission = await insertAndFetchPendingSubmission(bingo.id);
+    // Left pending — never approved.
+    const missing = await getApprovedSubmissionsMissingAttribution(bingo.id);
+    expect(missing.some((s) => s.id === submission.id)).toBe(false);
+  });
+
+  test("attributeApprovedSubmission sets player_id and removes it from the worklist", async () => {
+    const submission = await insertAndFetchPendingSubmission(bingo.id);
+    await approveSubmission(submission.id, { tileId, teamId: team.id });
+    expect((await getApprovedSubmissionsMissingAttribution(bingo.id)).some((s) => s.id === submission.id)).toBe(
+      true,
+    );
+
+    const updated = await attributeApprovedSubmission(submission.id, playerId);
+    expect(updated.player_id).toBe(playerId);
+    expect(updated.status).toBe("approved"); // unchanged — this never re-triggers approval
+
+    const missingAfter = await getApprovedSubmissionsMissingAttribution(bingo.id);
+    expect(missingAfter.some((s) => s.id === submission.id)).toBe(false);
   });
 });
 

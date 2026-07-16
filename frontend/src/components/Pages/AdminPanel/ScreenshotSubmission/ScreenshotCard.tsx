@@ -249,6 +249,18 @@ export function ScreenshotCard({
           <Typography variant="caption" sx={{ color: textSecondary }}>
             No players registered on this team yet.
           </Typography>
+        ) : !playerId ? (
+          // Non-blocking nudge (bug-report investigation, H1): approving with
+          // no player picked still counts for the team, but the tile won't
+          // show up anywhere per-player until an admin backfills it via the
+          // "Needs Player Attribution" section below. Left optional
+          // deliberately — some submissions genuinely can't be attributed
+          // (e.g. a group screenshot) — this just makes the tradeoff visible
+          // instead of a silent default.
+          <Typography variant="caption" sx={{ color: 'warning.main' }}>
+            No player selected — this won&apos;t show up in per-player stats (team totals still
+            count it).
+          </Typography>
         ) : null}
 
         {error && (
