@@ -103,14 +103,36 @@ export async function getPendingSubmissions(bingoId: string): Promise<BingoSubmi
  * H1). Feeds GET /bingo/screenshots/unattributed, which the ScreenshotSubmission
  * page's "Needs Player Attribution" section lists alongside the pending
  * queue, each with a player picker calling PATCH .../attribute.
+ *
+ * Restricted to Drops-type tiles (TEAM-BRIEF.md Sprint 13, Track A item 3):
+ * under the new hiscores-auto-verify model, a Kill Count/Experience tile's
+ * completion is 100% engine-computed and never reads player_id at all — an
+ * old approved submission missing attribution on one of those tiles (e.g. a
+ * legacy ToA row from before it became trackable) is scoring-irrelevant, so
+ * it must not inflate this worklist/the overview's attribution-gap banner.
+ * Two-step (drops tile ids for this bingo, then submissions scoped to them)
+ * rather than a join — same shape as getTeamStats' equivalent filter.
  */
 export async function getApprovedSubmissionsMissingAttribution(bingoId: string): Promise<BingoSubmission[]> {
-  const { data, error } = await getDb()
+  const db = getDb();
+
+  const { data: dropsTiles, error: tilesError } = await db
+    .from("bingo_board_tiles")
+    .select("id")
+    .eq("bingo_id", bingoId)
+    .eq("type", "Drops");
+  if (tilesError) throw new Error(`Failed to get drops tiles: ${tilesError.message}`);
+
+  const dropsTileIds = ((dropsTiles ?? []) as Array<{ id: string }>).map((t) => t.id);
+  if (!dropsTileIds.length) return [];
+
+  const { data, error } = await db
     .from("bingo_submissions")
     .select("*")
     .eq("bingo_id", bingoId)
     .eq("status", "approved")
     .is("player_id", null)
+    .in("tile_id", dropsTileIds)
     .order("reviewed_at", { ascending: true });
 
   if (error) throw new Error(`Failed to get unattributed approved submissions: ${error.message}`);
@@ -184,31 +206,47 @@ export function buildDropStatusByRsn(
 
 /**
  * Builds the `tiles[]` list for `GET /api/bingo/board` (TEAM-BRIEF.md
- * Sprint 7, Track A item 1), attaching `completedByMyTeam`.
+ * Sprint 7, Track A item 1; broadened Sprint 13, Track A items 1-2),
+ * attaching `completedByMyTeam` and `pendingByMyTeam`.
+ *
  * `completedByMyTeam` is true when the tile id is present in
- * `approvedTileIdsForMyTeam` — the set of `tile_id`s with an **approved**
- * `bingo_submissions` row for the caller's team, computed by the caller
- * (route handler) via a DB query scoped to `team_id = myTeamId`. Passing
- * `null` (caller has no team) always yields `completedByMyTeam: false` for
- * every tile, rather than requiring callers to special-case an empty team
- * lookup into an empty Set. Pure over its inputs so it's unit-testable
- * without a DB, mirroring buildDropStatusByRsn above. Only ever reflects the
- * caller's own team — never other teams' — since the caller only ever
- * passes in submissions already scoped to `myTeamId`.
+ * `completedTileIdsForMyTeam` — as of Sprint 13, the caller's team's slice
+ * of `services/completionEngine.ts`'s `computeBingoCompletion` result
+ * (auto-verified Kill Count/Experience OR an approved Drops submission,
+ * deduped by construction — see that module's header comment). Previously
+ * this was a raw approved-submissions-only query; the route handler now
+ * computes it via the engine instead, but this function's own contract is
+ * unchanged (`completedByMyTeam` = "is this tile id in the set the caller
+ * passed in").
+ *
+ * `pendingByMyTeam` (NEW, Sprint 13, Track A item 3/contract) is true when
+ * the tile id is present in `pendingTileIdsForMyTeam` — pending (not yet
+ * approved/denied) `bingo_submissions` rows tagged with this tile+the
+ * caller's team via PATCH .../tag (see tagPendingSubmission below; a
+ * pending row has no tile_id/team_id until either tagged or approved).
+ *
+ * Passing `null` for either set (caller has no team) always yields `false`
+ * for every tile, rather than requiring callers to special-case an empty
+ * team lookup into an empty Set. Pure over its inputs so it's
+ * unit-testable without a DB, mirroring buildDropStatusByRsn above. Only
+ * ever reflects the caller's own team — never other teams' — since the
+ * caller only ever passes in sets already scoped to `myTeamId`.
  *
  * Generic over `T` (rather than a fixed `{id,task}` shape) so callers can
  * pass in tiles already carrying extra fields — e.g. `type`/`points`/
  * `targetValue` (Sprint 8, Track A item 4) — and get them back untouched,
- * with `completedByMyTeam` merged in, instead of this function silently
- * dropping any field it doesn't know about.
+ * with `completedByMyTeam`/`pendingByMyTeam` merged in, instead of this
+ * function silently dropping any field it doesn't know about.
  */
 export function buildBoardTileCompletion<T extends { id: string; task: string }>(
   tiles: T[],
-  approvedTileIdsForMyTeam: Set<string> | null,
-): Array<T & { completedByMyTeam: boolean }> {
+  completedTileIdsForMyTeam: Set<string> | null,
+  pendingTileIdsForMyTeam: Set<string> | null = null,
+): Array<T & { completedByMyTeam: boolean; pendingByMyTeam: boolean }> {
   return tiles.map((tile) => ({
     ...tile,
-    completedByMyTeam: approvedTileIdsForMyTeam?.has(tile.id) ?? false,
+    completedByMyTeam: completedTileIdsForMyTeam?.has(tile.id) ?? false,
+    pendingByMyTeam: pendingTileIdsForMyTeam?.has(tile.id) ?? false,
   }));
 }
 
@@ -234,6 +272,37 @@ export async function approveSubmission(
     .single();
 
   if (error || !data) throw new Error(`Failed to approve submission: ${error?.message}`);
+  return data as BingoSubmission;
+}
+
+/**
+ * Sets tile_id/team_id on a submission that is STILL PENDING, without
+ * touching its status — the missing piece that makes `pendingByMyTeam`
+ * (TEAM-BRIEF.md Sprint 13, Track A contract 1) meaningful: previously
+ * tile_id/team_id were only ever written at the moment a submission
+ * transitioned pending -> approved (approveSubmission), so there was no way
+ * for GET /api/bingo/board to know which team/tile a still-pending
+ * submission belongs to. Called by PATCH .../tag as an admin works through
+ * the review queue's tile/team pickers, before deciding approve/deny — see
+ * that route's doc comment in routes/admin.ts for the full rationale.
+ * Always overwrites (same semantics as approveSubmission's own tile_id/
+ * team_id write) so re-tagging before a final decision is a normal, safe
+ * operation. Callers must verify the submission is still 'pending' first
+ * (same pattern as approveSubmission/denySubmission's route-level checks) —
+ * this function itself doesn't gate on status.
+ */
+export async function tagPendingSubmission(
+  id: string,
+  input: { tileId: string; teamId: string },
+): Promise<BingoSubmission> {
+  const { data, error } = await getDb()
+    .from("bingo_submissions")
+    .update({ tile_id: input.tileId, team_id: input.teamId })
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  if (error || !data) throw new Error(`Failed to tag submission: ${error?.message}`);
   return data as BingoSubmission;
 }
 
