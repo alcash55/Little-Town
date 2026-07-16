@@ -43,6 +43,19 @@ export type TeamStat = {
   unattributedPoints: number;
 };
 
+// TEAM-BRIEF.md Sprint 13, Track A item 1 (frozen contract): GET
+// /api/admin/bingo/team-stats additionally returns `unresolvableTiles` —
+// trackable-type (Kill Count/Experience) tiles whose `task` text couldn't be
+// mapped to a hiscore metric by the completion engine, so they can NEVER
+// auto-complete as-is. Surfaced as an admin warning (see BingoOverview)
+// pointing at Board Builder, since the fix is almost always retyping the
+// task to match the hiscores autocomplete vocabulary exactly.
+export type UnresolvableTile = {
+  id: string;
+  task: string;
+  type: 'Kill Count' | 'Experience';
+};
+
 // TEAM-BRIEF.md Track A item 4 (frozen contract): GET /api/admin/health/dependencies.
 // Bare `{ services: [...] }` response — no success/data envelope. Cached ~60s
 // server-side, so this page's poll can hit it freely.
@@ -82,6 +95,7 @@ export const useBingoOverview = () => {
   const [playerStats, setPlayerStats] = useState<PlayerStat[]>([]);
   const [playerStatsError, setPlayerStatsError] = useState<string | null>(null);
   const [teamStats, setTeamStats] = useState<TeamStat[]>([]);
+  const [unresolvableTiles, setUnresolvableTiles] = useState<UnresolvableTile[]>([]);
   const [pendingScreenshots, setPendingScreenshots] = useState<PendingScreenshotSubmission[]>([]);
   const [health, setHealth] = useState<ServiceHealth[]>([]);
   const [healthError, setHealthError] = useState<string | null>(null);
@@ -185,12 +199,17 @@ export const useBingoOverview = () => {
       const res = await fetchWithAuth(`${BASE_URL}/bingo/team-stats`);
       if (!res.ok) {
         setTeamStats([]);
+        setUnresolvableTiles([]);
         return;
       }
       const json = await res.json();
       setTeamStats(Array.isArray(json.data) ? json.data : []);
+      // See UnresolvableTile's doc comment above — additive sibling field on
+      // the same response, not nested under `data`.
+      setUnresolvableTiles(Array.isArray(json.unresolvableTiles) ? json.unresolvableTiles : []);
     } catch {
       setTeamStats([]);
+      setUnresolvableTiles([]);
     }
   }, []);
 
@@ -401,6 +420,7 @@ export const useBingoOverview = () => {
     playerStats,
     playerStatsError,
     teamStats,
+    unresolvableTiles,
     pendingScreenshots,
     health,
     healthError,
