@@ -563,3 +563,40 @@ export async function getSideAccountsMissingStartSnapshot(
   );
   return allPairs.filter((p) => !haveStart.has(p.sideAccount.id));
 }
+
+/**
+ * Bulk-fetches start+current snapshots for a set of side accounts, keyed by
+ * side_account_id — the side-account counterpart of getAllPlayerSnapshots
+ * above. Feeds services/completionEngine.ts's loadEnginePlayers, which sums
+ * a player's side-account deltas into their contribution toward their
+ * team's total (TEAM-BRIEF.md Sprint 13, Track A item 1 — side-account
+ * gains count, since it's the same real person's account).
+ *
+ * Every id in `sideAccountIds` always gets an entry in the returned map
+ * (start/current both null if no snapshot rows exist yet) so callers can
+ * `.get(id)!` without an extra existence check.
+ */
+export async function getSideAccountSnapshotsBulk(
+  sideAccountIds: string[],
+): Promise<Map<string, { start: PlayerSnapshot | null; current: PlayerSnapshot | null }>> {
+  const result = new Map<string, { start: PlayerSnapshot | null; current: PlayerSnapshot | null }>();
+  for (const id of sideAccountIds) result.set(id, { start: null, current: null });
+  if (!sideAccountIds.length) return result;
+
+  const db = getDb();
+  const { data, error } = await db
+    .from("bingo_player_hiscores")
+    .select("*")
+    .in("side_account_id", sideAccountIds);
+
+  if (error) throw new Error(`Failed to get side account snapshots: ${error.message}`);
+
+  for (const row of (data ?? []) as PlayerSnapshot[]) {
+    if (!row.side_account_id) continue;
+    const entry = result.get(row.side_account_id);
+    if (!entry) continue; // defensive — shouldn't happen, every id was seeded above
+    if (row.type === "start") entry.start = row;
+    else entry.current = row;
+  }
+  return result;
+}
