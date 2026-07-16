@@ -158,6 +158,7 @@ const BingoBoard = () => {
               key={tile.id}
               task={tile.task}
               completed={tile.completedByMyTeam}
+              pendingByMyTeam={tile.pendingByMyTeam}
               myTeamName={myTeam?.name}
               points={tile.points}
               type={tile.type}
