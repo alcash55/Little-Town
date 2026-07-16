@@ -455,13 +455,28 @@ const BingoOverview = () => {
       {/* ── Attribution gap: tiles a team completed with no player picked at
           approval time. Points/tiles KPI totals above already account for
           these (team-level ground truth); the Player Stats table below
-          cannot — it can only ever show what's attributed to someone. ── */}
+          cannot — it can only ever show what's attributed to someone.
+          Names the destination page correctly (it's "Screenshot Submissions"
+          in the sidebar/page title, not "Screenshot Review" — a prior version
+          of this banner used the wrong name) and links straight to its
+          "Needs Player Attribution" worklist, matching the pending-screenshots
+          alert's own Review button above, so an admin who lands here isn't
+          left to guess where "here" is. ── */}
       {unattributedTiles > 0 && (
-        <Alert severity="info" icon={<GppMaybeIcon />} sx={{ width: '100%' }}>
+        <Alert
+          severity="info"
+          icon={<GppMaybeIcon />}
+          action={
+            <Button size="small" color="inherit" href="/AdminPanel/ScreenshotSubmission">
+              Attribute
+            </Button>
+          }
+          sx={{ width: '100%' }}
+        >
           {unattributedTiles} tile completion{unattributedTiles > 1 ? 's are' : ' is'} not linked
-          to a specific player (approved without picking a player on the Screenshot Review page)
-          — counted in the totals above, but won&apos;t appear in the Player Stats table below.
-          Pick a player when approving to keep per-player stats accurate.
+          to a specific player (approved without picking a player) — counted in the totals
+          above, but won&apos;t appear in the Player Stats table below until fixed on the
+          Screenshot Submissions page&apos;s &quot;Needs Player Attribution&quot; list.
         </Alert>
       )}
 
