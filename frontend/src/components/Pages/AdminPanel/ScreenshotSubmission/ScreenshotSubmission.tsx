@@ -13,6 +13,8 @@ const ScreenshotSubmission = () => {
   const {
     pending,
     unattributed,
+    unattributedError,
+    dismissUnattributedError,
     teams,
     players,
     tileOptions,
@@ -170,10 +172,24 @@ const ScreenshotSubmission = () => {
         </Box>
       )}
 
+      {/* ── Attribution worklist load failure — previously silent (see
+          useScreenshotSubmission's fetchUnattributed doc comment): a failed
+          GET .../unattributed looked identical to "nothing to attribute",
+          which is exactly the kind of silent failure that could leave real
+          unattributed submissions invisible to an admin. ── */}
+      {unattributedError && (
+        <Alert severity="warning" sx={{ width: '100%' }} onClose={dismissUnattributedError}>
+          {unattributedError}
+        </Alert>
+      )}
+
       {/* ── Attribution backfill (bug-report investigation, H1): approved
           submissions with no player picked. Already counted at the team
           level (BingoOverview's team totals); this is how an admin fills in
-          the per-player link after the fact. ── */}
+          the per-player link after the fact. Rendered as a SIBLING of the
+          pending-queue block above (not nested inside its empty-state
+          branch), so this worklist is visible even when "All caught up"
+          (zero pending) is also true — the two states are independent. ── */}
       {unattributed.length > 0 && (
         <>
           <Typography variant="h3" sx={{ fontSize: 18, width: '100%', mt: 2 }}>

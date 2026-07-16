@@ -267,6 +267,28 @@ export function stopDiscordScreenshotService(): void {
  * submission (👍 on approve, 👎 on deny). No-ops if the service isn't
  * running; swallows errors (deleted message/channel, missing permissions,
  * etc.) since a failed reaction must never block the review itself.
+ *
+ * IMPORTANT — this is the ONLY reaction-related behavior this service has.
+ * It is strictly OUTBOUND (bot -> Discord, after a human approves/denies via
+ * the admin web UI's POST .../approve or .../deny). There is no gateway
+ * listener anywhere in this codebase for `messageReactionAdd` or similar —
+ * an admin reacting 👍 on the Discord message itself does NOT approve
+ * anything; it's just a human-readable confirmation trail on messages that
+ * already went through the web review. Two consequences worth being
+ * explicit about (bug-report investigation, H1/tech-lead follow-up):
+ *   1. Every submission this service ingests (see `ingestMessage` above)
+ *      starts and stays 'pending' with `player_id`/`reviewed_by` both NULL
+ *      until an admin opens /AdminPanel/ScreenshotSubmission and clicks
+ *      approve. There's no code path by which a Discord-only interaction
+ *      can EVER set player_id — the web UI's "Player (optional)" picker (or
+ *      the later PATCH .../attribute backfill) is the only way in.
+ *   2. `reviewed_by` can only be NULL on an 'approved' row if it was never
+ *      approved through POST .../approve at all (that route always stamps
+ *      the authenticated caller via `getAuditUserId`, which only omits it
+ *      for the local-dev bypass user — inert in production). A prod row
+ *      that's 'approved' with `reviewed_by` NULL therefore did not come
+ *      through this review flow; it was written directly (e.g. a manual/
+ *      fixture DB write), not approved by an admin via Discord or the UI.
  */
 export async function reactToSubmissionMessage(
   discordMessageId: string,
