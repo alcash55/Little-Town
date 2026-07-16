@@ -836,7 +836,11 @@ router.patch(
       return res.status(400).json({ success: false, error: validationError });
     }
 
-    const updated = await attributeApprovedSubmission(id, playerId);
+    // Gap-fill only: never overwrites a real reviewer, only stamps one onto
+    // rows that currently have none (see attributeApprovedSubmission's doc
+    // comment — tech-lead follow-up on the reviewed_by NULL finding).
+    const auditId = submission.reviewed_by === null ? getAuditUserId(req) : undefined;
+    const updated = await attributeApprovedSubmission(id, playerId, auditId);
     res.status(200).json({ success: true, data: updated, message: "Submission attributed" });
   }),
 );
