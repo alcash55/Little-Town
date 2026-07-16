@@ -257,13 +257,22 @@ export const useScreenshotSubmission = () => {
       setReviewError((prev) => omitKey(prev, submissionId));
 
       try {
-        const playerId = playerSelection[submissionId];
+        // TEAM-BRIEF.md Sprint 13, Track A item 4 / Track B item 2 (frozen
+        // contract): approving now 422s server-side without a playerId —
+        // attribution is required, not optional, for new approvals (only
+        // Drops tiles reach this endpoint at all; see tileOptions above).
+        // The Approve button stays disabled until a player is chosen (see
+        // ScreenshotCard's `canApprove`), so `playerId` is always present
+        // here in practice — sent unconditionally rather than the old
+        // optional spread so a would-be regression in that button-disable
+        // logic surfaces as a clear 422 from the backend, not a silently
+        // unattributed approval.
         const body =
           action === 'approve'
             ? {
                 tileId: tileSelection[submissionId],
                 teamId: teamSelection[submissionId],
-                ...(playerId ? { playerId } : {}),
+                playerId: playerSelection[submissionId],
               }
             : {};
 
@@ -339,10 +348,21 @@ export const useScreenshotSubmission = () => {
     [attributionSelection],
   );
 
-  /** Tiles that actually carry an id — the only ones safe to offer in the picker. */
-  const tileOptions = useMemo(
+  /**
+   * Tiles offered in the tile picker: must carry an id (the only ones safe
+   * to submit a `tileId` for), AND — per TEAM-BRIEF.md Sprint 13's frozen
+   * product model — must be a Drops tile. Kill Count/Experience tiles now
+   * auto-verify from the hiscores and never go through screenshot review,
+   * so offering them here would let an admin "approve" a tile that can't
+   * actually take a screenshot submission server-side.
+   */
+  const idTiles = useMemo(
     () => board.filter((t): t is BoardTile & { id: string } => !!t.id),
     [board],
+  );
+  const tileOptions = useMemo(
+    () => idTiles.filter((t) => t.type === 'Drops'),
+    [idTiles],
   );
 
   return {
@@ -353,7 +373,12 @@ export const useScreenshotSubmission = () => {
     teams,
     players,
     tileOptions,
-    boardMissingTileIds: board.length > 0 && tileOptions.length === 0,
+    // Two distinct empty-picker reasons, surfaced separately so the
+    // ScreenshotCard hint doesn't misdiagnose a normal "this board just has
+    // no Drops tiles" board as the (genuinely broken) "board endpoint isn't
+    // returning tile ids" case.
+    boardMissingTileIds: board.length > 0 && idTiles.length === 0,
+    boardHasNoDropsTiles: idTiles.length > 0 && tileOptions.length === 0,
     loading,
     refreshing,
     error,

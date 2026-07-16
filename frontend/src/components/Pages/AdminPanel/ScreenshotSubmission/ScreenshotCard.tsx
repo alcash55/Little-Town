@@ -59,6 +59,8 @@ export type ScreenshotCardProps = {
   teams: BingoTeam[];
   players: BingoPlayer[];
   boardMissingTileIds: boolean;
+  /** True when the board has id-carrying tiles, but none of them are Drops tiles. */
+  boardHasNoDropsTiles: boolean;
   tileId: string | undefined;
   teamId: string | undefined;
   playerId: string | undefined;
@@ -79,6 +81,7 @@ export function ScreenshotCard({
   teams,
   players,
   boardMissingTileIds,
+  boardHasNoDropsTiles,
   tileId,
   teamId,
   playerId,
@@ -93,7 +96,11 @@ export function ScreenshotCard({
   onDismissError,
 }: ScreenshotCardProps) {
   const busy = isApproving || isDenying;
-  const canApprove = !busy && !!tileId && !!teamId;
+  // TEAM-BRIEF.md Sprint 13, Track A item 4 / Track B item 2 (frozen
+  // contract): approving now REQUIRES a player — attribution is no longer
+  // optional. Approve stays disabled until tile, team, AND player are all
+  // chosen (same inline-hint pattern the tile/team requirement already used).
+  const canApprove = !busy && !!tileId && !!teamId && !!playerId;
 
   // A signed image URL can expire (5-minute TTL) before the next poll/refresh
   // replaces it. Once the <img> fails to load, swap to the placeholder rather
@@ -195,11 +202,19 @@ export function ScreenshotCard({
             ))}
           </Select>
         </FormControl>
-        {boardMissingTileIds && (
+        {boardMissingTileIds ? (
           <Typography variant="caption" sx={{ color: 'error.main' }}>
             No tile options available — the board endpoint isn&apos;t returning tile ids yet.
           </Typography>
-        )}
+        ) : boardHasNoDropsTiles ? (
+          // Distinct from the error case above: this board is fine, it just
+          // has no Drops tiles for screenshots to apply to (TEAM-BRIEF.md
+          // Sprint 13 — KC/XP tiles verify automatically from the hiscores).
+          <Typography variant="caption" sx={{ color: textSecondary }}>
+            This board has no Drops tiles — Kill Count/Experience tiles verify automatically
+            from the hiscores and don&apos;t use screenshot review.
+          </Typography>
+        ) : null}
 
         <FormControl size="small" fullWidth disabled={busy || teams.length === 0}>
           <InputLabel id={`team-label-${submission.id}`} sx={{ color: textSecondary }}>
@@ -220,20 +235,22 @@ export function ScreenshotCard({
           </Select>
         </FormControl>
 
-        <FormControl size="small" fullWidth disabled={busy || !teamId || teamPlayers.length === 0}>
+        <FormControl
+          size="small"
+          fullWidth
+          required
+          disabled={busy || !teamId || teamPlayers.length === 0}
+        >
           <InputLabel id={`player-label-${submission.id}`} sx={{ color: textSecondary }}>
-            Player (optional)
+            Player
           </InputLabel>
           <Select
             labelId={`player-label-${submission.id}`}
-            label="Player (optional)"
+            label="Player"
             value={playerId ?? ''}
             onChange={(e) => onPlayerChange(e.target.value)}
             sx={{ ...selectSx, width: '100%' }}
           >
-            <MenuItem value="">
-              <em>Unassigned</em>
-            </MenuItem>
             {teamPlayers.map((player) => (
               <MenuItem key={player.id} value={player.id}>
                 {player.rsn}
@@ -243,23 +260,19 @@ export function ScreenshotCard({
         </FormControl>
         {!teamId ? (
           <Typography variant="caption" sx={{ color: textSecondary }}>
-            Choose a team to attribute this submission to a player.
+            Choose a team, then the player who submitted this drop.
           </Typography>
         ) : teamPlayers.length === 0 ? (
           <Typography variant="caption" sx={{ color: textSecondary }}>
             No players registered on this team yet.
           </Typography>
         ) : !playerId ? (
-          // Non-blocking nudge (bug-report investigation, H1): approving with
-          // no player picked still counts for the team, but the tile won't
-          // show up anywhere per-player until an admin backfills it via the
-          // "Needs Player Attribution" section below. Left optional
-          // deliberately — some submissions genuinely can't be attributed
-          // (e.g. a group screenshot) — this just makes the tradeoff visible
-          // instead of a silent default.
+          // TEAM-BRIEF.md Sprint 13, Track A item 4 / Track B item 2 (frozen
+          // contract): attribution is REQUIRED for new approvals now, not a
+          // nudge — Approve stays disabled (see `canApprove`) until a
+          // player is picked here.
           <Typography variant="caption" sx={{ color: 'warning.main' }}>
-            No player selected — this won&apos;t show up in per-player stats (team totals still
-            count it).
+            Pick the player who submitted this drop — required to approve.
           </Typography>
         ) : null}
 
@@ -309,9 +322,9 @@ export function ScreenshotCard({
             Deny
           </Button>
         </Stack>
-        {!busy && (!tileId || !teamId) && (
+        {!busy && (!tileId || !teamId || !playerId) && (
           <Typography variant="caption" sx={{ color: textSecondary, mt: -1 }}>
-            Pick a tile and team to approve.
+            Pick a tile, team, and player to approve.
           </Typography>
         )}
       </CardContent>
