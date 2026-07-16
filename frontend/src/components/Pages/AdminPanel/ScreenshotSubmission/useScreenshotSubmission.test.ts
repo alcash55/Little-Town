@@ -169,3 +169,108 @@ describe('useScreenshotSubmission — attribution worklist (bug-report investiga
     );
   });
 });
+
+// TEAM-BRIEF.md Sprint 13, Track B item 2: the tile picker is now
+// Drops-only — KC/XP tiles auto-verify from the hiscores and never go
+// through screenshot review, so offering them here would let an admin
+// "approve" a tile the backend can't actually attach a submission to.
+describe('useScreenshotSubmission — Drops-only tile picker (TEAM-BRIEF.md Sprint 13)', () => {
+  const boardRow = (id: string, type: 'Kill Count' | 'Experience' | 'Drops') => ({
+    id,
+    task: `Task ${id}`,
+    type,
+    points: 10,
+  });
+
+  it('offers only Drops-type tiles in tileOptions, even when KC/XP tiles also have ids', async () => {
+    installRouter({
+      '/bingo/board': jsonResponse(200, {
+        data: [
+          boardRow('kc-1', 'Kill Count'),
+          boardRow('xp-1', 'Experience'),
+          boardRow('drop-1', 'Drops'),
+          boardRow('drop-2', 'Drops'),
+        ],
+      }),
+    });
+
+    const { result } = renderHook(() => useScreenshotSubmission());
+    await vi.waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.tileOptions.map((t) => t.id).sort()).toEqual(['drop-1', 'drop-2']);
+    expect(result.current.boardMissingTileIds).toBe(false);
+    expect(result.current.boardHasNoDropsTiles).toBe(false);
+  });
+
+  it('flags boardHasNoDropsTiles (distinct from boardMissingTileIds) when the board has id-carrying tiles but none are Drops', async () => {
+    installRouter({
+      '/bingo/board': jsonResponse(200, {
+        data: [boardRow('kc-1', 'Kill Count'), boardRow('xp-1', 'Experience')],
+      }),
+    });
+
+    const { result } = renderHook(() => useScreenshotSubmission());
+    await vi.waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.tileOptions).toEqual([]);
+    expect(result.current.boardHasNoDropsTiles).toBe(true);
+    expect(result.current.boardMissingTileIds).toBe(false);
+  });
+
+  it('still flags the genuine boardMissingTileIds error when tiles have no id at all', async () => {
+    installRouter({
+      '/bingo/board': jsonResponse(200, {
+        data: [{ task: 'No id', type: 'Drops', points: 10 }],
+      }),
+    });
+
+    const { result } = renderHook(() => useScreenshotSubmission());
+    await vi.waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.boardMissingTileIds).toBe(true);
+    expect(result.current.boardHasNoDropsTiles).toBe(false);
+  });
+});
+
+// TEAM-BRIEF.md Sprint 13, Track A item 4 / Track B item 2 (frozen
+// contract): approving now requires a playerId — the backend 422s without
+// one. This proves the hook always sends whatever playerId is selected
+// (including none) rather than silently omitting it the way the old
+// optional-attribution flow did.
+describe('useScreenshotSubmission — approve requires player (TEAM-BRIEF.md Sprint 13)', () => {
+  it('sends playerId in the approve request body when one is selected', async () => {
+    let approveBody: unknown = null;
+    installRouter({
+      '/bingo/screenshots/pending': jsonResponse(200, {
+        data: [
+          { id: 'sub-1', imageUrl: null, submittedBy: 'Discord', submittedAt: '2026-07-08T00:00:00.000Z' },
+        ],
+      }),
+      '/bingo/screenshots/sub-1/approve': () => {
+        return jsonResponse(200, { success: true, data: { id: 'sub-1' } });
+      },
+    });
+    // Capture the approve request body directly, since installRouter's
+    // simple suffix-matching doesn't expose per-call request options.
+    const originalImpl = mockedFetchWithAuth.getMockImplementation();
+    mockedFetchWithAuth.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (url.includes('/bingo/screenshots/sub-1/approve') && init?.body) {
+        approveBody = JSON.parse(init.body as string);
+      }
+      return originalImpl!(url, init);
+    });
+
+    const { result } = renderHook(() => useScreenshotSubmission());
+    await vi.waitFor(() => expect(result.current.pending.length).toBe(1));
+
+    act(() => result.current.setTileForSubmission('sub-1', 'tile-1'));
+    act(() => result.current.setTeamForSubmission('sub-1', 'team-1'));
+    act(() => result.current.setPlayerForSubmission('sub-1', 'player-1'));
+    await act(async () => {
+      await result.current.approve('sub-1');
+    });
+
+    expect(approveBody).toEqual({ tileId: 'tile-1', teamId: 'team-1', playerId: 'player-1' });
+    expect(result.current.pending).toEqual([]);
+  });
+});
