@@ -47,6 +47,23 @@ export type PendingScreenshotSubmission = {
   discordMessageId?: string;
 };
 
+/**
+ * Shape of one row from GET /bingo/screenshots/unattributed — the backfill
+ * worklist for the attribution gap (bug-report investigation, H1): approved
+ * submissions with no player_id. Already counted at the team level (GET
+ * /bingo/team-stats), just missing a per-player link.
+ */
+export type UnattributedSubmission = {
+  id: string;
+  tileId: string | null;
+  tileTask: string | null;
+  teamId: string | null;
+  teamName: string | null;
+  submittedBy: string;
+  approvedAt: string | null;
+  imageUrl: string | null;
+};
+
 type ReviewAction = 'approve' | 'deny';
 
 const omitKey = <T,>(map: Record<string, T>, key: string): Record<string, T> => {
@@ -57,6 +74,7 @@ const omitKey = <T,>(map: Record<string, T>, key: string): Record<string, T> => 
 
 export const useScreenshotSubmission = () => {
   const [pending, setPending] = useState<PendingScreenshotSubmission[]>([]);
+  const [unattributed, setUnattributed] = useState<UnattributedSubmission[]>([]);
   const [board, setBoard] = useState<BoardTile[]>([]);
   const [teams, setTeams] = useState<BingoTeam[]>([]);
   const [players, setPlayers] = useState<BingoPlayer[]>([]);
@@ -78,6 +96,11 @@ export const useScreenshotSubmission = () => {
   const [reviewing, setReviewing] = useState<{ id: string; action: ReviewAction } | null>(null);
   const [reviewError, setReviewError] = useState<Record<string, string>>({});
 
+  /** Per-unattributed-submission player selection (attribution backfill, H1). */
+  const [attributionSelection, setAttributionSelection] = useState<Record<string, string>>({});
+  const [attributing, setAttributing] = useState<string | null>(null);
+  const [attributionError, setAttributionError] = useState<Record<string, string>>({});
+
   /** Guards `refresh` against overlapping calls without depending on render state. */
   const refreshingRef = useRef(false);
   /** Mirrors `reviewing` for the poll loop, so the interval isn't rebuilt on every review. */
@@ -92,6 +115,17 @@ export const useScreenshotSubmission = () => {
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load pending screenshots.');
+    }
+  }, []);
+
+  const fetchUnattributed = useCallback(async () => {
+    try {
+      const res = await fetchWithAuth(`${BASE_URL}/bingo/screenshots/unattributed`);
+      if (!res.ok) return; // non-fatal: the section just stays at its last-known rows
+      const json = await res.json();
+      setUnattributed(Array.isArray(json.data) ? json.data : []);
+    } catch {
+      /* non-fatal */
     }
   }, []);
 
@@ -138,23 +172,23 @@ export const useScreenshotSubmission = () => {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      await Promise.all([fetchPending(), fetchTeamsAndBoard(), fetchPlayers()]);
+      await Promise.all([fetchPending(), fetchUnattributed(), fetchTeamsAndBoard(), fetchPlayers()]);
       setLoading(false);
     };
     load();
-  }, [fetchPending, fetchTeamsAndBoard, fetchPlayers]);
+  }, [fetchPending, fetchUnattributed, fetchTeamsAndBoard, fetchPlayers]);
 
   const refresh = useCallback(async () => {
     if (refreshingRef.current) return;
     refreshingRef.current = true;
     setRefreshing(true);
     try {
-      await Promise.all([fetchPending(), fetchTeamsAndBoard()]);
+      await Promise.all([fetchPending(), fetchUnattributed(), fetchTeamsAndBoard()]);
     } finally {
       refreshingRef.current = false;
       setRefreshing(false);
     }
-  }, [fetchPending, fetchTeamsAndBoard]);
+  }, [fetchPending, fetchUnattributed, fetchTeamsAndBoard]);
 
   useEffect(() => {
     reviewingRef.current = reviewing;
@@ -169,9 +203,10 @@ export const useScreenshotSubmission = () => {
       if (reviewingRef.current) return;
       if (refreshingRef.current) return;
       fetchPending();
+      fetchUnattributed();
     }, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [fetchPending]);
+  }, [fetchPending, fetchUnattributed]);
 
   const dismissTeamsBoardError = useCallback(() => setTeamsBoardError(null), []);
 
@@ -237,6 +272,47 @@ export const useScreenshotSubmission = () => {
     setReviewError((prev) => omitKey(prev, submissionId));
   }, []);
 
+  const setPlayerForAttribution = useCallback((submissionId: string, playerId: string) => {
+    setAttributionSelection((prev) => ({ ...prev, [submissionId]: playerId }));
+  }, []);
+
+  const dismissAttributionError = useCallback((submissionId: string) => {
+    setAttributionError((prev) => omitKey(prev, submissionId));
+  }, []);
+
+  /** Backfill path for H1 (bug-report investigation): fills in player_id on
+   * an already-approved submission via PATCH .../attribute. */
+  const attribute = useCallback(
+    async (submissionId: string) => {
+      const playerId = attributionSelection[submissionId];
+      if (!playerId) return;
+
+      setAttributing(submissionId);
+      setAttributionError((prev) => omitKey(prev, submissionId));
+
+      try {
+        const res = await fetchWithAuth(
+          `${BASE_URL}/bingo/screenshots/${submissionId}/attribute`,
+          { method: 'PATCH', body: JSON.stringify({ playerId }) },
+        );
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error ?? res.statusText);
+        }
+        setUnattributed((prev) => prev.filter((s) => s.id !== submissionId));
+        setAttributionSelection((prev) => omitKey(prev, submissionId));
+      } catch (e) {
+        setAttributionError((prev) => ({
+          ...prev,
+          [submissionId]: e instanceof Error ? e.message : 'Failed to attribute submission.',
+        }));
+      } finally {
+        setAttributing(null);
+      }
+    },
+    [attributionSelection],
+  );
+
   /** Tiles that actually carry an id — the only ones safe to offer in the picker. */
   const tileOptions = useMemo(
     () => board.filter((t): t is BoardTile & { id: string } => !!t.id),
@@ -245,6 +321,7 @@ export const useScreenshotSubmission = () => {
 
   return {
     pending,
+    unattributed,
     teams,
     players,
     tileOptions,
@@ -253,6 +330,13 @@ export const useScreenshotSubmission = () => {
     refreshing,
     error,
     refresh,
+
+    attributionSelection,
+    setPlayerForAttribution,
+    attributing,
+    attributionError,
+    dismissAttributionError,
+    attribute,
 
     teamsBoardError,
     dismissTeamsBoardError,

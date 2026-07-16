@@ -119,6 +119,18 @@ export const screenshotApprovalSchema = z.object({
 });
 
 // -------------------------------------------------------
+// Backfilling attribution on an already-approved submission
+// (PATCH /bingo/screenshots/:id/attribute) — playerId is REQUIRED here
+// (unlike screenshotApprovalSchema above): the whole point of this route is
+// filling in a previously-skipped attribution, so an empty call would be a
+// no-op that's better rejected than silently accepted.
+// -------------------------------------------------------
+
+export const screenshotAttributionSchema = z.object({
+  playerId: z.string().min(1, "Player ID is required"),
+});
+
+// -------------------------------------------------------
 // Invites (POST /admin/invites, POST /invites/:token/accept)
 // -------------------------------------------------------
 

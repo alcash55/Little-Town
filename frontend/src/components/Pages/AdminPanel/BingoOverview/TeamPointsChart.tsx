@@ -3,10 +3,11 @@ import { Box, Typography } from '@mui/material';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { appColors } from '../../../../layout/Theme';
 import { textSecondary } from '../TeamDrafter/teamDrafterStyles';
-import { PlayerStat } from './useBingoOverview';
+import { PlayerStat, TeamStat } from './useBingoOverview';
 
 export type TeamPointsChartProps = {
   playerStats: PlayerStat[];
+  teamStats: TeamStat[];
 };
 
 /**
@@ -14,9 +15,20 @@ export type TeamPointsChartProps = {
  * categories, so per dataviz's form heuristic this stays a single accent hue
  * (sequential job) rather than a categorical palette: the teams themselves
  * aren't the story, their relative standing is.
+ *
+ * Prefers teamStats (attribution-independent ground truth, see TeamStat's
+ * doc comment in useBingoOverview.ts) so this bar chart always matches the
+ * "Total Points Scored" KPI tile above it — summing playerStats alone would
+ * under-report whenever an approved submission has no player attribution
+ * (bug-report investigation, H1).
  */
-export const TeamPointsChart = ({ playerStats }: TeamPointsChartProps) => {
+export const TeamPointsChart = ({ playerStats, teamStats }: TeamPointsChartProps) => {
   const rows = useMemo(() => {
+    if (teamStats.length > 0) {
+      return teamStats
+        .map((t) => ({ team: t.teamName, points: t.totalPoints }))
+        .sort((a, b) => b.points - a.points);
+    }
     const byTeam = new Map<string, number>();
     for (const p of playerStats) {
       const key = p.teamName || 'Unassigned';
@@ -25,7 +37,7 @@ export const TeamPointsChart = ({ playerStats }: TeamPointsChartProps) => {
     return Array.from(byTeam.entries())
       .map(([team, points]) => ({ team, points }))
       .sort((a, b) => b.points - a.points);
-  }, [playerStats]);
+  }, [playerStats, teamStats]);
 
   if (rows.length === 0) {
     return (

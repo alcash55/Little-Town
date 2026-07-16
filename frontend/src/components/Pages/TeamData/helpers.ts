@@ -48,13 +48,11 @@ export const CELL_STATE_META: Record<
 /** Resolve a single player × tile intersection into a renderable cell. */
 export function getTileCell(tile: TileInfo, player: PlayerRow): TileCellData {
   if (tile.type === 'Drops') {
-    // GET /my-team-data's dropStatus is keyed inconsistently — the backend
-    // builds its tile-id lookup from a lowercased task (see
-    // TEAM-BRIEF.md Sprint 10 Track B report), so a submission can come
-    // back under either the tile's real-cased task or a lowercased one.
-    // Falling back to a lowercase match keeps Drops statuses from silently
-    // vanishing until that's fixed at the source.
-    const status = player.dropStatus[tile.task] ?? player.dropStatus[tile.task.toLowerCase()];
+    // GET /my-team-data's dropStatus is keyed by the tile's real-cased task
+    // (fixed at the source in backend/src/routes/bingo.ts — see Sprint 11
+    // candidates, todo.md ~line 132; used to be lowercased, requiring a
+    // frontend fallback that's no longer needed).
+    const status = player.dropStatus[tile.task];
     if (status === 'approved') {
       return { state: 'approved', label: 'Approved', detail: `${tile.task}: drop approved` };
     }

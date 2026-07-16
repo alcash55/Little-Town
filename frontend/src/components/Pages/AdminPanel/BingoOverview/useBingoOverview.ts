@@ -25,6 +25,24 @@ export type PlayerStat = {
   rsnStaleSince: string | null;
 };
 
+// GET /api/admin/bingo/team-stats -> { success: true, data: TeamStat[] }.
+// Additive sibling to player-stats (bug-report investigation, see todo.md):
+// player-level stats are undercounted whenever an admin approves a
+// screenshot without picking a player (the "Player (optional)" field on
+// ScreenshotCard) — the tile still counts for the TEAM (this is
+// attribution-independent, computed straight from team_id), it just can't
+// be attributed to anyone specific. unattributedTiles/unattributedPoints
+// isolate exactly that gap so it's visible instead of silently missing from
+// the per-player table below.
+export type TeamStat = {
+  teamId: string;
+  teamName: string;
+  tilesCompleted: number;
+  totalPoints: number;
+  unattributedTiles: number;
+  unattributedPoints: number;
+};
+
 // TEAM-BRIEF.md Track A item 4 (frozen contract): GET /api/admin/health/dependencies.
 // Bare `{ services: [...] }` response — no success/data envelope. Cached ~60s
 // server-side, so this page's poll can hit it freely.
@@ -63,6 +81,7 @@ export const useBingoOverview = () => {
   const [board, setBoard] = useState<Tile[]>([]);
   const [playerStats, setPlayerStats] = useState<PlayerStat[]>([]);
   const [playerStatsError, setPlayerStatsError] = useState<string | null>(null);
+  const [teamStats, setTeamStats] = useState<TeamStat[]>([]);
   const [pendingScreenshots, setPendingScreenshots] = useState<PendingScreenshotSubmission[]>([]);
   const [health, setHealth] = useState<ServiceHealth[]>([]);
   const [healthError, setHealthError] = useState<string | null>(null);
@@ -157,6 +176,24 @@ export const useBingoOverview = () => {
     }
   }, []);
 
+  // Additive sibling to player-stats (see TeamStat's doc comment above).
+  // Best-effort: a failure here just means the top KPI tiles/attribution
+  // banner fall back to the (possibly under-reporting) player-stats total
+  // rather than failing the whole page.
+  const fetchTeamStats = useCallback(async () => {
+    try {
+      const res = await fetchWithAuth(`${BASE_URL}/bingo/team-stats`);
+      if (!res.ok) {
+        setTeamStats([]);
+        return;
+      }
+      const json = await res.json();
+      setTeamStats(Array.isArray(json.data) ? json.data : []);
+    } catch {
+      setTeamStats([]);
+    }
+  }, []);
+
   const fetchPendingScreenshots = useCallback(async () => {
     try {
       const res = await fetchWithAuth(`${BASE_URL}/bingo/screenshots/pending`);
@@ -218,6 +255,7 @@ export const useBingoOverview = () => {
       await Promise.all([
         fetchPlayersAndBoard(),
         fetchPlayerStats(),
+        fetchTeamStats(),
         fetchPendingScreenshots(),
         fetchHealth(),
         fetchConflicts(bingoData?.id ?? null),
@@ -225,7 +263,15 @@ export const useBingoOverview = () => {
       setLoading(false);
     };
     load();
-  }, [fetchBingo, fetchPlayersAndBoard, fetchPlayerStats, fetchPendingScreenshots, fetchHealth, fetchConflicts]);
+  }, [
+    fetchBingo,
+    fetchPlayersAndBoard,
+    fetchPlayerStats,
+    fetchTeamStats,
+    fetchPendingScreenshots,
+    fetchHealth,
+    fetchConflicts,
+  ]);
 
   // Contract 6: poll pending screenshots, dependency health, and conflicts every 45s
   // while the page is visible, so the "N screenshots pending review" banner and the
@@ -242,11 +288,12 @@ export const useBingoOverview = () => {
         fetchPendingScreenshots(),
         fetchHealth(),
         fetchConflicts(bingoIdRef.current),
+        fetchTeamStats(),
       ]);
     } finally {
       pollingRef.current = false;
     }
-  }, [fetchPendingScreenshots, fetchHealth, fetchConflicts]);
+  }, [fetchPendingScreenshots, fetchHealth, fetchConflicts, fetchTeamStats]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
@@ -343,6 +390,7 @@ export const useBingoOverview = () => {
     board,
     playerStats,
     playerStatsError,
+    teamStats,
     pendingScreenshots,
     health,
     healthError,

@@ -131,3 +131,105 @@ export async function getPlayerStats(bingoId: string): Promise<PlayerStat[]> {
     };
   });
 }
+
+// -------------------------------------------------------
+// Team-level stats (attribution-independent ground truth)
+// -------------------------------------------------------
+
+export interface TeamStat {
+  teamId: string;
+  teamName: string;
+  // Distinct tiles with >=1 APPROVED submission for this team — counted
+  // regardless of player_id, unlike PlayerStat.tilesCompleted above. This is
+  // the same "did the team complete this tile" signal GET /api/bingo/board
+  // uses for completedByMyTeam (team_id-scoped, no player_id involved).
+  tilesCompleted: number;
+  totalPoints: number;
+  // Of the above, tiles where EVERY approved submission is missing
+  // player_id — i.e. the team demonstrably completed the tile, but no
+  // player-level stat anywhere reflects it (playerStats' tilesByPlayer only
+  // counts submissions WITH player_id). Surfaces the attribution gap
+  // instead of letting real progress silently vanish from the per-player
+  // table (root cause: player_id is an optional admin-filled field at
+  // approval time — routes/admin.ts's POST /bingo/screenshots/:id/approve,
+  // frontend ScreenshotCard's "Player (optional)" picker, defaults to
+  // unassigned).
+  unattributedTiles: number;
+  unattributedPoints: number;
+}
+
+/**
+ * Team-level completion, computed straight from approved submissions'
+ * team_id (never player_id). Exists specifically as a degrade-gracefully
+ * fallback for the attribution gap above: BingoOverview's player-level table
+ * can under-report a team's real progress when approvals weren't attributed
+ * to a specific player, but a team's OWN total is always accurate here — it
+ * doesn't depend on player_id at all. Pairs with getPlayerStats(); GET
+ * /api/admin/bingo/team-stats exposes this separately rather than folding it
+ * into PlayerStat[] (an additive, non-breaking sibling endpoint).
+ */
+export async function getTeamStats(bingoId: string): Promise<TeamStat[]> {
+  const db = getDb();
+
+  const [teamsRes, tilesRes, submissionsRes] = await Promise.all([
+    db.from("bingo_teams").select("id, name").eq("bingo_id", bingoId),
+    db.from("bingo_board_tiles").select("id, points").eq("bingo_id", bingoId),
+    db
+      .from("bingo_submissions")
+      .select("team_id, tile_id, player_id")
+      .eq("bingo_id", bingoId)
+      .eq("status", "approved")
+      .not("team_id", "is", null)
+      .not("tile_id", "is", null),
+  ]);
+
+  if (teamsRes.error) throw new Error(`Failed to get teams: ${teamsRes.error.message}`);
+  if (tilesRes.error) throw new Error(`Failed to get tiles: ${tilesRes.error.message}`);
+  if (submissionsRes.error) {
+    throw new Error(`Failed to get approved submissions: ${submissionsRes.error.message}`);
+  }
+
+  const teamRows = (teamsRes.data ?? []) as Array<{ id: string; name: string }>;
+  const tilePointsById = new Map(
+    ((tilesRes.data ?? []) as Array<{ id: string; points: number }>).map((t) => [t.id, t.points]),
+  );
+
+  // teamId -> tileId -> "has at least one approved submission WITH player_id"
+  const tilesByTeam = new Map<string, Map<string, boolean>>();
+  for (const sub of (submissionsRes.data ?? []) as Array<{
+    team_id: string | null;
+    tile_id: string | null;
+    player_id: string | null;
+  }>) {
+    if (!sub.team_id || !sub.tile_id) continue;
+    let teamTiles = tilesByTeam.get(sub.team_id);
+    if (!teamTiles) {
+      teamTiles = new Map();
+      tilesByTeam.set(sub.team_id, teamTiles);
+    }
+    teamTiles.set(sub.tile_id, (teamTiles.get(sub.tile_id) ?? false) || sub.player_id !== null);
+  }
+
+  return teamRows.map((team): TeamStat => {
+    const tileMap = tilesByTeam.get(team.id) ?? new Map<string, boolean>();
+    let totalPoints = 0;
+    let unattributedTiles = 0;
+    let unattributedPoints = 0;
+    for (const [tileId, attributed] of tileMap) {
+      const points = tilePointsById.get(tileId) ?? 0;
+      totalPoints += points;
+      if (!attributed) {
+        unattributedTiles += 1;
+        unattributedPoints += points;
+      }
+    }
+    return {
+      teamId: team.id,
+      teamName: team.name,
+      tilesCompleted: tileMap.size,
+      totalPoints,
+      unattributedTiles,
+      unattributedPoints,
+    };
+  });
+}

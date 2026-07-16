@@ -1,6 +1,7 @@
 import { getDb } from "./client.js";
 import { HiscoreData, SideAccount } from "../types/index.js";
 import { AppError } from "../middleware/errorHandler.js";
+import { findRsnClaimByUser } from "./rsnClaims.js";
 
 // -------------------------------------------------------
 // Types
@@ -125,6 +126,68 @@ export async function findBingoPlayerCaseInsensitive(
 
   if (error) throw new Error(`Failed to look up player "${rsn}": ${error.message}`);
   return data as BingoPlayer | null;
+}
+
+/**
+ * Resolves "which bingo_players row is ME" for a logged-in user — used by
+ * GET /api/bingo/board and GET /api/bingo/my-team-data to find the caller's
+ * own team. Two sources, in priority order:
+ *
+ *   1. `rsn_claims` (Sprint 11+) — a real, unambiguous user -> RSN link
+ *      created by POST /api/onboarding/rsn. Preferred whenever it resolves.
+ *   2. `bingo_players.registered_by` — the historical/fallback link. This
+ *      column records who RAN the registration call, not who the player IS:
+ *      the Team Drafter's admin "add player" flow (routes/admin.ts POST
+ *      /bingo/players) sets `registered_by` to the ADMIN's user id for every
+ *      player they add, which is the NORMAL way most players end up in a
+ *      bingo. That means an admin who has registered several players has
+ *      `registered_by = <admin id>` on ALL of them — a query for "the player
+ *      registered_by me" is only trustworthy when it comes back with exactly
+ *      one row. More than one match can't be resolved to a single "me"
+ *      without guessing, so it's treated the same as zero matches (no
+ *      self-registration to fall back to) rather than silently picking
+ *      whichever row happens to sort first.
+ *
+ * A player who was admin-registered for someone ELSE (the common case) has
+ * no rsn_claims row and a registered_by that points at the admin, not them —
+ * such a user resolves to `null` here until they claim their RSN via
+ * onboarding. That's a real gap (see todo.md's bug-report writeup); this
+ * function doesn't invent a fix for admin-registered-but-never-claimed
+ * players, it only fixes the two cases that ARE resolvable (a genuine claim,
+ * or an unambiguous self-registration).
+ */
+export async function resolveMyBingoPlayer(
+  bingoId: string,
+  userId: string,
+): Promise<BingoPlayer | null> {
+  const claim = await findRsnClaimByUser(userId);
+  if (claim) {
+    const claimed = await findBingoPlayerCaseInsensitive(bingoId, claim.rsn);
+    if (claimed) return claimed;
+    // Claimed an RSN, but it isn't (yet) in THIS bingo's player pool —
+    // fall through to the registered_by fallback rather than returning
+    // null outright, in case an older registered_by link still applies.
+  }
+
+  const db = getDb();
+  const { data, error } = await db
+    .from("bingo_players")
+    .select("*")
+    .eq("bingo_id", bingoId)
+    .eq("registered_by", userId);
+
+  if (error) throw new Error(`Failed to resolve player for user ${userId}: ${error.message}`);
+
+  const rows = (data ?? []) as BingoPlayer[];
+  if (rows.length === 1) return rows[0];
+  if (rows.length > 1) {
+    console.warn(
+      `[players] registered_by=${userId} matches ${rows.length} players in bingo ${bingoId} — ` +
+        "ambiguous (likely an admin who registered multiple players via the Team Drafter), " +
+        "treating as no self-registration rather than guessing which row is \"me\".",
+    );
+  }
+  return null;
 }
 
 /**
