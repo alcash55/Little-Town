@@ -1,4 +1,4 @@
-import { getSideAccounts, savePlayerSnapshot, type BingoPlayer } from "../db/players.js";
+import { getSideAccounts, savePlayerSnapshot, clearStartSnapshot, type BingoPlayer } from "../db/players.js";
 import { mapWithConcurrency, HISCORE_CONCURRENCY } from "../lib/concurrency.js";
 import { hiscores } from "./hiscores.js";
 import { checkSideAccountRsnChange, RsnChangeSource } from "./rsnChangeDetection.js";
@@ -51,6 +51,7 @@ async function snapshotOneSideAccount(
   sideAccount: SideAccount,
   types: Array<"start" | "current">,
   source: RsnChangeSource,
+  retakeExisting = false,
 ): Promise<SideSnapshotResult> {
   const base = { playerId, sideAccountId: sideAccount.id, rsn: sideAccount.rsn };
   try {
@@ -67,6 +68,13 @@ async function snapshotOneSideAccount(
         ok: false,
         error: `Side account "${sideAccount.rsn}" is not ranked on the OSRS hiscores`,
       };
+    }
+    // retakeExisting (TEAM-BRIEF.md Sprint 14, D2 fix; only ever true from an
+    // activation call whose `types` includes "start") — clears any
+    // pre-existing start row for this side account first so it gets a fresh
+    // baseline instead of savePlayerSnapshot's default insert-if-absent no-op.
+    if (retakeExisting && types.includes("start")) {
+      await clearStartSnapshot(playerId, sideAccount.id);
     }
     for (const type of types) {
       await savePlayerSnapshot(playerId, type, effectiveData, sideAccount.id);
@@ -105,11 +113,12 @@ export async function snapshotSideAccountTasks(
   tasks: SideAccountSnapshotTask[],
   types: Array<"start" | "current">,
   source: RsnChangeSource,
+  retakeExisting = false,
 ): Promise<SideSnapshotResult[]> {
   if (!tasks.length) return [];
 
   const settled = await mapWithConcurrency(tasks, HISCORE_CONCURRENCY, ({ playerId, sideAccount }) =>
-    snapshotOneSideAccount(playerId, sideAccount, types, source),
+    snapshotOneSideAccount(playerId, sideAccount, types, source, retakeExisting),
   );
 
   // snapshotOneSideAccount never throws, so every entry is fulfilled — this
@@ -139,6 +148,7 @@ export async function snapshotAllSideAccounts(
   players: Pick<BingoPlayer, "id">[],
   types: Array<"start" | "current">,
   source: RsnChangeSource,
+  retakeExisting = false,
 ): Promise<SideSnapshotResult[]> {
   if (!players.length) return [];
 
@@ -150,5 +160,5 @@ export async function snapshotAllSideAccounts(
     sideAccounts.map((sideAccount) => ({ playerId, sideAccount })),
   );
 
-  return snapshotSideAccountTasks(tasks, types, source);
+  return snapshotSideAccountTasks(tasks, types, source, retakeExisting);
 }

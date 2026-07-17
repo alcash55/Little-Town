@@ -12,7 +12,7 @@ import {
 import { getBingoConflicts } from "../db/conflicts.js";
 import { getTeamXpHistory } from "../db/teamXpHistory.js";
 import { getDb } from "../db/client.js";
-import { computeBingoCompletion, type EngineTile } from "../services/completionEngine.js";
+import { computeBingoCompletion, normalizeTaskText, type EngineTile } from "../services/completionEngine.js";
 
 const router = Router();
 
@@ -202,14 +202,17 @@ router.get(
     }
 
     const playerData = rows.map(({ player, start, current }) => {
-      // Skill XP deltas — only for skills referenced by an Experience tile
+      // Skill XP deltas — only for skills referenced by an Experience tile.
+      // Keyed by normalizeTaskText(curr.name) (D1 fix, TEAM-BRIEF.md Sprint
+      // 14) — see the /my-team-data block below for the full rationale;
+      // this roster block carries the identical bug/fix.
       const skillDeltas: Record<string, number> = {};
       if (start?.skills && current?.skills) {
         for (const curr of current.skills as Array<{ id: number; name: string; xp: number }>) {
           if (filterSkills && !trackedSkills.has(curr.name.toLowerCase())) continue;
           const startSkill = (start.skills as typeof curr[]).find((s) => s.id === curr.id);
           const delta = curr.xp - (startSkill?.xp ?? curr.xp);
-          if (delta > 0) skillDeltas[curr.name] = delta;
+          if (delta > 0) skillDeltas[normalizeTaskText(curr.name)] = delta;
         }
       }
 
@@ -220,7 +223,7 @@ router.get(
           if (filterActivities && !trackedActivities.has(curr.name.toLowerCase())) continue;
           const startAct = (start.activities as typeof curr[]).find((a) => a.id === curr.id);
           const delta = curr.kc - (startAct?.kc ?? curr.kc);
-          if (delta > 0) activityDeltas[curr.name] = delta;
+          if (delta > 0) activityDeltas[normalizeTaskText(curr.name)] = delta;
         }
       }
 
@@ -321,7 +324,20 @@ router.get(
       myTeamId ? player.team_id === myTeamId : player.id === myPlayer?.id
     );
 
-    // Build per-player skill/activity deltas
+    // Build per-player skill/activity deltas. Keyed by
+    // normalizeTaskText(curr.name) — e.g. hiscore-canonical "Hitpoints" ->
+    // "hitpoints" (D1 fix, TEAM-BRIEF.md Sprint 14 — root cause of the
+    // "board shows completed tiles, TeamData shows zero progress" report).
+    // bingo_board_tiles.task is stored lowercase (see boardTilesSchema in
+    // lib/validation.ts / the drafter UI), but this used to key deltas by
+    // the RAW hiscore API name (real-cased: "Hitpoints", "Prayer", ...) —
+    // every KC/XP TeamData cell missed on casing and rendered "no progress
+    // yet" regardless of real gains. normalizeTaskText is the SAME
+    // normalizer services/completionEngine.ts uses for its own tile/hiscore
+    // vocabulary matching (buildHiscoreVocab) — one shared keying
+    // convention end to end, producer (here) and consumer
+    // (frontend/.../TeamData/helpers.ts's getTileCell, which now looks up
+    // by normalizeTaskText(tile.task) instead of the raw tile.task).
     const playerData = teamRows.map(({ player, start, current }) => {
       const skillDeltas: Record<string, number> = {};
       if (start?.skills && current?.skills) {
@@ -329,7 +345,7 @@ router.get(
           if (filterSkills && !trackedSkills.has(curr.name.toLowerCase())) continue;
           const startSkill = (start.skills as typeof curr[]).find((s) => s.id === curr.id);
           const delta = curr.xp - (startSkill?.xp ?? curr.xp);
-          if (delta > 0) skillDeltas[curr.name] = delta;
+          if (delta > 0) skillDeltas[normalizeTaskText(curr.name)] = delta;
         }
       }
 
@@ -339,7 +355,7 @@ router.get(
           if (filterActivities && !trackedActivities.has(curr.name.toLowerCase())) continue;
           const startAct = (start.activities as typeof curr[]).find((a) => a.id === curr.id);
           const delta = curr.kc - (startAct?.kc ?? curr.kc);
-          if (delta > 0) activityDeltas[curr.name] = delta;
+          if (delta > 0) activityDeltas[normalizeTaskText(curr.name)] = delta;
         }
       }
 
