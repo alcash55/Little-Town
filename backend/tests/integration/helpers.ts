@@ -193,7 +193,12 @@ export interface BingoRow {
 
 export async function insertTestBingo(
   name: string,
-  overrides: Partial<{ status: BingoStatus; board_size: number }> = {},
+  overrides: Partial<{
+    status: BingoStatus;
+    board_size: number;
+    start_date: string | null;
+    end_date: string | null;
+  }> = {},
 ): Promise<BingoRow> {
   const { data, error } = await getDb()
     .from("bingos")
@@ -201,6 +206,8 @@ export async function insertTestBingo(
       name,
       status: overrides.status ?? "draft",
       board_size: overrides.board_size ?? 16,
+      ...(overrides.start_date !== undefined ? { start_date: overrides.start_date } : {}),
+      ...(overrides.end_date !== undefined ? { end_date: overrides.end_date } : {}),
     })
     .select("*")
     .single();
