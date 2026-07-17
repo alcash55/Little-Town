@@ -1,4 +1,5 @@
-import { Alert, Stack, SxProps, Theme, Typography, useTheme } from '@mui/material';
+import { Alert, Box, Stack, SxProps, Theme, Typography, useTheme } from '@mui/material';
+import LockOutlined from '@mui/icons-material/LockOutlined';
 import { darkTheme } from '../Theme/theme';
 import { ReactNode } from 'react';
 
@@ -35,6 +36,17 @@ interface PageLayoutProps {
   warningMessage?: string;
   /** Surface API errors */
   error?: string | null;
+  /**
+   * A gating GET for this page came back 401/403 — render a clear
+   * "no permission" state in place of `children` instead of whatever empty
+   * form/list state the page would otherwise show (bug-report investigation,
+   * prod incident: a swallowed 403 on admin pages was indistinguishable from
+   * "nothing exists yet", which is how an admin-only page ended up looking
+   * safe to fill in and submit for a caller who never had access). Takes
+   * precedence over `children` entirely — the underlying data was never
+   * fetched, so there is nothing legitimate to show alongside it.
+   */
+  permissionDenied?: boolean;
   /** Show the success alert after submit */
   submitted?: boolean;
   /**
@@ -58,6 +70,7 @@ const PageLayout = ({
   showExistingWarning = false,
   warningMessage,
   error,
+  permissionDenied = false,
   submitted = false,
   maxWidth = 500,
   align = 'top',
@@ -104,29 +117,49 @@ const PageLayout = ({
           </Typography>
         )}
 
-        {showExistingWarning && (
-          <Alert
-            severity="warning"
-            variant="filled"
-            sx={{ width: '100%', maxWidth: alertMaxWidth }}
+        {permissionDenied ? (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 2,
+              color: darkTheme.palette.text.secondary,
+              pt: 4,
+            }}
           >
-            {resolvedWarning}
-          </Alert>
-        )}
+            <LockOutlined fontSize="inherit" sx={{ fontSize: 64 }} />
+            <Typography variant="body1" sx={{ textAlign: 'center' }}>
+              You don&apos;t have permission to view this page.
+            </Typography>
+          </Box>
+        ) : (
+          <>
+            {showExistingWarning && (
+              <Alert
+                severity="warning"
+                variant="filled"
+                sx={{ width: '100%', maxWidth: alertMaxWidth }}
+              >
+                {resolvedWarning}
+              </Alert>
+            )}
 
-        {submitted && successMessage && (
-          <Alert severity="success" sx={{ width: '100%', maxWidth: alertMaxWidth }}>
-            {successMessage}
-          </Alert>
-        )}
+            {submitted && successMessage && (
+              <Alert severity="success" sx={{ width: '100%', maxWidth: alertMaxWidth }}>
+                {successMessage}
+              </Alert>
+            )}
 
-        {error && (
-          <Alert severity="error" sx={{ width: '100%', maxWidth: alertMaxWidth }}>
-            {error}
-          </Alert>
-        )}
+            {error && (
+              <Alert severity="error" sx={{ width: '100%', maxWidth: alertMaxWidth }}>
+                {error}
+              </Alert>
+            )}
 
-        {children}
+            {children}
+          </>
+        )}
       </Stack>
     </Stack>
   );

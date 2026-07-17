@@ -26,6 +26,9 @@ const BingoDetails = () => {
     isBingo,
     submitted,
     setSubmitted,
+    submitError,
+    permissionDenied,
+    loadError,
     isFormValid,
     hasFormData,
     handleSubmit,
@@ -44,6 +47,8 @@ const BingoDetails = () => {
       submitted={submitted}
       successMessage={isBingo ? 'Bingo details updated!' : 'Bingo details created!'}
       warningMessage="Bingo details already exist. Submitting will overwrite them."
+      permissionDenied={permissionDenied}
+      error={submitError ?? loadError}
     >
       <Stack
         spacing={3}

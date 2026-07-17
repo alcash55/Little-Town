@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fetchWithAuth } from '../../../../utils/fetchWithAuth';
+import { describeApiError } from '../../../../utils/apiError';
 
 type Bingo = {
   name: string;
@@ -40,6 +41,13 @@ export const useBingoDetails = () => {
   // UI state
   const [isBingo, setIsBingo] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  // True when the gating GET (existing bingo lookup) 401/403'd — the page
+  // must show a permission-denied state instead of an empty "no bingo yet"
+  // form (bug-report investigation, prod incident: this was previously
+  // indistinguishable from "no active bingo exists").
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Derived
   // Start of today (midnight) — no past dates allowed
@@ -69,10 +77,24 @@ export const useBingoDetails = () => {
   const existingBingo = async (): Promise<BingoConfig | null> => {
     try {
       const response = await fetchWithAuth(`${BASE_URL}/bingo/details`);
-      if (!response.ok) return null;
+      if (!response.ok) {
+        const info = await describeApiError(response, 'Failed to load bingo details');
+        if (info.isPermissionError) {
+          // Distinct from "no active bingo yet" — the caller can't see the
+          // answer either way, so don't let the form render as if there's
+          // definitely nothing there (bug-report investigation, prod incident).
+          setPermissionDenied(true);
+        } else if (response.status !== 404) {
+          setLoadError(info.message);
+        }
+        return null;
+      }
+      setPermissionDenied(false);
+      setLoadError(null);
       const json = await response.json();
       return json.data ?? null;
     } catch (e) {
+      setLoadError('Unable to reach the server. Please try again.');
       console.error(`Unable to get existing Bingo: ${e}`);
       return null;
     }
@@ -85,9 +107,12 @@ export const useBingoDetails = () => {
         body: JSON.stringify(details),
       });
       if (response.ok) return true;
-      throw new Error(`Failed to send bingo details: ${response.statusText}`);
+      const info = await describeApiError(response, 'Failed to create bingo details');
+      throw new Error(info.message);
     } catch (e) {
-      console.error(`Unable to send details: ${e}`);
+      const message = e instanceof Error ? e.message : 'Unable to reach the server. Please try again.';
+      setSubmitError(message);
+      console.error(`Unable to send details: ${message}`);
       return false;
     }
   };
@@ -96,7 +121,11 @@ export const useBingoDetails = () => {
     try {
       const current = await existingBingo();
       if (!current?.id) {
-        console.error('No active bingo found to modify');
+        const message = permissionDenied
+          ? "You don't have permission to modify bingo details."
+          : 'No active bingo found to modify.';
+        setSubmitError(message);
+        console.error(message);
         return false;
       }
       const response = await fetchWithAuth(`${BASE_URL}/bingo/${current.id}`, {
@@ -104,15 +133,19 @@ export const useBingoDetails = () => {
         body: JSON.stringify(details),
       });
       if (response.ok) return true;
-      throw new Error(`Failed to modify bingo details: ${response.statusText}`);
+      const info = await describeApiError(response, 'Failed to modify bingo details');
+      throw new Error(info.message);
     } catch (e) {
-      console.error(`Unable to update details: ${e}`);
+      const message = e instanceof Error ? e.message : 'Unable to reach the server. Please try again.';
+      setSubmitError(message);
+      console.error(`Unable to update details: ${message}`);
       return false;
     }
   };
 
   // Handlers
   const handleSubmit = async () => {
+    setSubmitError(null);
     const details = {
       name: bingoName,
       start: startDate,
@@ -191,6 +224,9 @@ export const useBingoDetails = () => {
     isBingo,
     submitted,
     setSubmitted,
+    submitError,
+    permissionDenied,
+    loadError,
     // Derived
     isFormValid,
     hasFormData,

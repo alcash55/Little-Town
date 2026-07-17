@@ -81,6 +81,36 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
 
   const BASE_URL = import.meta.env.VITE_BASEURL || "http://localhost:8081"
 
+  // Re-validates `user` against whatever token is currently in localStorage —
+  // shared by the mount-time rehydration below and the cross-tab storage
+  // listener further down, so both paths treat the backend's /me response as
+  // the single source of truth for "who am I" instead of trusting a token's
+  // embedded claims or a previous render's state.
+  const rehydrateFromToken = useCallback(
+    (token: string | null): Promise<void> => {
+      if (!token) {
+        setUser(null);
+        return Promise.resolve();
+      }
+      return fetch(`${BASE_URL}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => {
+          if (res.ok) return res.json();
+          // Token is invalid or expired — clean up silently (no expiry modal on boot)
+          localStorage.removeItem('authToken');
+          setSessionExpired(false);
+          return null;
+        })
+        .then((data) => setUser(data?.data ?? null))
+        .catch(() => {
+          localStorage.removeItem('authToken');
+          setUser(null);
+        });
+    },
+    [BASE_URL],
+  );
+
   // On mount, rehydrate user from existing token
   useEffect(() => {
     const token = localStorage.getItem('authToken');
@@ -88,23 +118,41 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
       setAuthReady(true);
       return;
     }
-
-    fetch(`${BASE_URL}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => {
-        if (res.ok) return res.json();
-        // Token is invalid or expired — clean up silently (no expiry modal on boot)
-        localStorage.removeItem('authToken');
-        setSessionExpired(false);
-        return null;
-      })
-      .then((data) => {
-        if (data?.data) setUser(data.data);
-      })
-      .catch(() => localStorage.removeItem('authToken'))
-      .finally(() => setAuthReady(true));
+    rehydrateFromToken(token).finally(() => setAuthReady(true));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Cross-tab account switch (bug report, prod incident): `authToken` lives in
+  // localStorage, which is shared by every tab/window on the same origin —
+  // but each tab's React `user` state is its own in-memory copy, set once at
+  // login/mount and never re-checked against the storage it was read from.
+  // Before this listener, a tab left open on an admin page (e.g. Board
+  // Builder) kept rendering as admin — sidebar, forms, submit buttons and
+  // all — even after a DIFFERENT tab in the same browser logged out and back
+  // in as a different (non-admin) account, because that second login only
+  // updates the token in shared storage, not this tab's React state. Any
+  // request the stale tab then fired (fetchWithAuth always reads the token
+  // fresh from localStorage) went out authenticated as the NEW account,
+  // while the UI kept behaving as the OLD one — a real user could watch an
+  // admin-looking page 403 on submit with no indication the account
+  // underneath it had changed. The `storage` event fires in every other tab
+  // the instant one tab's localStorage write commits (never in the tab that
+  // made the write), so listening for the `authToken` key here closes the
+  // gap: every open tab re-validates `user` (and drops any impersonation
+  // override, which is real-admin-gated and must not survive an account
+  // change) the moment the shared token rotates, which in turn makes
+  // ProtectedRoute/useSidebar (both driven by useEffectiveRole -> this
+  // `user`) immediately re-evaluate and redirect/hide admin UI if the new
+  // token belongs to a lower-privileged account.
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key !== 'authToken' || e.newValue === e.oldValue) return;
+      clearImpersonationTarget();
+      rehydrateFromToken(e.newValue);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [rehydrateFromToken]);
 
   const openLogin = useCallback(() => {
     ensureModalImported();

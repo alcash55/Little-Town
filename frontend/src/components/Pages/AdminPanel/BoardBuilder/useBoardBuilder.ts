@@ -3,6 +3,7 @@ import { getActivities } from '../../../../utils/getActivities';
 import { getSkills } from '../../../../utils/getSkills';
 import { fetchWithAuth } from '../../../../utils/fetchWithAuth';
 import { cachedFetch } from '../../../../utils/cachedFetch';
+import { describeApiError } from '../../../../utils/apiError';
 
 export type Tile =
   | { type: 'Kill Count'; task: string; points: number; killCount: number }
@@ -44,6 +45,12 @@ export const useBoardBuilder = () => {
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [editingTile, setEditingTile] = useState<EditingTile | null>(null);
+  // True when the gating GETs below (bingo details / board) 401/403 —
+  // distinct from "no board built yet" so the page shows a permission-denied
+  // state instead of an empty builder that invites creating a duplicate
+  // active bingo (bug-report investigation, prod incident).
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Derived
   const isExistingBoard = boardFromBackend;
@@ -83,6 +90,18 @@ export const useBoardBuilder = () => {
           if (bingoRes.ok) {
             const bingoJson = await bingoRes.json();
             if (bingoJson.data?.boardSize) setBoardSize(bingoJson.data.boardSize);
+            setPermissionDenied(false);
+          } else {
+            const info = await describeApiError(bingoRes, 'Failed to load bingo details');
+            if (info.isPermissionError) {
+              // Distinct from "no board built yet" — falling through to the
+              // localStorage-draft/empty-builder state below would look like
+              // a safe, empty page instead of one the caller can't see
+              // (bug-report investigation, prod incident).
+              setPermissionDenied(true);
+              return;
+            }
+            if (bingoRes.status !== 404) setLoadError(info.message);
           }
 
           // Fetch existing board from backend
@@ -98,8 +117,16 @@ export const useBoardBuilder = () => {
                 return;
               }
             }
+          } else {
+            const info = await describeApiError(boardRes, 'Failed to load board');
+            if (info.isPermissionError) {
+              setPermissionDenied(true);
+              return;
+            }
+            if (boardRes.status !== 404) setLoadError(info.message);
           }
         } catch (e) {
+          setLoadError('Unable to reach the server. Please try again.');
           console.error('Failed to fetch board from backend, falling back to localStorage:', e);
         }
       }
@@ -246,8 +273,8 @@ export const useBoardBuilder = () => {
         setSubmitted(true);
         localStorage.removeItem('bingoBoard');
       } else {
-        const json = await response.json().catch(() => ({}));
-        setSubmitError(json.error ?? `Failed to save board: ${response.statusText}`);
+        const info = await describeApiError(response, 'Failed to save board');
+        setSubmitError(info.message);
       }
     } catch (e) {
       setSubmitError('An unexpected error occurred. Please try again.');
@@ -283,6 +310,8 @@ export const useBoardBuilder = () => {
     submitted,
     setSubmitted,
     submitError,
+    permissionDenied,
+    loadError,
     // Derived
     isTileValid,
     isBoardComplete,
