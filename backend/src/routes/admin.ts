@@ -17,8 +17,9 @@ import {
 import { mapWithConcurrency } from "../lib/concurrency.js";
 import {
   getActiveBingo,
+  getLatestBingo,
   getBingoById,
-  getActiveBingoBoard,
+  getBingoBoardById,
   listBingos,
   saveActiveBingoBoard,
   saveBingoDetails,
@@ -62,6 +63,7 @@ import {
   validateApprovalPlayerId,
   attributeApprovedSubmission,
   getApprovedSubmissionsMissingAttribution,
+  countPendingSubmissions,
 } from "../db/bingoSubmissions.js";
 import { getPlayerStats, PlayerStat, getTeamStatsWithUnresolvable } from "../db/playerStats.js";
 import { reactToSubmissionMessage } from "../services/discordScreenshots.js";
@@ -131,6 +133,35 @@ router.get(
   }),
 );
 
+/**
+ * GET /api/admin/bingo/latest
+ *
+ * NEW (TEAM-BRIEF.md Sprint 15, Track A frozen contract). The most recent
+ * bingo REGARDLESS of status (draft/active/complete/archived; `bingo: null`
+ * only if none has ever been created), plus its pending-submission count.
+ * This is how the overview + screenshot-review pages resolve "the bingo"
+ * from now on — /bingo/details above stays active|draft-only on purpose
+ * (unchanged behavior for its existing drafting-flow consumers); this is the
+ * new, separate entry point for pages that must keep working after a bingo
+ * completes (product decision 2 — reviewing pending screenshots must never
+ * be blocked by the end-of-bingo transition).
+ *
+ * Same authz as the rest of this router (admin+moderator, router-level) —
+ * no extra `authorize` call needed.
+ */
+router.get(
+  "/bingo/latest",
+  asyncHandler(async (req: Request, res: Response) => {
+    const bingo = await getLatestBingo();
+    const pendingScreenshots = bingo?.id ? await countPendingSubmissions(bingo.id) : 0;
+    const response: ApiResponse<{ bingo: BingoConfig | null; pendingScreenshots: number }> = {
+      success: true,
+      data: { bingo, pendingScreenshots },
+    };
+    res.status(200).json(response);
+  }),
+);
+
 // -------------------------------------------------------
 // /bingo/board — must be before /bingo/:id
 // -------------------------------------------------------
@@ -165,12 +196,23 @@ router.put(
   }),
 );
 
+// GET /bingo/board resolves the LATEST bingo regardless of status
+// (TEAM-BRIEF.md Sprint 15, Track A follow-up — tech-lead decision: the
+// overview must be fully functional, including live stats, for a complete
+// bingo, not just its pending-screenshots banner). 404 only when no bingo
+// has ever been created; a bingo with no board yet still returns `data: []`
+// (unchanged) rather than 404, matching the pre-existing BoardBuilder /
+// BingoOverview consumers, which already treat a non-ok response and an
+// empty array identically.
 router.get(
   "/bingo/board",
   asyncHandler(async (req: Request, res: Response) => {
+    const bingo = await getLatestBingo();
+    if (!bingo?.id) return res.status(404).json({ success: false, error: "No bingo found" });
+
     const response: ApiResponse = {
       success: true,
-      data: await getActiveBingoBoard(),
+      data: await getBingoBoardById(bingo.id),
     };
     res.status(200).json(response);
   }),
@@ -371,12 +413,15 @@ router.put(
 // Players
 // -------------------------------------------------------
 
-// Get all players + snapshots for the active bingo
+// Get all players + snapshots for the LATEST bingo, regardless of status
+// (TEAM-BRIEF.md Sprint 15, Track A follow-up — the overview roster must
+// keep showing real data for a completed bingo, not 404 alongside the
+// pending-screenshots banner).
 router.get(
   "/bingo/players",
   asyncHandler(async (req: Request, res: Response) => {
-    const bingo = await getActiveBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+    const bingo = await getLatestBingo();
+    if (!bingo?.id) return res.status(404).json({ success: false, error: "No bingo found" });
 
     const [rows, sideAccountsByPlayer] = await Promise.all([
       getAllPlayerSnapshots(bingo.id),
@@ -679,13 +724,17 @@ router.delete(
 // Screenshot submissions (Discord ingest review queue)
 // -------------------------------------------------------
 
-// List pending screenshot submissions for the active bingo, each with a
-// short-lived signed URL to the stored image.
+// List pending screenshot submissions for the LATEST bingo, regardless of
+// its status, each with a short-lived signed URL to the stored image
+// (TEAM-BRIEF.md Sprint 15, Track A review-endpoints audit — previously
+// resolved via getActiveBingo(), which returns null once a bingo transitions
+// to 'complete', wrongly hiding pending screenshots exactly when product
+// decision 2 requires them to stay reviewable).
 router.get(
   "/bingo/screenshots/pending",
   asyncHandler(async (req: Request, res: Response) => {
-    const bingo = await getActiveBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+    const bingo = await getLatestBingo();
+    if (!bingo?.id) return res.status(404).json({ success: false, error: "No bingo found" });
 
     const submissions = await getPendingSubmissions(bingo.id);
     const data = await Promise.all(
@@ -713,16 +762,23 @@ router.get(
  * isn't attributed to any one player yet. Same signed-URL/enrichment shape
  * as the pending-queue list above, plus tileTask/teamName so the admin can
  * tell WHAT they're attributing without cross-referencing another page.
+ *
+ * Resolves the LATEST bingo regardless of status, same as
+ * /bingo/screenshots/pending above (TEAM-BRIEF.md Sprint 15, Track A
+ * review-endpoints audit) — tiles are read via getBingoBoardById(bingo.id)
+ * rather than getActiveBingoBoard() for the same reason: the latter
+ * internally re-resolves "the bingo" via getActiveBingo() and would silently
+ * go empty (losing tileTask enrichment) once the bingo completes.
  */
 router.get(
   "/bingo/screenshots/unattributed",
   asyncHandler(async (req: Request, res: Response) => {
-    const bingo = await getActiveBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+    const bingo = await getLatestBingo();
+    if (!bingo?.id) return res.status(404).json({ success: false, error: "No bingo found" });
 
     const [submissions, tiles] = await Promise.all([
       getApprovedSubmissionsMissingAttribution(bingo.id),
-      getActiveBingoBoard(),
+      getBingoBoardById(bingo.id),
     ]);
     const tileTaskById = new Map(tiles.map((t) => [t.id, t.task]));
     const teamNameById = new Map((bingo.teamObjects ?? []).map((t) => [t.id, t.name]));
@@ -936,11 +992,17 @@ router.post(
 // Player stats (overview page) — contract 3
 // -------------------------------------------------------
 
+// Resolves the LATEST bingo regardless of status (TEAM-BRIEF.md Sprint 15,
+// Track A follow-up — tech-lead decision: the overview must show real,
+// live player stats for a completed bingo, not 404 alongside the
+// pending-screenshots banner; frozen 'current' snapshots per D3 still
+// aggregate correctly via getPlayerStats since it has no status dependency
+// of its own).
 router.get(
   "/bingo/player-stats",
   asyncHandler(async (req: Request, res: Response) => {
-    const bingo = await getActiveBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+    const bingo = await getLatestBingo();
+    if (!bingo?.id) return res.status(404).json({ success: false, error: "No bingo found" });
 
     const response: ApiResponse<PlayerStat[]> = {
       success: true,
@@ -966,12 +1028,19 @@ router.get(
  * doesn't map to a hiscore metric, so an admin can see why a tile isn't
  * auto-completing instead of it silently never happening. `data` itself
  * stays `TeamStat[]`, unchanged shape, for existing consumers.
+ *
+ * Resolves the LATEST bingo regardless of status (TEAM-BRIEF.md Sprint 15,
+ * Track A follow-up — same reasoning as /bingo/player-stats above). The
+ * completion engine has no active-status dependency either — it computes
+ * purely from the bingo's tiles/snapshots/submissions by id, so it runs
+ * exactly the same over a completed bingo's frozen (D3) 'current' snapshots
+ * as it does over a live one's.
  */
 router.get(
   "/bingo/team-stats",
   asyncHandler(async (req: Request, res: Response) => {
-    const bingo = await getActiveBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+    const bingo = await getLatestBingo();
+    if (!bingo?.id) return res.status(404).json({ success: false, error: "No bingo found" });
 
     const { teams, unresolvableTiles } = await getTeamStatsWithUnresolvable(bingo.id);
     res.status(200).json({ success: true, data: teams, unresolvableTiles });
