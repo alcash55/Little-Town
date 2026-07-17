@@ -127,6 +127,28 @@ _(Done 2026-07-08: Refresh button now disables and shows a spinner + "Refreshing
 - [x] Pending screenshot = yellow tile on the board for that team only. _(warning-token amber + hourglass badge (non-color cue), "Pending review" chip in the detail dialog; completed wins over pending; other teams and anonymous visitors see nothing.)_
 - Backend 320/0 (int. suite live) + frontend 45/45; QA live-verified every scenario against the local stack incl. dedupe, legacy NULL-attribution invisibility, anonymous board, and real-browser screenshots of yellow/green/plain tiles under production role gating. No migrations — deploy is code-only.
 
+# Sprint 14 hotfixes — shipped 2026-07-17 (Alex-assigned)
+
+- [x] Board showed 3 completed tiles for "gold team rules" while TeamData showed zero progress for every player. _(shipped 2026-07-17 — prod diagnosis found the 3 greens were genuinely that team's (2 trivial-target XP tiles + 1 approved Drops submission); the real defects: (D1) TeamData looked up `skillDeltas[tile.task]` (lowercase) against maps keyed by canonical hiscore names ("Hitpoints") so every KC/XP cell rendered "no progress" — both sides now share `normalizeTaskText`, route-level test pins the exact prod shape; (D2) start snapshots were taken at registration, not activation (giminpain: June 1 baseline for a June 5 bingo) — activation now retakes ALL start snapshots incl. side accounts; (D3) the cron kept updating 'current' snapshots 17 days past end_date — refresh now freezes once end_date passes. Backend 403/0 + frontend tests; QA live-verified D1/D2/D3 independently. No migrations.)_
+- [x] `POST /api/admin/bingo/details` 403 "Unable to send details" + admin pages showing no active bingo. _(shipped 2026-07-17 — the 403 was CORRECT (session was the role=user GuySmoocherTest account); the real bugs were frontend: (1) cross-tab staleness — authToken in shared localStorage but per-tab user state never revalidated, so an admin tab stayed fully interactive after another tab switched accounts, firing requests under the new account's token; a `storage`-event listener now revalidates against /api/auth/me and clears impersonation; (2) BingoDetails/BoardBuilder rendered 401/403 as empty "no bingo" states (also swallowing the "already an active bingo" warning) — new PageLayout `permissionDenied` state; (3) error messages dropped the reason because HTTP/2 has empty statusText — new `describeApiError` includes JSON body + status. 91/91 frontend tests; QA live-verified the two-tab repro, the permission states, and a real submit error end-to-end.)_
+
+# Action items (Alex) — prod, after this deploys
+
+- [ ] Decide what to do with the "yes sir" bingo: it ended 2026-06-30 but is still status='active' (nothing transitions status at end_date). Its 'current' snapshots drifted for 17 days post-end and can't be reconstructed; snapshot writes are frozen from this deploy onward. Until it's closed out, no draft bingo can auto-activate.
+- [ ] The two XP tiles (target 20 XP) on that bingo stay green — baselines are polluted; retake start snapshots via Maintenance if you keep using it, or retire it.
+
+# Sprint 15 candidates — collected during Sprint 14 (2026-07-17)
+
+- **End-of-bingo status lifecycle** (promoted from this sprint's findings): nothing moves a bingo out of 'active' at end_date — `getActiveBingo()` keeps returning it, blocking the next draft's auto-activation, and D3's freeze is a band-aid around it. Decide: auto-complete at end_date, an explicit admin "End bingo" action, or both.
+- Systemic pass: the "empty state masks a 403" pattern still exists in other admin hooks (useBingoOverview's fetches, TeamDrafter, UserInvite, Maintenance) — wire them to PageLayout's new `permissionDenied` prop.
+- `frontend/.env.production` hardcodes the hosted backend URL, so a local `bun run build`/`preview` silently drives REAL PROD — QA caught it pre-browser. Document/guard (e.g. a preview script that forces `VITE_BASEURL`), or CI-only production env.
+- fetchWithAuth-level guard: on 403 with a role-bearing session, force an auth rehydrate — closes the brief async window between another tab's token rotation and this tab's redirect.
+- Cross-tab redirect lands on "Login Required" copy instead of "Access Denied" (ProtectedRoute's reason state doesn't re-evaluate after the second login resolves) — cosmetic, access correctly blocked. ProtectedRoute.tsx ~:44-50.
+- No admin "delete bingo" API route exists (QA had to SQL-delete seeded bingos) — needed for real bingo lifecycle management anyway.
+- `/api/bingo/team-data` (roster block) has no frontend consumer — dead code; wire it up or remove it.
+- `/my-team-data` doc comment describes a stale `playerProgress[rsn][tileIndex]` shape — cleanup.
+- Side-account activation-rebaseline shares the tested code path but has no dedicated integration test — add one if side accounts become a hot path.
+
 # Sprint 14 candidates — collected during Sprint 13 (2026-07-16)
 
 - **`env -u DISCORD_BOT_TOKEN` does NOT protect against the prod bot login** — dotenv refills unset keys from `backend/.env`, so the var must be set to an EMPTY STRING to block it. QA's backend briefly logged in the real bot and ingested 12 real Discord screenshots into the local stack (self-caught, fully cleaned). Extends the still-open Sprint 9 hazard; real fix: get the prod token out of `backend/.env` (env.local pattern) or add a startup guard when NODE_ENV≠production.
