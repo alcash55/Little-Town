@@ -342,6 +342,34 @@ export async function savePlayerSnapshot(
 }
 
 /**
+ * Deletes an existing 'start' snapshot row (if any) so a following
+ * `savePlayerSnapshot(..., "start", ...)` call actually inserts a fresh row
+ * instead of no-op'ing against upsert_player_hiscore_start's insert-if-
+ * absent conflict handling (see that RPC's doc comment above).
+ *
+ * Used ONLY by bingo activation (TEAM-BRIEF.md Sprint 14, D2 fix) — start
+ * snapshots are normally taken once at registration and must never move
+ * again on their own (registration races, mid-bingo claims), but activation
+ * time IS the baseline for the bingo that's about to start, so any start
+ * snapshot predating it (typically taken days earlier at registration) must
+ * be replaced. Not a general-purpose "reset a player" helper — every other
+ * start-snapshot call site (registration, retake-start-snapshots) must keep
+ * using the plain insert-if-absent path untouched.
+ *
+ * Two round trips (delete, then the caller's own insert) rather than one
+ * atomic statement — acceptable here because activation is an infrequent,
+ * effectively-single-writer operation (one admin action or one cron tick,
+ * guarded by uq_bingos_one_active), not a hot concurrent path.
+ */
+export async function clearStartSnapshot(playerId: string, sideAccountId?: string): Promise<void> {
+  const db = getDb();
+  let query = db.from("bingo_player_hiscores").delete().eq("player_id", playerId).eq("type", "start");
+  query = sideAccountId ? query.eq("side_account_id", sideAccountId) : query.is("side_account_id", null);
+  const { error } = await query;
+  if (error) throw new Error(`Failed to clear start snapshot: ${error.message}`);
+}
+
+/**
  * Get both snapshots for a player. Returns null for any that don't exist yet.
  */
 export async function getPlayerSnapshots(playerId: string): Promise<{
