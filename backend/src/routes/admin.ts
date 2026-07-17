@@ -19,7 +19,6 @@ import {
   getActiveBingo,
   getLatestBingo,
   getBingoById,
-  getActiveBingoBoard,
   getBingoBoardById,
   listBingos,
   saveActiveBingoBoard,
@@ -197,12 +196,23 @@ router.put(
   }),
 );
 
+// GET /bingo/board resolves the LATEST bingo regardless of status
+// (TEAM-BRIEF.md Sprint 15, Track A follow-up — tech-lead decision: the
+// overview must be fully functional, including live stats, for a complete
+// bingo, not just its pending-screenshots banner). 404 only when no bingo
+// has ever been created; a bingo with no board yet still returns `data: []`
+// (unchanged) rather than 404, matching the pre-existing BoardBuilder /
+// BingoOverview consumers, which already treat a non-ok response and an
+// empty array identically.
 router.get(
   "/bingo/board",
   asyncHandler(async (req: Request, res: Response) => {
+    const bingo = await getLatestBingo();
+    if (!bingo?.id) return res.status(404).json({ success: false, error: "No bingo found" });
+
     const response: ApiResponse = {
       success: true,
-      data: await getActiveBingoBoard(),
+      data: await getBingoBoardById(bingo.id),
     };
     res.status(200).json(response);
   }),
@@ -403,12 +413,15 @@ router.put(
 // Players
 // -------------------------------------------------------
 
-// Get all players + snapshots for the active bingo
+// Get all players + snapshots for the LATEST bingo, regardless of status
+// (TEAM-BRIEF.md Sprint 15, Track A follow-up — the overview roster must
+// keep showing real data for a completed bingo, not 404 alongside the
+// pending-screenshots banner).
 router.get(
   "/bingo/players",
   asyncHandler(async (req: Request, res: Response) => {
-    const bingo = await getActiveBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+    const bingo = await getLatestBingo();
+    if (!bingo?.id) return res.status(404).json({ success: false, error: "No bingo found" });
 
     const [rows, sideAccountsByPlayer] = await Promise.all([
       getAllPlayerSnapshots(bingo.id),
@@ -979,11 +992,17 @@ router.post(
 // Player stats (overview page) — contract 3
 // -------------------------------------------------------
 
+// Resolves the LATEST bingo regardless of status (TEAM-BRIEF.md Sprint 15,
+// Track A follow-up — tech-lead decision: the overview must show real,
+// live player stats for a completed bingo, not 404 alongside the
+// pending-screenshots banner; frozen 'current' snapshots per D3 still
+// aggregate correctly via getPlayerStats since it has no status dependency
+// of its own).
 router.get(
   "/bingo/player-stats",
   asyncHandler(async (req: Request, res: Response) => {
-    const bingo = await getActiveBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+    const bingo = await getLatestBingo();
+    if (!bingo?.id) return res.status(404).json({ success: false, error: "No bingo found" });
 
     const response: ApiResponse<PlayerStat[]> = {
       success: true,
@@ -1009,12 +1028,19 @@ router.get(
  * doesn't map to a hiscore metric, so an admin can see why a tile isn't
  * auto-completing instead of it silently never happening. `data` itself
  * stays `TeamStat[]`, unchanged shape, for existing consumers.
+ *
+ * Resolves the LATEST bingo regardless of status (TEAM-BRIEF.md Sprint 15,
+ * Track A follow-up — same reasoning as /bingo/player-stats above). The
+ * completion engine has no active-status dependency either — it computes
+ * purely from the bingo's tiles/snapshots/submissions by id, so it runs
+ * exactly the same over a completed bingo's frozen (D3) 'current' snapshots
+ * as it does over a live one's.
  */
 router.get(
   "/bingo/team-stats",
   asyncHandler(async (req: Request, res: Response) => {
-    const bingo = await getActiveBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+    const bingo = await getLatestBingo();
+    if (!bingo?.id) return res.status(404).json({ success: false, error: "No bingo found" });
 
     const { teams, unresolvableTiles } = await getTeamStatsWithUnresolvable(bingo.id);
     res.status(200).json({ success: true, data: teams, unresolvableTiles });

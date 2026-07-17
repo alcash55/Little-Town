@@ -256,4 +256,60 @@ describe.skipIf(!suite)("Review endpoints keep working after a bingo completes (
     expect(res.body.data.status).toBe("pending");
     expect(res.body.data.tile_id).toBe(dropsTileId);
   });
+
+  // -------------------------------------------------------
+  // Tech-lead follow-up (Sprint 15, Track A): the overview must be fully
+  // functional for a complete bingo, not just its screenshot-review corner
+  // — GET /bingo/players, /bingo/board, /bingo/player-stats, and
+  // /bingo/team-stats all previously 404'd via getActiveBingo() once this
+  // fixture's status flipped to 'complete'. By this point in the file, the
+  // "approve WITH playerId" test above has already approved one submission
+  // on dropsTileId (10 points, insertTestTile's default) attributed to
+  // `playerId` — real data these routes must now actually reflect.
+  // -------------------------------------------------------
+
+  test("GET /bingo/players returns the roster for the COMPLETE bingo (previously 404'd via getActiveBingo)", async () => {
+    const res = await getJson("/api/admin/bingo/players", signToken(admin));
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    const row = res.body.data.find((r: { player: { id: string } }) => r.player.id === playerId);
+    expect(row).toBeTruthy();
+    expect(Array.isArray(row.sideAccounts)).toBe(true);
+  });
+
+  test("GET /bingo/board (admin) returns the board tiles for the COMPLETE bingo", async () => {
+    const res = await getJson("/api/admin/bingo/board", signToken(admin));
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.some((t: { id: string }) => t.id === dropsTileId)).toBe(true);
+  });
+
+  test("GET /bingo/player-stats reflects the real approved-and-attributed completion on the COMPLETE bingo", async () => {
+    const res = await getJson("/api/admin/bingo/player-stats", signToken(admin));
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    const stat = res.body.data.find((s: { rsn: string }) => s.rsn.startsWith("ReviewAfterEndPlayer"));
+    expect(stat).toBeTruthy();
+    expect(stat.tilesCompleted).toBe(1);
+    expect(stat.totalPoints).toBe(10);
+  });
+
+  test("GET /bingo/team-stats runs the completion engine fine on a COMPLETE bingo's frozen snapshots and reflects the same completion", async () => {
+    const res = await getJson("/api/admin/bingo/team-stats", signToken(admin));
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.unresolvableTiles)).toBe(true);
+    const teamStat = res.body.data.find((t: { teamId: string }) => t.teamId === team.id);
+    expect(teamStat).toBeTruthy();
+    expect(teamStat.tilesCompleted).toBe(1);
+    expect(teamStat.totalPoints).toBe(10);
+  });
+
+  // NOTE: the "no bingo exists at all -> 404" branch shared by all four
+  // widened handlers above (`if (!bingo?.id) return res.status(404)...`) is
+  // not re-asserted here — this file's shared local stack always has at
+  // least this fixture's bingo present for the suite's duration, and
+  // emptying the whole bingos table isn't safe on a stack other concurrent
+  // integration test files depend on. That exact case (getLatestBingo()
+  // resolving null) is proven in isolation in tests/unit/getLatestBingo.test.ts.
 });
