@@ -5,6 +5,7 @@ import { mapWithConcurrency } from "../lib/concurrency.js";
 import { hiscores } from "./hiscores.js";
 import { checkRsnChange } from "./rsnChangeDetection.js";
 import { snapshotAllSideAccounts } from "./sideAccountSnapshots.js";
+import { completeEndedBingos } from "./bingoLifecycle.js";
 
 const INTERVAL_MS = 20 * 60 * 1000; // 20 minutes
 
@@ -168,6 +169,15 @@ async function autoActivateDueBingos(): Promise<void> {
 
 async function tick(): Promise<void> {
   try {
+    // Lifecycle check runs FIRST (TEAM-BRIEF.md Sprint 15, Track A item 1):
+    // flips any active bingo whose end_date has passed to 'complete' before
+    // this tick tries to activate a due draft (freeing up
+    // `uq_bingos_one_active`'s single active slot in the same tick, not the
+    // next one) or refresh snapshots (which already no-ops once
+    // getActiveBingo() stops returning the now-'complete' bingo — see
+    // isBingoPastEnd's doc comment for the belt-and-braces D3 freeze this
+    // sits alongside).
+    await completeEndedBingos();
     await autoActivateDueBingos();
     await refreshAllPlayerSnapshots();
   } catch (e) {
