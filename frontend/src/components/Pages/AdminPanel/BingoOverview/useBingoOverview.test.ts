@@ -189,3 +189,137 @@ describe('useBingoOverview — unresolvable tiles warning (TEAM-BRIEF.md Sprint 
     expect(result.current.unresolvableTiles).toEqual([]);
   });
 });
+
+// TEAM-BRIEF.md Sprint 15, Track A item 3 (frozen contract) / Track B item
+// 1: GET /bingo/details stays active|draft-only, so a just-completed bingo
+// reports `data: null` there same as "nothing has ever been created" — the
+// overview now falls back to GET /bingo/latest to tell the two apart, and
+// derives the "Bingo ended with N screenshots awaiting review" banner
+// (decision 4a) straight from its own `pendingScreenshots` count.
+describe('useBingoOverview — /bingo/latest fallback and ended-banner logic (TEAM-BRIEF.md Sprint 15)', () => {
+  it('falls back to /bingo/latest when /bingo/details has no active/draft bingo, resolving a completed bingo, its teams, and the ended-banner count', async () => {
+    installRouter({
+      '/bingo/details': { data: null },
+      '/bingo/latest': {
+        data: {
+          bingo: {
+            id: 'bingo-9',
+            name: 'Ended Bingo',
+            status: 'complete',
+            startDate: '2026-06-01T00:00:00.000Z',
+            endDate: '2026-06-30T00:00:00.000Z',
+            boardSize: 16,
+            teams: ['A', 'B'],
+            tasks: [],
+            teamObjects: [
+              { id: 't1', name: 'A', sortOrder: 1 },
+              { id: 't2', name: 'B', sortOrder: 0 },
+            ],
+          },
+          pendingScreenshots: 3,
+        },
+      },
+    });
+
+    const { result } = renderHook(() => useBingoOverview());
+    await vi.waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.bingo?.id).toBe('bingo-9');
+    expect(result.current.isComplete).toBe(true);
+    expect(result.current.latestPendingCount).toBe(3);
+    // Sorted by sortOrder, not insertion order.
+    expect(result.current.teams.map((t) => t.name)).toEqual(['B', 'A']);
+    expect(result.current.permissionDenied).toBe(false);
+  });
+
+  it('reports latestPendingCount 0 (no banner) for an active bingo — /latest is never consulted', async () => {
+    installRouter();
+
+    const { result } = renderHook(() => useBingoOverview());
+    await vi.waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.isComplete).toBe(false);
+    expect(result.current.latestPendingCount).toBe(0);
+    expect(callCountFor('/bingo/latest')).toBe(0);
+  });
+
+  it('resolves bingo: null via /bingo/latest as "genuinely never created", not an error state', async () => {
+    installRouter({
+      '/bingo/details': { data: null },
+      '/bingo/latest': { data: { bingo: null, pendingScreenshots: 0 } },
+    });
+
+    const { result } = renderHook(() => useBingoOverview());
+    await vi.waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.bingo).toBeNull();
+    expect(result.current.error).toBeNull();
+    expect(result.current.permissionDenied).toBe(false);
+  });
+
+  it('surfaces permissionDenied on a 403 from /bingo/details without falling through to the empty-state copy', async () => {
+    installRouter();
+    // installRouter's jsonResponse helper always returns 200 — override just
+    // /bingo/details here to a real 403, mirroring the raw-mockImplementation
+    // pattern used above for team-stats' 500 case.
+    mockedFetchWithAuth.mockImplementation(async (url: string) => {
+      if (url.includes('/bingo/details')) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
+      }
+      return jsonResponse({ data: [] });
+    });
+
+    const { result } = renderHook(() => useBingoOverview());
+    await vi.waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.permissionDenied).toBe(true);
+    expect(result.current.bingo).toBeNull();
+    // Permission-denied short-circuits before /bingo/latest is ever hit.
+    expect(callCountFor('/bingo/latest')).toBe(0);
+  });
+
+  // Mid-flight contract update from the lead (Sprint 15): player-stats,
+  // team-stats, players, and the admin board endpoint resolve via the
+  // latest bingo regardless of status now — a complete bingo must show its
+  // full final KPIs/points-by-team/player table, not a reduced "ended"
+  // overview. This hook never gated those fetches on isActive/isComplete in
+  // the first place (they're called unconditionally in the initial-load
+  // effect below), so this just proves that stays true once /bingo/details
+  // resolves to null and the bingo comes from /bingo/latest instead.
+  it('still fetches player-stats/team-stats/players/board normally for a completed bingo — no reduced overview', async () => {
+    installRouter({
+      '/bingo/details': { data: null },
+      '/bingo/latest': {
+        data: {
+          bingo: {
+            id: 'bingo-9',
+            name: 'Ended Bingo',
+            status: 'complete',
+            endDate: '2026-06-30T00:00:00.000Z',
+            teamObjects: [],
+          },
+          pendingScreenshots: 1,
+        },
+      },
+      '/bingo/player-stats': {
+        data: [
+          { rsn: 'Zezima', teamName: 'A', tilesCompleted: 4, totalPoints: 80, lastSeen: null, sideAccounts: [], rsnStale: false, rsnStaleSince: null },
+        ],
+      },
+      '/bingo/team-stats': {
+        data: [{ teamId: 't1', teamName: 'A', tilesCompleted: 4, totalPoints: 80, unattributedTiles: 0, unattributedPoints: 0 }],
+      },
+    });
+
+    const { result } = renderHook(() => useBingoOverview());
+    await vi.waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.isComplete).toBe(true);
+    expect(result.current.playerStats).toHaveLength(1);
+    expect(result.current.teamStats).toHaveLength(1);
+    expect(callCountFor('/bingo/player-stats')).toBeGreaterThan(0);
+    expect(callCountFor('/bingo/team-stats')).toBeGreaterThan(0);
+    expect(callCountFor('/bingo/players')).toBeGreaterThan(0);
+    expect(callCountFor('/bingo/board')).toBeGreaterThan(0);
+  });
+});

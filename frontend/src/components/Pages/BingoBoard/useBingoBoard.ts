@@ -56,8 +56,21 @@ export interface BingoBoardTeam {
   name: string;
 }
 
+// TEAM-BRIEF.md Sprint 15, Track A item 4 (frozen contract): when no bingo is
+// active but the most recent one is status='complete', GET /api/bingo/board
+// additively returns `{ active: false, ended: { name, endDate } }` instead
+// of the bare `{ active: false }` it always used to — anonymous-safe
+// (name+endDate only, no team data), so the public board can say "the bingo
+// has ended" instead of implying none ever existed. Optional: a caller on
+// today's pre-Sprint-15 backend, or a genuine "no bingo has ever run" case,
+// still gets the bare shape (no `ended` key).
+export interface BingoBoardEnded {
+  name: string;
+  endDate: string;
+}
+
 export type BingoBoardState =
-  | { active: false }
+  | { active: false; ended?: BingoBoardEnded }
   | {
       active: true;
       bingo: BingoBoardInfo;
