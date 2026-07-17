@@ -101,9 +101,17 @@ export async function ingestMessage(message: Message): Promise<void> {
 
   const bingo = await getActiveBingo();
   if (!bingo?.id || bingo.status !== "active") {
+    // No active bingo — covers both "ended" (status flipped to complete by
+    // the lifecycle service) and "none at all" (TEAM-BRIEF.md Sprint 15,
+    // Track A product decision 3). Refusal must be VISIBLE, not a silent
+    // drop: react ❌ on the original message (same best-effort,
+    // never-throws pattern as the 👍/👎 approve/deny reactions below) and
+    // log loudly. No submission row is ever created for a refused message.
     console.warn(
-      `[discordScreenshots] No active bingo — skipping screenshot from message ${message.id}.`,
+      `[discordScreenshots] Refusing screenshot from message ${message.id} (author ${message.author.tag}) — ` +
+        `no active bingo (reacting ❌).`,
     );
+    await reactToSubmissionMessage(message.id, "❌");
     return;
   }
   const bingoId = bingo.id;
@@ -264,9 +272,11 @@ export function stopDiscordScreenshotService(): void {
 
 /**
  * Best-effort reaction on the original Discord message for a reviewed
- * submission (👍 on approve, 👎 on deny). No-ops if the service isn't
- * running; swallows errors (deleted message/channel, missing permissions,
- * etc.) since a failed reaction must never block the review itself.
+ * submission (👍 on approve, 👎 on deny) — or, as of TEAM-BRIEF.md Sprint 15,
+ * ❌ on `ingestMessage`'s own no-active-bingo refusal (product decision 3;
+ * see the call site above). No-ops if the service isn't running; swallows
+ * errors (deleted message/channel, missing permissions, etc.) since a failed
+ * reaction must never block the review — or the refusal — itself.
  *
  * IMPORTANT — this is the ONLY reaction-related behavior this service has.
  * It is strictly OUTBOUND (bot -> Discord, after a human approves/denies via
@@ -292,7 +302,7 @@ export function stopDiscordScreenshotService(): void {
  */
 export async function reactToSubmissionMessage(
   discordMessageId: string,
-  emoji: "👍" | "👎",
+  emoji: "👍" | "👎" | "❌",
 ): Promise<void> {
   const channelId = process.env.DISCORD_SCREENSHOT_CHANNEL_ID;
   if (!client || !channelId) return;
@@ -308,5 +318,40 @@ export async function reactToSubmissionMessage(
     await message.react(emoji);
   } catch (e) {
     console.warn(`[discordScreenshots] Best-effort reaction failed for message ${realMessageId}:`, e);
+  }
+}
+
+/**
+ * Posts ONE message to the configured screenshots channel when the lifecycle
+ * service (services/bingoLifecycle.ts) auto-completes a bingo that still has
+ * pending submissions (TEAM-BRIEF.md Sprint 15, Track A product decision 4b).
+ * No-ops cleanly — never throws — when the bot isn't configured/running
+ * (`client`/`channelId` unset), same "skip cleanly" contract as every other
+ * Discord touchpoint in this service.
+ *
+ * Idempotency is NOT this function's job: it always sends when called. The
+ * "only once per transition" guarantee comes from the CALLER — bingoLifecycle
+ * only calls this at the moment it flips a bingo active -> complete (a
+ * one-way, race-guarded transition that can only happen once per bingo), not
+ * on every cron tick. See that module's doc comment.
+ */
+export async function notifyBingoEndedWithPendingScreenshots(
+  bingoName: string,
+  pendingCount: number,
+): Promise<void> {
+  const channelId = process.env.DISCORD_SCREENSHOT_CHANNEL_ID;
+  if (!client || !channelId) return;
+
+  try {
+    const channel = await client.channels.fetch(channelId);
+    if (!channel || !channel.isTextBased() || !channel.isSendable()) return;
+    await channel.send(
+      `${bingoName} has ended — ${pendingCount} screenshot${pendingCount === 1 ? "" : "s"} still need review.`,
+    );
+  } catch (e) {
+    console.warn(
+      `[discordScreenshots] Best-effort bingo-ended notification failed for "${bingoName}":`,
+      e,
+    );
   }
 }

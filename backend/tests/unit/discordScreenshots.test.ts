@@ -1,4 +1,4 @@
-import { describe, test, expect, mock, beforeEach } from "bun:test";
+import { describe, test, expect, mock, beforeEach, spyOn } from "bun:test";
 import type { Attachment, Message } from "discord.js";
 
 // -------------------------------------------------------
@@ -34,7 +34,9 @@ mock.module("../../src/db/client.js", () => ({
 // Imported dynamically *after* the mocks above are registered, so
 // discordScreenshots.js resolves the mocked db modules rather than the real
 // ones (which would throw on a missing SUPABASE_URL).
-const { ingestMessage } = await import("../../src/services/discordScreenshots.js");
+const { ingestMessage, reactToSubmissionMessage, notifyBingoEndedWithPendingScreenshots } = await import(
+  "../../src/services/discordScreenshots.js"
+);
 
 // -------------------------------------------------------
 // Fixtures
@@ -207,5 +209,94 @@ describe("ingestMessage — imgur link ingestion", () => {
 
     expect(getActiveBingoMock).not.toHaveBeenCalled();
     expect(insertPendingSubmissionMock).not.toHaveBeenCalled();
+  });
+});
+
+// -------------------------------------------------------
+// Ingestion refusal when there is no active bingo (TEAM-BRIEF.md Sprint 15,
+// Track A product decision 3: "ended" and "none" both covered by the same
+// `!bingo?.id || bingo.status !== "active"` check that already gated the
+// no-active-bingo case pre-Sprint-15 — this sprint's change is the ❌
+// react + louder log on top of it, not the gate itself). The bot is never
+// started in this test file (no client/channelId configured), so
+// reactToSubmissionMessage's own Discord call is guaranteed to no-op
+// (`if (!client || !channelId) return;`) without needing a live token —
+// these tests assert the OBSERVABLE refusal behavior instead: no submission
+// row is ever created, and the refusal is logged loudly (visible, not a
+// silent drop, per decision 3).
+// -------------------------------------------------------
+
+describe("ingestMessage — refuses when there is no active bingo (Sprint 15, Track A decision 3)", () => {
+  test("no bingo at all (getActiveBingo resolves null) -> refuses, logs loudly, no submission created", async () => {
+    getActiveBingoMock.mockImplementationOnce(async () => null as unknown as { id: string; status: string });
+    const warnSpy = spyOn(console, "warn");
+    const message = makeMessage({
+      id: "msg-refuse-1",
+      attachments: [{ id: "att-r1", name: "shot.png", url: "https://cdn.example.com/attachment.png", contentType: "image/png" }],
+    });
+
+    await ingestMessage(message);
+
+    expect(insertPendingSubmissionMock).not.toHaveBeenCalled();
+    expect(uploadMock).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalled();
+    const loggedRefusal = warnSpy.mock.calls.some((call) =>
+      call.some((arg) => typeof arg === "string" && /refusing/i.test(arg) && /no active bingo/i.test(arg)),
+    );
+    expect(loggedRefusal).toBe(true);
+    warnSpy.mockRestore();
+  });
+
+  test("bingo exists but is still a draft (not yet active) -> refuses the same way", async () => {
+    getActiveBingoMock.mockImplementationOnce(async () => ({ id: "bingo-draft", status: "draft" }));
+    const message = makeMessage({
+      id: "msg-refuse-2",
+      content: "https://imgur.com/refuse01",
+    });
+
+    await ingestMessage(message);
+
+    expect(insertPendingSubmissionMock).not.toHaveBeenCalled();
+  });
+
+  test("bingo exists but has already transitioned to 'complete' (post-lifecycle-flip) -> refuses", async () => {
+    getActiveBingoMock.mockImplementationOnce(async () => ({ id: "bingo-complete", status: "complete" }));
+    const message = makeMessage({
+      id: "msg-refuse-3",
+      attachments: [{ id: "att-r3", name: "shot.png", url: "https://cdn.example.com/attachment.png", contentType: "image/png" }],
+    });
+
+    await ingestMessage(message);
+
+    expect(insertPendingSubmissionMock).not.toHaveBeenCalled();
+  });
+
+  test("regression: an active bingo still ingests normally (refusal doesn't leak into the happy path)", async () => {
+    getActiveBingoMock.mockImplementationOnce(async () => ({ id: "bingo-1", status: "active" }));
+    const message = makeMessage({ id: "msg-accept-1", content: "https://imgur.com/accept01" });
+
+    await ingestMessage(message);
+
+    expect(insertPendingSubmissionMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+// -------------------------------------------------------
+// reactToSubmissionMessage / notifyBingoEndedWithPendingScreenshots — both
+// must skip cleanly (never throw) when the bot isn't configured/running, the
+// contract every Discord touchpoint in this service shares. Neither is
+// started in this file, so `client` stays null throughout — exactly the
+// "unconfigured" case.
+// -------------------------------------------------------
+
+describe("Discord notification helpers skip cleanly when the bot isn't configured", () => {
+  test("reactToSubmissionMessage('❌') never throws when the bot isn't running", async () => {
+    await expect(reactToSubmissionMessage("some-message-id", "❌")).resolves.toBeUndefined();
+  });
+
+  test("notifyBingoEndedWithPendingScreenshots never throws when the bot isn't running (skipped cleanly)", async () => {
+    await expect(
+      notifyBingoEndedWithPendingScreenshots("Test Bingo", 3),
+    ).resolves.toBeUndefined();
   });
 });
