@@ -2,6 +2,7 @@ import { alpha } from '@mui/material/styles';
 import { Alert, Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
 import SyncIcon from '@mui/icons-material/Sync';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
+import EventBusyIcon from '@mui/icons-material/EventBusy';
 import PageLayout from '../../../../layout/PageLayout/PageLayout';
 import { textSecondary } from '../TeamDrafter/teamDrafterStyles';
 import { appColors } from '../../../../layout/Theme';
@@ -9,12 +10,16 @@ import { useScreenshotSubmission } from './useScreenshotSubmission';
 import { ScreenshotCard } from './ScreenshotCard';
 import { UnattributedCard } from './UnattributedCard';
 
+const fmt = (iso: string | null | undefined) =>
+  iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+
 const ScreenshotSubmission = () => {
   const {
     pending,
     unattributed,
     unattributedError,
     dismissUnattributedError,
+    bingo,
     teams,
     players,
     tileOptions,
@@ -83,6 +88,20 @@ const ScreenshotSubmission = () => {
         here are for <strong>Drops</strong> tiles only, and approving one now requires picking
         the player who got the drop.
       </Alert>
+
+      {/* ── Ended-bingo context line (TEAM-BRIEF.md Sprint 15, Track B item
+          2): the bingo this page resolved via /bingo/latest is complete —
+          say so up front, since an admin landing here after the transition
+          would otherwise have no way to tell a "just ended" review queue
+          apart from an active one. Decision 2: pending submissions remain
+          fully reviewable after completion, so the approve/deny flow below
+          is otherwise unchanged. ── */}
+      {bingo?.status === 'complete' && (
+        <Alert severity="warning" icon={<EventBusyIcon />} sx={{ width: '100%' }}>
+          <strong>{bingo.name}</strong> ended {fmt(bingo.endDate)} — resolve the remaining
+          screenshots below.
+        </Alert>
+      )}
 
       <Box
         sx={{

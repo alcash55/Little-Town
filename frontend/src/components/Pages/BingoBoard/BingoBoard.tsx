@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { Alert, Box, Button, Stack, Typography } from '@mui/material';
 import GridViewIcon from '@mui/icons-material/GridView';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import PageLayout from '../../../layout/PageLayout/PageLayout';
 import { appColors } from '../../../layout/Theme';
 import { useBingoBoard } from './useBingoBoard';
@@ -80,6 +81,39 @@ const BingoBoard = () => {
   }
 
   if (!board?.active) {
+    // TEAM-BRIEF.md Sprint 15, Track A item 4 / Track B item 3: the
+    // additive `ended` field distinguishes "this bingo just finished" from
+    // "no bingo has ever run" — a real, sourced distinction (name+endDate),
+    // not a fake-empty state. Anonymous-safe: no team data leaks here.
+    if (board?.ended) {
+      const { name, endDate } = board.ended;
+      const endedLabel = endDate
+        ? new Date(endDate).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+        : null;
+      return (
+        <PageLayout title="Bingo Board" align="center">
+          <Stack
+            spacing={1.5}
+            sx={{
+              alignItems: 'center',
+              textAlign: 'center',
+              width: '100%',
+              py: 4,
+              color: appColors.textSecondary,
+            }}
+          >
+            <EmojiEventsIcon sx={{ fontSize: 48, color: appColors.mutedText }} />
+            <Typography variant="h6">
+              {name} has ended{endedLabel ? ` ${endedLabel}` : ''}
+            </Typography>
+            <Typography variant="body2" sx={{ color: appColors.textSecondary, maxWidth: 420 }}>
+              Check back once the next bingo kicks off.
+            </Typography>
+          </Stack>
+        </PageLayout>
+      );
+    }
+
     return (
       <PageLayout title="Bingo Board" align="center">
         <Stack
