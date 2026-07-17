@@ -14,6 +14,7 @@ import onboardingRoutes from "./routes/onboarding.js";
 import { startStaticDataCron, stopStaticDataCron, refreshStaticData } from "./services/staticDataCron.js";
 import { startPlayerSnapshotCron, stopPlayerSnapshotCron } from "./services/playerSnapshotCron.js";
 import { startDiscordScreenshotService, stopDiscordScreenshotService } from "./services/discordScreenshots.js";
+import { completeEndedBingos } from "./services/bingoLifecycle.js";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -142,8 +143,24 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/api/health`);
   startStaticDataCron();
-  startPlayerSnapshotCron();
+  // Discord service is started BEFORE the boot-time lifecycle check below so
+  // a bingo that ended while this instance was asleep (Render free-tier
+  // instances sleep after inactivity) has the best chance of its one-time
+  // "still N pending" notification (product decision 4b) actually reaching
+  // the channel — the notification is still best-effort/skips cleanly if the
+  // bot isn't configured or hasn't finished logging in yet.
   startDiscordScreenshotService();
+  // Boot-time lifecycle check (TEAM-BRIEF.md Sprint 15, Track A item 1):
+  // completeEndedBingos() also runs on every startPlayerSnapshotCron() tick
+  // (including that cron's own immediate first tick), but a dedicated,
+  // independently-testable call here means a bingo that ended hours ago on a
+  // sleeping instance is closed out the moment this instance wakes, not
+  // "eventually, whenever the cron machinery gets to it." Idempotent —
+  // running again moments later via the cron's first tick is a no-op.
+  completeEndedBingos().catch((e) =>
+    console.error("[bingoLifecycle] Boot-time lifecycle check failed:", e),
+  );
+  startPlayerSnapshotCron();
 });
 
 // Graceful shutdown

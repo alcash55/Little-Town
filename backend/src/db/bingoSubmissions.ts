@@ -98,6 +98,24 @@ export async function getPendingSubmissions(bingoId: string): Promise<BingoSubmi
 }
 
 /**
+ * Count-only variant of getPendingSubmissions (TEAM-BRIEF.md Sprint 15,
+ * Track A) — feeds GET /api/admin/bingo/latest's `pendingScreenshots` and
+ * the lifecycle service's "still has pending submissions at transition time"
+ * check, neither of which need the full rows. `head: true` skips returning
+ * any rows at all, just the count.
+ */
+export async function countPendingSubmissions(bingoId: string): Promise<number> {
+  const { count, error } = await getDb()
+    .from("bingo_submissions")
+    .select("id", { count: "exact", head: true })
+    .eq("bingo_id", bingoId)
+    .eq("status", "pending");
+
+  if (error) throw new Error(`Failed to count pending submissions: ${error.message}`);
+  return count ?? 0;
+}
+
+/**
  * Approved submissions with NO player attribution, oldest-approved first —
  * the admin-facing worklist for the backfill path (bug-report investigation,
  * H1). Feeds GET /bingo/screenshots/unattributed, which the ScreenshotSubmission

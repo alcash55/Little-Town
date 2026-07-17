@@ -84,6 +84,28 @@ export async function getBingoById(id: string): Promise<BingoConfig | null> {
   return data ? mapBingo(data) : null;
 }
 
+/**
+ * The single most-recently-created bingo, REGARDLESS of status (draft,
+ * active, complete, or archived) — null only when no bingo has ever been
+ * created. Frozen contract (TEAM-BRIEF.md Sprint 15, Track A):
+ * `GET /api/admin/bingo/latest` is how the overview + screenshot-review
+ * pages resolve "the bingo" now that a bingo can legitimately be
+ * status='complete' (getActiveBingo()'s active/draft-only definition would
+ * wrongly return null for a just-ended bingo whose leftover pending
+ * screenshots still need review). Deliberately does NOT filter by status at
+ * all, unlike getActiveBingo() above — that's the whole point of this
+ * function existing as a separate query rather than widening getActiveBingo.
+ */
+export async function getLatestBingo(): Promise<BingoConfig | null> {
+  const { data, error } = await bingoWithTeamsQuery()
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data ? mapBingo(data) : null;
+}
+
 export async function saveBingoDetails(input: {
   name: string;
   start?: string;
@@ -227,14 +249,19 @@ export async function getDueDraftBingos(): Promise<BingoConfig[]> {
   return (data ?? []).map((row) => mapBingo(row));
 }
 
-export async function getActiveBingoBoard(): Promise<Tile[]> {
-  const bingo = await getActiveBingo();
-  if (!bingo?.id) return [];
-
+/**
+ * Board tiles for an explicit bingo id, regardless of that bingo's status.
+ * Extracted from getActiveBingoBoard() below (TEAM-BRIEF.md Sprint 15, Track
+ * A review-endpoints audit) so callers that must keep working after a bingo
+ * completes — e.g. GET /bingo/screenshots/unattributed's tile-task lookup —
+ * aren't forced through getActiveBingo()'s active/draft-only resolution just
+ * to read tile metadata.
+ */
+export async function getBingoBoardById(bingoId: string): Promise<Tile[]> {
   const { data, error } = await getDb()
     .from("bingo_board_tiles")
     .select("id, type, task, points, target_value, metadata")
-    .eq("bingo_id", bingo.id)
+    .eq("bingo_id", bingoId)
     .order("position", { ascending: true });
 
   if (error) throw new Error(error.message);
@@ -255,4 +282,10 @@ export async function getActiveBingoBoard(): Promise<Tile[]> {
     points: row.points,
     target_value: row.target_value ?? null,
   }));
+}
+
+export async function getActiveBingoBoard(): Promise<Tile[]> {
+  const bingo = await getActiveBingo();
+  if (!bingo?.id) return [];
+  return getBingoBoardById(bingo.id);
 }

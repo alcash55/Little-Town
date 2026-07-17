@@ -150,17 +150,24 @@ afterAll(async () => {
 describe.skipIf(!suite)("GET /api/bingo/board", () => {
   let plainUser: TestUser;
 
-  test("no active bingo -> 200 { active: false } (bare object, no other fields)", async () => {
+  // TEAM-BRIEF.md Sprint 15, Track A: `ended` is now an ADDITIVE, optional
+  // field alongside `active: false` (see tests/integration/bingo-board-ended.test.ts
+  // for its dedicated contract coverage) — asserting `body.active === false`
+  // here rather than strict `toEqual({ active: false })` on the whole body,
+  // since the shared local stack may legitimately have SOME other bingo
+  // whose most-recent status is 'complete' at the moment this runs (not
+  // this test's concern; it only asserts "no bingo is currently active").
+  test("no active bingo -> 200, active: false", async () => {
     plainUser = await insertTestUser("user");
     const { status, body } = await request("/api/bingo/board", signToken(plainUser));
     expect(status).toBe(200);
-    expect(body).toEqual({ active: false });
+    expect(body.active).toBe(false);
   });
 
-  test("no active bingo, anonymous caller -> 200 { active: false }, never 401", async () => {
+  test("no active bingo, anonymous caller -> 200, active: false, never 401", async () => {
     const { status, body } = await request("/api/bingo/board");
     expect(status).toBe(200);
-    expect(body).toEqual({ active: false });
+    expect(body.active).toBe(false);
   });
 
   describe("with an active bingo", () => {
