@@ -151,6 +151,8 @@ const BoardBuilder = () => {
     boardSize,
     submitted,
     submitError,
+    permissionDenied,
+    loadError,
     isTileValid,
     isBoardComplete,
     isExistingBoard,
@@ -182,7 +184,8 @@ const BoardBuilder = () => {
       maxWidth="full"
       showExistingWarning={isExistingBoard}
       warningMessage="A board already exists. Submitting will overwrite it."
-      error={submitError}
+      permissionDenied={permissionDenied}
+      error={submitError ?? loadError}
       submitted={submitted}
       successMessage={isExistingBoard ? 'Board updated!' : 'Board created!'}
     >
