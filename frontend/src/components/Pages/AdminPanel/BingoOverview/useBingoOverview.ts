@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { fetchWithAuth } from '../../../../utils/fetchWithAuth';
+import { describeApiError } from '../../../../utils/apiError';
 import { BingoConfig } from '../BingoDetails/useBingoDetails';
 import { BingoTeam, BingoPlayer } from '../TeamDrafter/useTeamDrafter';
 import { Tile } from '../BoardBuilder/useBoardBuilder';
@@ -87,6 +88,20 @@ export type PlayerConflict = {
   severity: 'low' | 'high';
 };
 
+// TEAM-BRIEF.md Sprint 15, Track A item 3 (frozen contract): GET
+// /api/admin/bingo/latest -> { success, data: { bingo: BingoConfig | null,
+// pendingScreenshots: number } } — the most recent bingo REGARDLESS of
+// status (draft/active/complete/archived; null only if none exist ever),
+// plus its pending-submission count. This is how the overview resolves "the
+// bingo" once it's gone complete, since GET /bingo/details stays
+// active|draft-only by contract (item 26) and would otherwise report null —
+// indistinguishable from "no bingo has ever been created" — for a bingo
+// that just ended.
+type LatestBingoResponse = {
+  bingo: (BingoConfig & { teamObjects?: BingoTeam[] }) | null;
+  pendingScreenshots: number;
+};
+
 export const useBingoOverview = () => {
   const [bingo, setBingo] = useState<BingoConfig | null>(null);
   const [teams, setTeams] = useState<BingoTeam[]>([]);
@@ -104,6 +119,20 @@ export const useBingoOverview = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // True when the gating GET (bingo details / latest) 401/403'd — distinct
+  // from "no bingo has been set up yet" so the page shows a permission-denied
+  // state instead of an empty page that invites re-entering setup (same
+  // pattern as BingoDetails/BoardBuilder — bug-report investigation, prod
+  // incident).
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  // TEAM-BRIEF.md Sprint 15, Track A item 3 / decision 4a: pendingScreenshots
+  // count straight from GET /bingo/latest, used ONLY to drive the
+  // "Bingo ended with N screenshots awaiting review" banner below — distinct
+  // from `pendingScreenshots` (the full submission list from
+  // /bingo/screenshots/pending, which already works for any bingo status per
+  // Track A's review-endpoint audit) so the ended-banner's count reflects the
+  // frozen contract's own field rather than a second derived source.
+  const [latestPendingCount, setLatestPendingCount] = useState(0);
 
   // Tracks the active bingo id across renders without re-subscribing the poll
   // effect below every time `bingo` changes.
@@ -124,19 +153,14 @@ export const useBingoOverview = () => {
   const [refreshStatsMessage, setRefreshStatsMessage] = useState<string | null>(null);
 
   const isActive = bingo?.status === 'active';
-  const isPlanned = bingo?.status === 'planned' || (bingo && bingo.status !== 'active' && bingo.status !== 'complete');
+  const isComplete = bingo?.status === 'complete';
+  const isPlanned =
+    bingo?.status === 'planned' ||
+    (!!bingo && bingo.status !== 'active' && bingo.status !== 'complete' && bingo.status !== 'archived');
   const endNameMatches = endConfirmName.trim().toLowerCase() === (bingo?.name ?? '').trim().toLowerCase();
 
-  const fetchBingo = useCallback(async (): Promise<BingoConfig | null> => {
-    try {
-      const res = await fetchWithAuth(`${BASE_URL}/bingo/details`);
-      if (!res.ok) { setBingo(null); bingoIdRef.current = null; return null; }
-      const json = await res.json();
-      // The bingo details response also carries `teamObjects` (backend
-      // src/types/index.ts) — not part of the frontend BingoConfig type
-      // (pre-existing gap, unrelated to this ticket's scope), so it's read
-      // via a locally-widened type rather than `any`.
-      const data: (BingoConfig & { teamObjects?: BingoTeam[] }) | null = json.data ?? null;
+  const applyBingoData = useCallback(
+    (data: (BingoConfig & { teamObjects?: BingoTeam[] }) | null) => {
       setBingo(data);
       bingoIdRef.current = data?.id ?? null;
       if (data?.teamObjects) {
@@ -144,12 +168,81 @@ export const useBingoOverview = () => {
           [...data.teamObjects].sort((a: BingoTeam, b: BingoTeam) => a.sortOrder - b.sortOrder),
         );
       }
-      return data;
+    },
+    [],
+  );
+
+  // TEAM-BRIEF.md Sprint 15, Track A item 3 (frozen contract): GET
+  // /bingo/latest. Resolves "the bingo" once GET /bingo/details reports null
+  // (either a just-completed bingo, or genuinely none ever created — the
+  // response's `bingo` field distinguishes the two).
+  const fetchLatest = useCallback(async (): Promise<BingoConfig | null> => {
+    try {
+      const res = await fetchWithAuth(`${BASE_URL}/bingo/latest`);
+      if (!res.ok) {
+        const info = await describeApiError(res, 'Failed to load bingo status');
+        if (info.isPermissionError) {
+          setPermissionDenied(true);
+        } else {
+          setError(info.message);
+        }
+        applyBingoData(null);
+        setLatestPendingCount(0);
+        return null;
+      }
+      setPermissionDenied(false);
+      const json = await res.json();
+      const data: LatestBingoResponse | null = json.data ?? null;
+      applyBingoData(data?.bingo ?? null);
+      setLatestPendingCount(typeof data?.pendingScreenshots === 'number' ? data.pendingScreenshots : 0);
+      return data?.bingo ?? null;
+    } catch {
+      setError('Failed to load bingo status.');
+      return null;
+    }
+  }, [applyBingoData]);
+
+  const fetchBingo = useCallback(async (): Promise<BingoConfig | null> => {
+    try {
+      const res = await fetchWithAuth(`${BASE_URL}/bingo/details`);
+      if (!res.ok) {
+        const info = await describeApiError(res, 'Failed to load bingo details');
+        if (info.isPermissionError) {
+          setPermissionDenied(true);
+          applyBingoData(null);
+          return null;
+        }
+        if (res.status !== 404) {
+          setError(info.message);
+          applyBingoData(null);
+          return null;
+        }
+        // Unexpected 404 for this endpoint — still worth checking /latest.
+        return await fetchLatest();
+      }
+      setPermissionDenied(false);
+      const json = await res.json();
+      // The bingo details response also carries `teamObjects` (backend
+      // src/types/index.ts) — not part of the frontend BingoConfig type
+      // (pre-existing gap, unrelated to this ticket's scope), so it's read
+      // via a locally-widened type rather than `any`.
+      const data: (BingoConfig & { teamObjects?: BingoTeam[] }) | null = json.data ?? null;
+      if (data) {
+        applyBingoData(data);
+        setLatestPendingCount(0);
+        return data;
+      }
+      // No active/draft bingo — /bingo/details is active|draft-only by
+      // contract, so a just-completed bingo also reports null here. Fall
+      // back to /bingo/latest so the overview can tell "just ended" apart
+      // from "nothing has ever been created" instead of always rendering
+      // the pre-Sprint-15 empty state.
+      return await fetchLatest();
     } catch (e) {
       setError('Failed to load bingo details.');
       return null;
     }
-  }, []);
+  }, [applyBingoData, fetchLatest]);
 
   const fetchPlayersAndBoard = useCallback(async () => {
     try {
@@ -428,8 +521,11 @@ export const useBingoOverview = () => {
     conflictsError,
     loading,
     error,
+    permissionDenied,
     isActive,
+    isComplete,
     isPlanned,
+    latestPendingCount,
     // Start now
     startingNow,
     startError,

@@ -31,7 +31,12 @@ function installRouter(overrides: Record<string, Response | (() => Response)> = 
   const defaults: Record<string, unknown> = {
     '/bingo/screenshots/pending': { data: [] },
     '/bingo/screenshots/unattributed': { data: [] },
-    '/bingo/details': { data: { teamObjects: [] } },
+    // TEAM-BRIEF.md Sprint 15, Track B item 2: resolved via /bingo/latest
+    // now, not /bingo/details — see useScreenshotSubmission's
+    // fetchTeamsAndBoard doc comment.
+    '/bingo/latest': {
+      data: { bingo: { name: 'Test Bingo', status: 'active', endDate: '2026-07-30T00:00:00.000Z', teamObjects: [] }, pendingScreenshots: 0 },
+    },
     '/bingo/board': { data: [] },
     '/bingo/players': { data: [] },
   };
@@ -272,5 +277,74 @@ describe('useScreenshotSubmission — approve requires player (TEAM-BRIEF.md Spr
 
     expect(approveBody).toEqual({ tileId: 'tile-1', teamId: 'team-1', playerId: 'player-1' });
     expect(result.current.pending).toEqual([]);
+  });
+});
+
+// TEAM-BRIEF.md Sprint 15, Track A item 3 (frozen contract) / Track B item
+// 2: this page now resolves its bingo (and team picker) via /bingo/latest
+// instead of /bingo/details, so review keeps working — and the "ended"
+// context line has something to render from — after the bingo completes.
+describe('useScreenshotSubmission — /bingo/latest consumption (TEAM-BRIEF.md Sprint 15)', () => {
+  it('resolves the bingo and its teams from /bingo/latest for a completed bingo', async () => {
+    installRouter({
+      '/bingo/latest': jsonResponse(200, {
+        data: {
+          bingo: {
+            id: 'bingo-9',
+            name: 'Ended Bingo',
+            status: 'complete',
+            endDate: '2026-06-30T00:00:00.000Z',
+            teamObjects: [{ id: 't1', name: 'Team A', sortOrder: 0 }],
+          },
+          pendingScreenshots: 2,
+        },
+      }),
+    });
+
+    const { result } = renderHook(() => useScreenshotSubmission());
+    await vi.waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.bingo).toEqual({
+      id: 'bingo-9',
+      name: 'Ended Bingo',
+      status: 'complete',
+      endDate: '2026-06-30T00:00:00.000Z',
+    });
+    expect(result.current.teams.map((t) => t.name)).toEqual(['Team A']);
+  });
+
+  it('resolves bingo: null when /bingo/latest reports no bingo has ever been created', async () => {
+    installRouter({
+      '/bingo/latest': jsonResponse(200, { data: { bingo: null, pendingScreenshots: 0 } }),
+    });
+
+    const { result } = renderHook(() => useScreenshotSubmission());
+    await vi.waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.bingo).toBeNull();
+    expect(result.current.teams).toEqual([]);
+  });
+
+  it('a subsequent refresh() re-resolves /bingo/latest, e.g. after the bingo transitions to complete mid-session', async () => {
+    let status = 'active';
+    installRouter({
+      '/bingo/latest': () =>
+        jsonResponse(200, {
+          data: {
+            bingo: { id: 'bingo-9', name: 'Test Bingo', status, endDate: '2026-06-30T00:00:00.000Z', teamObjects: [] },
+            pendingScreenshots: 0,
+          },
+        }),
+    });
+
+    const { result } = renderHook(() => useScreenshotSubmission());
+    await vi.waitFor(() => expect(result.current.bingo?.status).toBe('active'));
+
+    status = 'complete';
+    await act(async () => {
+      await result.current.refresh();
+    });
+
+    expect(result.current.bingo?.status).toBe('complete');
   });
 });

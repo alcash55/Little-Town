@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchWithAuth } from '../../../../utils/fetchWithAuth';
 import { BingoPlayer, BingoTeam } from '../TeamDrafter/useTeamDrafter';
 import { Tile } from '../BoardBuilder/useBoardBuilder';
+import { BingoConfig } from '../BingoDetails/useBingoDetails';
 
 const BASE_URL = `${import.meta.env.VITE_BASEURL || 'http://localhost:8081'}/api/admin`;
 
@@ -66,6 +67,24 @@ export type UnattributedSubmission = {
 
 type ReviewAction = 'approve' | 'deny';
 
+/**
+ * TEAM-BRIEF.md Sprint 15, Track A item 3 (frozen contract): GET
+ * /api/admin/bingo/latest -> { success, data: { bingo: BingoConfig | null,
+ * pendingScreenshots } }. This page resolves its bingo via /latest (not
+ * /bingo/details, which stays active|draft-only) so pending review keeps
+ * working after the bingo has ended — decision 2: "Pending submissions
+ * survive the transition and remain fully reviewable ... after the bingo is
+ * complete." Only the fields this page actually renders/needs are kept in
+ * local state (name/status/endDate for the "ended" context line, teamObjects
+ * for the team picker).
+ */
+export type ReviewBingoContext = {
+  id?: string;
+  name: string;
+  status?: string;
+  endDate: string;
+};
+
 const omitKey = <T,>(map: Record<string, T>, key: string): Record<string, T> => {
   const next = { ...map };
   delete next[key];
@@ -78,6 +97,8 @@ export const useScreenshotSubmission = () => {
   const [board, setBoard] = useState<BoardTile[]>([]);
   const [teams, setTeams] = useState<BingoTeam[]>([]);
   const [players, setPlayers] = useState<BingoPlayer[]>([]);
+  /** Resolved via /bingo/latest — see ReviewBingoContext's doc comment. */
+  const [bingo, setBingo] = useState<ReviewBingoContext | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -156,20 +177,37 @@ export const useScreenshotSubmission = () => {
 
   const fetchTeamsAndBoard = useCallback(async () => {
     try {
-      const [detailsRes, boardRes] = await Promise.all([
-        fetchWithAuth(`${BASE_URL}/bingo/details`),
+      // TEAM-BRIEF.md Sprint 15, Track B item 2: resolve via /bingo/latest
+      // (frozen contract, item 3) instead of /bingo/details, so the team
+      // picker keeps populating once the bingo is complete — /bingo/details
+      // stays active|draft-only and would otherwise go quietly empty right
+      // when review-after-end needs it most.
+      const [latestRes, boardRes] = await Promise.all([
+        fetchWithAuth(`${BASE_URL}/bingo/latest`),
         fetchWithAuth(`${BASE_URL}/bingo/board`),
       ]);
-      if (detailsRes.ok) {
-        const json = await detailsRes.json();
-        const teamObjects: BingoTeam[] = json.data?.teamObjects ?? [];
+      if (latestRes.ok) {
+        const json = await latestRes.json();
+        const latestBingo: (BingoConfig & { teamObjects?: BingoTeam[] }) | null =
+          json.data?.bingo ?? null;
+        setBingo(
+          latestBingo
+            ? {
+                id: latestBingo.id,
+                name: latestBingo.name,
+                status: latestBingo.status,
+                endDate: latestBingo.endDate,
+              }
+            : null,
+        );
+        const teamObjects: BingoTeam[] = latestBingo?.teamObjects ?? [];
         setTeams([...teamObjects].sort((a, b) => a.sortOrder - b.sortOrder));
       }
       if (boardRes.ok) {
         const json = await boardRes.json();
         setBoard(Array.isArray(json.data) ? json.data : []);
       }
-      if (!detailsRes.ok && !boardRes.ok) {
+      if (!latestRes.ok && !boardRes.ok) {
         throw new Error('Failed to load teams and board.');
       }
       setTeamsBoardError(null);
@@ -370,6 +408,7 @@ export const useScreenshotSubmission = () => {
     unattributed,
     unattributedError,
     dismissUnattributedError,
+    bingo,
     teams,
     players,
     tileOptions,
