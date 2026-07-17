@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { protect, authorize, optionalAuth } from "../middleware/auth.js";
 import { ApiResponse } from "../types/index.js";
-import { getActiveBingo, getActiveBingoBoard } from "../db/bingos.js";
+import { getActiveBingo, getActiveBingoBoard, getLatestBingo } from "../db/bingos.js";
 import { getAllPlayerSnapshots, resolveMyBingoPlayer } from "../db/players.js";
 import {
   buildDropStatusByRsn,
@@ -70,6 +70,19 @@ const router = Router();
  * still-PENDING submission has been tagged (PATCH .../tag — see
  * routes/admin.ts) with this tile + my team, so the board can render a
  * yellow "awaiting review" cue before an admin has approved/denied it.
+ *
+ * `ended` (NEW, TEAM-BRIEF.md Sprint 15, Track A — ADDITIVE, optional field;
+ * every field/shape above is unchanged): when there's no active bingo but
+ * the most recently-created bingo has status='complete' (the lifecycle
+ * service's auto-completion — services/bingoLifecycle.ts), the response is
+ * `{ active: false, ended: { name, endDate } }` instead of the bare
+ * `{ active: false }`, so the public board can distinguish "this bingo has
+ * ended" from "no bingo has ever existed". Anonymous-safe by construction —
+ * name + endDate only, sourced from getLatestBingo() which carries no
+ * team/player data to begin with. Absent entirely (not `ended: null`) for
+ * every other case: no bingo at all, or the most recent bingo is still
+ * draft (matches the pre-existing bare `{ active: false }` contract for
+ * every caller that isn't tracking this new field).
  */
 router.get(
   "/board",
@@ -77,6 +90,13 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const bingo = await getActiveBingo();
     if (!bingo?.id || bingo.status !== "active") {
+      const latest = await getLatestBingo();
+      if (latest?.status === "complete") {
+        return res.status(200).json({
+          active: false,
+          ended: { name: latest.name, endDate: latest.endDate },
+        });
+      }
       return res.status(200).json({ active: false });
     }
 
