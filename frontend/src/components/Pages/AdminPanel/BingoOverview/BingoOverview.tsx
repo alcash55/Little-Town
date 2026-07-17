@@ -236,7 +236,10 @@ const BingoOverview = () => {
     conflictsError,
     loading,
     error,
+    permissionDenied,
+    isComplete,
     isPlanned,
+    latestPendingCount,
     startingNow,
     startError,
     startNow,
@@ -271,6 +274,16 @@ const BingoOverview = () => {
       <PageLayout title="Bingo Overview" align="center">
         <CircularProgress sx={{ color: appColors.accent }} />
       </PageLayout>
+    );
+  }
+
+  // Permission-denied takes precedence over both the error and empty states
+  // below — the caller can't see the answer either way, so don't let the
+  // page render as if there's definitely no bingo (same pattern as
+  // BingoDetails/BoardBuilder — bug-report investigation, prod incident).
+  if (permissionDenied) {
+    return (
+      <PageLayout title="Bingo Overview" align="center" permissionDenied />
     );
   }
 
@@ -425,6 +438,33 @@ const BingoOverview = () => {
           {refreshStatsMessage}
         </Alert>
       )}
+      {/* ── Bingo-ended-with-pending-screenshots banner (TEAM-BRIEF.md Sprint
+          15, decision 4a): the lifecycle check completes a bingo without
+          waiting on its pending submissions (decision 2) — this is the
+          in-app half of the resulting notification, sourced from GET
+          /bingo/latest's own `pendingScreenshots` count (not the
+          /screenshots/pending list below, which is a separate fetch), and
+          persists until that count hits 0. Icon + bold copy give it a
+          non-color cue distinct from the info/warning alerts below, since
+          this is the most actionable state a completed bingo can be in. ── */}
+      {isComplete && latestPendingCount > 0 && (
+        <Alert
+          severity="warning"
+          variant="filled"
+          icon={<WarningAmberIcon />}
+          action={
+            <Button size="small" color="inherit" href="/AdminPanel/ScreenshotSubmission">
+              Review
+            </Button>
+          }
+          sx={{ width: '100%' }}
+        >
+          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+            Bingo ended with {latestPendingCount} screenshot{latestPendingCount > 1 ? 's' : ''} awaiting
+            review
+          </Typography>
+        </Alert>
+      )}
       {/* ── Pending screenshots alert — Drops-specific copy (TEAM-BRIEF.md
           Sprint 13, Track B item 3): the only screenshots left in this flow
           are Drops-tile submissions, KC/XP tiles auto-verify from the
@@ -564,20 +604,35 @@ const BingoOverview = () => {
         <PlayerStatsTable playerStats={playerStats} />
       </Section>
 
-      {/* ── Time remaining ── */}
-      <Card sx={{ width: '100%' }}>
-        <CardContent>
-          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 2 }}>
-            <AccessTimeIcon sx={{ color: appColors.accent }} />
-            <Typography variant="h3" sx={{ fontSize: 18 }}>
-              Time Remaining
-            </Typography>
-          </Stack>
-          <Countdown targetDate={endDateObj} label="" />
-        </CardContent>
-      </Card>
+      {/* ── Time remaining (active) / ended notice (complete) — a completed
+          bingo has nothing left to count down to, and "End Bingo Early" no
+          longer applies (TEAM-BRIEF.md Sprint 15 Track B item 1: "fully
+          functional for a complete bingo", not still showing active-only
+          affordances). ── */}
+      {isComplete ? (
+        <Card sx={{ width: '100%' }}>
+          <CardContent>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+              <AccessTimeIcon sx={{ color: appColors.accent }} />
+              <Typography variant="body1">This bingo ended {fmt(bingo.endDate)}.</Typography>
+            </Stack>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card sx={{ width: '100%' }}>
+          <CardContent>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 2 }}>
+              <AccessTimeIcon sx={{ color: appColors.accent }} />
+              <Typography variant="h3" sx={{ fontSize: 18 }}>
+                Time Remaining
+              </Typography>
+            </Stack>
+            <Countdown targetDate={endDateObj} label="" />
+          </CardContent>
+        </Card>
+      )}
 
-      {/* ── End bingo button ── */}
+      {/* ── Refresh stats / end bingo controls ── */}
       <Stack direction="row" spacing={2} sx={{ alignSelf: 'flex-end' }}>
         <Button
           variant="outlined"
@@ -598,9 +653,11 @@ const BingoOverview = () => {
         >
           {refreshingStats ? 'Refreshing…' : 'Refresh Player Stats'}
         </Button>
-        <Button variant="outlined" color="error" onClick={() => setEndDialogOpen(true)}>
-          End Bingo Early
-        </Button>
+        {!isComplete && (
+          <Button variant="outlined" color="error" onClick={() => setEndDialogOpen(true)}>
+            End Bingo Early
+          </Button>
+        )}
       </Stack>
 
       {/* ── End bingo confirmation dialog ── */}
