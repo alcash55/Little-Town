@@ -132,14 +132,32 @@ _(Done 2026-07-08: Refresh button now disables and shows a spinner + "Refreshing
 - [x] Board showed 3 completed tiles for "gold team rules" while TeamData showed zero progress for every player. _(shipped 2026-07-17 — prod diagnosis found the 3 greens were genuinely that team's (2 trivial-target XP tiles + 1 approved Drops submission); the real defects: (D1) TeamData looked up `skillDeltas[tile.task]` (lowercase) against maps keyed by canonical hiscore names ("Hitpoints") so every KC/XP cell rendered "no progress" — both sides now share `normalizeTaskText`, route-level test pins the exact prod shape; (D2) start snapshots were taken at registration, not activation (giminpain: June 1 baseline for a June 5 bingo) — activation now retakes ALL start snapshots incl. side accounts; (D3) the cron kept updating 'current' snapshots 17 days past end_date — refresh now freezes once end_date passes. Backend 403/0 + frontend tests; QA live-verified D1/D2/D3 independently. No migrations.)_
 - [x] `POST /api/admin/bingo/details` 403 "Unable to send details" + admin pages showing no active bingo. _(shipped 2026-07-17 — the 403 was CORRECT (session was the role=user GuySmoocherTest account); the real bugs were frontend: (1) cross-tab staleness — authToken in shared localStorage but per-tab user state never revalidated, so an admin tab stayed fully interactive after another tab switched accounts, firing requests under the new account's token; a `storage`-event listener now revalidates against /api/auth/me and clears impersonation; (2) BingoDetails/BoardBuilder rendered 401/403 as empty "no bingo" states (also swallowing the "already an active bingo" warning) — new PageLayout `permissionDenied` state; (3) error messages dropped the reason because HTTP/2 has empty statusText — new `describeApiError` includes JSON body + status. 91/91 frontend tests; QA live-verified the two-tab repro, the permission states, and a real submit error end-to-end.)_
 
-# Action items (Alex) — prod, after this deploys
+# Sprint 15 — shipped 2026-07-17 (Alex-assigned: bingos must actually END)
 
-- [ ] Decide what to do with the "yes sir" bingo: it ended 2026-06-30 but is still status='active' (nothing transitions status at end_date). Its 'current' snapshots drifted for 17 days post-end and can't be reconstructed; snapshot writes are frozen from this deploy onward. Until it's closed out, no draft bingo can auto-activate.
-- [ ] The two XP tiles (target 20 XP) on that bingo stay green — baselines are polluted; retake start snapshots via Maintenance if you keep using it, or retire it.
+- [x] Auto-complete at end_date: new `services/bingoLifecycle.ts` — idempotent, race-guarded active→complete transition on every cron tick AND at server boot, loudly logged. Resolves the "yes sir" blocker: prod flipped to complete (early, see note below) and QA proved a fresh draft can be created + activated afterward.
+- [x] No new screenshots after end: Discord ingestion refuses when no status='active' bingo exists — ❌ reaction on the message + loud log, never a silent drop.
+- [x] Pending screenshots survive the end and stay fully reviewable: review endpoints (pending list, unattributed worklist, approve/deny/tag) work on a complete bingo; approve still 422s without playerId. Admin notification: one-time Discord message at transition when pending>0 (mock-tested only) + persistent overview banner ("Bingo ended with N screenshots awaiting review" → Review link) until the count hits 0.
+- [x] New `GET /api/admin/bingo/latest` (any-status resolution + pendingScreenshots count); player-stats/team-stats/players/admin-board widened to the latest bingo so a completed bingo's overview shows FULL final stats, not a fake-empty view. Public board renders "<name> has ended <date>" (anonymous-safe) instead of implying no bingo ever existed.
+- Backend 441/0 + frontend 101/101; QA live end-to-end: boot transition + idempotent second boot, banner count 2→1→0 through real approve/deny, ended board state, Sprint 13/14 regressions intact. No migrations.
+- **Prod note (2026-07-17):** "yes sir" was completed EARLY by Alex's local `bun run dev` backend — nodemon hot-reloaded the freshly merged lifecycle code and ran the boot check against prod via backend/.env (the standing hazard, now proven to WRITE). Outcome was the intended one (bingo ended; 5 pending screenshots await review via the new banner post-deploy), but the path was unsafe — see the env-file item below.
+
+# Action items (Alex) — prod
+
+- [ ] Review the 5 pending screenshots on "yes sir" via /AdminPanel/ScreenshotSubmission once this deploys (the overview banner will nag until they're resolved).
+- [ ] Check the Discord screenshots channel for the bot's "yes sir has ended — 5 screenshots still need review" message (may have fired from the local dev backend when it hot-reloaded the lifecycle code).
+- [ ] **Close/re-point the backend `bun run dev` terminal using backend/.env** — it has prod DB creds + the live Discord token and hot-reloads whatever lands on main straight into prod.
+
+# Sprint 16 candidates — collected during Sprint 15 (2026-07-17)
+
+- **Get prod credentials out of `backend/.env`** (root fix for two incidents now: the QA Discord-bot login and the dev-terminal prod write). Move to `.env.production`-style separation or `.env.local` + example file; make `bun run dev` default to the local stack.
+- Boot-time Discord notification can silently miss if the bot client hasn't finished logging in when a sleeping instance closes out a bingo at startup — best-effort today; revisit if it matters in prod.
+- Onboarding wizard modal pops over admin pages for accounts created via direct DB insert (no onboarding record) — QA hit it with a seeded admin; confirm intended for real admin accounts.
+- "No bingo has ever existed" board branch was verified by tests/code, not live-in-browser (needs a throwaway stack for a truly empty-DB Playwright pass).
+- No isolation helper for `getLatestBingo()`-based integration tests (parallel runs against the shared stack are theoretically racy — same class as the existing `hasPreexistingActiveBingo()` guard).
 
 # Sprint 15 candidates — collected during Sprint 14 (2026-07-17)
 
-- **End-of-bingo status lifecycle** (promoted from this sprint's findings): nothing moves a bingo out of 'active' at end_date — `getActiveBingo()` keeps returning it, blocking the next draft's auto-activation, and D3's freeze is a band-aid around it. Decide: auto-complete at end_date, an explicit admin "End bingo" action, or both.
+- [x] ~~**End-of-bingo status lifecycle**~~ _(shipped in Sprint 15 above — auto-complete at end_date; an explicit admin "End bingo early" button remains unbuilt if ever wanted)_
 - Systemic pass: the "empty state masks a 403" pattern still exists in other admin hooks (useBingoOverview's fetches, TeamDrafter, UserInvite, Maintenance) — wire them to PageLayout's new `permissionDenied` prop.
 - `frontend/.env.production` hardcodes the hosted backend URL, so a local `bun run build`/`preview` silently drives REAL PROD — QA caught it pre-browser. Document/guard (e.g. a preview script that forces `VITE_BASEURL`), or CI-only production env.
 - fetchWithAuth-level guard: on 403 with a role-bearing session, force an auth rehydrate — closes the brief async window between another tab's token rotation and this tab's redirect.
