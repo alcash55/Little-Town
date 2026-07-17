@@ -8,6 +8,22 @@ import { PlayerRow, TileInfo } from './useTeamData';
 export const fmtDate = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 
+/**
+ * Mirrors backend/src/services/completionEngine.ts's `normalizeTaskText`
+ * exactly (trim -> lowercase -> collapse internal whitespace) — copied, not
+ * imported, so backend code never ships in the frontend bundle. D1 fix
+ * (TEAM-BRIEF.md Sprint 14): `skillDeltas`/`activityDeltas` from
+ * GET /my-team-data are now keyed by this same normalized form (see that
+ * route's handler), while `tile.task` (bingo_board_tiles.task) is stored
+ * lowercase but NOT whitespace-collapsed — normalizing both sides here is
+ * what makes the lookup below match regardless of which side happens to
+ * already be "clean". A future rename of either side's convention breaks
+ * this pairing loudly (see this file's test suite's keying-contract test).
+ */
+export function normalizeTaskText(s: string): string {
+  return s.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
 export function fmtProgress(val: number, type: TileInfo['type']): string {
   if (type === 'Experience') {
     if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(2)}m xp`;
@@ -66,10 +82,19 @@ export function getTileCell(tile: TileInfo, player: PlayerRow): TileCellData {
     return { state: 'none', label: '—', detail: `${tile.task}: no submission yet` };
   }
 
+  // D1 fix (TEAM-BRIEF.md Sprint 14): look up by the normalized task text,
+  // matching how GET /my-team-data now keys skillDeltas/activityDeltas
+  // (backend/src/routes/bingo.ts) — tile.task is stored lowercase
+  // ("hitpoints") while the hiscore API's canonical name is real-cased
+  // ("Hitpoints"); a raw `player.skillDeltas[tile.task]` lookup missed on
+  // that casing difference for every KC/XP tile, which is the exact prod
+  // repro (giminpain's Hitpoints/Prayer XP never showing in TeamData
+  // despite genuinely completing those tiles on the board).
+  const normalizedTask = normalizeTaskText(tile.task);
   const val =
     tile.type === 'Experience'
-      ? player.skillDeltas[tile.task] ?? 0
-      : player.activityDeltas[tile.task] ?? 0;
+      ? player.skillDeltas[normalizedTask] ?? 0
+      : player.activityDeltas[normalizedTask] ?? 0;
 
   if (!val) {
     return { state: 'none', label: '—', detail: `${tile.task}: no progress yet` };

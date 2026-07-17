@@ -12,10 +12,41 @@ let cronTimer: ReturnType<typeof setTimeout> | null = null;
 let stopped = false;
 
 /**
+ * True once a bingo's end_date has passed. Pure/exported so it's directly
+ * unit-testable without a DB round trip.
+ *
+ * D3 fix (TEAM-BRIEF.md Sprint 14): bingo.status stays 'active' past
+ * end_date until an admin (or a future dedicated cron) explicitly closes it
+ * out — nothing today flips it automatically — so status alone can't gate
+ * "is this bingo's scoring window still open". `endDate` is a date/
+ * timestamp string compared lexically against `now.toISOString()`, the same
+ * comparison style db/bingos.ts's getDueDraftBingos already uses for
+ * start_date.
+ */
+export function isBingoPastEnd(endDate: string | null | undefined, now: Date = new Date()): boolean {
+  if (!endDate) return false;
+  const end = new Date(endDate);
+  if (Number.isNaN(end.getTime())) return false;
+  return end.getTime() < now.getTime();
+}
+
+/**
  * Fetches the latest hiscores for every player in the active bingo (and, as
  * a separate capped phase, every one of their side accounts) and saves them
  * as 'current' snapshots. Called by the cron and by the manual "Refresh
  * Stats" button via the admin API.
+ *
+ * D3 fix (TEAM-BRIEF.md Sprint 14): skips entirely (no 'current' writes at
+ * all, main or side) once the active bingo's end_date has passed — freezing
+ * 'current' at whatever it was on end_date instead of letting it keep
+ * drifting forever (prod history showed 20-minute ticks still running 17
+ * days after end_date, so gains earned AFTER the bingo ended kept completing
+ * tiles). Completion math (services/completionEngine.ts) must reflect gains
+ * within the bingo's actual window, not whatever happened afterward while
+ * status hadn't been flipped off 'active' yet. Retroactive repair of
+ * 'current' rows already polluted by post-end-date ticks is impossible — no
+ * per-metric history exists to reconstruct "gains as of end_date" after the
+ * fact — and is explicitly out of scope for this fix.
  *
  * Side accounts only ever get a 'current' refresh here, never 'start' —
  * same as main accounts, whose 'start' snapshot is only ever taken once, at
@@ -31,6 +62,14 @@ export async function refreshAllPlayerSnapshots(): Promise<{
 }> {
   const bingo = await getActiveBingo();
   if (!bingo?.id || bingo.status !== "active") {
+    return { succeeded: 0, failed: [] };
+  }
+
+  if (isBingoPastEnd(bingo.endDate)) {
+    console.log(
+      `[playerSnapshotCron] Skipping snapshot refresh — bingo "${bingo.name}" ended ${bingo.endDate}; ` +
+        "'current' snapshots stay frozen at their end-of-bingo values.",
+    );
     return { succeeded: 0, failed: [] };
   }
 

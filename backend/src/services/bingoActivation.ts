@@ -1,5 +1,5 @@
 import { activateBingo } from "../db/bingos.js";
-import { getBingoPlayers, savePlayerSnapshot, BingoPlayer } from "../db/players.js";
+import { getBingoPlayers, savePlayerSnapshot, clearStartSnapshot, BingoPlayer } from "../db/players.js";
 import { mapWithConcurrency, HISCORE_CONCURRENCY } from "../lib/concurrency.js";
 import { hiscores } from "./hiscores.js";
 import { checkRsnChange, RsnChangeSource } from "./rsnChangeDetection.js";
@@ -30,8 +30,21 @@ export interface PlayerSnapshotResult {
  * `savePlayerSnapshot(..., "start", ...)` only ever writes once per account
  * (see db/players.ts), so calling this again for the same players — e.g. the
  * retake-start-snapshots admin route retrying just the ones still missing a
- * start snapshot — is idempotent: accounts that already succeeded are simply
- * re-confirmed ("start" untouched, "current" refreshed).
+ * start snapshot — is idempotent by default: accounts that already
+ * succeeded are simply re-confirmed ("start" untouched, "current"
+ * refreshed).
+ *
+ * `retakeExisting` (TEAM-BRIEF.md Sprint 14, D2 fix; default false) flips
+ * that: when true, any EXISTING start snapshot is cleared first
+ * (db/players.ts's clearStartSnapshot) so this call's fresh hiscore fetch
+ * becomes the new baseline instead of being ignored. Set by bingo
+ * activation ONLY (both manual and cron auto-activation, via
+ * takeActivationSnapshots below) — activation time IS the baseline for the
+ * bingo about to start, so a start snapshot taken earlier at registration
+ * (which can predate activation by days) must be replaced, not preserved.
+ * retake-start-snapshots (routes/admin.ts) must keep the default
+ * (false) — it exists to fill in snapshots that failed during activation,
+ * not to move an already-correct baseline.
  *
  * A failed side-account lookup never fails the parent player's own
  * main-account outcome — `failed`/`succeeded` only ever reflect main
@@ -40,6 +53,7 @@ export interface PlayerSnapshotResult {
 export async function snapshotStartAndCurrent(
   players: BingoPlayer[],
   source: RsnChangeSource,
+  retakeExisting = false,
 ): Promise<{
   succeeded: number;
   failed: string[];
@@ -61,7 +75,9 @@ export async function snapshotStartAndCurrent(
         `Player "${player.rsn}" is not ranked on the OSRS hiscores — ensure the RSN is correct and the account has played enough to appear on the hiscores`,
       );
     }
-    // start is idempotent — won't overwrite if already exists
+    // start is insert-if-absent by default; retakeExisting (activation
+    // only) clears any pre-existing start row first so it's replaced.
+    if (retakeExisting) await clearStartSnapshot(player.id);
     await savePlayerSnapshot(player.id, "start", effectiveData);
     await savePlayerSnapshot(player.id, "current", effectiveData);
     return rsnCheck.renamed ? rsnCheck.newRsn! : player.rsn;
@@ -73,8 +89,11 @@ export async function snapshotStartAndCurrent(
 
   // Separate phase, strictly after the main-account pass above — keeps peak
   // in-flight OSRS requests capped at HISCORE_CONCURRENCY at any instant
-  // rather than adding a second concurrent pool on top.
-  const sideResults = await snapshotAllSideAccounts(players, ["start", "current"], source);
+  // rather than adding a second concurrent pool on top. Side accounts get
+  // the same retakeExisting treatment as their parent — they feed the same
+  // team-total math (services/completionEngine.ts), so an activation must
+  // rebaseline them too, not just the primary account.
+  const sideResults = await snapshotAllSideAccounts(players, ["start", "current"], source, retakeExisting);
 
   return { succeeded, failed, results, sideResults };
 }
@@ -90,7 +109,10 @@ export async function takeActivationSnapshots(
   sideResults: SideSnapshotResult[];
 }> {
   const players = await getBingoPlayers(bingoId);
-  return snapshotStartAndCurrent(players, source);
+  // retakeExisting: true — see snapshotStartAndCurrent's doc comment.
+  // Activation is the only call site that should ever move an existing
+  // start baseline.
+  return snapshotStartAndCurrent(players, source, true);
 }
 
 function toPlayerSnapshotResults(
