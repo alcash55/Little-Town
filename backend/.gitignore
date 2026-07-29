@@ -20,6 +20,7 @@ scripts/out/
 *.local
 .env.local.generated
 .env
+.env.production
 credentials.json
 
 # Editor directories and files
