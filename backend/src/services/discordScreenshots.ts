@@ -209,8 +209,26 @@ async function backfillChannel(channel: TextBasedChannel): Promise<void> {
  * and DISCORD_SCREENSHOT_CHANNEL_ID are optional — if either is unset this
  * logs a single warning and does not start (the admin review API still
  * works against whatever submissions already exist).
+ *
+ * TEAM-BRIEF.md Sprint 16, Track A item A4: this used to log in the real
+ * shared bot on every local start (open since Sprint 9), causing duplicate
+ * gateway logins and, in Sprint 14, real ingestion into a local stack. It
+ * now requires an explicit opt-in (`DISCORD_ENABLED=true`) outside
+ * production. This is a POSITIVE flag check, not an absent-token check —
+ * `env -u DISCORD_BOT_TOKEN` does not work as a way to disable this, because
+ * dotenv refills unset keys from `.env` (Sprint 14 finding).
  */
 export function startDiscordScreenshotService(): void {
+  const discordEnabled = process.env.DISCORD_ENABLED === "true" || process.env.NODE_ENV === "production";
+
+  if (!discordEnabled) {
+    console.warn(
+      "[discordScreenshots] DISCORD_ENABLED is not 'true' (and NODE_ENV isn't production) — " +
+        "Discord screenshot ingest disabled for this run. Set DISCORD_ENABLED=true to opt in locally.",
+    );
+    return;
+  }
+
   const token = process.env.DISCORD_BOT_TOKEN;
   const channelId = process.env.DISCORD_SCREENSHOT_CHANNEL_ID;
 
