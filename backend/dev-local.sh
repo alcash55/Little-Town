@@ -13,8 +13,8 @@ for arg in "$@"; do
     --help|-h)
       cat <<'HELP'
 Usage:
-  bash scripts/dev-local.sh          Start Supabase, export local env, build, and run API
-  bash scripts/dev-local.sh --reset  Also reset local DB and apply migrations first
+  bash dev-local.sh          Start Supabase, export local env, build, and run API
+  bash dev-local.sh --reset  Also reset local DB and apply migrations first
 
 Run this from WSL. Docker Desktop must be running with WSL integration enabled.
 This script never overwrites an existing .env file.
@@ -68,8 +68,8 @@ if [ ! -d node_modules ]; then
 fi
 
 if [ ! -f .env ]; then
-  echo "Creating .env from env.example..."
-  cp env.example .env
+  echo "Creating .env from .env.example..."
+  cp .env.example .env
 else
   echo "Keeping existing .env unchanged."
 fi
@@ -143,4 +143,6 @@ open a new tab and paste the Studio URL manually instead of reloading the error 
 Starting backend...
 INFO
 
-npm run dev
+# `npm run dev:raw` (not `dev`) — `dev` now runs this script by default
+# (TEAM-BRIEF.md Sprint 16, Track A item A2); calling it here would recurse.
+npm run dev:raw
