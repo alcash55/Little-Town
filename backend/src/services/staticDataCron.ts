@@ -1,4 +1,4 @@
-import scrapeWiki from "./scrapeWiki.js";
+import { fetchHiscoreVocab } from "./hiscoreVocab.js";
 import { upsertStaticData, getStaticDataUpdatedAt } from "../db/staticData.js";
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -7,23 +7,38 @@ let cronTimer: ReturnType<typeof setTimeout> | null = null;
 let stopped = false;
 
 /**
- * Scrapes skills and activities from the wiki and saves them to the DB.
+ * Fetches the authoritative skill/activity vocabulary from the real OSRS
+ * hiscores API (TEAM-BRIEF.md Sprint 16, Track B — "one vocabulary, not
+ * two") and saves it to the DB. If the probe lookup fails (network/hiscores
+ * outage), this deliberately does NOT fall back to a different source —
+ * there is no other source that's guaranteed to agree with what
+ * completionEngine.ts matches tile task text against, which is the exact
+ * two-vocabularies problem this sprint closes. Previously-served data (if
+ * any) is left in place and a loud error is logged; the next cron tick
+ * retries.
  */
 export async function refreshStaticData(): Promise<void> {
   console.log("[staticDataCron] Refreshing static data...");
 
-  const results = await Promise.allSettled([
-    scrapeWiki("skills", { bypassCache: true }).then((data) => upsertStaticData("skills", data)),
-    scrapeWiki("activities", { bypassCache: true }).then((data) => upsertStaticData("activities", data)),
-  ]);
-
-  for (const result of results) {
-    if (result.status === "rejected") {
-      console.error("[staticDataCron] Error during refresh:", result.reason);
+  try {
+    const vocab = await fetchHiscoreVocab();
+    const results = await Promise.allSettled([
+      upsertStaticData("skills", vocab.skills),
+      upsertStaticData("activities", vocab.activities),
+    ]);
+    for (const result of results) {
+      if (result.status === "rejected") {
+        console.error("[staticDataCron] Error during refresh:", result.reason);
+      }
     }
+    console.log("[staticDataCron] Refresh complete.");
+  } catch (e) {
+    console.error(
+      "[staticDataCron] Authoritative hiscores vocabulary probe failed — keeping previously-served " +
+        "data in place rather than serving anything not sourced from the real hiscores API:",
+      e,
+    );
   }
-
-  console.log("[staticDataCron] Refresh complete.");
 }
 
 /**
