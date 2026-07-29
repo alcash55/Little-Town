@@ -34,8 +34,15 @@ accounts, snapshot refresh — that aren't listed above either.)
 ### `hiscores.ts`
 OSRS hiscores routes at `/api/hiscores`:
 - `GET /:player` — fetch live hiscore data for a player from the OSRS API
-- `GET /skills/list` — scrape the RuneScape wiki for the current list of skills
-- `GET /activities/list` — scrape the RuneScape wiki for the current list of activities
+- `GET /skills/list` — the current list of skills (bare JSON array; 503 until populated)
+- `GET /activities/list` — the current list of activities (same shape)
+
+  Both read `osrs_static_data`, which `staticDataCron.ts` populates from the real
+  hiscores API via `services/hiscoreVocab.ts` (Sprint 16, Track B). They deliberately
+  serve the SAME vocabulary `completionEngine.ts` matches tile task text against, so a
+  name the Board Builder can offer is always a name that can resolve. This previously
+  came from a RuneScape wiki scrape, which diverged from the hiscores in two names and
+  produced tiles that could never auto-complete.
 - `PUT /:player` — refresh hiscore data for a player (requires `protect`)
 
 ### `invites.ts`
