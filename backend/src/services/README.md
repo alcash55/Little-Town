@@ -4,9 +4,19 @@ Business logic layer between routes and the database. Files here orchestrate mul
 
 ## Files
 
-(This README predates most files actually in this directory — e.g. `hiscores.ts`, `scrapeWiki.ts`,
+(This README predates most files actually in this directory — e.g. `hiscores.ts`,
 `staticDataCron.ts`, `playerSnapshotCron.ts`, `bingoActivation.ts` — none of which are documented
 below.)
+
+### `hiscoreVocab.ts`
+(TEAM-BRIEF.md Sprint 16, Track B — "one vocabulary, not two".) Fetches the authoritative
+skill/activity name list straight from the real OSRS hiscores lite API (via `hiscores.ts`, probing
+a well-known always-ranked RSN) rather than scraping a wiki page. `staticDataCron.ts` uses this as
+the sole source for the Board Builder's `/api/hiscores/skills/list` / `/activities/list`
+vocabulary, so a name the Board Builder offers is always a name `completionEngine.ts`'s
+`buildHiscoreVocab()` can resolve — both now come from the same API. Replaces the old
+`scrapeWiki.ts` (removed this sprint), which scraped `runescape.wiki` — RS3, not OSRS — and
+diverged from the real hiscores names on 2 of 115 skills/activities in practice.
 
 ### `discordScreenshots.ts`
 Discord gateway ingest for bingo screenshot submissions. Env-optional: does nothing but log one

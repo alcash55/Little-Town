@@ -1,9 +1,12 @@
 import "dotenv/config";
+import { assertEnvironmentSafety } from "./config/envGuard.js";
+assertEnvironmentSafety();
 import express, { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { errorHandler } from "./middleware/errorHandler.js";
+import { rateLimitKey } from "./middleware/rateLimitKey.js";
 import authRoutes from "./routes/auth.js";
 import hiscoresRoutes from "./routes/hiscores.js";
 import adminRoutes from "./routes/admin.js";
@@ -66,9 +69,18 @@ app.use(
 );
 
 // Rate limiting
+//
+// keyGenerator (TEAM-BRIEF.md Sprint 16, Track C): an authenticated caller
+// gets their own bucket keyed by user id (rateLimitKey verifies the bearer
+// token itself, since `protect` — and therefore req.user — hasn't run yet
+// at this point in the middleware chain); an unauthenticated caller, or one
+// whose token fails verification, keys by IP exactly as before. This stops
+// several admins behind one shared office/VPN IP from draining a single
+// bucket amongst themselves.
 const limiter = rateLimit({
   windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
   max: Number(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+  keyGenerator: rateLimitKey,
   message: {
     error: "Too many requests from this IP, please try again later.",
   },

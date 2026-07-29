@@ -122,10 +122,13 @@ export interface CompletionResult {
 /**
  * Case/whitespace normalization for task-text <-> hiscore-name matching.
  * Board tile tasks come from the BoardBuilder's autocomplete, itself fed by
- * the same OSRS hiscore skill/activity vocabulary (services/scrapeWiki.ts),
- * so exact-after-normalization is expected to cover real boards (TEAM-
- * BRIEF.md item 1) — this deliberately does NOT strip punctuation or do
- * fuzzy matching, both of which risk silently matching the wrong metric.
+ * the same OSRS hiscore skill/activity vocabulary this engine matches
+ * against — both now come straight from the real hiscores API
+ * (services/hiscoreVocab.ts, TEAM-BRIEF.md Sprint 16, Track B item 1), so
+ * exact-after-normalization is expected to cover real boards — this
+ * deliberately does NOT strip punctuation or do fuzzy matching, both of
+ * which risk silently matching the wrong metric. See
+ * HISCORE_NAME_ALIASES below for the narrow legacy-data exception.
  */
 export function normalizeTaskText(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, " ");
@@ -156,10 +159,41 @@ export function buildHiscoreVocab(players: EnginePlayer[]): HiscoreVocab {
 }
 
 /**
+ * Fallback name translation for tile task text that predates TEAM-BRIEF.md
+ * Sprint 16, Track B ("one vocabulary, not two"). Before that sprint, the
+ * Board Builder's autocomplete was fed by a scrape of the RS3 wiki
+ * (services/scrapeWiki.ts, since removed) — which offered two spellings
+ * the real OSRS hiscores API never returns. An admin who picked one of
+ * these from the autocomplete got a tile whose task text could never
+ * match a real hiscore name, so it could never auto-complete.
+ *
+ * Sprint 16 makes the hiscores API (services/hiscoreVocab.ts) the sole
+ * source for the Board Builder's vocabulary going forward, so a NEWLY
+ * authored tile cannot hit this again — every name it can offer is now a
+ * name this engine can already resolve directly, no alias needed. This
+ * table exists only to translate task text on tiles that were already
+ * created under the old (wrong) vocabulary before that fix landed. It is a
+ * fallback for known legacy data, not the resolution mechanism — do not add
+ * speculative entries here for names that were never actually offered.
+ *
+ * Keys and values are pre-normalized (normalizeTaskText'd) so lookups can
+ * compare directly against already-normalized task text/vocab members.
+ *
+ * Verified 2026-07-28 against a live snapshot: these were the only 2
+ * divergences across all 115 skill+activity names.
+ */
+export const HISCORE_NAME_ALIASES: Record<string, string> = {
+  runecrafting: "runecraft",
+  "cal'varion": "calvar'ion",
+};
+
+/**
  * Maps a tile's task text to a hiscore metric. Drops tiles never resolve
- * (they're never trackable — contract 2). Returns null for a trackable tile
- * whose task doesn't normalize-match anything in `vocab` — the tile then
- * belongs in `unresolvableTiles` and never auto-completes.
+ * (they're never trackable — contract 2). Tries an exact (normalized)
+ * match against `vocab` first; if that fails, tries the legacy alias table
+ * above as a fallback for tiles authored before Sprint 16 Track B. Returns
+ * null for a trackable tile whose task doesn't resolve either way — the
+ * tile then belongs in `unresolvableTiles` and never auto-completes.
  */
 export function resolveTileMetric(
   tile: Pick<EngineTile, "task" | "type">,
@@ -167,10 +201,15 @@ export function resolveTileMetric(
 ): ResolvedMetric | null {
   if (tile.type === "Drops") return null;
   const normalizedName = normalizeTaskText(tile.task);
-  if (tile.type === "Experience") {
-    return vocab.skillNames.has(normalizedName) ? { kind: "skill", normalizedName } : null;
-  }
-  return vocab.activityNames.has(normalizedName) ? { kind: "activity", normalizedName } : null;
+  const names = tile.type === "Experience" ? vocab.skillNames : vocab.activityNames;
+  const kind = tile.type === "Experience" ? "skill" : "activity";
+
+  if (names.has(normalizedName)) return { kind, normalizedName };
+
+  const aliased = HISCORE_NAME_ALIASES[normalizedName];
+  if (aliased && names.has(aliased)) return { kind, normalizedName: aliased };
+
+  return null;
 }
 
 /** A single account's delta for a resolved metric. Missing start -> 0 (never negative). */
