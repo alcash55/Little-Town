@@ -116,55 +116,65 @@ describe("resolveTileMetric", () => {
     expect(resolveTileMetric({ task: "Zulrah", type: "Drops" }, vocab)).toBeNull();
   });
 
-  // -----------------------------------------------------
-  // Wiki-name -> hiscores-name aliases (regression, 2026-07-28)
-  //
-  // A live board had an Experience tile reading "runecrafting" — picked
-  // straight from the Board Builder's autocomplete, which is fed by
-  // scrapeWiki.ts. The hiscores lite API (and therefore every snapshot)
-  // calls that skill "Runecraft", so the tile resolved to null and the
-  // overview told the admin to retype it to match a vocabulary that never
-  // offered the right spelling. Same class of bug for "Cal'varion" vs the
-  // hiscores' "Calvar'ion". These two names are the ONLY divergences across
-  // all 25 skills / 90 activities, verified against a live snapshot.
-  // -----------------------------------------------------
+});
 
-  const realVocab = buildHiscoreVocab([
-    // Names exactly as the hiscores lite API returns them.
+// -------------------------------------------------------
+// HISCORE_NAME_ALIASES — legacy vocabulary fallback (TEAM-BRIEF.md Sprint
+// 16, Track B item 3). Board Builder now sources its autocomplete straight
+// from the hiscores API (services/hiscoreVocab.ts), so a NEWLY authored
+// tile can't hit this — these pin the two real names an admin could
+// previously pick from the old wiki-scraped autocomplete but that the real
+// hiscores API never returns, so tiles already saved with that task text
+// keep resolving instead of silently staying broken forever.
+// -------------------------------------------------------
+
+describe("HISCORE_NAME_ALIASES (legacy vocabulary fallback)", () => {
+  // vocab built from real hiscore snapshot data — "Runecraft" and
+  // "Calvar'ion" are what the OSRS hiscores API actually returns; the old
+  // wiki scrape offered "runecrafting" / "cal'varion" instead.
+  const vocab = buildHiscoreVocab([
     player("p1", "team-a", [account(0, 100, "Runecraft", "skill")]),
-    player("p2", "team-a", [account(0, 100, "Calvar'ion", "activity")]),
+    player("p2", "team-a", [account(0, 50, "Calvar'ion", "activity")]),
   ]);
 
-  test("wiki spelling 'runecrafting' resolves to the hiscores' 'runecraft'", () => {
-    expect(resolveTileMetric({ task: "runecrafting", type: "Experience" }, realVocab)).toEqual({
+  test("a legacy 'runecrafting' Experience tile resolves via the alias to the real 'runecraft' skill", () => {
+    const resolved = resolveTileMetric({ task: "runecrafting", type: "Experience" }, vocab);
+    expect(resolved).toEqual({ kind: "skill", normalizedName: "runecraft" });
+  });
+
+  test("a legacy \"cal'varion\" Kill Count tile resolves via the alias to the real \"calvar'ion\" activity", () => {
+    const resolved = resolveTileMetric({ task: "Cal'Varion", type: "Kill Count" }, vocab);
+    expect(resolved).toEqual({ kind: "activity", normalizedName: "calvar'ion" });
+  });
+
+  test("the alias resolution flows through to real delta math against snapshot data keyed by the real name", () => {
+    const metric = resolveTileMetric({ task: "runecrafting", type: "Experience" }, vocab)!;
+    const p = player("p1", "team-a", [account(1000, 5000, "Runecraft", "skill")]);
+    expect(playerMetricDelta(p, metric)).toBe(4000);
+  });
+
+  test("an unaliased, genuinely-unknown task still returns null (the alias table is not a fuzzy matcher)", () => {
+    expect(resolveTileMetric({ task: "not a real skill at all", type: "Experience" }, vocab)).toBeNull();
+  });
+
+  test("a legacy name is not offered in the WRONG bucket via the alias (Kill Count vs Experience)", () => {
+    // "runecrafting" aliases to the skill "runecraft" — must not resolve as an activity.
+    expect(resolveTileMetric({ task: "runecrafting", type: "Kill Count" }, vocab)).toBeNull();
+  });
+
+  test("the hiscores' own spelling 'Runecraft' resolves directly, without consulting the alias table", () => {
+    // Exact match must win before the fallback is ever reached — the alias
+    // table is a legacy translation layer, not part of normal resolution.
+    expect(resolveTileMetric({ task: "Runecraft", type: "Experience" }, vocab)).toEqual({
       kind: "skill",
       normalizedName: "runecraft",
     });
   });
 
-  test("the hiscores' own spelling 'Runecraft' still resolves unchanged", () => {
-    expect(resolveTileMetric({ task: "Runecraft", type: "Experience" }, realVocab)).toEqual({
-      kind: "skill",
-      normalizedName: "runecraft",
-    });
-  });
-
-  test("wiki spelling \"cal'varion\" resolves to the hiscores' \"calvar'ion\"", () => {
-    expect(resolveTileMetric({ task: "Cal'varion", type: "Kill Count" }, realVocab)).toEqual({
-      kind: "activity",
-      normalizedName: "calvar'ion",
-    });
-  });
-
-  test("an alias is still bucket-checked — 'runecrafting' as a Kill Count stays unresolvable", () => {
-    // Aliasing must not become a backdoor around the skill/activity split.
-    expect(resolveTileMetric({ task: "runecrafting", type: "Kill Count" }, realVocab)).toBeNull();
-  });
-
-  test("an unlisted mismatch still falls through to unresolvable rather than guessing", () => {
+  test("near-miss spellings that were never actually offered stay unresolvable", () => {
     // Guards the explicit-synonym-table design: no fuzzy fallback crept in.
-    expect(resolveTileMetric({ task: "rune crafting", type: "Experience" }, realVocab)).toBeNull();
-    expect(resolveTileMetric({ task: "runecraftin", type: "Experience" }, realVocab)).toBeNull();
+    expect(resolveTileMetric({ task: "rune crafting", type: "Experience" }, vocab)).toBeNull();
+    expect(resolveTileMetric({ task: "runecraftin", type: "Experience" }, vocab)).toBeNull();
   });
 });
 
