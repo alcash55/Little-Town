@@ -25,22 +25,58 @@ A Bun.js/Express backend API for the Little Town application with JWT authentica
 ```bash
 cd /Little-Town/backend
 bun install
-cp env.example .env
 ```
+
+`bun run dev` is the default and creates `.env` for you from `.env.example` the first
+time it runs (see [Environment layout](#environment-layout) below) — no manual copy
+needed.
 
 First-time setup — starts Supabase, resets the DB, applies migrations, builds, and runs the API:
 
 ```bash
-npm run local:reset
+bun run dev:reset
 ```
 
 After the first setup, use:
 
 ```bash
-npm run local
+bun run dev
 ```
 
 The API will be available at `http://localhost:8081`.
+
+## Environment layout
+
+**TEAM-BRIEF.md Sprint 16, Track A.** Three incidents (Sprint 14 real Discord ingestion
+from a local backend, Sprint 15 a local `bun run dev` writing to prod, a 2026-07-28
+debugging session reading live prod data locally) traced back to the same cause:
+`backend/.env` used to point at the hosted **production** Supabase project by default, so
+any casually started local backend talked to prod. That's fixed:
+
+| File | Purpose | Committed? |
+| --- | --- | --- |
+| `.env` | Local dev config — local Supabase URL, no real Discord token. Loaded by default. | No (gitignored) |
+| `.env.example` | Template for `.env`, safe placeholders. | Yes |
+| `.env.production` | **Real** production credentials (hosted Supabase service-role key, real Discord bot token, JWT secret). Loaded **only** by `bun run dev:remote`. | No (gitignored) |
+| `.env.production.example` | Template for `.env.production`, placeholders only. | Yes |
+
+### Scripts
+
+| Script | What it does |
+| --- | --- |
+| `bun run dev` | **Default.** Runs `dev-local.sh`: starts local Supabase, exports its URL/key into the process env (dotenv doesn't override already-set vars), builds, and runs the API against the **local** stack. |
+| `bun run dev:reset` | Same as `dev`, but also wipes and re-applies local DB migrations first (`dev-local.sh --reset`). |
+| `bun run dev:remote` | **Deliberate escape hatch.** Runs `dev-remote.sh`: requires typing `yes-hit-prod` to confirm, loads `.env.production`, sets `ALLOW_REMOTE_DB=true`, then runs the API against the **real hosted production** Supabase project. Only use this on purpose. |
+| `bun run dev:raw` | Bare `nodemon` — reads `.env` directly with no local-stack export step. Used internally by `dev-local.sh`/`dev-remote.sh`; only run it yourself if you know your process env is already correct. |
+
+### The startup guard
+
+`src/config/envGuard.ts` (`assertEnvironmentSafety()`, called first thing in
+`src/index.ts`) is the backstop: it throws with an actionable message if `NODE_ENV !==
+"production"` **and** `SUPABASE_URL` isn't a local address, unless `ALLOW_REMOTE_DB=true`
+is explicitly set (in which case it logs a loud warning banner instead and continues).
+It never throws when `NODE_ENV === "production"` (Render must boot normally).
+`dev-remote.sh` sets `ALLOW_REMOTE_DB=true` for you; nothing else should.
 
 ## Local Supabase
 
@@ -142,24 +178,27 @@ Local dev seed users (created by `db:reset`):
 | `JWT_EXPIRES_IN`            | JWT expiration duration (default: `24h`)                                | No                     |
 | `SUPABASE_URL`              | Supabase project API URL                                                | Yes                    |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-only Supabase service role key — never expose to the frontend    | Yes                    |
-| `DISCORD_BOT_TOKEN`         | Discord bot token for the screenshot ingest service. Optional — if unset (along with `DISCORD_SCREENSHOT_CHANNEL_ID`), the service logs one warning on startup and does not run; the admin screenshot review API still works. Never log this value. | No |
+| `ALLOW_REMOTE_DB`           | Set to `true` to opt into a remote (non-`production`) `SUPABASE_URL` outside production — set for you by `bun run dev:remote`. See [the startup guard](#the-startup-guard). Never set this by hand for routine local dev. | No |
+| `DISCORD_ENABLED`           | Set to `true` (or run with `NODE_ENV=production`) to allow the Discord screenshot bot to log in at all. Positive opt-in, checked before token/channel presence — required since Sprint 9 caused duplicate real-bot logins on every local start otherwise. | No |
+| `DISCORD_BOT_TOKEN`         | Discord bot token for the screenshot ingest service. Optional — if unset (along with `DISCORD_SCREENSHOT_CHANNEL_ID`), or if `DISCORD_ENABLED` isn't `true`, the service logs one warning on startup and does not run; the admin screenshot review API still works. Never log this value. | No |
 | `DISCORD_SCREENSHOT_CHANNEL_ID` | Discord channel ID the bot watches for screenshot attachments      | No                      |
 
 ## Scripts
 
-| Script                | Description                                                       |
-| --------------------- | ----------------------------------------------------------------- |
-| `bun run local`       | Start Supabase, export local env, build, and run the API          |
-| `npm run local:reset` | Same as `local` but resets the DB and re-applies migrations first |
-| `bun run build`       | Compile TypeScript to `dist/`                                     |
-| `bun run start`       | Run the compiled server                                           |
-| `bun run dev`         | Run with nodemon — rebuilds and restarts on file changes          |
-| `bun run db:start`    | Start local Supabase Docker containers                            |
-| `bun run db:stop`     | Stop local Supabase Docker containers                             |
-| `bun run db:status`   | Show local Supabase URLs and API keys                             |
-| `bun run db:reset`    | Wipe local DB and re-apply all migrations                         |
-| `bun run db:push`     | Push migrations to linked hosted Supabase project                 |
-| `bun run test`        | Run Node.js built-in test runner                                  |
+| Script                 | Description                                                                |
+| ----------------------- | --------------------------------------------------------------------------- |
+| `bun run dev`           | **Default.** Local-safe: starts Supabase, exports local env, builds, and runs the API (`dev-local.sh`). |
+| `bun run dev:reset`     | Same as `dev`, but also resets the local DB and re-applies migrations first. |
+| `bun run dev:remote`    | Deliberate opt-in to run against **real production** data (`dev-remote.sh`). Requires typed confirmation. |
+| `bun run dev:raw`       | Bare `nodemon` — no local-stack export step. Used internally by the two scripts above. |
+| `bun run build`         | Compile TypeScript to `dist/`                                               |
+| `bun run start`         | Run the compiled server                                                     |
+| `bun run db:start`      | Start local Supabase Docker containers                                      |
+| `bun run db:stop`       | Stop local Supabase Docker containers                                       |
+| `bun run db:status`     | Show local Supabase URLs and API keys                                       |
+| `bun run db:reset`      | Wipe local DB and re-apply all migrations                                   |
+| `bun run db:push`       | Push migrations to linked hosted Supabase project                           |
+| `bun run test`          | Run Node.js built-in test runner                                            |
 
 ## Running tests
 
