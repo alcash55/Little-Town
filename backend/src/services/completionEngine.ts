@@ -122,13 +122,44 @@ export interface CompletionResult {
 /**
  * Case/whitespace normalization for task-text <-> hiscore-name matching.
  * Board tile tasks come from the BoardBuilder's autocomplete, itself fed by
- * the same OSRS hiscore skill/activity vocabulary (services/scrapeWiki.ts),
- * so exact-after-normalization is expected to cover real boards (TEAM-
- * BRIEF.md item 1) — this deliberately does NOT strip punctuation or do
- * fuzzy matching, both of which risk silently matching the wrong metric.
+ * the OSRS hiscore skill/activity vocabulary (services/scrapeWiki.ts), so
+ * exact-after-normalization is expected to cover real boards (TEAM-BRIEF.md
+ * item 1) — this deliberately does NOT strip punctuation or do fuzzy
+ * matching, both of which risk silently matching the wrong metric.
  */
 export function normalizeTaskText(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+/**
+ * Curated wiki-name -> hiscores-name aliases, keyed and valued in
+ * normalizeTaskText() form.
+ *
+ * The "same vocabulary" assumption above is very nearly true but not quite:
+ * scrapeWiki.ts reads the RuneScape wiki's API page, and in a handful of
+ * cases the wiki's spelling differs from what the live hiscores lite API
+ * returns (which is what snapshots — and therefore buildHiscoreVocab() —
+ * actually contain). A tile built from such an autocomplete entry could
+ * never auto-complete: the admin picked a legitimate suggestion and still
+ * got an unresolvable tile, with the UI telling them to retype it to match
+ * a vocabulary that never offered the right spelling.
+ *
+ * Verified against a live snapshot's skill/activity name lists: these are
+ * the only two divergences across all 25 skills and 90 activities. This is
+ * an explicit synonym table, NOT fuzzy matching — an unlisted mismatch
+ * still falls through to `unresolvableTiles` rather than guessing.
+ */
+const HISCORE_NAME_ALIASES = new Map<string, string>([
+  // Wiki: "Runecrafting" (the in-game skill name) / hiscores: "Runecraft".
+  ["runecrafting", "runecraft"],
+  // Wiki: "Cal'varion" / hiscores: "Calvar'ion" — apostrophe placement.
+  ["cal'varion", "calvar'ion"],
+]);
+
+/** Task text -> the name the hiscores actually use, via the alias table. */
+function canonicalHiscoreName(task: string): string {
+  const normalized = normalizeTaskText(task);
+  return HISCORE_NAME_ALIASES.get(normalized) ?? normalized;
 }
 
 /**
@@ -166,7 +197,7 @@ export function resolveTileMetric(
   vocab: HiscoreVocab,
 ): ResolvedMetric | null {
   if (tile.type === "Drops") return null;
-  const normalizedName = normalizeTaskText(tile.task);
+  const normalizedName = canonicalHiscoreName(tile.task);
   if (tile.type === "Experience") {
     return vocab.skillNames.has(normalizedName) ? { kind: "skill", normalizedName } : null;
   }

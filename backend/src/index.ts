@@ -65,13 +65,24 @@ app.use(
   }),
 );
 
-// Rate limiting
+// Rate limiting.
+// The default budget has to cover an admin sitting on the panel, not just
+// casual page views: ScreenshotSubmission and BingoOverview each poll on a
+// 45s timer (3 requests/tick between them), which alone burns ~60 requests
+// per 15 min window before the admin clicks anything. A 100-request ceiling
+// left submits like POST /bingo/draft failing with 429 on an idle-ish tab.
 const limiter = rateLimit({
   windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  max: Number(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+  max: Number(process.env.RATE_LIMIT_MAX_REQUESTS) || 1000,
   message: {
     error: "Too many requests from this IP, please try again later.",
   },
+  // In local dev every request arrives from the same loopback address, so a
+  // shared bucket makes the limiter fire on normal use while protecting
+  // nothing. Production keeps the limit.
+  skip: (req) =>
+    process.env.NODE_ENV !== "production" &&
+    ["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(req.ip ?? ""),
 });
 app.use("/api/", limiter);
 
