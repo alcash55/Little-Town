@@ -35,9 +35,9 @@ function installRouter(overrides: Record<string, Response> = {}) {
 beforeEach(() => {
   mockedFetchWithAuth.mockReset();
   localStorage.clear();
-  // The board/details GETs are gated behind a stored auth token (same guard
-  // as the real app — no token means "don't bother, fall back to any local
-  // draft"); a logged-in admin session always has one.
+  // A logged-in admin session always has a token. The load is NO LONGER
+  // gated on it, though — see the no-token regression test at the bottom of
+  // this file for why that gate had to go.
   localStorage.setItem('authToken', 'test-admin-token');
   // The OSRS item-mapping fetch goes through raw `fetch` to an external
   // wiki API (cachedFetch), not fetchWithAuth — pre-seed its cache key so
@@ -126,5 +126,52 @@ describe('useBoardBuilder — error-message formatting on submit (bug-report inv
       expect(result.current.submitError).toBe('Failed to save board (HTTP 403)'),
     );
     expect(result.current.submitError).not.toMatch(/:\s*$/);
+  });
+});
+
+// Regression, 2026-07-28. The load used to be wrapped in `if (token)`, where
+// token = localStorage 'authToken'. That silently broke the entire page under
+// `bun dev`: ProtectedRoute bypasses auth in dev, and the backend's `protect`
+// does the same for a missing token when ALLOW_DEV_AUTH=true, so an admin is
+// routinely on this page with no token in localStorage. The gate skipped both
+// GETs, fell through to the (empty) localStorage draft, and rendered an empty
+// Board Builder with NO error — for a saved board that every other admin page
+// displayed fine, because they all call fetchWithAuth unconditionally.
+describe('useBoardBuilder — loads without a stored authToken (dev-auth bypass regression)', () => {
+  const savedBoard = [
+    { task: 'runecrafting', type: 'Experience', points: 1, experience: 1000000 },
+    { task: 'zulrah', type: 'Kill Count', points: 1, killCount: 50 },
+  ];
+
+  it('still fetches the saved board when localStorage has no authToken', async () => {
+    localStorage.removeItem('authToken');
+    installRouter({ '/bingo/board': jsonResponse(200, { data: savedBoard }) });
+
+    const { result } = renderHook(() => useBoardBuilder());
+
+    await waitFor(() => expect(result.current.board).toHaveLength(2));
+    // The saved board is what came back from the backend, and the page knows
+    // it is editing an existing board (drives the "Update Board" affordance).
+    expect(result.current.board).toEqual(savedBoard);
+    expect(result.current.isExistingBoard).toBe(true);
+    expect(result.current.permissionDenied).toBe(false);
+    expect(result.current.loadError).toBeNull();
+    // The requests must actually have gone out — the old gate's failure mode
+    // was silence, not a bad response.
+    expect(mockedFetchWithAuth).toHaveBeenCalledWith(expect.stringContaining('/bingo/board'));
+    expect(mockedFetchWithAuth).toHaveBeenCalledWith(expect.stringContaining('/bingo/details'));
+  });
+
+  it('still maps a genuine 403 to permissionDenied when there is no token', async () => {
+    // Removing the gate must not weaken the permission handling: an
+    // unauthenticated caller against a backend WITHOUT the dev bypass gets a
+    // real 403, and that must still surface as permission-denied.
+    localStorage.removeItem('authToken');
+    installRouter({ '/bingo/details': jsonResponse(403, { error: 'Forbidden' }) });
+
+    const { result } = renderHook(() => useBoardBuilder());
+
+    await waitFor(() => expect(result.current.permissionDenied).toBe(true));
+    expect(result.current.board).toHaveLength(0);
   });
 });

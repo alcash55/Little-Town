@@ -81,54 +81,60 @@ export const useBoardBuilder = () => {
   // On mount: fetch existing board from backend, fallback to localStorage, load autocomplete data
   useEffect(() => {
     const loadBoard = async () => {
-      const token = localStorage.getItem('authToken');
-
-      if (token) {
-        try {
-          // Fetch active bingo to get board size
-          const bingoRes = await fetchWithAuth(`${BASEURL}/bingo/details`);
-          if (bingoRes.ok) {
-            const bingoJson = await bingoRes.json();
-            if (bingoJson.data?.boardSize) setBoardSize(bingoJson.data.boardSize);
-            setPermissionDenied(false);
-          } else {
-            const info = await describeApiError(bingoRes, 'Failed to load bingo details');
-            if (info.isPermissionError) {
-              // Distinct from "no board built yet" — falling through to the
-              // localStorage-draft/empty-builder state below would look like
-              // a safe, empty page instead of one the caller can't see
-              // (bug-report investigation, prod incident).
-              setPermissionDenied(true);
-              return;
-            }
-            if (bingoRes.status !== 404) setLoadError(info.message);
+      // Deliberately NOT gated on a stored `authToken`. It used to be, which
+      // silently broke the whole page under `bun dev`: ProtectedRoute bypasses
+      // auth in dev (see ProtectedRoute.tsx) and the backend's `protect` does
+      // the same for a missing token when ALLOW_DEV_AUTH=true, so an admin can
+      // legitimately be on this page with no token in localStorage. The gate
+      // then skipped both GETs entirely and fell through to the localStorage
+      // draft — an empty Board Builder, with no error, for a board that exists
+      // and loads fine on every other admin page (which all call fetchWithAuth
+      // unconditionally). Let the request go out and let the response decide:
+      // a real 401/403 still lands in the permission-denied branch below.
+      try {
+        // Fetch active bingo to get board size
+        const bingoRes = await fetchWithAuth(`${BASEURL}/bingo/details`);
+        if (bingoRes.ok) {
+          const bingoJson = await bingoRes.json();
+          if (bingoJson.data?.boardSize) setBoardSize(bingoJson.data.boardSize);
+          setPermissionDenied(false);
+        } else {
+          const info = await describeApiError(bingoRes, 'Failed to load bingo details');
+          if (info.isPermissionError) {
+            // Distinct from "no board built yet" — falling through to the
+            // localStorage-draft/empty-builder state below would look like
+            // a safe, empty page instead of one the caller can't see
+            // (bug-report investigation, prod incident).
+            setPermissionDenied(true);
+            return;
           }
-
-          // Fetch existing board from backend
-          const boardRes = await fetchWithAuth(`${BASEURL}/bingo/board`);
-          if (boardRes.ok) {
-            const contentType = boardRes.headers.get('content-type') ?? '';
-            if (contentType.includes('application/json')) {
-              const boardJson = await boardRes.json();
-              if (Array.isArray(boardJson.data) && boardJson.data.length > 0) {
-                setBoard(boardJson.data);
-                setBoardFromBackend(true);
-                localStorage.setItem('bingoBoard', JSON.stringify(boardJson.data));
-                return;
-              }
-            }
-          } else {
-            const info = await describeApiError(boardRes, 'Failed to load board');
-            if (info.isPermissionError) {
-              setPermissionDenied(true);
-              return;
-            }
-            if (boardRes.status !== 404) setLoadError(info.message);
-          }
-        } catch (e) {
-          setLoadError('Unable to reach the server. Please try again.');
-          console.error('Failed to fetch board from backend, falling back to localStorage:', e);
+          if (bingoRes.status !== 404) setLoadError(info.message);
         }
+
+        // Fetch existing board from backend
+        const boardRes = await fetchWithAuth(`${BASEURL}/bingo/board`);
+        if (boardRes.ok) {
+          const contentType = boardRes.headers.get('content-type') ?? '';
+          if (contentType.includes('application/json')) {
+            const boardJson = await boardRes.json();
+            if (Array.isArray(boardJson.data) && boardJson.data.length > 0) {
+              setBoard(boardJson.data);
+              setBoardFromBackend(true);
+              localStorage.setItem('bingoBoard', JSON.stringify(boardJson.data));
+              return;
+            }
+          }
+        } else {
+          const info = await describeApiError(boardRes, 'Failed to load board');
+          if (info.isPermissionError) {
+            setPermissionDenied(true);
+            return;
+          }
+          if (boardRes.status !== 404) setLoadError(info.message);
+        }
+      } catch (e) {
+        setLoadError('Unable to reach the server. Please try again.');
+        console.error('Failed to fetch board from backend, falling back to localStorage:', e);
       }
 
       // Fallback to localStorage for unsaved board

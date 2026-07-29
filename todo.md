@@ -58,6 +58,19 @@
 - [x] on mobile the hgome page <BoardGame /> icon needs the color fixed @homePageIcon.png _(fixed 2026-07-14, Sprint 11 — the SVG had no fill so it rendered spec-default black; fill="currentColor" like the Discord icon, theme-correct at all breakpoints)_
 - [x] Onboarding wizard _(shipped 2026-07-14, Sprint 11)_
   - [x] When creating an account from the generated link, the user is asked for a username and nickname (optional) neither of those names should be used for the RSN for step 2 on the onboarding wizard. Instead it should be a textbox that they type their name in and then that user should be added to the team drafter if they are not already on there/being tracked @onboardingwizard.png. I have tested this twice and one time used the username/nickname and the other gave me a textbox. Ensure that the username is not used as the RSN and create tests around this so that we can prevent issues in the future _(ROOT CAUSE of the sometimes/sometimes: suggestions came from bingo_players rows with no link to your account — any stray row matching a username (admin typo, or created while impersonating) leaked in; data-dependent, hence intermittent. FIX: step 2 is a typed textbox (roster suggestions filtered so username/nickname can never appear), confirm calls the new POST /api/onboarding/rsn — server-side hiscores validation + new rsn_claims table (one changeable claim per account, case-insensitive conflicts → 409) + create-or-find in the drafter pool, so finishing the wizard genuinely lands you in Team Drafter. TESTS: new rsn.test/validation/onboarding-rsn suites (backend, 297 total) + the repo's FIRST frontend test harness (vitest + happy-dom, 19 tests) proving username/nickname never survive the filter. QA re-verified the exact leak vector adversarially: seeded a player row exactly matching the username — wizard shows nothing. NOTE: migration 20260715000000_rsn_claims.sql needs prod application, see action items.)_
+- [ ] The board builder page
+  - [ ] This occurs when adding a tile likely cleanup from the mui5 migration. Warning: React does not recognize the `titleTypographyProps` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `titletypographyprops` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+  - [ ] On click of add tile it did not clear the boss / monster / mini game autocompete component when it should have
+  - [ ] Source map error: Error: JSON.parse: unexpected character at line 1 column 1 of the JSON data
+        Stack in the worker:parseSourceMapInput@resource://devtools/client/shared/vendor/source-map/lib/util.js:163:15
+        \_factory@resource://devtools/client/shared/vendor/source-map/lib/source-map-consumer.js:1069:22
+        SourceMapConsumer@resource://devtools/client/shared/vendor/source-map/lib/source-map-consumer.js:26:12
+        \_fetch@resource://devtools/client/shared/source-map-loader/utils/fetchSourceMap.js:83:19
+
+    Resource URL: http://localhost:3000/AdminPanel/%3Canonymous%20code%3E
+    Source Map URL: installHook.js.map
+- [ ] Team Data page
+  - [ ] On tablet views and desktop views the table should not have a vertical scroll in it, the user should be able to see everything
 
 # Next sprint — carried over from the July 2026 audit sprint
 
@@ -141,12 +154,6 @@ _(Done 2026-07-08: Refresh button now disables and shows a spinner + "Refreshing
 - Backend 441/0 + frontend 101/101; QA live end-to-end: boot transition + idempotent second boot, banner count 2→1→0 through real approve/deny, ended board state, Sprint 13/14 regressions intact. No migrations.
 - **Prod note (2026-07-17):** "yes sir" was completed EARLY by Alex's local `bun run dev` backend — nodemon hot-reloaded the freshly merged lifecycle code and ran the boot check against prod via backend/.env (the standing hazard, now proven to WRITE). Outcome was the intended one (bingo ended; 5 pending screenshots await review via the new banner post-deploy), but the path was unsafe — see the env-file item below.
 
-# Action items (Alex) — prod
-
-- [ ] Review the 5 pending screenshots on "yes sir" via /AdminPanel/ScreenshotSubmission once this deploys (the overview banner will nag until they're resolved).
-- [ ] Check the Discord screenshots channel for the bot's "yes sir has ended — 5 screenshots still need review" message (may have fired from the local dev backend when it hot-reloaded the lifecycle code).
-- [ ] **Close/re-point the backend `bun run dev` terminal using backend/.env** — it has prod DB creds + the live Discord token and hot-reloads whatever lands on main straight into prod.
-
 # Sprint 16 candidates — collected during Sprint 15 (2026-07-17)
 
 - **Get prod credentials out of `backend/.env`** (root fix for two incidents now: the QA Discord-bot login and the dev-terminal prod write). Move to `.env.production`-style separation or `.env.local` + example file; make `bun run dev` default to the local stack.
@@ -154,6 +161,9 @@ _(Done 2026-07-08: Refresh button now disables and shows a spinner + "Refreshing
 - Onboarding wizard modal pops over admin pages for accounts created via direct DB insert (no onboarding record) — QA hit it with a seeded admin; confirm intended for real admin accounts.
 - "No bingo has ever existed" board branch was verified by tests/code, not live-in-browser (needs a throwaway stack for a truly empty-DB Playwright pass).
 - No isolation helper for `getLatestBingo()`-based integration tests (parallel runs against the shared stack are theoretically racy — same class as the existing `hasPreexistingActiveBingo()` guard).
+- **Two vocabularies for the same names**: Board Builder's autocomplete is fed by `scrapeWiki.ts` (the RuneScape wiki's API page), while the completion engine matches against names from the hiscores lite API (via snapshots). They diverge in exactly 2 of 115 names today — `runecrafting`/`Runecraft` and `cal'varion`/`Calvar'ion` — so an admin could pick a legitimate autocomplete suggestion and get a tile that can never auto-complete. Patched 2026-07-28 with an explicit alias table in `completionEngine.ts` (`HISCORE_NAME_ALIASES`), but the drift is unbounded: the wiki can rename anything at any time and nothing detects it. Real fix is to source the builder's vocabulary from the hiscores API itself (a snapshot already contains the authoritative list), or add a startup/cron check that diffs the two lists and warns. Note `scrapeWiki.ts` reads `runescape.wiki` (RS3), not `oldschool.runescape.wiki` — likely the source of the drift.
+- Board Builder was the only page hook gating its data load on `localStorage.authToken`; removed 2026-07-28. Worth a sweep for the inverse assumption elsewhere — anything that assumes a token exists will behave differently under `bun dev`'s auth bypass (`ALLOW_DEV_AUTH=true` + ProtectedRoute) than in prod, which is how this one hid for so long.
+- **Global rate limiter is keyed on IP, which doesn't fit an authenticated admin session** (root cause of the 2026-07-28 "Too many requests" 429 on POST `/bingo/draft`). The admin panel's two 45s pollers — `useScreenshotSubmission.ts:264` (2 requests/tick) and `useBingoOverview.ts:425` — cost ~60 requests per 15-min window on an idle tab, so the old 100-request ceiling was exhausted before a submit landed. Patched by raising the default to 1000 and skipping loopback in non-production (`index.ts:68`), but the shape is still wrong: several admins behind one office/VPN NAT share a single bucket. Real fix is keying the limiter on user ID for authenticated routes (IP only for unauthenticated ones), and/or backing the pollers off.
 
 # Sprint 15 candidates — collected during Sprint 14 (2026-07-17)
 
