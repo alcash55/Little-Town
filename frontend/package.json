@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "bunx --bun vite",
     "build": "tsc && vite build --mode production",
-    "preview": "vite build && vite preview",
+    "preview": "VITE_BASEURL=http://localhost:8081 vite build --mode production && vite preview",
+    "preview:remote": "vite build --mode production && vite preview",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx}\"",
     "art:bingo": "bun run src/components/Pages/BingoBoard/download-bingo-art.ts",
     "test": "vitest run"

@@ -5,7 +5,10 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "nodemon",
+    "dev": "bash dev-local.sh",
+    "dev:reset": "bash dev-local.sh --reset",
+    "dev:remote": "bash dev-remote.sh",
+    "dev:raw": "nodemon",
     "build": "bun x tsc",
     "start": "bun --bun dist/index.js",
     "test": "bun test",
