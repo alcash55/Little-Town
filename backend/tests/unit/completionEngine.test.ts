@@ -118,6 +118,51 @@ describe("resolveTileMetric", () => {
 });
 
 // -------------------------------------------------------
+// HISCORE_NAME_ALIASES — legacy vocabulary fallback (TEAM-BRIEF.md Sprint
+// 16, Track B item 3). Board Builder now sources its autocomplete straight
+// from the hiscores API (services/hiscoreVocab.ts), so a NEWLY authored
+// tile can't hit this — these pin the two real names an admin could
+// previously pick from the old wiki-scraped autocomplete but that the real
+// hiscores API never returns, so tiles already saved with that task text
+// keep resolving instead of silently staying broken forever.
+// -------------------------------------------------------
+
+describe("HISCORE_NAME_ALIASES (legacy vocabulary fallback)", () => {
+  // vocab built from real hiscore snapshot data — "Runecraft" and
+  // "Calvar'ion" are what the OSRS hiscores API actually returns; the old
+  // wiki scrape offered "runecrafting" / "cal'varion" instead.
+  const vocab = buildHiscoreVocab([
+    player("p1", "team-a", [account(0, 100, "Runecraft", "skill")]),
+    player("p2", "team-a", [account(0, 50, "Calvar'ion", "activity")]),
+  ]);
+
+  test("a legacy 'runecrafting' Experience tile resolves via the alias to the real 'runecraft' skill", () => {
+    const resolved = resolveTileMetric({ task: "runecrafting", type: "Experience" }, vocab);
+    expect(resolved).toEqual({ kind: "skill", normalizedName: "runecraft" });
+  });
+
+  test("a legacy \"cal'varion\" Kill Count tile resolves via the alias to the real \"calvar'ion\" activity", () => {
+    const resolved = resolveTileMetric({ task: "Cal'Varion", type: "Kill Count" }, vocab);
+    expect(resolved).toEqual({ kind: "activity", normalizedName: "calvar'ion" });
+  });
+
+  test("the alias resolution flows through to real delta math against snapshot data keyed by the real name", () => {
+    const metric = resolveTileMetric({ task: "runecrafting", type: "Experience" }, vocab)!;
+    const p = player("p1", "team-a", [account(1000, 5000, "Runecraft", "skill")]);
+    expect(playerMetricDelta(p, metric)).toBe(4000);
+  });
+
+  test("an unaliased, genuinely-unknown task still returns null (the alias table is not a fuzzy matcher)", () => {
+    expect(resolveTileMetric({ task: "not a real skill at all", type: "Experience" }, vocab)).toBeNull();
+  });
+
+  test("a legacy name is not offered in the WRONG bucket via the alias (Kill Count vs Experience)", () => {
+    // "runecrafting" aliases to the skill "runecraft" — must not resolve as an activity.
+    expect(resolveTileMetric({ task: "runecrafting", type: "Kill Count" }, vocab)).toBeNull();
+  });
+});
+
+// -------------------------------------------------------
 // Delta math — team summing, missing start snapshot, side accounts
 // -------------------------------------------------------
 

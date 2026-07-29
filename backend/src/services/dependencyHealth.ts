@@ -1,4 +1,6 @@
 import { getDb } from "../db/client.js";
+import { getStaticData } from "../db/staticData.js";
+import { fetchHiscoreVocab } from "./hiscoreVocab.js";
 
 // -------------------------------------------------------
 // GET /api/admin/health/dependencies (TEAM-BRIEF.md Track A item 4).
@@ -141,6 +143,65 @@ function checkSelf(): Promise<ServiceHealth> {
 }
 
 /**
+ * Symmetric difference between two name lists, formatted for a human
+ * reading a `detail` string — a name only on one side is exactly the drift
+ * this check exists to catch (TEAM-BRIEF.md Sprint 16, Track B item 2).
+ */
+function diffNames(served: string[], authoritative: string[]): string[] {
+  const servedSet = new Set(served);
+  const authoritativeSet = new Set(authoritative);
+  return [
+    ...served.filter((n) => !authoritativeSet.has(n)).map((n) => `"${n}" served but not in hiscores`),
+    ...authoritative.filter((n) => !servedSet.has(n)).map((n) => `"${n}" in hiscores but not served`),
+  ];
+}
+
+/**
+ * Drift check between the Board Builder's currently-served vocabulary
+ * (`osrs_static_data`, refreshed by staticDataCron.ts from the same source
+ * below) and a fresh, live hiscores probe (TEAM-BRIEF.md Sprint 16, Track B
+ * item 2 — "detect drift instead of hoping"). Since Track B item 1 already
+ * makes the hiscores API the sole source `staticDataCron.ts` writes from,
+ * this is a defense-in-depth check for the gap that can still open even
+ * with a single source: the DB row is a point-in-time snapshot from the
+ * last successful refresh (cron runs every 24h), so if OSRS ships a new
+ * skill/activity or renames one between refreshes, what's served can
+ * legitimately lag what a fresh probe returns right now — exactly the kind
+ * of silent mismatch this sprint is closing. A genuine mismatch is
+ * console.warn'd (grep/alert-friendly) with the specific differing names,
+ * not just reported "degraded" in the response.
+ */
+function checkHiscoreVocabDrift(): Promise<ServiceHealth> {
+  return safeCheck("osrs-vocab-drift", "OSRS Vocab Drift", async () => {
+    const [servedSkills, servedActivities, authoritative] = await Promise.all([
+      getStaticData("skills"),
+      getStaticData("activities"),
+      fetchHiscoreVocab(),
+    ]);
+
+    // No served data yet (fresh DB, first cron tick hasn't landed) isn't
+    // drift — there's nothing to compare, and /api/hiscores/skills/list
+    // already reports that state itself via its own 503.
+    if (servedSkills.length === 0 && servedActivities.length === 0) {
+      return { status: "unknown", detail: "No static data served yet" };
+    }
+
+    const diff = [
+      ...diffNames(servedSkills, authoritative.skills),
+      ...diffNames(servedActivities, authoritative.activities),
+    ];
+
+    if (diff.length === 0) {
+      return { status: "up" };
+    }
+
+    const detail = `Board Builder vocabulary drift: ${diff.join(", ")}`;
+    console.warn(`[dependencyHealth] ${detail}`);
+    return { status: "degraded", detail };
+  });
+}
+
+/**
  * Runs (or serves a cached copy of) all dependency checks. Cached ~60s
  * server-side so the overview UI can poll freely without hammering upstream
  * status pages / the OSRS API / our own DB on every page view.
@@ -154,6 +215,7 @@ export async function getDependencyHealth(): Promise<{ services: ServiceHealth[]
     checkOsrsHiscores(),
     checkCloudflareStatus(),
     checkSelf(),
+    checkHiscoreVocabDrift(),
   ]);
 
   const data = { services };
