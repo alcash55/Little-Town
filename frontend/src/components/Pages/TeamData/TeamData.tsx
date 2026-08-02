@@ -21,6 +21,7 @@ import { fmtDate, getTileCell } from './helpers';
 import { StatusLegend } from './StatusLegend';
 import { TeamDataTable } from './TeamDataTable';
 import { TeamDataMobileList } from './TeamDataMobileList';
+import { UnlinkedAccountCallout } from './UnlinkedAccountCallout';
 
 const TABLE_MAX_HEIGHT = '62vh';
 
@@ -41,6 +42,20 @@ const TeamData = () => {
     return data.tiles.filter((tile) => players.some((p) => getTileCell(tile, p).state !== 'none'));
   }, [data?.tiles, players, hideEmpty]);
 
+  // `teamId === null` covers two genuinely different causes (TEAM-BRIEF.md
+  // Sprint 17, Track B item 3) that resolveMyBingoPlayer() (backend/src/db/players.ts)
+  // can both produce: no rsn_claims row for this user at all (`players: []` —
+  // the caller isn't linked to any bingo_players row), vs. an RSN that IS
+  // claimed but whose player row hasn't been drafted onto a team yet
+  // (`players` contains exactly the caller's own row). Only the first is
+  // fixed by the onboarding wizard; the second is on an admin to draft, not
+  // something "Show intro" can help with, so it gets its own distinct copy
+  // instead of silently reusing the unlinked-account CTA or falling through
+  // to a one-column table that would render under a blank header (team name
+  // is intentionally hidden while teamId is null — see below).
+  const isUnlinked = !!data && data.teamId === null && data.players.length === 0;
+  const isLinkedButUndrafted = !!data && data.teamId === null && data.players.length > 0;
+
   return (
     <PageLayout title="My Team" maxWidth="full">
       {/* Header */}
@@ -54,7 +69,11 @@ const TeamData = () => {
         }}
       >
         <Stack spacing={0.25}>
-          {data && (
+          {/* teamId === null means the caller isn't linked to a player at all —
+              UnlinkedAccountCallout below owns that state's messaging, so the
+              header doesn't also print the placeholder "Unassigned" as if it
+              were a real team name (TEAM-BRIEF.md Sprint 17, Track B item 3). */}
+          {data && data.teamId !== null && (
             <Typography variant="body1" sx={{ color: appColors.textPrimary, fontWeight: 600 }}>
               {data.teamName}
             </Typography>
@@ -139,7 +158,18 @@ const TeamData = () => {
         </Typography>
       )}
 
-      {data && data.players.length === 0 && (
+      {isUnlinked && <UnlinkedAccountCallout />}
+
+      {isLinkedButUndrafted && (
+        <Typography
+          sx={{ color: appColors.textSecondary, textAlign: 'center', width: '100%', mt: 4 }}
+        >
+          Your RSN is confirmed, but you haven't been drafted onto a team yet — check back once
+          an admin sets up teams.
+        </Typography>
+      )}
+
+      {data && data.teamId !== null && data.players.length === 0 && (
         <Typography
           sx={{ color: appColors.textSecondary, textAlign: 'center', width: '100%', mt: 4 }}
         >
@@ -147,7 +177,7 @@ const TeamData = () => {
         </Typography>
       )}
 
-      {data && data.players.length > 0 && (
+      {data && data.players.length > 0 && !isLinkedButUndrafted && (
         <>
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
