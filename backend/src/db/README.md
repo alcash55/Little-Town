@@ -15,6 +15,15 @@ All database operations for bingo data. Exports:
 - `updateBingo` — update bingo fields and optionally replace its teams
 - `saveActiveBingoBoard` — replace all tiles on the active bingo
 - `getActiveBingoBoard` — fetch all tiles for the active bingo ordered by position
+- `getBingoDeleteCounts` / `deleteBingoRow` (Sprint 17, Track A2, contract A2) — pre-delete row
+  counts across the 4 tables with a direct `bingo_id` FK, and the unconditional delete itself.
+  Everything else (side accounts, hiscores, hiscore history, rsn_change_log — see the Sprint 17
+  cascade-walk report) is removed by existing `ON DELETE CASCADE` FKs; this file does not purge the
+  `screenshots` storage bucket — see `bingoSubmissions.ts`'s `purgeBingoScreenshots` for that.
+  Active-bingo refusal / force+header guard is route-layer, not here.
+- `cloneBingo` (Sprint 17, Track A2, contract A3) — clones a source bingo's board tiles into a new
+  `draft` bingo via the `clone_bingo` RPC (atomic 404/409 checks + set-based tile copy in one
+  transaction). Never copies teams/players/submissions/snapshots.
 
 ### `users.ts`
 All database operations for user data. Exports:
@@ -49,6 +58,10 @@ access to the private `screenshots` storage bucket. Exports:
 - `approveSubmission`, `denySubmission` — admin review actions. `approveSubmission` accepts an
   optional `playerId`, persisted to `bingo_submissions.player_id` (validated by the route handler)
 - `getSignedScreenshotUrl` — short-lived signed URL for a stored screenshot object path
+- `purgeBingoScreenshots` (Sprint 17, Track A2, contract A2) — deletes every screenshot object for a
+  bingo from the private `screenshots` bucket, by listing the `${bingoId}/...` path prefix every
+  uploader writes under. The one piece of A2's delete Postgres's FK cascade cannot reach (storage
+  objects aren't rows); safe to call before or after `deleteBingoRow`. Returns the count removed.
 
 (Note: this file predates `players.ts` and `staticData.ts`, which also aren't listed above.)
 
@@ -64,6 +77,14 @@ single bingo cycle's player pool. Exports `findRsnClaim` (lookup by normalized/l
 for the 409 `RSN_TAKEN` conflict check), `findRsnClaimByUser`, and `upsertRsnClaim` (one claim per
 user — re-claiming under a different RSN moves the existing row). See the migration header
 (`supabase/migrations/20260715000000_rsn_claims.sql`) for the full design rationale.
+
+Sprint 17, Track A2, contract A4 (admin release/reassign) adds:
+- `listRsnClaims` — every claim joined to `users` for `username`, newest-first
+- `releaseRsnClaim(rsnNormalized)` — deletes the claim; returns `false` (not an error) if none exists
+- `reassignRsnClaim(rsnNormalized, userId)` — moves the claim to `userId`; 409
+  (`RSN_CLAIM_CONFLICT`) if that user already holds a *different* claim (`UNIQUE(user_id)`),
+  checked up front and re-checked via the 23505 the UPDATE would raise on a race; 404
+  (`RSN_CLAIM_NOT_FOUND`) if `rsnNormalized` doesn't exist
 
 (`players.ts`'s `findBingoPlayerCaseInsensitive`, added the same sprint, also feeds
 `POST /api/onboarding/rsn` — see `routes/onboarding.ts`.)
