@@ -35,6 +35,7 @@ import {
   jsonRequest,
   startTestServer,
   uniqueSuffix,
+  withAllowDevAuth,
   type TestUser,
 } from "./helpers.js";
 
@@ -162,9 +163,13 @@ describe.skipIf(!suite)("POST /api/admin/bingo/clone", () => {
   });
 
   test("401 with no token at all", async () => {
-    const { status } = await jsonRequest(port, "POST", "/api/admin/bingo/clone", {
-      body: cloneBody("00000000-0000-0000-0000-000000000000", `test-clone-authz-none-${uniqueSuffix()}`),
-    });
+    // Deterministic regardless of the developer's local .env — see
+    // withAllowDevAuth's doc comment (helpers.ts).
+    const { status } = await withAllowDevAuth("false", () =>
+      jsonRequest(port, "POST", "/api/admin/bingo/clone", {
+        body: cloneBody("00000000-0000-0000-0000-000000000000", `test-clone-authz-none-${uniqueSuffix()}`),
+      }),
+    );
     expect(status).toBe(401);
   });
 
