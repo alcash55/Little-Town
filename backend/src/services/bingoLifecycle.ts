@@ -44,6 +44,38 @@ interface EndedActiveBingoRow {
 }
 
 /**
+ * The ONE guarded status='active' -> 'complete' transition in the codebase
+ * (TEAM-BRIEF.md Sprint 17, Track A1 — A1's "reuse the existing transition,
+ * don't write a second path" instruction). Shared by completeEndedBingos
+ * below (auto, driven by end_date passing) and endBingoEarly below (manual,
+ * an admin action) — both are just different CALLERS of this same guarded
+ * UPDATE, not separate transition logic.
+ *
+ * The UPDATE carries a `status = 'active'` filter and is verified via the
+ * returned row, so if two callers race on the same bingo (e.g. the boot-time
+ * check and a concurrent cron tick, or an admin's "End Early" click racing
+ * the auto-complete tick), only the winner gets a non-null row back — the
+ * loser's UPDATE matches zero rows and silently no-ops rather than double-
+ * processing. Returns null both when the id doesn't exist AND when it
+ * exists but isn't 'active' — callers that need to tell those apart (e.g.
+ * the 404-vs-409 split in POST /admin/bingo/:bingoId/end) check existence
+ * themselves first.
+ */
+async function transitionActiveBingoToComplete(bingoId: string, now: Date): Promise<EndedActiveBingoRow | null> {
+  const db = getDb();
+  const { data: updated, error } = await db
+    .from("bingos")
+    .update({ status: "complete", updated_at: now.toISOString() })
+    .eq("id", bingoId)
+    .eq("status", "active")
+    .select("id, name, end_date")
+    .maybeSingle();
+
+  if (error) throw new Error(`Failed to complete bingo ${bingoId}: ${error.message}`);
+  return updated as EndedActiveBingoRow | null;
+}
+
+/**
  * Idempotent — safe to call repeatedly (every cron tick, plus once at boot).
  * Flips every status='active' bingo whose end_date is strictly in the past
  * (same "< now, not <=" comparison as playerSnapshotCron.ts's
@@ -51,12 +83,9 @@ interface EndedActiveBingoRow {
  * means at most one row ever matches, but this doesn't assume that — it
  * processes every match it finds.
  *
- * Each transition is individually race-guarded: the UPDATE itself carries a
- * `status = 'active'` filter and is verified via the returned row, so if two
- * callers (e.g. a boot-time check and a concurrent cron tick) race on the
- * same bingo, only the winner logs the transition, counts pending
- * submissions, and fires the Discord notification — the loser's UPDATE
- * matches zero rows and is silently skipped, not double-processed.
+ * Each transition goes through transitionActiveBingoToComplete above, so
+ * it's individually race-guarded the same way endBingoEarly's manual
+ * transition is.
  */
 export async function completeEndedBingos(now: Date = new Date()): Promise<CompletedBingoResult[]> {
   const db = getDb();
@@ -74,19 +103,11 @@ export async function completeEndedBingos(now: Date = new Date()): Promise<Compl
   const results: CompletedBingoResult[] = [];
 
   for (const row of (data ?? []) as EndedActiveBingoRow[]) {
-    // Race guard: only actually transition (and only proceed to notify) if
-    // this call is the one that flips it — a concurrent caller that lost the
-    // race gets no row back here and moves on.
-    const { data: updated, error: updateError } = await db
-      .from("bingos")
-      .update({ status: "complete", updated_at: nowIso })
-      .eq("id", row.id)
-      .eq("status", "active")
-      .select("id")
-      .maybeSingle();
-
-    if (updateError) {
-      console.error(`[bingoLifecycle] Failed to complete bingo "${row.name}" (${row.id}):`, updateError.message);
+    let updated: EndedActiveBingoRow | null;
+    try {
+      updated = await transitionActiveBingoToComplete(row.id, now);
+    } catch (e) {
+      console.error(`[bingoLifecycle] Failed to complete bingo "${row.name}" (${row.id}):`, (e as Error).message);
       continue;
     }
     if (!updated) {
@@ -118,4 +139,47 @@ export async function completeEndedBingos(now: Date = new Date()): Promise<Compl
   }
 
   return results;
+}
+
+/**
+ * Manual "End Early" transition (TEAM-BRIEF.md Sprint 17, Track A1 — A1).
+ * POST /api/admin/bingo/:bingoId/end's underlying service call. Goes through
+ * the exact same guarded transitionActiveBingoToComplete as
+ * completeEndedBingos above — this is a different CALLER (an admin action
+ * instead of the end_date-passed cron/boot check), not a second transition
+ * path.
+ *
+ * Returns null if the bingo isn't currently 'active' (already complete,
+ * still draft/archived, or lost a race to a concurrent transition). Does
+ * NOT distinguish "doesn't exist" from "exists but not active" — the route
+ * checks existence itself first (404) before calling this, so a null return
+ * here always means 409 "not active".
+ */
+export async function endBingoEarly(
+  bingoId: string,
+  actingAdminId?: string,
+  now: Date = new Date(),
+): Promise<(CompletedBingoResult & { endedAt: string }) | null> {
+  const updated = await transitionActiveBingoToComplete(bingoId, now);
+  if (!updated) return null;
+
+  const pendingCount = await countPendingSubmissions(bingoId);
+  const endedAt = now.toISOString();
+
+  console.log(
+    `[bingoLifecycle] Bingo "${updated.name}" (${bingoId}) ended early by admin ${actingAdminId ?? "unknown"}.` +
+      (pendingCount > 0
+        ? ` ${pendingCount} screenshot submission(s) still pending review.`
+        : " No pending screenshot submissions."),
+  );
+
+  if (pendingCount > 0) {
+    // Same product decision as completeEndedBingos: best-effort, one-time,
+    // never lets a Discord failure look like the transition itself failed.
+    await notifyBingoEndedWithPendingScreenshots(updated.name, pendingCount).catch((e) =>
+      console.warn(`[bingoLifecycle] Discord end-of-bingo notification failed for "${updated.name}":`, e),
+    );
+  }
+
+  return { id: updated.id, name: updated.name, pendingCount, endedAt };
 }

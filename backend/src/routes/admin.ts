@@ -13,6 +13,9 @@ import {
   screenshotApprovalSchema,
   screenshotTagSchema,
   screenshotAttributionSchema,
+  bingoDeleteSchema,
+  bingoCloneSchema,
+  rsnClaimReassignSchema,
 } from "../lib/validation.js";
 import { mapWithConcurrency } from "../lib/concurrency.js";
 import {
@@ -24,6 +27,7 @@ import {
   saveActiveBingoBoard,
   saveBingoDetails,
   updateBingo,
+  cloneBingo,
 } from "../db/bingos.js";
 import { refreshStaticData } from "../services/staticDataCron.js";
 import { refreshAllPlayerSnapshots } from "../services/playerSnapshotCron.js";
@@ -68,6 +72,14 @@ import {
 import { getPlayerStats, PlayerStat, getTeamStatsWithUnresolvable } from "../db/playerStats.js";
 import { reactToSubmissionMessage } from "../services/discordScreenshots.js";
 import { getDependencyHealth } from "../services/dependencyHealth.js";
+import { endBingoEarly } from "../services/bingoLifecycle.js";
+import { deleteBingoWithPurge } from "../services/bingoDelete.js";
+import {
+  listRsnClaims,
+  releaseRsnClaim,
+  reassignRsnClaim,
+  type RsnClaimAdminRow,
+} from "../db/rsnClaims.js";
 
 const router = Router();
 
@@ -159,6 +171,156 @@ router.get(
       data: { bingo, pendingScreenshots },
     };
     res.status(200).json(response);
+  }),
+);
+
+// -------------------------------------------------------
+// /bingo/:bingoId/end — end a bingo early (TEAM-BRIEF.md Sprint 17, Track
+// A1). Frozen contract. Extra path segment after the id, so this doesn't
+// collide with the /bingo/:id wildcard below regardless of ordering — kept
+// up here with the other bingo-lifecycle routes for readability. Reuses
+// services/bingoLifecycle.ts's guarded transition (endBingoEarly shares its
+// race-guarded UPDATE with completeEndedBingos) rather than a second
+// transition path.
+// -------------------------------------------------------
+
+router.post(
+  "/bingo/:bingoId/end",
+  authorize("admin"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const bingoId = Array.isArray(req.params.bingoId) ? req.params.bingoId[0] : req.params.bingoId;
+    if (!bingoId) return res.status(400).json({ success: false, error: "Bingo ID is required" });
+
+    const bingo = await getBingoById(bingoId);
+    if (!bingo?.id) {
+      return res.status(404).json({ success: false, error: "No such bingo" });
+    }
+
+    const result = await endBingoEarly(bingoId, getAuditUserId(req));
+    if (!result) {
+      // Idempotent-safe per the contract: already complete/draft/archived
+      // isn't a panic state, just a 409 telling the caller nothing happened.
+      return res.status(409).json({ success: false, error: "Bingo is not active" });
+    }
+
+    const response: ApiResponse<{ id: string; status: "complete"; endedAt: string; pendingScreenshots: number }> = {
+      success: true,
+      data: { id: result.id, status: "complete", endedAt: result.endedAt, pendingScreenshots: result.pendingCount },
+    };
+    res.status(200).json(response);
+  }),
+);
+
+// -------------------------------------------------------
+// DELETE /bingo/:bingoId — delete a bingo (TEAM-BRIEF.md Sprint 17, Track
+// A2). Frozen contract. THE only destructive endpoint in the codebase.
+//
+// Refuses status='active' unless BOTH halves of the guard are satisfied:
+// body { force: true } AND header X-Confirm-Delete matching the bingo's
+// name exactly. Non-active bingos (draft/complete/archived) delete freely —
+// the guard is specific to 'active' per the contract, not a blanket
+// confirmation requirement.
+//
+// Postgres FK cascade (verified by data-engineer, not re-checked here)
+// removes teams/tiles/players/submissions; the storage bucket's screenshot
+// objects are NOT covered by that cascade and are purged explicitly by
+// services/bingoDelete.ts's deleteBingoWithPurge.
+// -------------------------------------------------------
+
+router.delete(
+  "/bingo/:bingoId",
+  authorize("admin"),
+  validateBody(bingoDeleteSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const bingoId = Array.isArray(req.params.bingoId) ? req.params.bingoId[0] : req.params.bingoId;
+    if (!bingoId) return res.status(400).json({ success: false, error: "Bingo ID is required" });
+
+    const bingo = await getBingoById(bingoId);
+    if (!bingo?.id) {
+      return res.status(404).json({ success: false, error: "No such bingo" });
+    }
+
+    if (bingo.status === "active") {
+      const { force } = req.body as { force?: boolean };
+      const confirmHeaderRaw = req.headers["x-confirm-delete"];
+      const confirmHeader = Array.isArray(confirmHeaderRaw) ? confirmHeaderRaw[0] : confirmHeaderRaw;
+
+      // Two independent halves — BOTH must hold. Neither substitutes for
+      // the other: a caller with force:true but a missing/wrong header is
+      // blocked exactly like a caller with the right header but no force.
+      const forceOk = force === true;
+      const confirmOk = confirmHeader !== undefined && confirmHeader === bingo.name;
+
+      if (!forceOk || !confirmOk) {
+        return res.status(409).json({
+          success: false,
+          error: "Refusing to delete an active bingo",
+          code: "BINGO_ACTIVE",
+        });
+      }
+    }
+
+    // Explicit `id: bingo.id` re-asserts the narrowed (non-undefined) type
+    // from the `!bingo?.id` guard above — BingoConfig itself declares `id`
+    // optional, which doesn't otherwise survive passing the whole object
+    // through to a function parameter typed with a required `id`.
+    const purged = await deleteBingoWithPurge({ ...bingo, id: bingo.id }, getAuditUserId(req));
+
+    const response: ApiResponse<{
+      deleted: true;
+      id: string;
+      purged: { teams: number; tiles: number; players: number; submissions: number; storageObjects: number };
+    }> = {
+      success: true,
+      data: { deleted: true, id: bingo.id, purged },
+    };
+    res.status(200).json(response);
+  }),
+);
+
+// -------------------------------------------------------
+// POST /bingo/clone — clone a board into a new draft (TEAM-BRIEF.md Sprint
+// 17, Track A3). Frozen contract. Copies board tiles only (task, type,
+// points, targetValue, position — plus `metadata`, a flagged contract
+// deviation; see the clone_bingo migration's header) — never teams,
+// players, submissions, or snapshots.
+//
+// Delegates entirely to db/bingos.ts's cloneBingo, which wraps the
+// `clone_bingo` Postgres RPC: source-not-found and active-bingo-exists are
+// checked ATOMICALLY inside that one RPC call (avoiding the TOCTOU window a
+// separate "check then insert" from this route would have), and it throws
+// AppError(404, "BINGO_NOT_FOUND") / AppError(409, "BINGO_ACTIVE") that
+// asyncHandler forwards to errorHandler untouched (not re-mapped here —
+// tech lead's explicit instruction; NOTE this means these two error
+// responses render as errorHandler's `{ error, code }` shape, NOT this
+// route's usual `{ success: false, error }` — flagged as a contract
+// conformance gap in the sprint report, not silently changed here).
+// -------------------------------------------------------
+
+router.post(
+  "/bingo/clone",
+  authorize("admin"),
+  validateBody(bingoCloneSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { sourceBingoId, name, startDate, endDate } = req.body as {
+      sourceBingoId: string;
+      name: string;
+      startDate: string;
+      endDate: string;
+    };
+
+    const created = await cloneBingo({ sourceBingoId, name, startDate, endDate });
+
+    console.log(
+      `[bingo-clone] Cloned bingo ${sourceBingoId} into new draft "${created.name}" (${created.id}) by admin ` +
+        `${getAuditUserId(req) ?? "unknown"} — ${created.tilesCloned} tile(s).`,
+    );
+
+    const response: ApiResponse<{ id: string; name: string; status: string; tilesCloned: number }> = {
+      success: true,
+      data: created,
+    };
+    res.status(201).json(response);
   }),
 );
 
@@ -1099,6 +1261,81 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const data = await getDependencyHealth();
     res.status(200).json(data);
+  }),
+);
+
+// -------------------------------------------------------
+// RSN claims admin — release / reassign a claimed RSN (TEAM-BRIEF.md
+// Sprint 17, Track A4). Frozen contract. Admin-only (authorize("admin"),
+// same as every other route in this file that narrows past the router-level
+// admin+moderator gate). Every release/reassign is logged with the acting
+// admin's id.
+//
+// 404-on-missing-claim for DELETE isn't spelled out in the frozen contract
+// text (only the 409 reassign-conflict case is) — added here for
+// consistency with every other admin route in this file's "no such
+// resource" handling (e.g. bingo/player 404s above). Flagged in the sprint
+// report as an addition beyond the literal contract, not a silent change to
+// it. PATCH's 404/409 come from db/rsnClaims.ts's reassignRsnClaim, which
+// throws AppError for both — forwarded to errorHandler untouched (see the
+// same note on POST /bingo/clone above re: `{ error, code }` vs this file's
+// usual `{ success: false, error }`).
+// -------------------------------------------------------
+
+router.get(
+  "/rsn-claims",
+  authorize("admin"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const response: ApiResponse<RsnClaimAdminRow[]> = {
+      success: true,
+      data: await listRsnClaims(),
+    };
+    res.status(200).json(response);
+  }),
+);
+
+router.delete(
+  "/rsn-claims/:rsnNormalized",
+  authorize("admin"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const rsnNormalized = Array.isArray(req.params.rsnNormalized) ? req.params.rsnNormalized[0] : req.params.rsnNormalized;
+    if (!rsnNormalized) return res.status(400).json({ success: false, error: "rsnNormalized is required" });
+
+    const released = await releaseRsnClaim(rsnNormalized);
+    if (!released) {
+      return res.status(404).json({ success: false, error: `No RSN claim found for "${rsnNormalized}"` });
+    }
+
+    console.warn(
+      `[rsn-claims] AUDIT: claim "${rsnNormalized}" released by admin ${getAuditUserId(req) ?? "unknown"}.`,
+    );
+
+    const response: ApiResponse<{ released: true }> = { success: true, data: { released: true } };
+    res.status(200).json(response);
+  }),
+);
+
+router.patch(
+  "/rsn-claims/:rsnNormalized",
+  authorize("admin"),
+  validateBody(rsnClaimReassignSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const rsnNormalized = Array.isArray(req.params.rsnNormalized) ? req.params.rsnNormalized[0] : req.params.rsnNormalized;
+    if (!rsnNormalized) return res.status(400).json({ success: false, error: "rsnNormalized is required" });
+    const { userId } = req.body as { userId: string };
+
+    // reassignRsnClaim throws AppError(404, "RSN_CLAIM_NOT_FOUND") /
+    // AppError(409, "RSN_CLAIM_CONFLICT") itself — let asyncHandler forward
+    // those to errorHandler rather than re-checking a falsy return here.
+    const result = await reassignRsnClaim(rsnNormalized, userId);
+
+    console.warn(
+      `[rsn-claims] AUDIT: claim "${rsnNormalized}" reassigned to user ${userId} by admin ` +
+        `${getAuditUserId(req) ?? "unknown"}.`,
+    );
+
+    const response: ApiResponse<{ rsn: string; userId: string }> = { success: true, data: result };
+    res.status(200).json(response);
   }),
 );
 
