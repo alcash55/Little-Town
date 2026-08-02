@@ -85,6 +85,12 @@ const SortableTileCard = ({
           cursor: 'default',
         }}
       >
+        {/* `titleTypographyProps` was the MUI v5 API (TEAM-BRIEF.md Sprint 17,
+            Track B item 4(a)) — v9's CardHeader forwards unrecognized props
+            straight to the root `div`, which is what was surfacing as a
+            `React does not recognize the titleTypographyProps prop on a DOM
+            element` console warning on every render. `slotProps.title` is
+            the v9 equivalent (see CardHeaderSlotsAndSlotProps). */}
         <CardHeader
           title={tile.task}
           avatar={
@@ -107,7 +113,7 @@ const SortableTileCard = ({
               </IconButton>
             </Stack>
           }
-          titleTypographyProps={{ variant: 'h6', fontSize: 16, noWrap: true }}
+          slotProps={{ title: { variant: 'h6', fontSize: 16, noWrap: true } }}
         />
         <CardContent>
           <Stack>
