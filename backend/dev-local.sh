@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# The backend dir — this script lives in it. It used to live in backend/scripts/,
+# which is where the trailing "/.." came from; the move (d3169d7) left the "/.."
+# behind, so the script cd'd to the repo root, found no package.json there, and
+# `bun run dev` died in `npm install`. Resolve to the script's own directory.
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
 RESET_DB=false
@@ -35,21 +39,13 @@ need_command() {
   fi
 }
 
+# Read one KEY="value" pair out of `supabase status -o env`. The bare
+# `supabase status` this used to scrape now prints JSON, so the old
+# box-drawing-table parse ("Project URL", "Secret", ...) silently returned
+# empty strings and the script aborted. `-o env` is the stable machine format,
+# and is what tests/integration/helpers.ts already parses.
 extract_status_value() {
-  local label="$1"
-  printf '%s\n' "$STATUS" | sed 's/│/|/g' | awk -F'|' -v label="$label" '
-    {
-      for (i=1; i<=NF; i++) {
-        gsub(/^[[:space:]]+|[[:space:]]+$/, "", $i)
-        if ($i == label) {
-          val=$(i+1)
-          gsub(/^[[:space:]]+|[[:space:]]+$/, "", val)
-          print val
-          exit
-        }
-      }
-    }
-  '
+  printf '%s\n' "$STATUS" | sed -n "s/^$1=\"\(.*\)\"$/\1/p" | head -n 1
 }
 
 need_command npm
@@ -77,14 +73,14 @@ fi
 echo "Starting local Supabase..."
 npx supabase start >/dev/null
 
-STATUS="$(npx supabase status)"
-API_URL="$(extract_status_value "Project URL")"
-DB_URL="$(extract_status_value "URL")"
-STUDIO_URL="$(extract_status_value "Studio")"
-SERVICE_ROLE_KEY="$(extract_status_value "Secret")"
+STATUS="$(npx supabase status -o env)"
+API_URL="$(extract_status_value API_URL)"
+DB_URL="$(extract_status_value DB_URL)"
+STUDIO_URL="$(extract_status_value STUDIO_URL)"
+SERVICE_ROLE_KEY="$(extract_status_value SERVICE_ROLE_KEY)"
 
 if [ -z "$API_URL" ] || [ -z "$SERVICE_ROLE_KEY" ]; then
-  echo "Could not read local Supabase URL/key from 'npx supabase status'."
+  echo "Could not read local Supabase URL/key from 'npx supabase status -o env'."
   echo "$STATUS"
   exit 1
 fi
