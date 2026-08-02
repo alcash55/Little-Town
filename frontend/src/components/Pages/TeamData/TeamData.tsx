@@ -23,8 +23,6 @@ import { TeamDataTable } from './TeamDataTable';
 import { TeamDataMobileList } from './TeamDataMobileList';
 import { UnlinkedAccountCallout } from './UnlinkedAccountCallout';
 
-const TABLE_MAX_HEIGHT = '62vh';
-
 const TeamData = () => {
   const { data, loading, error, lastUpdated, refresh } = useTeamData();
   const [search, setSearch] = useState('');
@@ -224,7 +222,7 @@ const TeamData = () => {
             <>
               {/* Desktop / tablet: tiles-as-rows × players-as-columns, sticky both ways */}
               <Box sx={{ display: { xs: 'none', sm: 'block' }, width: '100%' }}>
-                <TeamDataTable tiles={tiles} players={players} maxHeight={TABLE_MAX_HEIGHT} />
+                <TeamDataTable tiles={tiles} players={players} />
               </Box>
 
               {/* Mobile: per-player accordion — a pinched grid isn't usable at this width */}

@@ -143,22 +143,42 @@ const TileRowHeader = ({ tile }: { tile: TileInfo }) => {
 export type TeamDataTableProps = {
   tiles: TileInfo[];
   players: PlayerRow[];
-  maxHeight: string;
 };
 
 /**
  * Desktop presentation: tiles as rows, players as columns. Board sizes run
  * 16–25 tiles (better as a scrolling row axis) against teams of ~2–10 (a
  * column count that comfortably fits a viewport width instead of the 16+
- * wide text columns the old per-player-row layout produced). Sticky header
- * row + sticky tile column keep both axes labeled through the scroll.
+ * wide text columns the old per-player-row layout produced). The sticky tile
+ * column keeps rows labeled as the player axis scrolls sideways.
+ *
+ * TEAM-BRIEF.md Sprint 17, Track B item 5: this used to cap itself at a
+ * fixed `maxHeight` (62vh), which made `TableContainer` establish its own
+ * vertical scroll region nested inside PageLayout's already-scrollable page
+ * — a full 16–25-tile board was stuck scrolling through a cramped inner
+ * pane even on desktop/tablet, where there was room to just show more of
+ * the board. Dropping the vertical cap removes that inner scrollbar: the
+ * table lays out to its natural height and the page itself scrolls, like
+ * every other page in the app.
+ *
+ * TRADEOFF, deliberate: `stickyHeader`'s player row no longer sticks. MUI's
+ * `TableContainer` sets `overflow-x: auto`, and CSS computes the other axis
+ * from `visible` to `auto` when one axis is not `visible` — so this element
+ * stays the nearest scrollport for `position: sticky` even with no height
+ * cap. It simply never scrolls vertically anymore, so a `top`-stuck header
+ * has nothing to stick against and rides up with the page. Making it stick
+ * to the *page* would require `overflow: visible` here, which would forfeit
+ * horizontal scrolling for wide teams (PageLayout sets `overflowX: hidden`,
+ * so those columns would be clipped and unreachable). Horizontal scroll for
+ * many-player teams is worth more than a stuck header, so `stickyHeader`
+ * stays only for the sticky *left* tile column, which still works — that
+ * axis does still scroll here.
  */
-export function TeamDataTable({ tiles, players, maxHeight }: TeamDataTableProps) {
+export function TeamDataTable({ tiles, players }: TeamDataTableProps) {
   return (
     <TableContainer
       sx={{
         width: '100%',
-        maxHeight,
         border: `1px solid ${appColors.subtleBorder}`,
         borderRadius: 1,
         bgcolor: 'background.paper',
