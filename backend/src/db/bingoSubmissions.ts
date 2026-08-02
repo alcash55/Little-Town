@@ -387,6 +387,64 @@ export async function denySubmission(
 }
 
 /**
+ * Deletes every screenshot object for a bingo from the private `screenshots`
+ * bucket (TEAM-BRIEF.md Sprint 17, contract A2) — the one piece of A2's
+ * delete that Postgres's FK cascade genuinely cannot reach: ON DELETE
+ * CASCADE only ever removes rows, never storage.objects, so deleting a
+ * bingo's rows alone leaves every uploaded screenshot orphaned in the
+ * bucket forever.
+ *
+ * Every object in this bucket is uploaded under a `${bingoId}/...` path
+ * (see discordScreenshots.ts's uploadAttachment / uploadImgurImage), so
+ * listing by that prefix finds every object for this bingo directly —
+ * deliberately NOT by reading `image_path` off `bingo_submissions` rows,
+ * because that table may already be gone (this can safely run before OR
+ * after `deleteBingoRow` — call order doesn't matter).
+ *
+ * `.storage.list()` is paginated; this loops requesting the same
+ * (un-offset) page after each batch removal, since removing the objects
+ * just listed naturally brings the next batch to the front — no manual
+ * offset bookkeeping, and no risk of skipping an object a naive
+ * increasing-offset loop could hit if the bucket is being listed and
+ * mutated at the same time. Expected volume is tens to low hundreds of
+ * screenshots per bingo event, well within a handful of page fetches.
+ *
+ * Returns the number of objects actually removed (0 if the bingo never had
+ * any screenshots, or the bucket doesn't exist yet in a fresh local stack).
+ */
+const SCREENSHOT_PURGE_PAGE_SIZE = 100;
+
+export async function purgeBingoScreenshots(bingoId: string): Promise<number> {
+  const db = getDb();
+  let purged = 0;
+
+  for (;;) {
+    const { data: page, error: listError } = await db.storage
+      .from(SCREENSHOTS_BUCKET)
+      .list(bingoId, { limit: SCREENSHOT_PURGE_PAGE_SIZE, sortBy: { column: "name", order: "asc" } });
+
+    if (listError) {
+      throw new Error(`Failed to list screenshots for bingo ${bingoId}: ${listError.message}`);
+    }
+    if (!page || page.length === 0) break;
+
+    const paths = page.map((object) => `${bingoId}/${object.name}`);
+    const { data: removed, error: removeError } = await db.storage
+      .from(SCREENSHOTS_BUCKET)
+      .remove(paths);
+
+    if (removeError) {
+      throw new Error(`Failed to purge screenshots for bingo ${bingoId}: ${removeError.message}`);
+    }
+    purged += removed?.length ?? paths.length;
+
+    if (page.length < SCREENSHOT_PURGE_PAGE_SIZE) break;
+  }
+
+  return purged;
+}
+
+/**
  * Short-lived signed URL for a screenshot in the private `screenshots`
  * bucket. Returns null (instead of throwing) on failure so a single bad
  * row doesn't take down the whole pending list.
