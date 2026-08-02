@@ -10,9 +10,10 @@ Read `CLAUDE.md` first — it is the corrected repo guide (as of 2026-07-31). Th
 
 These block verification. Do not work around them or fake them.
 
-1. **Apply `20260715000000_rsn_claims.sql` to prod.** Until then no player can link their account to their OSRS name, and every player sees "Unassigned".
+1. ~~**Apply `20260715000000_rsn_claims.sql` to prod.**~~ **DONE 2026-08-01** — verified live via the management API, `public.rsn_claims` exists with RLS enabled.
 2. **Switch `DISCORD_SCREENSHOT_CHANNEL_ID`** (local + Render) to the real screenshots channel.
-3. **Enable Docker Desktop's WSL integration.** Without it the local Supabase stack can't boot and **247 of 469 backend tests skip**. This blocked Sprints 7 and 16 too.
+3. ~~**Enable Docker Desktop's WSL integration.**~~ **CORRECTION 2026-08-01 — Docker is available and the local Supabase stack is running.** An earlier `docker info` probe failed and I wrongly reported the stack as down; a first `bun test` run that showed 247 skips had hit a cold `bun x supabase status`. The real numbers on main are **381 pass / 88 skip / 0 fail**. Integration tests DO run — verify against the live local stack, do not settle for mocks.
+4. **Push `main` to `origin`.** `origin/main` is 11 commits behind local `main`: all of Sprint 16 and this sprint exist only on Alex's disk. This is also why Track A2's worktree forked from a pre-Sprint-16 base.
 
 ---
 
@@ -53,7 +54,9 @@ POST /api/admin/bingo/clone
   404 source bingo not found
   409 { success: false, error: "An active bingo already exists" }   // uq_bingos_one_active
 ```
-Copies board tiles only — task, type, points, targetValue, position. **Never** copies teams, players, submissions, or snapshots.
+Copies board tiles only — task, type, points, targetValue, position, **and `metadata`**. **Never** copies teams, players, submissions, or snapshots.
+
+> **Contract amended 2026-08-01 (tech lead).** The original wording omitted `metadata`. Track A2 flagged this rather than applying it silently, and the flag was correct: `metadata` carries the Board Builder's boss/monster/activity picker data, and `points`/`target_value` are *derived from* it at save time. Cloning without it would produce round-2 tiles holding a KC/XP number with no attached boss or activity — silent data loss, not cosmetic. Response shape is unchanged (`tilesCloned` is still a count), so no other track is affected.
 
 ### A4 — Admin RSN claim release / reassign
 
