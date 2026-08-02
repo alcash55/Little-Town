@@ -415,3 +415,32 @@ export function startTestServer(app: import("express").Express): Promise<{ serve
     });
   });
 }
+
+/**
+ * Temporarily overrides `process.env.ALLOW_DEV_AUTH` for the duration of
+ * `fn`, then restores whatever value (including "unset") was there before —
+ * even if `fn` throws/an `expect()` inside it fails, via `finally`.
+ *
+ * `middleware/auth.ts`'s `protect` reads this env var fresh on every
+ * request (no caching), so a "no token -> 401" assertion is only
+ * deterministic if the test controls this value itself: a developer's local
+ * `backend/.env` commonly sets `ALLOW_DEV_AUTH=true` (see `.env.example`),
+ * which makes `protect` inject the local-dev admin user for a token-less
+ * request instead of rejecting it — turning an intended 401 into a 200/404/
+ * etc. depending on the route. Wrap any "no token" authz assertion in
+ * `withAllowDevAuth("false", async () => { ... })` so it passes regardless
+ * of what's in `.env`. Use `withAllowDevAuth("true", async () => { ... })`
+ * to instead pin the bypass's own accept-as-dev-user behavior.
+ */
+export async function withAllowDevAuth<T>(value: string | undefined, fn: () => Promise<T>): Promise<T> {
+  const previous = process.env.ALLOW_DEV_AUTH;
+  if (value === undefined) delete process.env.ALLOW_DEV_AUTH;
+  else process.env.ALLOW_DEV_AUTH = value;
+
+  try {
+    return await fn();
+  } finally {
+    if (previous === undefined) delete process.env.ALLOW_DEV_AUTH;
+    else process.env.ALLOW_DEV_AUTH = previous;
+  }
+}
