@@ -12,6 +12,9 @@ import {
   sideAccountSchema,
   screenshotApprovalSchema,
   rsnClaimSchema,
+  bingoDeleteSchema,
+  bingoCloneSchema,
+  rsnClaimReassignSchema,
 } from "../../src/lib/validation.js";
 
 // -------------------------------------------------------
@@ -273,6 +276,88 @@ describe("rsnClaimSchema (POST /onboarding/rsn)", () => {
 
   test("missing rsn key entirely is rejected", () => {
     const result = rsnClaimSchema.safeParse({});
+    expect(result.success).toBe(false);
+  });
+});
+
+// -------------------------------------------------------
+// Sprint 17 Track A2/A3/A4 schemas
+// -------------------------------------------------------
+
+describe("bingoDeleteSchema (DELETE /admin/bingo/:bingoId)", () => {
+  test("empty body is valid — force defaults to absent (guard only applies to active bingos)", () => {
+    const result = bingoDeleteSchema.safeParse({});
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.force).toBeUndefined();
+  });
+
+  test("accepts force: true", () => {
+    const result = bingoDeleteSchema.safeParse({ force: true });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.force).toBe(true);
+  });
+
+  test("accepts force: false", () => {
+    const result = bingoDeleteSchema.safeParse({ force: false });
+    expect(result.success).toBe(true);
+  });
+
+  test("rejects a non-boolean force value", () => {
+    const result = bingoDeleteSchema.safeParse({ force: "true" });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("bingoCloneSchema (POST /admin/bingo/clone)", () => {
+  const valid = {
+    sourceBingoId: "11111111-1111-1111-1111-111111111111",
+    name: "Round 2",
+    startDate: "2026-08-01T00:00:00.000Z",
+    endDate: "2026-08-15T00:00:00.000Z",
+  };
+
+  test("accepts a well-formed clone request", () => {
+    const result = bingoCloneSchema.safeParse(valid);
+    expect(result.success).toBe(true);
+  });
+
+  test("rejects a missing sourceBingoId", () => {
+    const { sourceBingoId: _drop, ...rest } = valid;
+    const result = bingoCloneSchema.safeParse(rest);
+    expect(result.success).toBe(false);
+  });
+
+  test("rejects an empty name", () => {
+    const result = bingoCloneSchema.safeParse({ ...valid, name: "" });
+    expect(result.success).toBe(false);
+  });
+
+  test("rejects a missing startDate", () => {
+    const { startDate: _drop, ...rest } = valid;
+    const result = bingoCloneSchema.safeParse(rest);
+    expect(result.success).toBe(false);
+  });
+
+  test("rejects a missing endDate", () => {
+    const { endDate: _drop, ...rest } = valid;
+    const result = bingoCloneSchema.safeParse(rest);
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("rsnClaimReassignSchema (PATCH /admin/rsn-claims/:rsnNormalized)", () => {
+  test("accepts a userId", () => {
+    const result = rsnClaimReassignSchema.safeParse({ userId: "11111111-1111-1111-1111-111111111111" });
+    expect(result.success).toBe(true);
+  });
+
+  test("rejects a missing userId", () => {
+    const result = rsnClaimReassignSchema.safeParse({});
+    expect(result.success).toBe(false);
+  });
+
+  test("rejects an empty-string userId", () => {
+    const result = rsnClaimReassignSchema.safeParse({ userId: "" });
     expect(result.success).toBe(false);
   });
 });

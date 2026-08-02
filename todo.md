@@ -17,10 +17,10 @@ Everything below this section is either shipped history or a per-sprint candidat
 
 Goal: run repeated bingos with 10–30 Little Town players instead of solo-testing.
 
-- [ ] **A1** `POST /api/admin/bingo/:id/end` — end early, reusing `bingoLifecycle.ts`'s idempotent transition
-- [ ] **A2** `DELETE /api/admin/bingo/:id` — cascade + storage-object purge, double-guarded against deleting an active bingo
-- [ ] **A3** `POST /api/admin/bingo/clone` — new draft from an existing board, so each test round isn't a 25-tile rebuild
-- [ ] **A4** Admin RSN claim release/reassign — someone will fat-finger a claim and it currently locks that name short of a DB edit
+- [x] ~~**A1** `POST /api/admin/bingo/:id/end` — end early, reusing `bingoLifecycle.ts`'s idempotent transition~~ _(shipped 2026-08-02, Sprint 17 Track A1 — extracted the shared guarded UPDATE into `transitionActiveBingoToComplete`; `completeEndedBingos` and the new `endBingoEarly` are both just callers of it, not a second transition path. 11/11 integration tests pass live.)_
+- [x] ~~**A2** `DELETE /api/admin/bingo/:id` — cascade + storage-object purge, double-guarded against deleting an active bingo~~ _(shipped 2026-08-02, Sprint 17 Track A1 — route owns the guard (existence, active refusal, force+X-Confirm-Delete double gate, audit log); `services/bingoDelete.ts` orchestrates data-engineer's `getBingoDeleteCounts`/`deleteBingoRow`/`purgeBingoScreenshots`. 9/9 integration tests pass live, including each guard half proven independently and a real cascade+purge run against a live active bingo.)_
+- [x] ~~**A3** `POST /api/admin/bingo/clone` — new draft from an existing board, so each test round isn't a 25-tile rebuild~~ _(shipped 2026-08-02, Sprint 17 Track A1 — delegates entirely to data-engineer's `clone_bingo` RPC via `cloneBingo()`; 404/409 are its AppErrors forwarded through errorHandler untouched, which is a flagged contract-shape gap — see report. 6/6 integration tests pass live.)_
+- [x] ~~**A4** Admin RSN claim release/reassign — someone will fat-finger a claim and it currently locks that name short of a DB edit~~ _(shipped 2026-08-02, Sprint 17 Track A1 — GET/DELETE/PATCH `/api/admin/rsn-claims`, admin-only, every release/reassign logged with the acting admin id. 9/9 integration tests pass live.)_
 - [x] ~~**A2-data** Prove the delete cascade is complete; purge orphaned screenshot objects~~ _(shipped 2026-08-01 — cascade proven at runtime: 11 seeded rows across all 11 table-scopes went to 0 on one DELETE. Storage purge helper runtime-verified. Also pinned search_path on 8 advisor-flagged functions + clone_bingo.)_
 - [ ] **B1** Admin UI: end early / delete (typed confirm) / clone
 - [ ] **B2** Team Drafter: release-reassign a claim; flag pool entries never claimed by a real user

@@ -190,3 +190,41 @@ export const inviteAcceptSchema = z.object({
 export const rsnClaimSchema = z.object({
   rsn: z.string().min(1, "RSN is required").max(40, "RSN is too long"),
 });
+
+// -------------------------------------------------------
+// Delete a bingo (DELETE /admin/bingo/:bingoId — TEAM-BRIEF.md Sprint 17,
+// Track A2). `force` is only the FIRST half of the double guard for
+// deleting an ACTIVE bingo — the second half (the `X-Confirm-Delete`
+// header, matched against the bingo's name) isn't part of the body, so it's
+// checked separately in the route. A body without `force` at all is still
+// syntactically valid (most deletes are of a non-active bingo, where no
+// guard applies); the route itself refuses deleting an ACTIVE bingo unless
+// both halves are present and correct.
+// -------------------------------------------------------
+
+export const bingoDeleteSchema = z.object({
+  force: z.boolean().optional(),
+});
+
+// -------------------------------------------------------
+// Clone a bingo's board into a new draft (POST /admin/bingo/clone —
+// TEAM-BRIEF.md Sprint 17, Track A3). Loose non-empty-string checks for the
+// dates, matching the existing convention elsewhere in this file (e.g.
+// bingoDetailsSchema's start/end) rather than a strict ISO-8601 regex.
+// -------------------------------------------------------
+
+export const bingoCloneSchema = z.object({
+  sourceBingoId: z.string().min(1, "sourceBingoId is required"),
+  name: z.string().min(1, "Bingo name is required"),
+  startDate: z.string().min(1, "startDate is required"),
+  endDate: z.string().min(1, "endDate is required"),
+});
+
+// -------------------------------------------------------
+// Reassign a claimed RSN to a different user (PATCH
+// /admin/rsn-claims/:rsnNormalized — TEAM-BRIEF.md Sprint 17, Track A4).
+// -------------------------------------------------------
+
+export const rsnClaimReassignSchema = z.object({
+  userId: z.string().min(1, "userId is required"),
+});
