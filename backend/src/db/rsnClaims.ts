@@ -81,3 +81,120 @@ export async function upsertRsnClaim(
 
   return data as RsnClaimRow;
 }
+
+// -------------------------------------------------------
+// Admin release/reassign (TEAM-BRIEF.md Sprint 17, Track A2, contract A4)
+// -------------------------------------------------------
+
+export interface RsnClaimAdminRow {
+  userId: string;
+  username: string;
+  rsn: string;
+  rsnNormalized: string;
+  claimedAt: string;
+}
+
+/**
+ * Every current RSN claim, joined to `users` for `username` (the join
+ * works because `rsn_claims.user_id` is a real FK to `users(id)` — see the
+ * migration). Ordered newest-claim-first so a busy admin panel shows recent
+ * activity at the top, matching listInvites'/listUsers' listing
+ * conventions elsewhere in this file's sibling modules.
+ */
+export async function listRsnClaims(): Promise<RsnClaimAdminRow[]> {
+  const { data, error } = await getDb()
+    .from("rsn_claims")
+    .select("user_id, rsn, rsn_normalized, claimed_at, users(username)")
+    .order("claimed_at", { ascending: false });
+
+  if (error) throw new Error(`Failed to list RSN claims: ${error.message}`);
+
+  return ((data ?? []) as unknown as Array<{
+    user_id: string;
+    rsn: string;
+    rsn_normalized: string;
+    claimed_at: string;
+    users: { username: string } | { username: string }[] | null;
+  }>).map((row) => {
+    // PostgREST embeds a to-one relationship as an object normally, but the
+    // supabase-js generated types model every embed as possibly-array —
+    // handle both shapes defensively rather than asserting one.
+    const embeddedUser = Array.isArray(row.users) ? row.users[0] : row.users;
+    return {
+      userId: row.user_id,
+      username: embeddedUser?.username ?? "",
+      rsn: row.rsn,
+      rsnNormalized: row.rsn_normalized,
+      claimedAt: row.claimed_at,
+    };
+  });
+}
+
+/**
+ * Releases (deletes) the claim on `rsnNormalized`, freeing that RSN for
+ * anyone to claim again via POST /api/onboarding/rsn. Returns false — not
+ * an error — if no claim exists for that RSN, so the route can turn that
+ * into its own 404 rather than this layer guessing at HTTP semantics.
+ */
+export async function releaseRsnClaim(rsnNormalized: string): Promise<boolean> {
+  const { data, error } = await getDb()
+    .from("rsn_claims")
+    .delete()
+    .eq("rsn_normalized", rsnNormalized)
+    .select("id");
+
+  if (error) throw new Error(`Failed to release RSN claim "${rsnNormalized}": ${error.message}`);
+  return (data ?? []).length > 0;
+}
+
+/**
+ * Reassigns the claim on `rsnNormalized` to a different `userId`. Both of
+ * the table's UNIQUE constraints are load-bearing here, not just
+ * `UNIQUE(rsn_normalized)`:
+ *   - `UNIQUE(user_id)` means the target user can hold at most one claim
+ *     total — if they already hold a DIFFERENT rsn's claim, this must be
+ *     refused with 409 (the frozen contract's own wording), not silently
+ *     overwrite their existing claim or violate the constraint.
+ *   - `UNIQUE(rsn_normalized)` is naturally respected because this UPDATEs
+ *     the one existing row for `rsnNormalized` in place rather than
+ *     inserting a second one.
+ *
+ * Pre-checks findRsnClaimByUser for a clear 409 message in the common
+ * (non-race) case, then still catches 23505 as a last-line defense against
+ * a concurrent claim/reassign landing between the pre-check and the
+ * UPDATE — same two-layer pattern as upsertRsnClaim above.
+ */
+export async function reassignRsnClaim(
+  rsnNormalized: string,
+  userId: string,
+): Promise<{ rsn: string; userId: string }> {
+  const db = getDb();
+
+  const existingForUser = await findRsnClaimByUser(userId);
+  if (existingForUser && existingForUser.rsn_normalized !== rsnNormalized) {
+    throw new AppError(
+      `User already holds a different RSN claim ("${existingForUser.rsn}")`,
+      409,
+      "RSN_CLAIM_CONFLICT",
+    );
+  }
+
+  const { data, error } = await db
+    .from("rsn_claims")
+    .update({ user_id: userId })
+    .eq("rsn_normalized", rsnNormalized)
+    .select("rsn, user_id")
+    .maybeSingle();
+
+  if (error) {
+    if ((error as { code?: string } | null)?.code === "23505") {
+      throw new AppError("User already holds a different RSN claim", 409, "RSN_CLAIM_CONFLICT");
+    }
+    throw new Error(`Failed to reassign RSN claim "${rsnNormalized}": ${error.message}`);
+  }
+  if (!data) {
+    throw new AppError(`No RSN claim found for "${rsnNormalized}"`, 404, "RSN_CLAIM_NOT_FOUND");
+  }
+
+  return { rsn: data.rsn, userId: data.user_id };
+}
