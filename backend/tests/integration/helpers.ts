@@ -30,8 +30,11 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import http from "node:http";
+import jwt from "jsonwebtoken";
 
 import { getDb } from "../../src/db/client.js";
+import { getJwtSecret } from "../../src/lib/jwt.js";
 import type { BingoStatus } from "../../src/types/index.js";
 
 const execFileAsync = promisify(execFile);
@@ -318,4 +321,97 @@ export async function countBingoPlayerRows(bingoId: string, rsn: string): Promis
 
   if (error) throw new Error(`Failed to count player rows for "${rsn}": ${error.message}`);
   return count ?? 0;
+}
+
+// -------------------------------------------------------
+// Minimal HTTP test harness for route-level tests (guard checks, authz,
+// status codes) — TEAM-BRIEF.md Sprint 17, Track A1. Same shape as the
+// hand-rolled harness in adminRouteMounting.test.ts, centralized here so
+// every new route test file doesn't reimplement it. Callers spin up their
+// own `express()` app (mounting whatever router(s) + errorHandler they need)
+// and use jsonRequest() to hit it.
+// -------------------------------------------------------
+
+export interface TestUser {
+  id: string;
+  username: string;
+  role: "user" | "admin" | "moderator";
+}
+
+/** Inserts a throwaway user row directly (bypasses db/users.ts — no real password needed for these tests). */
+export async function insertTestUser(role: TestUser["role"], labelPrefix = "Test"): Promise<TestUser> {
+  const username = `${labelPrefix}${role}${uniqueSuffix()}`;
+  const { data, error } = await getDb()
+    .from("users")
+    .insert({ username, password_hash: "x", role })
+    .select("id, username, role")
+    .single();
+  if (error || !data) throw new Error(`Failed to insert test user "${username}": ${error?.message}`);
+  return data as TestUser;
+}
+
+export async function deleteTestUser(id: string): Promise<void> {
+  await getDb()
+    .from("users")
+    .delete()
+    .eq("id", id)
+    .then(() => undefined, () => undefined);
+}
+
+export function signTestToken(user: TestUser): string {
+  return jwt.sign({ id: user.id, username: user.username, role: user.role }, getJwtSecret(), { expiresIn: "1h" });
+}
+
+export interface TestHttpResponse {
+  status: number;
+  body: any;
+}
+
+export interface JsonRequestOptions {
+  token?: string;
+  body?: unknown;
+  headers?: Record<string, string>;
+}
+
+/** Fires a single HTTP request at a locally-listening test server (see startTestServer below). */
+export function jsonRequest(
+  port: number,
+  method: string,
+  path: string,
+  options: JsonRequestOptions = {},
+): Promise<TestHttpResponse> {
+  return new Promise((resolve, reject) => {
+    const payload = options.body !== undefined ? JSON.stringify(options.body) : undefined;
+    const headers: Record<string, string> = { ...options.headers };
+    if (options.token) headers.Authorization = `Bearer ${options.token}`;
+    if (payload !== undefined) {
+      headers["Content-Type"] = "application/json";
+      headers["Content-Length"] = Buffer.byteLength(payload).toString();
+    }
+
+    const req = http.request({ host: "127.0.0.1", port, path, method, headers }, (res) => {
+      let raw = "";
+      res.on("data", (chunk) => (raw += chunk));
+      res.on("end", () => {
+        try {
+          resolve({ status: res.statusCode ?? 0, body: raw ? JSON.parse(raw) : undefined });
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
+    req.on("error", reject);
+    if (payload !== undefined) req.write(payload);
+    req.end();
+  });
+}
+
+/** Starts `app` listening on an ephemeral local port; caller is responsible for `.close()`ing it. */
+export function startTestServer(app: import("express").Express): Promise<{ server: http.Server; port: number }> {
+  return new Promise((resolve) => {
+    const server = app.listen(0, "127.0.0.1", () => {
+      const port = (server.address() as { port: number }).port;
+      resolve({ server, port });
+    });
+  });
 }
