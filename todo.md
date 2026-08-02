@@ -4,7 +4,8 @@ Everything below this section is either shipped history or a per-sprint candidat
 
 ## Blocked on Alex (blocks Sprint 17 verification)
 
-- [ ] **Apply `20260715000000_rsn_claims.sql` to prod** (Supabase SQL editor). Unapplied since Sprint 11 while every sprint since built on top of it. Until it lands, no player can link their account to their OSRS name and **every player sees "Unassigned"** — no My Team, no board highlights. Then `NOTIFY pgrst, 'reload schema';`, and `supabase migration repair` before any future CLI `db push`.
+- [x] ~~**Apply `20260715000000_rsn_claims.sql` to prod**~~ _(applied by Alex 2026-08-01; verified live via the Supabase management API — `public.rsn_claims` exists with RLS enabled. Same caveat as every earlier hand-applied batch: remote migration history won't know this version, so run `supabase migration repair` before any future CLI `db push`.)_
+  - [ ] Run `NOTIFY pgrst, 'reload schema';` in the SQL editor if not already done — PostgREST caches the schema and won't see the new table until it reloads.
 - [ ] **Switch `DISCORD_SCREENSHOT_CHANNEL_ID`** (local + Render) from `#portfolio-interactions` to the real screenshots channel; confirm Bingo-Bot can read it. Until then real drop screenshots go nowhere.
 - [ ] **Enable Docker Desktop → WSL integration.** Without it the local Supabase stack can't boot and **247 of 469 backend tests silently skip**. This blocked Sprints 7 and 16 as well; every "backend NNN/0" figure in the history below counts unit tests only.
 - [ ] Apply the Playwright MCP fix so agents can actually verify UI in a browser (see `Dev Projects/Fix - Playwright MCP browser launch (WSL Chromium)` in the vault). Must be done with **no Claude Code session running** — the live process rewrites `~/.claude.json`.
@@ -49,7 +50,7 @@ Goal: run repeated bingos with 10–30 Little Town players instead of solo-testi
 **Data / schema**
 - [ ] `bingo_player_hiscore_history` retention policy — this sprint generates the usage data to decide with
 - [ ] `citext`/normalized index for `bingo_players` UNIQUE(bingo_id, rsn) — removes the case-insensitive workaround
-- [ ] `hiscore_total_xp()` likely trips the same mutable-search_path advisor as `log_hiscore_history` did
+- [x] ~~`hiscore_total_xp()` likely trips the same mutable-search_path advisor~~ — _confirmed 2026-08-01, and it's **8 functions, not 1**: `replace_bingo_board`, `replace_bingo_teams`, `set_team_captain`, `activate_bingo`, `upsert_player_hiscore_start`, `upsert_player_hiscore_current`, `hiscore_total_xp`, `accept_invite`. All WARN, all SECURITY INVOKER with EXECUTE revoked from anon/authenticated, so exploiting one needs the service_role key already. Pulled into Sprint 17 (data-engineer) as a single migration following the `20260714000000_fix_log_hiscore_history_search_path.sql` precedent._
 - [ ] Board-progress dedup semantics — product decision; summed player points can exceed board max
 - [ ] `PUT /api/hiscores/:player` has no rate limit — fine today
 
