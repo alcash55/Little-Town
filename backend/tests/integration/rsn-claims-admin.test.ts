@@ -33,6 +33,7 @@ import {
   jsonRequest,
   startTestServer,
   uniqueSuffix,
+  withAllowDevAuth,
   type TestUser,
 } from "./helpers.js";
 
@@ -75,7 +76,7 @@ async function claimExists(rsnNormalized: string): Promise<boolean> {
 }
 
 describe.skipIf(!suite)("GET /api/admin/rsn-claims", () => {
-  test("lists claims joined to username, 403 for a plain user, 401 with no token", async () => {
+  test("lists claims joined to username, 403 for a plain user", async () => {
     const claimant = await insertTestUser("user", "RsnClaimant");
     createdUserIds.push(claimant.id);
     const rsn = `ClaimTest${uniqueSuffix()}`;
@@ -92,9 +93,15 @@ describe.skipIf(!suite)("GET /api/admin/rsn-claims", () => {
 
     const user403 = await jsonRequest(port, "GET", "/api/admin/rsn-claims", { token: signTestToken(plainUser) });
     expect(user403.status).toBe(403);
+  });
 
-    const none401 = await jsonRequest(port, "GET", "/api/admin/rsn-claims", {});
-    expect(none401.status).toBe(401);
+  test("401 with no token at all", async () => {
+    // Deterministic regardless of the developer's local .env — see
+    // withAllowDevAuth's doc comment (helpers.ts).
+    const { status } = await withAllowDevAuth("false", () =>
+      jsonRequest(port, "GET", "/api/admin/rsn-claims", {}),
+    );
+    expect(status).toBe(401);
   });
 });
 

@@ -37,6 +37,7 @@ import {
   jsonRequest,
   startTestServer,
   uniqueSuffix,
+  withAllowDevAuth,
   type TestUser,
 } from "./helpers.js";
 
@@ -219,7 +220,11 @@ describe.skipIf(!suite)("POST /api/admin/bingo/:bingoId/end (route)", () => {
     const bingo = await insertTestBingo(`test-end-early-authz-none-${uniqueSuffix()}`, { status: "active" });
     createdBingoIds.push(bingo.id);
 
-    const { status } = await jsonRequest(port, "POST", `/api/admin/bingo/${bingo.id}/end`, {});
+    // Deterministic regardless of the developer's local .env — see
+    // withAllowDevAuth's doc comment (helpers.ts).
+    const { status } = await withAllowDevAuth("false", () =>
+      jsonRequest(port, "POST", `/api/admin/bingo/${bingo.id}/end`, {}),
+    );
     expect(status).toBe(401);
 
     await deleteTestBingo(bingo.id);
