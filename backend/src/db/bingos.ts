@@ -1,4 +1,5 @@
 import { getDb } from "./client.js";
+import { AppError } from "../middleware/errorHandler.js";
 import { BingoConfig, BingoStatus } from "../types/index.js";
 
 type Tile = Record<string, unknown> & {
@@ -288,4 +289,144 @@ export async function getActiveBingoBoard(): Promise<Tile[]> {
   const bingo = await getActiveBingo();
   if (!bingo?.id) return [];
   return getBingoBoardById(bingo.id);
+}
+
+// -------------------------------------------------------
+// Delete (TEAM-BRIEF.md Sprint 17, Track A2, contract A2)
+// -------------------------------------------------------
+
+export interface BingoDeleteCounts {
+  teams: number;
+  tiles: number;
+  players: number;
+  submissions: number;
+}
+
+/**
+ * Row counts across every table with a DIRECT bingo_id -> bingos(id) FK,
+ * taken BEFORE the delete. The DELETE itself is a single statement against
+ * `bingos`; every one of these four tables (plus everything transitively
+ * hanging off bingo_players/bingo_teams — side accounts, hiscores, hiscore
+ * history, rsn_change_log) is removed by ON DELETE CASCADE as part of that
+ * same transaction, but a cascade delete doesn't surface a row count back
+ * to the statement that triggered it, so the counts have to be read first.
+ * See the Sprint 17 data-engineer report for the full table-by-table
+ * cascade walk this was verified against.
+ *
+ * Cheap even for a busy bingo (tens of teams/players, low hundreds of
+ * tiles/submissions) — four indexed `count(*)` reads on an admin-only,
+ * one-shot delete path, not a hot loop.
+ */
+export async function getBingoDeleteCounts(bingoId: string): Promise<BingoDeleteCounts> {
+  const db = getDb();
+
+  const countRows = async (table: string): Promise<number> => {
+    const { count, error } = await db
+      .from(table)
+      .select("id", { count: "exact", head: true })
+      .eq("bingo_id", bingoId);
+    if (error) throw new Error(`Failed to count ${table} for bingo ${bingoId}: ${error.message}`);
+    return count ?? 0;
+  };
+
+  const [teams, tiles, players, submissions] = await Promise.all([
+    countRows("bingo_teams"),
+    countRows("bingo_board_tiles"),
+    countRows("bingo_players"),
+    countRows("bingo_submissions"),
+  ]);
+
+  return { teams, tiles, players, submissions };
+}
+
+/**
+ * Deletes a bingo row outright. Every child row this sprint's cascade walk
+ * found (teams, tiles, players, submissions, and transitively side
+ * accounts, hiscores, hiscore history, rsn_change_log) is removed by an
+ * existing ON DELETE CASCADE FK — see the migrations listed in the Sprint
+ * 17 cascade-walk report. This function does nothing beyond the single
+ * DELETE; it does NOT purge the `screenshots` storage bucket (Postgres
+ * cannot reach that — call `purgeBingoScreenshots` from bingoSubmissions.ts
+ * separately; either order is safe since that helper lists by the bingoId
+ * path prefix rather than reading bingo_submissions rows).
+ *
+ * The active-bingo refusal / force + X-Confirm-Delete gate is route-layer
+ * guard logic (TEAM-BRIEF.md: backend agent's), not this function's job —
+ * this is the unconditional delete the route calls once its own guards
+ * pass. Returns false (not an error) if no bingo with this id existed, so
+ * the route can turn that into its own 404.
+ */
+export async function deleteBingoRow(bingoId: string): Promise<boolean> {
+  const { data, error } = await getDb()
+    .from("bingos")
+    .delete()
+    .eq("id", bingoId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) throw new Error(`Failed to delete bingo ${bingoId}: ${error.message}`);
+  return data !== null;
+}
+
+// -------------------------------------------------------
+// Clone (TEAM-BRIEF.md Sprint 17, Track A2, contract A3)
+// -------------------------------------------------------
+
+export interface CloneBingoResult {
+  id: string;
+  name: string;
+  status: BingoStatus;
+  tilesCloned: number;
+}
+
+/**
+ * Clones a bingo's board tiles into a brand-new 'draft' bingo, via the
+ * `clone_bingo` RPC (see the migration for the full rationale, including a
+ * flagged contract-deviation note on carrying `metadata` along with the
+ * enumerated task/type/points/target_value/position columns). Never copies
+ * teams, players, submissions, or snapshots — those stay scoped to the
+ * source bingo.
+ *
+ * Error mapping mirrors acceptInvite's convention (invites.ts): the RPC's
+ * distinct RAISE EXCEPTION messages are matched by text into the frozen
+ * 404 / 409 contract responses; anything else is rethrown as-is so
+ * errorHandler's Postgres-code mapping still applies.
+ */
+export async function cloneBingo(input: {
+  sourceBingoId: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+}): Promise<CloneBingoResult> {
+  const { data, error } = await getDb().rpc("clone_bingo", {
+    p_source_bingo_id: input.sourceBingoId,
+    p_name: input.name,
+    p_start_date: input.startDate,
+    p_end_date: input.endDate,
+  });
+
+  if (error) {
+    if (/source bingo not found/i.test(error.message)) {
+      throw new AppError("Source bingo not found", 404, "BINGO_NOT_FOUND");
+    }
+    if (/an active bingo already exists/i.test(error.message)) {
+      throw new AppError("An active bingo already exists", 409, "BINGO_ACTIVE");
+    }
+    throw error;
+  }
+
+  // clone_bingo is a RETURNS TABLE function — PostgREST/supabase-js returns
+  // its result as an array of rows, one row here since it always returns
+  // exactly the newly-created bingo.
+  const row = (Array.isArray(data) ? data[0] : data) as
+    | { id: string; name: string; status: BingoStatus; tiles_cloned: number }
+    | undefined;
+  if (!row) throw new Error("clone_bingo returned no row");
+
+  return {
+    id: row.id,
+    name: row.name,
+    status: row.status,
+    tilesCloned: row.tiles_cloned,
+  };
 }
