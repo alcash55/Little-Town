@@ -1,3 +1,107 @@
+# 📍 OPEN WORK — single view (triaged 2026-08-01)
+
+Everything below this section is either shipped history or a per-sprint candidate list kept for the record. **This is the only list of what's actually open.** Sprint sections below are append-only history — don't hunt through them for open items.
+
+## Blocked on Alex (blocks Sprint 17 verification)
+
+- [ ] **Apply `20260715000000_rsn_claims.sql` to prod** (Supabase SQL editor). Unapplied since Sprint 11 while every sprint since built on top of it. Until it lands, no player can link their account to their OSRS name and **every player sees "Unassigned"** — no My Team, no board highlights. Then `NOTIFY pgrst, 'reload schema';`, and `supabase migration repair` before any future CLI `db push`.
+- [ ] **Switch `DISCORD_SCREENSHOT_CHANNEL_ID`** (local + Render) from `#portfolio-interactions` to the real screenshots channel; confirm Bingo-Bot can read it. Until then real drop screenshots go nowhere.
+- [ ] **Enable Docker Desktop → WSL integration.** Without it the local Supabase stack can't boot and **247 of 469 backend tests silently skip**. This blocked Sprints 7 and 16 as well; every "backend NNN/0" figure in the history below counts unit tests only.
+- [ ] Apply the Playwright MCP fix so agents can actually verify UI in a browser (see `Dev Projects/Fix - Playwright MCP browser launch (WSL Chromium)` in the vault). Must be done with **no Claude Code session running** — the live process rewrites `~/.claude.json`.
+- [ ] Cloudflare Insights beacon console errors — dashboard toggle, nothing in the repo to fix.
+- [ ] Fix WSL SSH for good: `~/.ssh` on the Windows mount means every push needs a temp-key workaround. Move keys to real ext4.
+
+## Sprint 17 — "Run a real bingo" (IN FLIGHT, see TEAM-BRIEF.md)
+
+Goal: run repeated bingos with 10–30 Little Town players instead of solo-testing.
+
+- [ ] **A1** `POST /api/admin/bingo/:id/end` — end early, reusing `bingoLifecycle.ts`'s idempotent transition
+- [ ] **A2** `DELETE /api/admin/bingo/:id` — cascade + storage-object purge, double-guarded against deleting an active bingo
+- [ ] **A3** `POST /api/admin/bingo/clone` — new draft from an existing board, so each test round isn't a 25-tile rebuild
+- [ ] **A4** Admin RSN claim release/reassign — someone will fat-finger a claim and it currently locks that name short of a DB edit
+- [ ] **A2-data** Prove the delete cascade is complete table-by-table; purge orphaned screenshot objects from the storage bucket (Postgres FK cascade can't reach them)
+- [ ] **B1** Admin UI: end early / delete (typed confirm) / clone
+- [ ] **B2** Team Drafter: release-reassign a claim; flag pool entries never claimed by a real user
+- [ ] **B3** TeamData "Unassigned" → CTA opening "Show intro" _(replaces the old "tell users to confirm their RSN" action item — a button beats a Discord announcement)_
+- [ ] **B4** Board Builder: `titleTypographyProps` DOM warning; autocomplete not clearing after Add Tile (silently lands the wrong tile); source-map console error
+- [ ] **B5** TeamData: no vertical scroll inside the table on tablet/desktop
+- [ ] **C1** Boot the local stack end-to-end; make the 247 skipped tests actually run
+- [ ] **C2** Full dress rehearsal: invite → accept → RSN claim → drafter → board highlights → Discord screenshot → approve → auto-verify → end early → delete → clone round 2
+- [ ] **C3** Systemic 403 sweep — wire `useBingoOverview`/TeamDrafter/UserInvite/Maintenance to PageLayout's `permissionDenied` (today a wrong-role user sees a fake-empty page)
+
+## Sprint 18 — hardening for repeat events
+
+**Correctness / robustness**
+- [ ] `express-rate-limit` 7.5.1 → 8.x for `ipKeyGenerator` (correct IPv6 keying) — touches all four limiters, do it deliberately
+- [ ] Back off or make adaptive the two 45s admin pollers (~60 req/window from an idle tab)
+- [ ] `fetchWithAuth` guard: on 403 with a role-bearing session, force an auth rehydrate
+- [ ] Rate-limit claim *changes*, not just creation
+- [ ] Sweep for the inverse of the Board Builder bug — anything assuming `localStorage.authToken` exists behaves differently under `bun dev`'s auth bypass than in prod
+- [ ] Boot-time Discord notification can miss if the bot hasn't finished logging in when a sleeping instance closes a bingo
+- [ ] Confirm the onboarding wizard popping over admin pages (accounts created by direct DB insert) is intended
+
+**Performance / build**
+- [ ] 15MB `LittleTownAnimation.gif` on Home — compress or lazy-load. Promote to P0 if signups ever open to the public
+- [ ] Vite 5.4.21 → 6.4.3+ — clears 4 `bun audit` findings (1 high, all dev-server-only)
+- [ ] Add ESLint to `frontend/` (only tsc + prettier today)
+- [ ] Completion engine recomputes per request — caching candidate if timing degrades at real scale
+
+**Data / schema**
+- [ ] `bingo_player_hiscore_history` retention policy — this sprint generates the usage data to decide with
+- [ ] `citext`/normalized index for `bingo_players` UNIQUE(bingo_id, rsn) — removes the case-insensitive workaround
+- [ ] `hiscore_total_xp()` likely trips the same mutable-search_path advisor as `log_hiscore_history` did
+- [ ] Board-progress dedup semantics — product decision; summed player points can exceed board max
+- [ ] `PUT /api/hiscores/:player` has no rate limit — fine today
+
+**Cleanup / docs / a11y** _(batch these into one pass)_
+- [ ] `/api/bingo/team-data` has no frontend consumer — wire up or remove
+- [ ] `/my-team-data` doc comment describes a stale shape
+- [ ] Backend README: document the bingo routes incl. `/board`'s optional-auth behavior
+- [ ] frontend README: note that `bun dev` bypasses ProtectedRoute role gating by design
+- [ ] Fresh-clone note: `bun install` in `frontend/` before typecheck/tests work
+- [ ] One dedicated `prettier --write .` pass
+- [ ] `useBoardBuilder.ts` `any` casts for killCount/experience/dropsAmount
+- [ ] `useSidebar.tsx` `SidebarItem` doesn't declare the `roles` field it uses (`as any[]`)
+- [ ] `vite.config.ts:11` comment still names `@mui/x-data-grid` (removed in Sprint 10)
+- [ ] `teamDrafterStyles.ts` literal `#2A9D8F` hovers/focus states → `appColors.accent`
+- [ ] SideBar mobile drawer close button has no aria-label
+- [ ] LoginModal `validateDOMNesting` (`<h6>` in `<h2>`) — same one-liner as the OnboardingWizard fix
+- [ ] Unauthorized page: stale "Access Denied" flashes after clearing impersonation
+- [ ] Cross-tab redirect shows "Login Required" instead of "Access Denied" (cosmetic; access correctly blocked)
+- [ ] `bingoArtEntities.ts` `calvarion` apostrophe vs the real hiscores name — art won't exact-match
+- [ ] Deadman/Soul Wars art was hand-downsized; a bare `art:bingo` re-run refetches full size
+- [ ] `imageLinks.test.ts` prints a noisy expected ECONNRESET stack mid-run
+- [ ] BingoBoard `maxWidth: 900` leaves dead space on wide desktops now that tiles carry art
+- [ ] `manualChunks` split for TeamData's 421KB DataGrid chunk — only once a second consumer exists
+- [ ] Duplicate-username error via `accept_invite` RPC reads "field already exists"
+- [ ] Merge `protect`/`optionalAuth` shared logic if more public-read endpoints appear
+- [ ] Team Drafter: surface which pool entries were self-claimed vs admin-entered
+- [ ] ScreenshotSubmission page refactor now that the attribution flow has settled
+- [ ] Login rate limit (10/15min per IP) has no env override for scripted E2E
+- [ ] Confirm the onboarding wizard auto-opening on ANY route (not just Home) is intentional
+
+**Test coverage**
+- [ ] Isolation helper for `getLatestBingo()`-based integration tests (parallel runs are theoretically racy)
+- [ ] `useBingoBoard.test.ts` — `pendingByMyTeam` wiring only covered via BingoTile props today
+- [ ] Side-account activation-rebaseline has no dedicated integration test
+- [ ] RsnStep Autocomplete DOM isn't unit-tested (needs jsdom + ResizeObserver polyfill)
+- [ ] "No bingo has ever existed" board branch verified by tests/code, never live in a browser
+- [ ] Real-device iOS Safari check of the mobile sidebar `100dvh` fix
+- [ ] Agent-infra: teardown step in team briefs — a past track left a fixture bingo active and blocked all later seeding
+- [ ] Agent-infra: coordinate migration timestamps in the brief; parallel worktrees have collided
+- [ ] Watch for the unconfirmed transient "Login Required" when deep-linking to an admin page while authenticated
+
+## Closed as stale (verified against the code 2026-08-01)
+
+- ~~`BingoBoardExample.png` deletion~~ — already deleted
+- ~~`dropStatus` tile-task lowercase mismatch~~ — root-fixed in Sprint 14 (D1)
+- ~~`backend/.env` defaults to prod Supabase~~ — closed in Sprint 16
+- ~~Fix the 2 unattributed prod submissions~~ — obsoleted by Sprint 13 (ToA now auto-verifies)
+- ~~Backend baseline "4 fail / 1 error"~~ — the suite is **0 fail** as of 2026-08-01 (222 pass / 247 skip)
+- ~~"End bingo early" left unbuilt~~ — now Sprint 17 item A1
+
+---
+
 # Epics (Alex)
 
 - [x] Create Admin page for sending or generating links to onboard new users _(shipped 2026-07-13, Sprint 6 — Track A invites API (single-use hashed tokens, 72h default expiry, revoke) + Track B /AdminPanel invites page (generate with role+expiry, list, copy, revoke))_
