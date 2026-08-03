@@ -11,6 +11,19 @@
  *
  * Prints the JWTs so the driver script can inject them as `localStorage.authToken`.
  * Run from backend/:  bun run tests/manual-seed-browser-verify.ts
+ *
+ * ⚠️ TEARDOWN MATTERS. This leaves an **active** bingo behind, and a large part
+ * of the integration suite guards itself with `hasPreexistingActiveBingo()` and
+ * SKIPS when one exists — so leaving the fixture in place silently drops ~114
+ * tests and `bun test` still reports "0 fail". That is indistinguishable at a
+ * glance from a clean run and has misled past sprints. Measured 2026-08-03:
+ *
+ *     fixture left active   ->  412 pass / 114 skip / 0 fail
+ *     fixture removed       ->  526 pass /   0 skip / 0 fail
+ *
+ * So before trusting a backend test run, clear it:
+ *
+ *     delete from bingos where name like 'Browser Verify%';
  */
 import {
   getLocalStackConfig,
