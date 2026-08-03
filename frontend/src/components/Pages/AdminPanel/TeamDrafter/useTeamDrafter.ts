@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchWithAuth } from '../../../../utils/fetchWithAuth';
+import { describeApiError } from '../../../../utils/apiError';
 
 // -------------------------------------------------------
 // Types
@@ -28,6 +29,39 @@ export interface SideAccount {
   notes: string | null;
   added_by: string | null;
   added_at: string;
+}
+
+// -------------------------------------------------------
+// RSN claims admin (TEAM-BRIEF.md Sprint 17, Track B2)
+// -------------------------------------------------------
+
+/** One row from GET /api/admin/rsn-claims — frozen contract shape. */
+export interface RsnClaimAdminRow {
+  userId: string;
+  username: string;
+  rsn: string;
+  rsnNormalized: string;
+  claimedAt: string;
+}
+
+/** One row from GET /api/admin/users — frozen contract shape (Sprint 6, Track A). */
+export interface AdminUserOption {
+  id: string;
+  label: string;
+  role: 'user' | 'admin' | 'moderator';
+}
+
+/**
+ * Mirrors backend/src/lib/rsn.ts's canonicalizeRsn + normalizeRsn: trim,
+ * collapse internal whitespace, treat underscores as spaces, lowercase.
+ * There is no route that joins `bingo_players` to `rsn_claims` directly
+ * (TEAM-BRIEF.md Track B2 item 2 — "the drafter already has the pool", GET
+ * /admin/rsn-claims gives the claimed set) — this is the client-side string
+ * match the brief points at, kept in lockstep with the server's own
+ * normalization so it doesn't silently drift out of sync.
+ */
+export function normalizeRsnForMatch(rsn: string): string {
+  return rsn.replace(/_/g, ' ').trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
 /** Items map used by the DnD context: container id -> list of RSN strings */
@@ -115,6 +149,27 @@ export const useTeamDrafter = () => {
   const [sideAccountsByPlayerId, setSideAccountsByPlayerId] = useState<
     Record<string, SideAccount[]>
   >({});
+
+  // ── RSN claims admin state ────────────────────────────
+  const [rsnClaims, setRsnClaims] = useState<RsnClaimAdminRow[]>([]);
+  const [loadingRsnClaims, setLoadingRsnClaims] = useState(true);
+  const [rsnClaimsError, setRsnClaimsError] = useState<string | null>(null);
+
+  /** Target-user picker for reassignment — loaded lazily on first dialog open. */
+  const [adminUsers, setAdminUsers] = useState<AdminUserOption[] | null>(null);
+  const [loadingAdminUsers, setLoadingAdminUsers] = useState(false);
+  const [adminUsersError, setAdminUsersError] = useState<string | null>(null);
+
+  /** Claim pending release confirmation (null = dialog closed). */
+  const [releaseClaimTarget, setReleaseClaimTarget] = useState<RsnClaimAdminRow | null>(null);
+  const [releasingClaim, setReleasingClaim] = useState(false);
+  const [releaseClaimError, setReleaseClaimError] = useState<string | null>(null);
+
+  /** Claim pending reassignment (null = dialog closed). */
+  const [reassignClaimTarget, setReassignClaimTarget] = useState<RsnClaimAdminRow | null>(null);
+  const [reassignClaimUser, setReassignClaimUser] = useState<AdminUserOption | null>(null);
+  const [reassigningClaim, setReassigningClaim] = useState(false);
+  const [reassignClaimError, setReassignClaimError] = useState<string | null>(null);
 
   // ── Helpers ───────────────────────────────────────────
 
@@ -214,9 +269,145 @@ export const useTeamDrafter = () => {
     [BASE_URL, teams, buildDraftItems],
   );
 
+  /**
+   * Load every current RSN claim (system-wide, not scoped to the active
+   * bingo — TEAM-BRIEF.md Track B2 item 1). Frozen contract: GET
+   * /api/admin/rsn-claims -> data: [{ userId, username, rsn, rsnNormalized,
+   * claimedAt }].
+   */
+  const loadRsnClaims = useCallback(async () => {
+    setLoadingRsnClaims(true);
+    setRsnClaimsError(null);
+    try {
+      const res = await fetchWithAuth(`${BASE_URL}/rsn-claims`);
+      if (!res.ok) {
+        const { message } = await describeApiError(res, 'Failed to load RSN claims');
+        throw new Error(message);
+      }
+      const json = await res.json();
+      setRsnClaims(json.data ?? []);
+    } catch (e) {
+      setRsnClaimsError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoadingRsnClaims(false);
+    }
+  }, [BASE_URL]);
+
+  /**
+   * Load the reassignment target-user picker options. Lazy (only fetched on
+   * first "Reassign" dialog open) — mirrors ImpersonationControl's picker,
+   * which uses the same GET /api/admin/users contract.
+   */
+  const loadAdminUsers = useCallback(async () => {
+    setLoadingAdminUsers(true);
+    setAdminUsersError(null);
+    try {
+      const res = await fetchWithAuth(`${BASE_URL}/users`);
+      if (!res.ok) {
+        const { message } = await describeApiError(res, 'Failed to load users');
+        throw new Error(message);
+      }
+      const json: { users?: AdminUserOption[] } = await res.json();
+      setAdminUsers(Array.isArray(json.users) ? json.users : []);
+    } catch (e) {
+      setAdminUsersError(e instanceof Error ? e.message : String(e));
+      setAdminUsers([]);
+    } finally {
+      setLoadingAdminUsers(false);
+    }
+  }, [BASE_URL]);
+
+  /** Open the release-confirmation dialog for a claim. */
+  const openReleaseClaimDialog = useCallback((claim: RsnClaimAdminRow) => {
+    setReleaseClaimTarget(claim);
+    setReleaseClaimError(null);
+  }, []);
+
+  const closeReleaseClaimDialog = useCallback(() => {
+    setReleaseClaimTarget(null);
+    setReleaseClaimError(null);
+  }, []);
+
+  /**
+   * DELETE /api/admin/rsn-claims/:rsnNormalized. Frozen contract:
+   * 200 -> { released: true }, 404 -> no such claim (already gone under us).
+   */
+  const confirmReleaseClaim = useCallback(async () => {
+    if (!releaseClaimTarget) return;
+    setReleasingClaim(true);
+    setReleaseClaimError(null);
+    try {
+      const res = await fetchWithAuth(
+        `${BASE_URL}/rsn-claims/${encodeURIComponent(releaseClaimTarget.rsnNormalized)}`,
+        { method: 'DELETE' },
+      );
+      if (!res.ok) {
+        const { message } = await describeApiError(res, 'Failed to release claim');
+        throw new Error(message);
+      }
+      setReleaseClaimTarget(null);
+      await loadRsnClaims();
+    } catch (e) {
+      setReleaseClaimError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setReleasingClaim(false);
+    }
+  }, [releaseClaimTarget, BASE_URL, loadRsnClaims]);
+
+  /** Open the reassign dialog for a claim; lazy-loads the user picker. */
+  const openReassignClaimDialog = useCallback(
+    (claim: RsnClaimAdminRow) => {
+      setReassignClaimTarget(claim);
+      setReassignClaimUser(null);
+      setReassignClaimError(null);
+      if (adminUsers === null) void loadAdminUsers();
+    },
+    [adminUsers, loadAdminUsers],
+  );
+
+  const closeReassignClaimDialog = useCallback(() => {
+    setReassignClaimTarget(null);
+    setReassignClaimUser(null);
+    setReassignClaimError(null);
+  }, []);
+
+  /**
+   * PATCH /api/admin/rsn-claims/:rsnNormalized, body { userId }. Frozen
+   * contract: 200 -> { rsn, userId }; 409 if the target user already holds
+   * a DIFFERENT claim. The 409 body is a forwarded AppError ({ error, code }
+   * rather than this route file's usual { success: false, error } — flagged
+   * in TEAM-BRIEF.md, handled defensively by describeApiError below) whose
+   * message already names the conflicting RSN
+   * (db/rsnClaims.ts: `User already holds a different RSN claim ("<rsn>")`),
+   * so no extra parsing is needed to surface which claim is in the way.
+   */
+  const confirmReassignClaim = useCallback(async () => {
+    if (!reassignClaimTarget || !reassignClaimUser) return;
+    setReassigningClaim(true);
+    setReassignClaimError(null);
+    try {
+      const res = await fetchWithAuth(
+        `${BASE_URL}/rsn-claims/${encodeURIComponent(reassignClaimTarget.rsnNormalized)}`,
+        { method: 'PATCH', body: JSON.stringify({ userId: reassignClaimUser.id }) },
+      );
+      if (!res.ok) {
+        const { message } = await describeApiError(res, 'Failed to reassign claim');
+        throw new Error(message);
+      }
+      setReassignClaimTarget(null);
+      setReassignClaimUser(null);
+      await loadRsnClaims();
+    } catch (e) {
+      setReassignClaimError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setReassigningClaim(false);
+    }
+  }, [reassignClaimTarget, reassignClaimUser, BASE_URL, loadRsnClaims]);
+
   /** Initial load on mount */
   useEffect(() => {
     loadBingoDetails().then((teamList) => loadPlayers(teamList));
+    void loadRsnClaims();
   }, []);
 
   /**
@@ -569,6 +760,33 @@ export const useTeamDrafter = () => {
   const submitTeamsLabel =
     teamsEverSubmitted && draftIsDirty ? 'Update Teams' : 'Submit Teams';
 
+  /**
+   * Normalized RSNs with a current claim, for the "unclaimed pool entries"
+   * flag (TEAM-BRIEF.md Track B2 item 2). Built from rsnClaims' own
+   * rsnNormalized (the server's normalization), matched against
+   * normalizeRsnForMatch(player.rsn) below.
+   */
+  const claimedRsnNormalizedSet = useMemo(
+    () => new Set(rsnClaims.map((c) => c.rsnNormalized)),
+    [rsnClaims],
+  );
+
+  /**
+   * Pool players with no rsn_claims row pointing at them — an admin typed
+   * them in and no real account has confirmed ownership, so that player
+   * never sees their own team data (TEAM-BRIEF.md Track B2 item 2). Empty
+   * while rsn claims are still loading, so the drafter never flashes every
+   * player as unclaimed before the claims list resolves.
+   */
+  const unclaimedPlayers = loadingRsnClaims
+    ? []
+    : players.filter((p) => !claimedRsnNormalizedSet.has(normalizeRsnForMatch(p.rsn)));
+
+  const unclaimedPlayerIds = useMemo(
+    () => new Set(unclaimedPlayers.map((p) => p.id)),
+    [unclaimedPlayers],
+  );
+
   const teamNameById = useMemo(
     () => Object.fromEntries(teams.map((t) => [t.id, t.name])),
     [teams],
@@ -631,5 +849,30 @@ export const useTeamDrafter = () => {
     addSideAccount,
     removeSideAccount,
     sideAccountsByPlayerId,
+
+    // RSN claims admin
+    rsnClaims,
+    loadingRsnClaims,
+    rsnClaimsError,
+    loadRsnClaims,
+    unclaimedPlayers,
+    unclaimedPlayerIds,
+    adminUsers,
+    loadingAdminUsers,
+    adminUsersError,
+    releaseClaimTarget,
+    releasingClaim,
+    releaseClaimError,
+    openReleaseClaimDialog,
+    closeReleaseClaimDialog,
+    confirmReleaseClaim,
+    reassignClaimTarget,
+    reassignClaimUser,
+    setReassignClaimUser,
+    reassigningClaim,
+    reassignClaimError,
+    openReassignClaimDialog,
+    closeReassignClaimDialog,
+    confirmReassignClaim,
   };
 };
