@@ -1,125 +1,198 @@
-# TEAM-BRIEF.md — Sprint 17: "Run a real bingo"
+# TEAM-BRIEF.md — Sprint 17, phase 2: admin controls + drafter claim admin
 
-**Goal:** Alex can run repeated bingos with 10–30 Little Town players. Every failure mode a real player hits is either fixed or visible to an admin. Today he only runs bingos solo; this sprint is what makes a multi-player round survivable.
+**Read `CLAUDE.md` first.** It is the corrected repo guide. MUI is **v9**, charts are
+`@mui/x-charts`, TypeScript with no `any` unless genuinely unavoidable.
 
-Read `CLAUDE.md` first — it is the corrected repo guide (as of 2026-07-31). The old `agents.md` is deleted; anything you remember from it about MUI v5, victory charts, `requireAuth`/`requireRole`, or `npm run local` is wrong.
+Sprint 17's goal is that Alex can run repeated bingos with 10–30 real players.
+Phase 1 shipped the backend (A1–A4) and three frontend items (B3/B4/B5). This
+phase is the admin UI that makes those routes reachable, plus one bug that
+currently locks admins out of admin pages.
+
+**Status of phase 1 — all merged to `main`, all live:**
+- `POST /api/admin/bingo/:bingoId/end`, `DELETE /api/admin/bingo/:bingoId`,
+  `POST /api/admin/bingo/clone`, `GET|DELETE|PATCH /api/admin/rsn-claims`
+- Backend suite: **521 pass / 0 fail / 0 skip**. Frontend: **103/103**. Both `tsc` clean.
+- `bun run dev` works again in `backend/` (it was broken outright; fixed in d0f79b8).
 
 ---
 
-## Prerequisites (Alex, not agents)
+## Interface contracts — FROZEN, these routes already exist
 
-These block verification. Do not work around them or fake them.
+Do **not** change a route to suit the UI. If a contract is wrong, say so in your
+report and build against it as written.
 
-1. ~~**Apply `20260715000000_rsn_claims.sql` to prod.**~~ **DONE 2026-08-01** — verified live via the management API, `public.rsn_claims` exists with RLS enabled.
-2. **Switch `DISCORD_SCREENSHOT_CHANNEL_ID`** (local + Render) to the real screenshots channel.
-3. ~~**Enable Docker Desktop's WSL integration.**~~ **CORRECTION 2026-08-01 — Docker is available and the local Supabase stack is running.** An earlier `docker info` probe failed and I wrongly reported the stack as down; a first `bun test` run that showed 247 skips had hit a cold `bun x supabase status`. The real numbers on main are **381 pass / 88 skip / 0 fail**. Integration tests DO run — verify against the live local stack, do not settle for mocks.
-4. **Push `main` to `origin`.** `origin/main` is 11 commits behind local `main`: all of Sprint 16 and this sprint exist only on Alex's disk. This is also why Track A2's worktree forked from a pre-Sprint-16 base.
+All are `protect` + `authorize("admin")`, mounted under `/api/admin`. Success is
+`{ success: true, data: ... }`, errors `{ success: false, error: "..." }`.
 
----
-
-## Interface contracts — FIXED
-
-Frontend builds against these. Backend implements exactly these. If a contract is wrong, **say so in your report — do not silently change it.**
-
-All admin routes: `protect` + `authorize("admin")`. All responses follow the repo convention: success `{ success: true, data: <payload> }`, error `{ success: false, error: "..." }`.
-
-### A1 — End a bingo early
-
+### End a bingo early
 ```
 POST /api/admin/bingo/:bingoId/end
-  200 { success: true, data: { id, status: "complete", endedAt: ISO8601, pendingScreenshots: number } }
-  404 no such bingo
-  409 { success: false, error: "Bingo is not active" }   // already complete/draft — idempotent-safe, not an error state to panic on
+  200 { success: true, data: { id, status: "complete", endedAt, pendingScreenshots } }
+  404 { success: false, error: "No such bingo" }
+  409 { success: false, error: "Bingo is not active" }
 ```
-Reuses the existing idempotent, race-guarded transition in `services/bingoLifecycle.ts`. Do **not** write a second transition path.
+409 is **not** a panic state — it means the bingo was already complete/draft.
+Surface it as information, not a red failure.
 
-### A2 — Delete a bingo
+`pendingScreenshots` matters: it is the count of screenshots still awaiting
+review at the moment the bingo ended. Show it in the success state — Alex needs
+to know he has N screenshots to review, not just "ended".
 
+### Delete a bingo
 ```
 DELETE /api/admin/bingo/:bingoId
-  200 { success: true, data: { deleted: true, id, purged: { teams, tiles, players, submissions, storageObjects } } }
-  404 no such bingo
-  409 { success: false, error: "Refusing to delete an active bingo", code: "BINGO_ACTIVE" }
+  body   { force?: true }
+  header X-Confirm-Delete: <exact bingo name>
+  200 { success: true, data: { deleted: true, id,
+        purged: { teams, tiles, players, submissions, storageObjects } } }
+  404 { success: false, error: "No such bingo" }
+  409 { success: false, error: "...", code: "BINGO_ACTIVE" }
 ```
-- Refuses `status='active'` unless body `{ "force": true }` AND header `X-Confirm-Delete: <bingo name>`. Both required. This is the only destructive endpoint in the codebase.
-- Postgres already cascades from `bingos(id)` through teams/tiles/players/submissions (and transitively side accounts + hiscore history) — **verify** that, don't rewrite it.
-- **Screenshot images in the Supabase storage bucket are NOT covered by the FK cascade.** Deleting the rows orphans the objects. Purge them explicitly and report the count in `purged.storageObjects`.
+Deleting an **active** bingo requires **both** `force: true` in the body and the
+`X-Confirm-Delete` header matching the bingo's name exactly. Either alone is
+refused. This is the only destructive endpoint in the codebase — the typed
+confirmation in the UI must be the real bingo name, and the header must carry
+exactly what the user typed. Do not auto-fill it.
 
-### A3 — Clone a board into a new draft
+Show the `purged` counts in the result. "Deleted 1 bingo, 2 teams, 25 tiles,
+14 players, 8 submissions, 8 images" is the confirmation Alex actually wants.
 
+### Clone a board into a new draft
 ```
 POST /api/admin/bingo/clone
-  body { sourceBingoId: uuid, name: string, startDate: ISO8601, endDate: ISO8601 }
-  201 { success: true, data: { id, name, status: "draft", tilesCloned: number } }
+  body { sourceBingoId, name, startDate, endDate }
+  201 { success: true, data: { id, name, status: "draft", tilesCloned } }
   404 source bingo not found
-  409 { success: false, error: "An active bingo already exists" }   // uq_bingos_one_active
+  409 an active bingo already exists
 ```
-Copies board tiles only — task, type, points, targetValue, position, **and `metadata`**. **Never** copies teams, players, submissions, or snapshots.
+Copies board tiles only (including `metadata`) — never teams, players,
+submissions or snapshots.
 
-> **Contract amended 2026-08-01 (tech lead).** The original wording omitted `metadata`. Track A2 flagged this rather than applying it silently, and the flag was correct: `metadata` carries the Board Builder's boss/monster/activity picker data, and `points`/`target_value` are *derived from* it at save time. Cloning without it would produce round-2 tiles holding a KC/XP number with no attached boss or activity — silent data loss, not cosmetic. Response shape is unchanged (`tilesCloned` is still a count), so no other track is affected.
-
-### A4 — Admin RSN claim release / reassign
-
+### RSN claims admin
 ```
-GET    /api/admin/rsn-claims                → { success: true, data: [{ userId, username, rsn, rsnNormalized, claimedAt }] }
-DELETE /api/admin/rsn-claims/:rsnNormalized → { success: true, data: { released: true } }
-PATCH  /api/admin/rsn-claims/:rsnNormalized  body { userId: uuid }
-                                            → { success: true, data: { rsn, userId } }
-  409 on reassign if the target user already holds a different claim (UNIQUE(user_id))
+GET    /api/admin/rsn-claims                → data: [{ userId, username, rsn, rsnNormalized, claimedAt }]
+DELETE /api/admin/rsn-claims/:rsnNormalized → data: { released: true }
+PATCH  /api/admin/rsn-claims/:rsnNormalized   body { userId } → data: { rsn, userId }
+  409 if the target user already holds a different claim (UNIQUE(user_id))
 ```
-Admin-only. Log every release/reassign with the acting admin's id.
+
+> **Known contract-shape gap, already flagged, do not "fix" it yourself:** the
+> clone and rsn-claims routes forward `AppError`s through `errorHandler`, so some
+> error bodies carry an extra `code` field and some don't. Read the error message
+> defensively (`describeApiError` already does) and report anything that bites you.
 
 ---
 
-## Track A1 — `backend` agent (routes + services)
+## Track B1 — `frontend` agent: admin lifecycle controls + the wizard bug
 
-**Owns:** `backend/src/routes/`, `backend/src/services/`, `backend/tests/`
-**Does NOT touch:** `backend/src/db/`, `backend/supabase/migrations/` — those are data-engineer's. Need a data-layer function? Specify it in your report; don't write it.
+**Owns:** `frontend/src/components/Pages/AdminPanel/BingoDetails/`,
+`frontend/src/components/Pages/AdminPanel/Maintenance/`,
+`frontend/src/components/Onboarding/`
 
-1. Implement A1, A2, A3, A4 exactly per the contracts above.
-2. A2's guard logic is yours and it is the highest-risk code in the sprint: active-bingo refusal, the force + `X-Confirm-Delete` double gate, and a loud audit log line on every delete.
-3. Tests for each route: happy path, 404, 409, the A2 guards (both halves independently), and authz (non-admin → 403).
-4. Run `bun test` and `bun x tsc --noEmit` in `backend/` before reporting.
+**Does NOT touch:** `frontend/src/components/Pages/AdminPanel/TeamDrafter/` (Track B2's).
 
-## Track A2 — `data-engineer` agent (data layer)
+1. **End Early** — confirm dialog, then `POST .../end`. Show `pendingScreenshots`
+   in the success state with a link to the review page. Handle 409 as information.
+2. **Delete** — typed-name confirmation. The button stays disabled until the typed
+   text exactly matches the bingo name; send that text as `X-Confirm-Delete` and
+   `force: true`. Report the `purged` counts on success. This is the most dangerous
+   control in the app — it should feel dangerous and be impossible to trigger by
+   accident.
+3. **Clone** — name + start/end date pickers (`@mui/x-date-pickers` + `date-fns`;
+   `LocalizationProvider` is already in `Providers`, don't add another), then
+   `POST /bingo/clone`. On success, route the admin to the new draft. Handle the
+   409 "an active bingo already exists" case with a message that says what to do.
+4. **B6 (BUG) — the onboarding wizard traps admins.** `OnboardingProvider`
+   (`frontend/src/components/Onboarding/useOnboarding.tsx:87-96`) auto-opens for
+   **any** authenticated user with no `onboarding:v1:<userId>` localStorage record,
+   on **any** route, regardless of role — and an auto-open is deliberately
+   non-dismissable (`dismissable: openReason === 'manual'`, so Escape and backdrop
+   are both ignored). The modal intercepts every pointer event, so an admin landing
+   on `/AdminPanel/BoardBuilder` cannot use or dismiss the page; the only way out is
+   completing all four steps including RSN confirmation. This hits any admin created
+   by direct DB insert, any admin with cleared site data, and every fresh browser
+   profile. It was confirmed in a real browser on 2026-08-02 — it blocked the B4
+   verification run until the record was seeded by hand.
 
-**Owns:** `backend/src/db/`, `backend/supabase/migrations/`
-**Does NOT touch:** `backend/src/routes/`
+   Fix so an admin is never forced through a player-oriented RSN flow to reach an
+   admin page. **Do not** simply make auto-opens dismissable — the "must complete
+   once" behaviour was a deliberate Sprint 10 decision for real players and must
+   survive for them. Decide deliberately between not auto-opening on `/AdminPanel/*`
+   and not auto-opening for the admin role, and **state which you chose and why in
+   your report.** Add a regression test — this is exactly the kind of thing that
+   silently comes back.
 
-1. **Verify the delete cascade is actually complete.** Walk every table with a path to `bingos(id)` and prove each one is reachable by cascade. Report any table that would be orphaned. Do not assume the FK graph is right because it looks right.
-2. Storage-bucket purge helper for A2: list and delete screenshot objects for a bingo, return the count. This is the piece Postgres cannot do.
-3. Data-layer functions for A4 (list/release/reassign claims) respecting both `UNIQUE(user_id)` and `UNIQUE(rsn_normalized)`.
-4. Clone helper for A3 — set-based tile copy, not a row-by-row loop.
-5. If you need a migration, coordinate the timestamp in your report — parallel worktrees have collided on auto-timestamps before (Sprint 6).
-6. **No destructive migration against real data.** Local stack only. `backend/.env` targets local by design (Sprint 16 env guard); do not set `ALLOW_REMOTE_DB`.
+## Track B2 — `frontend` agent: Team Drafter claim administration
 
-## Track B — `frontend` agent
+**Owns:** `frontend/src/components/Pages/AdminPanel/TeamDrafter/`
 
-**Owns:** `frontend/src/`
+**Does NOT touch:** `BingoDetails/`, `Maintenance/`, `Onboarding/` (Track B1's).
 
-1. **B1** — Admin controls on BingoDetails/Maintenance: End Early (confirm dialog), Delete (typed-name confirmation matching the `X-Confirm-Delete` header), Clone → new draft. Mock against the contracts above until Track A merges; mark mocks clearly.
-2. **B2** — Team Drafter: release/reassign a claimed RSN (A4); flag pool entries never claimed by a real user.
-3. **B3** — TeamData's "Unassigned" empty state gets a CTA that opens the onboarding "Show intro" wizard. **This is the highest-value item in the track** — without it real players land on an empty page with no idea that confirming their RSN is what lights everything up.
-4. **B4** — Board Builder bugs: (a) `titleTypographyProps` reaching the DOM (MUI v5→v9 leftover), (b) the boss/monster/minigame autocomplete not clearing after Add Tile — a real data-entry hazard, wrong tile lands silently, (c) the source-map console error.
-5. **B5** — TeamData: no vertical scroll inside the table on tablet and desktop.
-6. Verify in a real browser with the Playwright MCP tools. **Caveat:** the Playwright MCP may still fail to launch in WSL (unapplied fix, `Dev Projects/Fix - Playwright MCP browser launch (WSL Chromium)` in Alex's vault). If it errors, say so plainly in your report and fall back to driving cached Chromium via the playwright library — **do not report UI work as browser-verified if you never got a browser.**
-7. Run `bun run test` and `bun x tsc --noEmit` in `frontend/`.
+1. **Release / reassign a claimed RSN** against the `/api/admin/rsn-claims` routes.
+   Someone will fat-finger a claim, and today that locks the name until Alex edits
+   the database by hand. Release needs a confirmation step; reassign needs to pick
+   a target user. Handle the 409 (target user already holds a different claim) with
+   a message naming the conflict rather than a generic failure.
+2. **Flag pool entries never claimed by a real user.** A `bingo_players` row can
+   exist with no `rsn_claims` row pointing at it — that player was typed in by an
+   admin and no real account has confirmed it. Those players never see their own
+   team data. Make that visible in the drafter so Alex can chase them. `GET
+   /api/admin/rsn-claims` gives you the claimed set; the drafter already has the
+   pool.
+3. Do not invent a backend route. If you need data the existing routes don't
+   expose, say so in your report.
 
 ---
+
+## Shared local stack — read this, it has bitten past sprints
+
+Both tracks share **one** local Supabase stack, and the schema allows only **one
+active bingo** (`uq_bingos_one_active`).
+
+- Seed with `cd backend && bun run tests/manual-seed-browser-verify.ts`. It is
+  re-runnable, clears its own prior rows, refuses any non-local target, and prints
+  JWTs for a linked user, an unlinked user, and an admin. It creates an active
+  bingo "Browser Verify Round 1" with 16 tiles on a 25-tile board, 2 teams, 4 players.
+- **Track B1 owns destructive flows.** If you end/delete/clone the fixture bingo,
+  re-run the seed afterwards.
+- **Track B2: re-run the seed immediately before your verification pass** rather
+  than trusting whatever is in the database.
+- If state vanishes mid-run, that is probably the other track, not a bug in your
+  code. **Report it — do not build a workaround.**
+
+## Browser verification — the MCP is broken, use the library directly
+
+The Playwright **MCP** does not launch in WSL. That is **not** an excuse to report
+UI work as unverified — the library and a cached Chromium are both present.
+
+- Write a script, copy it into `frontend/` (it cannot resolve `playwright` from
+  elsewhere), run `node ./.verify-tmp.mjs`, then delete it.
+- Get into the app by setting **two** localStorage keys before navigating:
+  - `authToken` — a JWT printed by the seed script
+  - `onboarding:v1:<userId>` → `{"status":"completed"}` — **required until B1 fixes
+    B6**, or the wizard modal swallows every click. Decode `<userId>` from the JWT's
+    `id` claim.
+- Assert on computed style and layout via `page.evaluate`, not just screenshots,
+  and capture `console` + `pageerror` — that is what proves a React warning is gone.
+- Your worktree needs its own `bun install` in `frontend/` (node_modules is
+  gitignored and does not travel). Run Vite on your own port (`--port 3001` /
+  `--port 3002`) and point it at the backend already running on `:8081`.
 
 ## Done criteria
 
-- [ ] A1–A4 implemented to contract, with tests, non-admin gets 403 on all of them
-- [ ] Delete cascade proven complete, including storage objects — with the walk documented
-- [ ] A2 cannot delete an active bingo without both the force flag and the confirm header
-- [ ] B1–B5 shipped and browser-verified (or explicitly reported as unverified with the reason)
-- [ ] `bun test` + `tsc --noEmit` clean on both sides
-- [ ] Full dress rehearsal passes: invite → accept → onboarding RSN claim → drafter assignment → board highlights → Discord drop screenshot → admin approve → KC/XP auto-verify → **end early → delete → clone into round 2**
+- [ ] Every control built against the frozen contracts above, including both halves
+      of the delete double-gate
+- [ ] B6 fixed without regressing the "players complete the wizard once" behaviour,
+      with a regression test and a stated rationale for the approach chosen
+- [ ] `bun run test` and `bun x tsc --noEmit` clean in `frontend/`
+- [ ] Browser-verified: **name the routes and states you actually exercised.** Work
+      reported as done without that is treated as unverified.
+- [ ] Report contract problems and shared-stack collisions; don't paper over them
 
 ## Rules
 
-- Report contract problems; don't unilaterally change a contract another role is building against.
-- Read neighbouring code before writing new code — match existing patterns.
-- Never send auth or secret-handling code through the local Ollama model.
-- Do not report anything as verified that you did not actually run. A skipped test is not a passing test — this repo has 247 backend tests that silently skip without Docker, and several sprints reported "NNN/0" while the integration layer never ran.
-</content>
+- Never add a `Co-Authored-By` trailer or any similar attribution to commits.
+- Read neighbouring code before writing new code; match the existing patterns.
+- Named exports, one folder per component, `theme.*` tokens — no hardcoded hex/px.
+- Don't send auth or secret-handling code through a local Ollama model.
+- Don't report anything as verified that you did not actually run.
