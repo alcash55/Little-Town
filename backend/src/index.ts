@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { assertEnvironmentSafety } from "./config/envGuard.js";
+import { CORS_ALLOWED_HEADERS } from "./config/cors.js";
 assertEnvironmentSafety();
 import express, { Request, Response } from "express";
 import cors from "cors";
@@ -60,11 +61,9 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    // X-Impersonate-User-Id: the "view as user" override header (TEAM-BRIEF.md
-    // Sprint 6, Track A item 2) — must be allowlisted or the browser's CORS
-    // preflight strips it on every cross-origin request (frontend and
-    // backend run on different origins even in local dev).
-    allowedHeaders: ["Content-Type", "Authorization", "X-Impersonate-User-Id"],
+    // See src/config/cors.ts — every custom request header the frontend sends
+    // must be allowlisted or the browser's preflight strips it.
+    allowedHeaders: [...CORS_ALLOWED_HEADERS],
   }),
 );
 
