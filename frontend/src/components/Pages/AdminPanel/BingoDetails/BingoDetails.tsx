@@ -10,6 +10,7 @@ import {
 import { DateTimePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useBingoDetails } from './useBingoDetails';
+import { BingoLifecycle } from './BingoLifecycle';
 import PageLayout from '../../../../layout/PageLayout/PageLayout';
 
 const BingoDetails = () => {
@@ -23,6 +24,9 @@ const BingoDetails = () => {
     numberOfTeams,
     setNumberOfTeams,
     teamNames,
+    bingoId,
+    bingoStatus,
+    refetchBingo,
     isBingo,
     submitted,
     setSubmitted,
@@ -50,29 +54,34 @@ const BingoDetails = () => {
       permissionDenied={permissionDenied}
       error={submitError ?? loadError}
     >
-      <Stack
-        spacing={3}
-        sx={{
-          justifyContent: 'center',
-          alignItems: 'center',
-          maxWidth: 500,
-          width: '100%',
-        }}
-      >
-        <TextField
-          id="bingo-name"
-          label="Bingo Name"
-          placeholder={`${new Date().getFullYear()} Little Town Bingo`}
-          variant="outlined"
-          value={bingoName}
-          onChange={(e) => setBingoName(e.target.value)}
-          fullWidth
-          required
-          autoFocus
-        />
+      {/* Single LocalizationProvider for the whole page — covers both the
+          create/edit form's pickers below and CloneBingoDialog's, which is
+          rendered by BingoLifecycle further down this same tree. Providers
+          deliberately doesn't supply one globally (see layout/Providers),
+          so this is BingoDetails' own, per that comment. */}
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <Stack
+          spacing={3}
+          sx={{
+            justifyContent: 'center',
+            alignItems: 'center',
+            maxWidth: 500,
+            width: '100%',
+          }}
+        >
+          <TextField
+            id="bingo-name"
+            label="Bingo Name"
+            placeholder={`${new Date().getFullYear()} Little Town Bingo`}
+            variant="outlined"
+            value={bingoName}
+            onChange={(e) => setBingoName(e.target.value)}
+            fullWidth
+            required
+            autoFocus
+          />
 
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ width: '100%' }}>
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ width: '100%' }}>
             <DateTimePicker
               label="Start"
               views={['day', 'month', 'hours']}
@@ -93,81 +102,91 @@ const BingoDetails = () => {
               slotProps={{ textField: { required: true, error: false, fullWidth: true } }}
               sx={{ flex: 1, minWidth: 0 }}
             />
-          </LocalizationProvider>
-        </Stack>
+          </Stack>
 
-        <FormControl variant="outlined" sx={{ m: 1, width: '100%' }} required>
-          <InputLabel id="board-size-label">Board Size</InputLabel>
-          <Select
-            labelId="board-size-label"
-            id="board-size"
-            value={boardSize}
-            onChange={(e) => setBoardSize(e.target.value as number)}
-            label="Board Size"
+          <FormControl variant="outlined" sx={{ m: 1, width: '100%' }} required>
+            <InputLabel id="board-size-label">Board Size</InputLabel>
+            <Select
+              labelId="board-size-label"
+              id="board-size"
+              value={boardSize}
+              onChange={(e) => setBoardSize(e.target.value as number)}
+              label="Board Size"
+            >
+              <MenuItem value={16}>4X4</MenuItem>
+              <MenuItem value={35}>5X5</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl variant="outlined" sx={{ m: 1, width: '100%' }} required>
+            <InputLabel id="team-size-select-label">Number of teams playing</InputLabel>
+            <Select
+              labelId="team-size-select-label"
+              id="team-size"
+              value={numberOfTeams}
+              onChange={(e) => setNumberOfTeams(e.target.value as number)}
+              label="Number of teams playing"
+            >
+              <MenuItem value={2}>2</MenuItem>
+              <MenuItem value={3}>3</MenuItem>
+              <MenuItem value={4}>4</MenuItem>
+              <MenuItem value={5}>5</MenuItem>
+            </Select>
+          </FormControl>
+
+          <Stack
+            spacing={2}
+            sx={{
+              width: '100%',
+            }}
           >
-            <MenuItem value={16}>4X4</MenuItem>
-            <MenuItem value={35}>5X5</MenuItem>
-          </Select>
-        </FormControl>
+            {Array.from({ length: numberOfTeams }).map((_, index) => (
+              <TextField
+                key={`team-${index}`}
+                id={`team-${index}`}
+                label={`Team ${index + 1}`}
+                value={teamNames[index] || ''}
+                onChange={(e) => handleTeamNameChange(index, e.target.value)}
+                variant="outlined"
+                fullWidth
+              />
+            ))}
+          </Stack>
 
-        <FormControl variant="outlined" sx={{ m: 1, width: '100%' }} required>
-          <InputLabel id="team-size-select-label">Number of teams playing</InputLabel>
-          <Select
-            labelId="team-size-select-label"
-            id="team-size"
-            value={numberOfTeams}
-            onChange={(e) => setNumberOfTeams(e.target.value as number)}
-            label="Number of teams playing"
+          <Stack
+            spacing={2}
+            direction="row"
+            sx={{
+              width: '100%',
+            }}
           >
-            <MenuItem value={2}>2</MenuItem>
-            <MenuItem value={3}>3</MenuItem>
-            <MenuItem value={4}>4</MenuItem>
-            <MenuItem value={5}>5</MenuItem>
-          </Select>
-        </FormControl>
-
-        <Stack
-          spacing={2}
-          sx={{
-            width: '100%',
-          }}
-        >
-          {Array.from({ length: numberOfTeams }).map((_, index) => (
-            <TextField
-              key={`team-${index}`}
-              id={`team-${index}`}
-              label={`Team ${index + 1}`}
-              value={teamNames[index] || ''}
-              onChange={(e) => handleTeamNameChange(index, e.target.value)}
+            <Button
               variant="outlined"
-              fullWidth
-            />
-          ))}
-        </Stack>
-
-        <Stack
-          spacing={2}
-          direction="row"
-          sx={{
-            width: '100%',
-          }}
-        >
-          <Button
-            variant="outlined"
-            color={isBingo ? 'info' : 'success'}
-            disabled={!isFormValid}
-            onClick={handleSubmit}
-            sx={{ width: '50%' }}
-          >
-            {isBingo ? 'Modify Bingo' : 'Add Bingo Details'}
-          </Button>
-          {hasFormData && (
-            <Button variant="outlined" color="error" onClick={clearBingo} sx={{ width: '50%' }}>
-              Clear
+              color={isBingo ? 'info' : 'success'}
+              disabled={!isFormValid}
+              onClick={handleSubmit}
+              sx={{ width: '50%' }}
+            >
+              {isBingo ? 'Modify Bingo' : 'Add Bingo Details'}
             </Button>
-          )}
+            {hasFormData && (
+              <Button variant="outlined" color="error" onClick={clearBingo} sx={{ width: '50%' }}>
+                Clear
+              </Button>
+            )}
+          </Stack>
+
+          {/* Always mounted (not gated on isBingo/bingoId) so a Delete's
+              success alert survives the very refetch it triggers — that
+              refetch is what flips isBingo back to false. BingoLifecycle
+              decides its own visibility: nothing to act on AND nothing left
+              to report renders null. */}
+          <BingoLifecycle
+            source={bingoId ? { id: bingoId, name: bingoName, status: bingoStatus } : null}
+            onChanged={refetchBingo}
+          />
         </Stack>
-      </Stack>
+      </LocalizationProvider>
     </PageLayout>
   );
 };

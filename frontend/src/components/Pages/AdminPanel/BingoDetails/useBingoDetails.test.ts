@@ -66,6 +66,7 @@ describe('useBingoDetails — 403 -> permission-state mapping (bug-report invest
         data: {
           id: 'bingo-1',
           name: 'Summer Bingo',
+          status: 'active',
           boardSize: 16,
           startDate: '2026-07-01T00:00:00.000Z',
           endDate: '2026-08-01T00:00:00.000Z',
@@ -81,6 +82,58 @@ describe('useBingoDetails — 403 -> permission-state mapping (bug-report invest
     await waitFor(() => expect(result.current.isBingo).toBe(true));
     expect(result.current.permissionDenied).toBe(false);
     expect(result.current.bingoName).toBe('Summer Bingo');
+    // Captured for useBingoLifecycle (End Early/Delete/Clone) — the create
+    // form's fields alone don't carry the bingo's real id/status.
+    expect(result.current.bingoId).toBe('bingo-1');
+    expect(result.current.bingoStatus).toBe('active');
+  });
+
+  // Regression coverage for the useBingoLifecycle wiring: after a
+  // destructive/lifecycle action (e.g. Delete), BingoLifecycle calls
+  // refetchBingo to reset this form to whatever's left — a 404 there means
+  // "nothing left", and the id/status captured above must reset with it,
+  // not linger and point BingoLifecycle at a bingo that no longer exists.
+  //
+  // Direct regression for a bug caught in browser verification: the first
+  // version of this reset only cleared isBingo/bingoId/bingoStatus, leaving
+  // the just-deleted bingo's name/dates/board size/teams sitting on screen
+  // right next to the "Add Bingo Details" button — a stale identity behind
+  // a button that reads as "create fresh".
+  it('refetchBingo clears every field (not just bingoId/bingoStatus/isBingo) when the bingo it pointed at is gone', async () => {
+    mockedFetchWithAuth.mockResolvedValueOnce(
+      jsonResponse(200, {
+        data: {
+          id: 'bingo-1',
+          name: 'Summer Bingo',
+          status: 'draft',
+          boardSize: 16,
+          startDate: '2026-07-01T00:00:00.000Z',
+          endDate: '2026-08-01T00:00:00.000Z',
+          numberOfTeams: 2,
+          teams: ['Red', 'Blue'],
+          tasks: [],
+        },
+      }),
+    );
+
+    const { result } = renderHook(() => useBingoDetails());
+    await waitFor(() => expect(result.current.bingoId).toBe('bingo-1'));
+
+    mockedFetchWithAuth.mockResolvedValueOnce(jsonResponse(404, {}));
+    await act(async () => {
+      await result.current.refetchBingo();
+    });
+
+    expect(result.current.isBingo).toBe(false);
+    expect(result.current.bingoId).toBeNull();
+    expect(result.current.bingoStatus).toBeUndefined();
+    // The part the first fix missed:
+    expect(result.current.bingoName).toBe('');
+    expect(result.current.startDate).toBe('');
+    expect(result.current.endDate).toBe('');
+    expect(result.current.boardSize).toBe(16);
+    expect(result.current.numberOfTeams).toBe(3);
+    expect(result.current.teamNames).toEqual([]);
   });
 });
 
