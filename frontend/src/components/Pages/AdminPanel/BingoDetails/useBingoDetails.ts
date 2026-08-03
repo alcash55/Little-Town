@@ -38,6 +38,12 @@ export const useBingoDetails = () => {
   const [numberOfTeams, setNumberOfTeams] = useState<number>(3);
   const [teamNames, setTeamNames] = useState<string[]>([]);
 
+  // Identity of the loaded bingo (active|draft only — see existingBingo below).
+  // Consumed by useBingoLifecycle for End Early/Delete/Clone, which need the
+  // real id and status this form's fields alone don't carry.
+  const [bingoId, setBingoId] = useState<string | null>(null);
+  const [bingoStatus, setBingoStatus] = useState<string | undefined>(undefined);
+
   // UI state
   const [isBingo, setIsBingo] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -194,19 +200,42 @@ export const useBingoDetails = () => {
     setTeamNames([]);
   };
 
+  // Shared by the mount-time load and refetchBingo (called after an
+  // End Early/Delete/Clone lifecycle action so this form's state — including
+  // the id/status a fresh useBingoLifecycle mirrors — reflects the result
+  // without a full page reload).
+  //
+  // The mount-time-only original version of this function never needed an
+  // "and there's genuinely nothing now" branch, because nothing ever called
+  // it a second time after it had already populated the form. refetchBingo
+  // does exactly that after a Delete, and browser verification caught the
+  // gap: without fully resetting every field here (not just isBingo/
+  // bingoId/bingoStatus), the just-deleted bingo's name/dates/board size
+  // stayed on screen next to an "Add Bingo Details" button — a stale
+  // identity sitting behind a button that reads as "create fresh".
+  const loadExistingBingo = async () => {
+    const data = await existingBingo();
+    if (data) {
+      setIsBingo(true);
+      setBingoId(data.id ?? null);
+      setBingoStatus(data.status);
+      setBingoName(data.name);
+      setBoardSize(data.boardSize);
+      setStartDate(data.startDate);
+      setEndDate(data.endDate);
+      setNumberOfTeams(data.numberOfTeams ?? 3);
+      setTeamNames(data.teams ?? []);
+    } else {
+      setIsBingo(false);
+      setBingoId(null);
+      setBingoStatus(undefined);
+      clearBingo();
+    }
+  };
+
   // On mount: check for existing bingo and pre-populate form
   useEffect(() => {
-    existingBingo().then((data) => {
-      if (data) {
-        setIsBingo(true);
-        setBingoName(data.name);
-        setBoardSize(data.boardSize);
-        setStartDate(data.startDate);
-        setEndDate(data.endDate);
-        setNumberOfTeams(data.numberOfTeams ?? 3);
-        setTeamNames(data.teams ?? []);
-      }
-    });
+    loadExistingBingo();
   }, []);
 
   return {
@@ -220,6 +249,10 @@ export const useBingoDetails = () => {
     numberOfTeams,
     setNumberOfTeams,
     teamNames,
+    // Identity (for useBingoLifecycle)
+    bingoId,
+    bingoStatus,
+    refetchBingo: loadExistingBingo,
     // UI state
     isBingo,
     submitted,
