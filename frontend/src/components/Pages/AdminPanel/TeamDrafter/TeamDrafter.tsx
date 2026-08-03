@@ -1,8 +1,9 @@
-import { Stack, Tab, Tabs, Typography } from '@mui/material';
+import { Badge, Stack, Tab, Tabs, Typography } from '@mui/material';
 import PageLayout from '../../../../layout/PageLayout/PageLayout';
 import { useTeamDrafter } from './useTeamDrafter';
 import { DrafterTab } from './DrafterTab';
 import { PlayerManagementTab } from './PlayerManagementTab';
+import { RsnClaimsTab } from './RsnClaimsTab';
 import { teamDrafterTabsSx, textSecondary } from './teamDrafterStyles';
 
 export default function TeamDrafter() {
@@ -13,6 +14,17 @@ export default function TeamDrafter() {
       <Tabs value={hook.activeTab} onChange={(_, v) => hook.setActiveTab(v)} sx={teamDrafterTabsSx}>
         <Tab label="Drafter" />
         <Tab label="Player Management" />
+        <Tab
+          label={
+            <Badge
+              color="warning"
+              badgeContent={hook.unclaimedPlayers.length}
+              sx={{ '& .MuiBadge-badge': { right: -12, top: -2 } }}
+            >
+              RSN Claims
+            </Badge>
+          }
+        />
       </Tabs>
       {hook.activeTab === 0 && (
         <Stack
@@ -45,6 +57,7 @@ export default function TeamDrafter() {
         </Stack>
       )}
       {hook.activeTab === 1 && <PlayerManagementTab {...hook} />}
+      {hook.activeTab === 2 && <RsnClaimsTab {...hook} />}
     </PageLayout>
   );
 }
