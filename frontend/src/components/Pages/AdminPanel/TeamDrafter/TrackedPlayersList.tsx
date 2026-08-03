@@ -22,6 +22,7 @@ import {
 } from '@mui/material';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { BingoPlayer, BingoTeam, SideAccount } from './useTeamDrafter';
 import { mutedText, selectSx, tableCellSx, textPrimary, textSecondary } from './teamDrafterStyles';
 
@@ -32,10 +33,31 @@ export type TrackedPlayersListProps = {
   sideAccountsByPlayerId: Record<string, SideAccount[]>;
   removingRsn: string | null;
   captainUpdatingRsn: string | null;
+  /**
+   * Player ids with no rsn_claims row pointing at them (TEAM-BRIEF.md
+   * Sprint 17, Track B2 item 2) — flagged here for quick visibility while
+   * managing the roster; the full "chase list" lives on the RSN Claims tab.
+   */
+  unclaimedPlayerIds: Set<string>;
   onRemovePlayer: (rsn: string) => void;
   onOpenSideAccountDialog: (player: BingoPlayer) => void;
   onSetPlayerCaptain: (rsn: string, captainTeamId: string | null) => void;
 };
+
+function UnclaimedBadge() {
+  return (
+    <Tooltip title="No linked account has claimed this RSN yet">
+      <Chip
+        size="small"
+        icon={<WarningAmberIcon fontSize="small" />}
+        label="Unclaimed"
+        color="warning"
+        variant="outlined"
+        sx={{ ml: 1 }}
+      />
+    </Tooltip>
+  );
+}
 
 function CaptainSelect({
   player,
@@ -179,6 +201,7 @@ function MobilePlayerCard({
   teamNameById,
   removingRsn,
   captainUpdatingRsn,
+  isUnclaimed,
   onRemovePlayer,
   onOpenSideAccountDialog,
   onSetPlayerCaptain,
@@ -189,6 +212,7 @@ function MobilePlayerCard({
   teamNameById: Record<string, string>;
   removingRsn: string | null;
   captainUpdatingRsn: string | null;
+  isUnclaimed: boolean;
   onRemovePlayer: (rsn: string) => void;
   onOpenSideAccountDialog: (player: BingoPlayer) => void;
   onSetPlayerCaptain: (rsn: string, captainTeamId: string | null) => void;
@@ -221,9 +245,17 @@ function MobilePlayerCard({
         >
           <Typography
             variant="subtitle1"
-            sx={{ color: textPrimary, fontWeight: 600, wordBreak: 'break-word' }}
+            sx={{
+              color: textPrimary,
+              fontWeight: 600,
+              wordBreak: 'break-word',
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+            }}
           >
             {player.rsn}
+            {isUnclaimed && <UnclaimedBadge />}
           </Typography>
           <PlayerActions
             player={player}
@@ -281,6 +313,7 @@ export function TrackedPlayersList({
   sideAccountsByPlayerId,
   removingRsn,
   captainUpdatingRsn,
+  unclaimedPlayerIds,
   onRemovePlayer,
   onOpenSideAccountDialog,
   onSetPlayerCaptain,
@@ -305,6 +338,7 @@ export function TrackedPlayersList({
             teamNameById={teamNameById}
             removingRsn={removingRsn}
             captainUpdatingRsn={captainUpdatingRsn}
+            isUnclaimed={unclaimedPlayerIds.has(player.id)}
             onRemovePlayer={onRemovePlayer}
             onOpenSideAccountDialog={onOpenSideAccountDialog}
             onSetPlayerCaptain={onSetPlayerCaptain}
@@ -344,7 +378,10 @@ export function TrackedPlayersList({
               key={player.id}
               sx={{ '&:hover': { backgroundColor: 'rgba(255,255,255,0.04)' } }}
             >
-              <TableCell sx={{ ...tableCellSx, whiteSpace: 'nowrap' }}>{player.rsn}</TableCell>
+              <TableCell sx={{ ...tableCellSx, whiteSpace: 'nowrap' }}>
+                {player.rsn}
+                {unclaimedPlayerIds.has(player.id) && <UnclaimedBadge />}
+              </TableCell>
               <TableCell sx={{ ...tableCellSx, whiteSpace: 'nowrap' }}>
                 {new Date(player.registered_at).toLocaleDateString()}
               </TableCell>

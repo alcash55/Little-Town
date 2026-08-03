@@ -49,6 +49,7 @@ export function PlayerManagementTab(props: ReturnType<typeof useTeamDrafter>) {
     captainUpdatingRsn,
     playerSearchQuery,
     setPlayerSearchQuery,
+    unclaimedPlayerIds,
   } = props;
 
   const parsedCount = csvInput
@@ -176,6 +177,7 @@ export function PlayerManagementTab(props: ReturnType<typeof useTeamDrafter>) {
               sideAccountsByPlayerId={sideAccountsByPlayerId}
               removingRsn={removingRsn}
               captainUpdatingRsn={captainUpdatingRsn}
+              unclaimedPlayerIds={unclaimedPlayerIds}
               onRemovePlayer={removePlayer}
               onOpenSideAccountDialog={openSideAccountDialog}
               onSetPlayerCaptain={setPlayerCaptain}
