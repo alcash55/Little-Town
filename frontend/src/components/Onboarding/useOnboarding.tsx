@@ -9,6 +9,7 @@ import {
   useMemo,
   useState,
 } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useLoginModal } from '../LoginModal/useLoginModal';
 import type { OnboardingStatus } from './OnboardingWizard';
 
@@ -68,9 +69,29 @@ const readRecord = (key: string): OnboardingRecord | null => {
  * their first authenticated visit, persists completion/skip to localStorage
  * so it never reappears on its own, and stays reachable via `showIntro()`
  * (wired to a "Show intro" button in the sidebar footer).
+ *
+ * B6 fix (TEAM-BRIEF.md Sprint 17, Track B1 #4 — bug): the auto-open used to
+ * fire on ANY route, so an admin with no onboarding record landing straight
+ * on `/AdminPanel/*` got the non-dismissable first-run wizard on top of an
+ * admin page it has nothing to do with, with no way to reach the page under
+ * it short of completing a player-oriented RSN flow. Fixed by not
+ * auto-opening while the current route is under `/AdminPanel` — chosen over
+ * gating on the admin *role* because an admin can also be a real player on
+ * a team (this app has no "admin-only, never plays" account type), and that
+ * admin still needs the same first-visit RSN nudge as anyone else the first
+ * time they're on a player-facing route. Route-gating preserves that for
+ * them while a role gate would silently drop it everywhere, forever, for
+ * every admin. The check does NOT mark the user "checked" while on an admin
+ * route — it deliberately re-evaluates on every route change so the
+ * wizard still auto-opens the moment that same admin lands on a
+ * non-admin route later in the session (e.g. clicking Home), and every
+ * user who has already completed/skipped it (a real record exists) is
+ * marked checked immediately regardless of route, so this never re-opens
+ * something the user already dismissed.
  */
 export const OnboardingProvider = ({ children }: PropsWithChildren<{}>) => {
   const { user, authReady } = useLoginModal();
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   // Tracks why the wizard is currently open, so the Dialog knows whether
   // it's allowed to be Escape/backdrop-dismissed. null once closed.
@@ -78,6 +99,7 @@ export const OnboardingProvider = ({ children }: PropsWithChildren<{}>) => {
   const [checkedUserId, setCheckedUserId] = useState<string | null>(null);
 
   const storageKey = user ? `${STORAGE_PREFIX}${user.id}` : null;
+  const isAdminRoute = location.pathname.startsWith('/AdminPanel');
 
   // Auto-open on first authenticated visit — once per signed-in user id, so
   // switching accounts in the same browser session re-evaluates instead of
@@ -87,13 +109,24 @@ export const OnboardingProvider = ({ children }: PropsWithChildren<{}>) => {
   useEffect(() => {
     if (!authReady || !user || !storageKey) return;
     if (checkedUserId === user.id) return;
-    setCheckedUserId(user.id);
+
     const record = readRecord(storageKey);
-    if (!record) {
-      setOpen(true);
-      setOpenReason('auto');
+    if (record) {
+      // Genuinely nothing left to check for this user — safe to stop
+      // re-running this effect on every route change.
+      setCheckedUserId(user.id);
+      return;
     }
-  }, [authReady, user, storageKey, checkedUserId]);
+
+    // See the B6 comment above the component: never auto-open over an
+    // admin page. `checkedUserId` is deliberately left unset here so this
+    // effect re-runs (and re-evaluates) the next time the route changes.
+    if (isAdminRoute) return;
+
+    setCheckedUserId(user.id);
+    setOpen(true);
+    setOpenReason('auto');
+  }, [authReady, user, storageKey, checkedUserId, isAdminRoute]);
 
   // Logging out closes the wizard — there's no user to key its persistence on.
   useEffect(() => {
