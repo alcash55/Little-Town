@@ -10,9 +10,13 @@ name: CI
 # were written for.
 #
 # BUN_VERSION is pinned above the reusable workflow's own default (1.1.34):
-# both lockfiles use the "configVersion" field, which older Bun releases
-# don't write or reliably read, so installing with the default version
-# risks failing on lockfile parsing before a single dependency installs.
+# both lockfiles use the "configVersion" field, which older Bun releases do
+# not write. The failure mode is worse than an error, which is why the pin
+# is not optional -- 1.1.34 does not reject the lockfile, it silently
+# ignores the pinned versions and re-resolves newer ones from the semver
+# ranges (measured: @supabase/supabase-js 2.107.0 -> 2.112.4, discord.js
+# 14.26.4 -> 14.27.0), with no warning. That defeats the entire contract of
+# --frozen-lockfile while still reporting success.
 #
 # Neither workspace has a `lint` or `typecheck` script -- the reusable
 # workflow skips both automatically since neither script name exists in
