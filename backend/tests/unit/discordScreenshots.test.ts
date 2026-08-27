@@ -12,7 +12,20 @@ import type { Attachment, Message } from "discord.js";
 const submissionExistsMock = mock(async (_discordMessageId: string) => false);
 const insertPendingSubmissionMock = mock(async (_input: unknown) => {});
 
+const uploadMock = mock(async (_path: string, _body: unknown, _opts: unknown) => ({ error: null }));
+const storageFromMock = mock((_bucket: string) => ({ upload: uploadMock }));
+
+mock.module("../../src/db/client.js", () => ({
+  getDb: () => ({ storage: { from: storageFromMock } }),
+}));
+
+// Both db mocks below spread the real module and override only what this
+// file stubs. See the note on db/bingos.js underneath for why a partial
+// registration is a process-wide hazard rather than a local shortcut.
+const actualSubmissions = await import("../../src/db/bingoSubmissions.js");
+
 mock.module("../../src/db/bingoSubmissions.js", () => ({
+  ...actualSubmissions,
   submissionExistsByDiscordMessageId: submissionExistsMock,
   insertPendingSubmission: insertPendingSubmissionMock,
   SCREENSHOTS_BUCKET: "screenshots",
@@ -20,15 +33,29 @@ mock.module("../../src/db/bingoSubmissions.js", () => ({
 
 const getActiveBingoMock = mock(async () => ({ id: "bingo-1", status: "active" }));
 
+// Spread the real module and override only getActiveBingo, rather than
+// registering a one-export replacement of it.
+//
+// `bun:test`'s mock.module swaps a module for the entire process, not per
+// file, and bun runs every test file in one process — so a registration that
+// drops an export breaks any *other* file importing that specifier, with
+// `SyntaxError: Export named 'activateBingo' not found in module`. Which file
+// wins depends on the order the runner reaches them, and that order differs
+// between this project's case-insensitive dev mount and a Linux CI runner:
+// the one-export version passed locally and failed on ext4, 31 tests down.
+//
+// Spreading rather than hand-listing the other exports (as
+// dependencyHealth.test.ts does for staticData.js) keeps a newly added export
+// in db/bingos.ts covered without anyone remembering to come back here.
+//
+// Importing it for real is safe: db/bingos.ts's only runtime dependency is
+// getDb from db/client.js, mocked immediately above, so nothing below reaches
+// Supabase or needs SUPABASE_URL.
+const actualBingos = await import("../../src/db/bingos.js");
+
 mock.module("../../src/db/bingos.js", () => ({
+  ...actualBingos,
   getActiveBingo: getActiveBingoMock,
-}));
-
-const uploadMock = mock(async (_path: string, _body: unknown, _opts: unknown) => ({ error: null }));
-const storageFromMock = mock((_bucket: string) => ({ upload: uploadMock }));
-
-mock.module("../../src/db/client.js", () => ({
-  getDb: () => ({ storage: { from: storageFromMock } }),
 }));
 
 // Imported dynamically *after* the mocks above are registered, so
