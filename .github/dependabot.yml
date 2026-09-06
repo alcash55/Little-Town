@@ -1,11 +1,10 @@
 version: 2
 updates:
-  - package-ecosystem: "bundler"
+  - package-ecosystem: "bun"
     directory: "/frontend"
     schedule:
-      interval: "yearly"
-    allow:
-      - dependency-type: "direct"
-      labels:
-        - "dependencies"
-        - "frontend"
+      interval: "weekly"
+  - package-ecosystem: "bun"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
