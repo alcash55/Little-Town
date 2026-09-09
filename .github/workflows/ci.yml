@@ -107,14 +107,22 @@ jobs:
       # columnExists()-gated tests for a migration that hasn't landed on
       # main yet. If this ever fires, read test-output.log for which
       # describe.skipIf blocks fired and why before raising the number.
+      #
+      # bun test OMITS the "<N> skip" line entirely when the skip count is
+      # exactly 0 -- it does not print "0 skip" -- confirmed against a real
+      # run of this workflow. So no match is the good case (0 skipped), not
+      # a parse failure; "Ran <N> tests" is checked separately as the sanity
+      # check that this is actually bun's summary output and not some other
+      # failure upstream.
       - name: Fail if the skip count regresses back toward the old wall of skips
         run: |
           ALLOWED_SKIP=10
-          skipped="$(grep -oP '^\s*\K[0-9]+(?= skip$)' test-output.log | tail -1)"
-          if [ -z "$skipped" ]; then
-            echo "::error::Could not find a '<N> skip' line in bun test's summary output -- the test runner's output format may have changed."
+          if ! grep -qP '^Ran [0-9]+ tests? across [0-9]+ files?\.' test-output.log; then
+            echo "::error::Could not find bun test's 'Ran <N> tests...' summary line -- the test runner's output format may have changed, or the run failed before printing a summary."
             exit 1
           fi
+          skipped="$(grep -oP '^\s*\K[0-9]+(?= skip$)' test-output.log | tail -1)"
+          skipped="${skipped:-0}"
           echo "Skipped: $skipped (allowed: <= $ALLOWED_SKIP)"
           if [ "$skipped" -gt "$ALLOWED_SKIP" ]; then
             echo "::error::$skipped tests skipped, more than the $ALLOWED_SKIP allowed -- see test-output.log for which describe.skipIf blocks fired."
