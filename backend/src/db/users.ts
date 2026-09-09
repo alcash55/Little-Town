@@ -27,16 +27,37 @@ function toUser(row: UserRow): User {
   };
 }
 
-async function verifyPassword(
+/**
+ * Gate for the `dev:`-prefixed plaintext-comparison branch below. Issue
+ * #51: this used to be three conditions inlined directly in
+ * `verifyPassword` (`ALLOW_DEV_AUTH === "true"`, `NODE_ENV !== "production"`,
+ * literal match), which meant a future edit could weaken production auth by
+ * dropping just one `&&` clause during an unrelated change. Pulled out and
+ * hardened two ways:
+ *
+ *   1. The production check runs first and returns early — it is no longer
+ *      possible to reach the ALLOW_DEV_AUTH check at all when NODE_ENV is
+ *      "production", regardless of what happens to the rest of this
+ *      function later.
+ *   2. NODE_ENV must equal "development" exactly, not merely "!== production"
+ *      — the old check treated staging, test, or an unset NODE_ENV as
+ *      eligible for the bypass, which is broader than "local dev" actually
+ *      needs.
+ *
+ * Every combination of ALLOW_DEV_AUTH x NODE_ENV is pinned in
+ * tests/unit/verifyPassword.test.ts (issue #52).
+ */
+function isDevAuthBypassEnabled(): boolean {
+  if (process.env.NODE_ENV === "production") return false;
+  return process.env.ALLOW_DEV_AUTH === "true" && process.env.NODE_ENV === "development";
+}
+
+export async function verifyPassword(
   password: string,
   passwordHash: string,
 ): Promise<boolean> {
   if (passwordHash.startsWith("dev:")) {
-    return (
-      process.env.ALLOW_DEV_AUTH === "true" &&
-      process.env.NODE_ENV !== "production" &&
-      password === passwordHash.slice(4)
-    );
+    return isDevAuthBypassEnabled() && password === passwordHash.slice(4);
   }
 
   return bcrypt.compare(password, passwordHash);

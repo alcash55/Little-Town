@@ -81,8 +81,10 @@ ALTER TABLE bingo_board_tiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bingo_submissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE hiscore_cache ENABLE ROW LEVEL SECURITY;
 
-INSERT INTO users (username, email, password_hash, role)
-VALUES
-  ('admin', 'admin@littletown.local', 'dev:password', 'admin'),
-  ('user', 'user@littletown.local', 'dev:password', 'user')
-ON CONFLICT (username) DO NOTHING;
+-- Fixture admin/user rows used to be seeded here (issue #51). Moved to
+-- supabase/seed.sql, which db:reset applies for local dev and db:push never
+-- touches — a numbered migration in this chain runs against hosted
+-- Supabase exactly like every other schema change, so it had no business
+-- inserting fixture credentials into a production table. See the
+-- 20260909000000 migration below for the one-time cleanup of the two rows
+-- this used to create.
