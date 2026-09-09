@@ -1,6 +1,7 @@
 import { Request } from "express";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../lib/jwt.js";
+import { getRequestToken } from "../lib/session.js";
 
 /**
  * Rate-limit key generator for the general `/api/` limiter (TEAM-BRIEF.md
@@ -12,7 +13,10 @@ import { getJwtSecret } from "../lib/jwt.js";
  * Sequencing: the limiter this feeds is mounted at
  * `app.use("/api/", limiter)`, which runs BEFORE `protect` — `req.user` is
  * never populated by the time this runs, so the bearer token is read and
- * verified independently here rather than trusting `req.user`.
+ * verified independently here rather than trusting `req.user`. Reads the
+ * same cookie-or-header source `protect` uses (getRequestToken, issue #53)
+ * so a cookie-authenticated browser caller still gets its own per-user
+ * bucket instead of falling back to shared IP keying.
  *
  * Deliberately uses `jwt.verify`, not `jwt.decode`: decoding without
  * verifying the signature would let anyone put an arbitrary `id` claim into
@@ -34,8 +38,7 @@ import { getJwtSecret } from "../lib/jwt.js";
  * than this sprint's fix.
  */
 export function rateLimitKey(req: Request): string {
-  const authHeader = req.headers.authorization;
-  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : undefined;
+  const token = getRequestToken(req);
 
   if (token) {
     try {

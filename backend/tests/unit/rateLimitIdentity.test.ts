@@ -52,6 +52,21 @@ function get(path: string, token?: string): Promise<{ status: number }> {
   });
 }
 
+/** Same as get(), but carries the token as a cookie (the browser/frontend path — issue #53) instead of a header. */
+function getWithCookie(path: string, token: string): Promise<{ status: number }> {
+  return new Promise((resolve, reject) => {
+    http
+      .get(
+        { host: "127.0.0.1", port, path, headers: { cookie: `authToken=${token}` } },
+        (res) => {
+          res.resume();
+          res.on("end", () => resolve({ status: res.statusCode ?? 0 }));
+        },
+      )
+      .on("error", reject);
+  });
+}
+
 function signToken(id: string, secret: string = process.env.JWT_SECRET!): string {
   return jwt.sign({ id, username: id, role: "member" }, secret, { expiresIn: "1h" });
 }
@@ -112,6 +127,18 @@ describe("rate limiter keying — identity vs IP (TEAM-BRIEF.md Track C)", () =>
     expect((await get("/api/ping")).status).toBe(200);
     expect((await get("/api/ping")).status).toBe(200);
     expect((await get("/api/ping")).status).toBe(429);
+  });
+
+  test("a cookie-carried token (the browser/frontend path, issue #53) keys by user id same as a bearer header does", async () => {
+    const token = signToken("user-cookie");
+
+    expect((await getWithCookie("/api/ping", token)).status).toBe(200);
+    expect((await getWithCookie("/api/ping", token)).status).toBe(200);
+    expect((await getWithCookie("/api/ping", token)).status).toBe(429);
+
+    // Same user id via the header path instead — must land in the SAME
+    // bucket getRequestToken resolved for the cookie above, not a fresh one.
+    expect((await get("/api/ping", token)).status).toBe(429);
   });
 
   test("an authenticated caller's exhausted bucket does not block a later unauthenticated request from the same IP", async () => {
