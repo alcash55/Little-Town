@@ -8,6 +8,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { rateLimitKey } from "./middleware/rateLimitKey.js";
+import { loginLimiter } from "./middleware/loginLimiter.js";
 import authRoutes from "./routes/auth.js";
 import hiscoresRoutes from "./routes/hiscores.js";
 import adminRoutes from "./routes/admin.js";
@@ -100,15 +101,6 @@ const limiter = rateLimit({
 });
 app.use("/api/", limiter);
 
-// Stricter limiter on the login route to slow down credential stuffing/brute
-// force — fixed 15 min window regardless of RATE_LIMIT_WINDOW_MS.
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10, // limit each IP to 10 login attempts per 15 minutes
-  message: {
-    error: "Too many login attempts from this IP, please try again later.",
-  },
-});
 app.use("/api/auth/login", loginLimiter);
 
 // Public invite lookup/accept has no auth of its own beyond the token
