@@ -231,3 +231,28 @@ TEST_SUPABASE_URL=http://127.0.0.1:54321 \
 TEST_SUPABASE_SERVICE_ROLE_KEY=<local service_role key from db:status> \
 bun test             # explicit override, e.g. in CI
 ```
+
+### CI (issue #41)
+
+`.github/workflows/ci.yml`'s `backend` job starts the local Supabase stack
+itself (`bun x supabase start` — a fresh CI runner has Docker already, and a
+first start on an empty volume applies every migration plus `seed.sql`, same
+as `db:reset`) and points `TEST_SUPABASE_URL`/`TEST_SUPABASE_SERVICE_ROLE_KEY`
+at it before running `bun test`. Chosen over a dedicated hosted Supabase
+project used only for CI because it needs no secrets, no external dependency,
+and no rotation discipline — the cost is a slower CI run (the stack has to
+boot), which was worth it here.
+
+Two extra guardrails beyond just setting the env vars, both landed because a
+"looks green" CI run is exactly what issue #41 was about:
+
+- A reachability check (`curl` against the local REST endpoint) runs before
+  the test step and fails the job outright if the stack isn't actually up,
+  rather than letting `tests/integration/helpers.ts`'s own reachability
+  check quietly skip every integration test the way it's designed to for a
+  developer's local machine.
+- A step after the test run parses `bun test`'s own `<N> skip` summary line
+  and fails the job if it's above a small buffer (10, for tests that skip
+  for a real, current reason — see the workflow file's comment). This is the
+  actual regression guard: it's what would have caught 287/526 skipping
+  silently in the first place.
