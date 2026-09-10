@@ -40,7 +40,7 @@ const asLoginModal = (user: User | null, authReady: boolean): ReturnType<typeof 
 
 const ADMIN: User = {
   id: 'admin-1',
-  username: 'QaAdminTest',
+  username: 'admin',
   role: 'admin',
   createdAt: '',
   updatedAt: '',
