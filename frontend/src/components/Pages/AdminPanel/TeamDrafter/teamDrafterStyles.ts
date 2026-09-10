@@ -17,8 +17,8 @@ export const inputSx = {
     color: textPrimary,
     backgroundColor: 'transparent',
     '& .MuiOutlinedInput-notchedOutline': { borderColor: subtleBorder },
-    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#2A9D8F' },
-    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#2A9D8F' },
+    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: appColors.accent },
+    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: appColors.accent },
     '& input': { backgroundColor: 'transparent' },
     '& textarea': { backgroundColor: 'transparent' },
   },
@@ -28,7 +28,7 @@ export const inputSx = {
   },
   '& .MuiInputLabel-root': {
     color: textSecondary,
-    '&.Mui-focused': { color: '#2A9D8F' },
+    '&.Mui-focused': { color: appColors.accent },
   },
 };
 
@@ -54,8 +54,8 @@ export const selectSx = {
   minWidth: 150,
   color: textPrimary,
   '& .MuiOutlinedInput-notchedOutline': { borderColor: subtleBorder },
-  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#2A9D8F' },
-  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#2A9D8F' },
+  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: appColors.accent },
+  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: appColors.accent },
   '& .MuiSelect-icon': { color: textSecondary },
 };
 
@@ -74,9 +74,9 @@ export const teamDrafterTabsSx = {
     },
   },
   '& .MuiTab-root.Mui-selected': {
-    color: '#2A9D8F',
+    color: appColors.accent,
   },
   '& .MuiTabs-indicator': {
-    backgroundColor: '#2A9D8F',
+    backgroundColor: appColors.accent,
   },
 };
