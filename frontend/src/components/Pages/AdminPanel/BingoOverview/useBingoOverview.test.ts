@@ -115,6 +115,83 @@ describe('useBingoOverview polling (TEAM-BRIEF.md contract 6)', () => {
     Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
     document.dispatchEvent(new Event('visibilitychange'));
   });
+
+  // #45: an idle admin tab (nothing on the page actually changing) used to
+  // poll at a flat 45s forever. This proves consecutive unchanged ticks back
+  // off past that floor instead of holding it.
+  //
+  // Tick 1 has nothing to compare against yet (the fingerprint from the
+  // mount-time fetch was never recorded as "last tick's" fingerprint), so
+  // it always fires at the floor and only establishes the baseline. Tick 2
+  // is the first one that can actually observe "unchanged" and starts the
+  // backoff — every tick after that widens the interval further as long as
+  // the mocked data keeps returning identically.
+  it('backs off the poll interval on consecutive unchanged ticks', async () => {
+    installRouter();
+    renderHook(() => useBingoOverview());
+    await vi.waitFor(() => expect(callCountFor('/bingo/player-stats')).toBeGreaterThan(0));
+    const afterMount = callCountFor('/bingo/player-stats');
+
+    // Tick 1 (45s): baseline only, still at the floor.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(45_000);
+    });
+    expect(callCountFor('/bingo/player-stats')).toBe(afterMount + 1);
+
+    // Tick 2 (45s more): unchanged vs. tick 1, still at the floor — this is
+    // the tick that starts widening the interval for tick 3.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(45_000);
+    });
+    expect(callCountFor('/bingo/player-stats')).toBe(afterMount + 2);
+
+    // Tick 3 would fire at a flat 45s but shouldn't yet — the interval
+    // widened after tick 2.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(45_000);
+    });
+    expect(callCountFor('/bingo/player-stats')).toBe(afterMount + 2);
+
+    // Advancing well past the widened interval does eventually fire it.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(120_000);
+    });
+    expect(callCountFor('/bingo/player-stats')).toBe(afterMount + 3);
+  });
+
+  it('resets the poll interval back to the floor once something changes', async () => {
+    installRouter();
+    renderHook(() => useBingoOverview());
+    await vi.waitFor(() => expect(callCountFor('/bingo/player-stats')).toBeGreaterThan(0));
+
+    // Back off for two unchanged ticks.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(45_000);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(200_000);
+    });
+    const afterBackoff = callCountFor('/bingo/player-stats');
+
+    // Something changes server-side (a new pending screenshot).
+    installRouter({
+      '/bingo/screenshots/pending': { data: [{ id: 'sub-1' }] },
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(200_000);
+    });
+    const afterChange = callCountFor('/bingo/player-stats');
+    expect(afterChange).toBeGreaterThan(afterBackoff);
+
+    // A flat 45s tick fires again now, which wouldn't happen if backoff had
+    // stuck at its widened interval.
+    const beforeFloorCheck = callCountFor('/bingo/player-stats');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(45_000);
+    });
+    expect(callCountFor('/bingo/player-stats')).toBeGreaterThan(beforeFloorCheck);
+  });
 });
 
 describe('useBingoOverview KPI totals — attribution-gap fallback', () => {
