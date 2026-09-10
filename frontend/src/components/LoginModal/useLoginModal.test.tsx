@@ -7,14 +7,14 @@ import { AUTH_SESSION_STORAGE_KEY } from '../../utils/authSession';
 
 const ADMIN_USER = {
   id: 'admin-1',
-  username: 'QaAdminTest',
+  username: 'admin',
   role: 'admin',
   createdAt: '',
   updatedAt: '',
 };
 const PLAIN_USER = {
   id: 'user-1',
-  username: 'GuySmoocherTest',
+  username: 'user',
   role: 'user',
   createdAt: '',
   updatedAt: '',
@@ -103,7 +103,11 @@ describe('LoginModalProvider — cross-tab account switch (bug-report investigat
     });
 
     await waitFor(() => expect(result.current.user?.role).toBe('user'));
-    expect(result.current.user?.username).toBe('GuySmoocherTest');
+    // Assert the id rather than the username. Both fixtures take their names
+    // from seed.sql now, where the plain user's username and role are both
+    // "user", so a username assertion here could not tell the two fields
+    // apart and would still pass if the hook returned the wrong one.
+    expect(result.current.user?.id).toBe('user-1');
   });
 
   it('re-validates in the other direction too (plain user -> admin)', async () => {
