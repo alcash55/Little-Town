@@ -211,8 +211,8 @@ export function ScreenshotCard({
           // has no Drops tiles for screenshots to apply to (TEAM-BRIEF.md
           // Sprint 13 — KC/XP tiles verify automatically from the hiscores).
           <Typography variant="caption" sx={{ color: textSecondary }}>
-            This board has no Drops tiles — Kill Count/Experience tiles verify automatically
-            from the hiscores and don&apos;t use screenshot review.
+            This board has no Drops tiles — Kill Count/Experience tiles verify automatically from
+            the hiscores and don&apos;t use screenshot review.
           </Typography>
         ) : null}
 
