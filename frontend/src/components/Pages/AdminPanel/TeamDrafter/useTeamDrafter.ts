@@ -59,6 +59,14 @@ export interface AdminUserOption {
  * /admin/rsn-claims gives the claimed set) — this is the client-side string
  * match the brief points at, kept in lockstep with the server's own
  * normalization so it doesn't silently drift out of sync.
+ *
+ * This is a duplicate, not a shared import: the frontend build can't pull
+ * from backend/src (different runtime, no shared package boundary between
+ * the two). If you change this function, change backend/src/lib/rsn.ts's
+ * canonicalizeRsn + normalizeRsn to match, or the two silently drift.
+ * useTeamDrafter.test.ts imports the backend module directly by relative
+ * path and asserts byte-identical output on a shared fixture list, so a
+ * drift fails a test instead of failing silently in production.
  */
 export function normalizeRsnForMatch(rsn: string): string {
   return rsn.replace(/_/g, ' ').trim().replace(/\s+/g, ' ').toLowerCase();

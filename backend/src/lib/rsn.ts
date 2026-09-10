@@ -43,6 +43,17 @@ export function normalizeRsn(canonical: string): string {
   return canonical.toLowerCase();
 }
 
+/**
+ * frontend/src/components/Pages/AdminPanel/TeamDrafter/useTeamDrafter.ts's
+ * normalizeRsnForMatch duplicates canonicalizeRsn + normalizeRsn above —
+ * the frontend build can't import from backend/src, so it's a separate
+ * copy, not a shared import. If you change either function here, update
+ * that copy too, or the two silently drift. useTeamDrafter.test.ts imports
+ * this file directly by relative path and asserts byte-identical output on
+ * a shared fixture list, so drift fails a test instead of failing silently
+ * in production.
+ */
+
 /** True if `canonical` (already run through canonicalizeRsn) is a plausible RSN shape. */
 export function isPlausibleRsn(canonical: string): boolean {
   return RSN_PATTERN.test(canonical);
