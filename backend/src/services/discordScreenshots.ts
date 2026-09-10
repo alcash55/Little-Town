@@ -11,6 +11,13 @@ import { extractImgurCandidates, downloadImgurImage, type ImgurDownloadResult } 
 const BACKFILL_LIMIT = 100;
 
 let client: Client | null = null;
+// Resolves once the gateway login completes (the `clientReady` event fires
+// below). #45: `client` goes non-null the moment `new Client()` runs, well
+// before `client.login()` actually finishes the handshake — a caller that
+// only checks `if (!client)` treats "still logging in" the same as "not
+// configured" and can silently drop a one-shot notification that fires
+// during that window. See `waitForReady` below.
+let readyPromise: Promise<void> | null = null;
 
 function isImageAttachment(attachment: Attachment): boolean {
   if (attachment.contentType?.startsWith("image/")) return true;
@@ -247,11 +254,17 @@ export function startDiscordScreenshotService(): void {
     ],
   });
 
+  let resolveReady: () => void = () => {};
+  readyPromise = new Promise((resolve) => {
+    resolveReady = resolve;
+  });
+
   // discord.js v14.14+ renamed the "ready" event to "clientReady" ("ready"
   // is deprecated and slated for removal in v15) — see TEAM-BRIEF.md Sprint
   // 7, Track A item 3.
   client.once("clientReady", async (readyClient) => {
     console.log(`[discordScreenshots] Logged in as ${readyClient.user.tag}`);
+    resolveReady();
     try {
       const channel = await readyClient.channels.fetch(channelId);
       if (!channel || !channel.isTextBased()) {
@@ -284,8 +297,32 @@ export function stopDiscordScreenshotService(): void {
   if (client) {
     client.destroy();
     client = null;
+    readyPromise = null;
     console.log("[discordScreenshots] Stopped.");
   }
+}
+
+const READY_TIMEOUT_MS = 15_000;
+
+/**
+ * Waits (bounded) for the gateway login to finish. #45: the boot-time
+ * lifecycle check (index.ts's `completeEndedBingos()` call) can run its
+ * one-shot "bingo ended while this instance was asleep" notification before
+ * `client.login()` resolves on a cold start — `client` is already non-null
+ * at that point (see the comment on its declaration above), so without this
+ * wait the notification would attempt the Discord API call while still
+ * unauthenticated, fail, and never fire again (bingoLifecycle.ts calls this
+ * once per transition, there's no retry). Bounded so a login that genuinely
+ * never completes doesn't hang the caller forever.
+ */
+async function waitForReady(): Promise<boolean> {
+  if (!readyPromise) return false;
+  const timedOut = Symbol("discordScreenshots.waitForReady timeout");
+  const outcome = await Promise.race([
+    readyPromise.then(() => true as const),
+    new Promise<typeof timedOut>((resolve) => setTimeout(() => resolve(timedOut), READY_TIMEOUT_MS)),
+  ]);
+  return outcome === true;
 }
 
 /**
@@ -359,6 +396,15 @@ export async function notifyBingoEndedWithPendingScreenshots(
 ): Promise<void> {
   const channelId = process.env.DISCORD_SCREENSHOT_CHANNEL_ID;
   if (!client || !channelId) return;
+
+  const ready = await waitForReady();
+  if (!ready) {
+    console.warn(
+      `[discordScreenshots] Still not logged in after ${READY_TIMEOUT_MS}ms — skipping the bingo-ended ` +
+        `notification for "${bingoName}". This was a one-shot notification and will not retry.`,
+    );
+    return;
+  }
 
   try {
     const channel = await client.channels.fetch(channelId);

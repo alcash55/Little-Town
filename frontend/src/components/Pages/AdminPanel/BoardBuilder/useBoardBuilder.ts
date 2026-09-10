@@ -66,7 +66,7 @@ export const useBoardBuilder = () => {
 
   /**
    * Fetch all items in osrs
-   * @returns 
+   * @returns
    */
   const getItemMappings = (): Promise<string[]> =>
     cachedFetch('osrs:items', async () => {

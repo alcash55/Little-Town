@@ -10,7 +10,12 @@ export default function TeamDrafter() {
   const hook = useTeamDrafter();
 
   return (
-    <PageLayout title="Team Drafter" maxWidth="full" contentSx={{ alignItems: 'stretch' }}>
+    <PageLayout
+      title="Team Drafter"
+      maxWidth="full"
+      contentSx={{ alignItems: 'stretch' }}
+      permissionDenied={hook.permissionDenied}
+    >
       <Tabs value={hook.activeTab} onChange={(_, v) => hook.setActiveTab(v)} sx={teamDrafterTabsSx}>
         <Tab label="Drafter" />
         <Tab label="Player Management" />

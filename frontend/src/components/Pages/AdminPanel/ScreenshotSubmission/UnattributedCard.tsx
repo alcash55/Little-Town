@@ -1,7 +1,25 @@
-import { Alert, Box, Button, Card, CardContent, CircularProgress, FormControl, InputLabel, MenuItem, Select, Stack, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  Typography,
+} from '@mui/material';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import { BingoPlayer } from '../TeamDrafter/useTeamDrafter';
-import { selectSx, subtleBorder, textPrimary, textSecondary } from '../TeamDrafter/teamDrafterStyles';
+import {
+  selectSx,
+  subtleBorder,
+  textPrimary,
+  textSecondary,
+} from '../TeamDrafter/teamDrafterStyles';
 import { appColors } from '../../../../layout/Theme';
 import { UnattributedSubmission } from './useScreenshotSubmission';
 
@@ -44,7 +62,9 @@ export function UnattributedCard({
   error,
   onDismissError,
 }: UnattributedCardProps) {
-  const teamPlayers = submission.teamId ? players.filter((p) => p.team_id === submission.teamId) : [];
+  const teamPlayers = submission.teamId
+    ? players.filter((p) => p.team_id === submission.teamId)
+    : [];
 
   return (
     <Card sx={{ width: '100%', maxWidth: 380, display: 'flex', flexDirection: 'column' }}>

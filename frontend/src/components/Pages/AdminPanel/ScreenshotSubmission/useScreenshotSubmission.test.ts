@@ -35,7 +35,15 @@ function installRouter(overrides: Record<string, Response | (() => Response)> = 
     // now, not /bingo/details — see useScreenshotSubmission's
     // fetchTeamsAndBoard doc comment.
     '/bingo/latest': {
-      data: { bingo: { name: 'Test Bingo', status: 'active', endDate: '2026-07-30T00:00:00.000Z', teamObjects: [] }, pendingScreenshots: 0 },
+      data: {
+        bingo: {
+          name: 'Test Bingo',
+          status: 'active',
+          endDate: '2026-07-30T00:00:00.000Z',
+          teamObjects: [],
+        },
+        pendingScreenshots: 0,
+      },
     },
     '/bingo/board': { data: [] },
     '/bingo/players': { data: [] },
@@ -248,7 +256,12 @@ describe('useScreenshotSubmission — approve requires player (TEAM-BRIEF.md Spr
     installRouter({
       '/bingo/screenshots/pending': jsonResponse(200, {
         data: [
-          { id: 'sub-1', imageUrl: null, submittedBy: 'Discord', submittedAt: '2026-07-08T00:00:00.000Z' },
+          {
+            id: 'sub-1',
+            imageUrl: null,
+            submittedBy: 'Discord',
+            submittedAt: '2026-07-08T00:00:00.000Z',
+          },
         ],
       }),
       '/bingo/screenshots/sub-1/approve': () => {
@@ -331,7 +344,13 @@ describe('useScreenshotSubmission — /bingo/latest consumption (TEAM-BRIEF.md S
       '/bingo/latest': () =>
         jsonResponse(200, {
           data: {
-            bingo: { id: 'bingo-9', name: 'Test Bingo', status, endDate: '2026-06-30T00:00:00.000Z', teamObjects: [] },
+            bingo: {
+              id: 'bingo-9',
+              name: 'Test Bingo',
+              status,
+              endDate: '2026-06-30T00:00:00.000Z',
+              teamObjects: [],
+            },
             pendingScreenshots: 0,
           },
         }),
@@ -346,5 +365,63 @@ describe('useScreenshotSubmission — /bingo/latest consumption (TEAM-BRIEF.md S
     });
 
     expect(result.current.bingo?.status).toBe('complete');
+  });
+});
+
+// #45: this page's poller shares useBingoOverview's floor/backoff fix — see
+// that file's test suite for the fuller commentary on why tick 1 is always
+// a baseline and tick 2 is the first one that can observe "unchanged".
+describe('useScreenshotSubmission — poll backoff (#45)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const callCountFor = (pathSuffix: string) =>
+    mockedFetchWithAuth.mock.calls.filter(([url]) => (url as string).includes(pathSuffix)).length;
+
+  it('backs off on consecutive unchanged ticks and resets once something changes', async () => {
+    installRouter();
+    renderHook(() => useScreenshotSubmission());
+    await vi.waitFor(() => expect(callCountFor('/bingo/screenshots/pending')).toBeGreaterThan(0));
+    const afterMount = callCountFor('/bingo/screenshots/pending');
+
+    // Tick 1: baseline only, floor interval.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(45_000);
+    });
+    expect(callCountFor('/bingo/screenshots/pending')).toBe(afterMount + 1);
+
+    // Tick 2: unchanged vs. tick 1, still floor — starts widening for tick 3.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(45_000);
+    });
+    expect(callCountFor('/bingo/screenshots/pending')).toBe(afterMount + 2);
+
+    // Tick 3 shouldn't have fired yet at a flat 45s once widened.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(45_000);
+    });
+    expect(callCountFor('/bingo/screenshots/pending')).toBe(afterMount + 2);
+
+    // A change resets the interval back to the floor on the next tick.
+    installRouter({
+      '/bingo/screenshots/pending': jsonResponse(200, { data: [unattributedRow('sub-new', 'team-a')] }),
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(120_000);
+    });
+    const afterChange = callCountFor('/bingo/screenshots/pending');
+    expect(afterChange).toBeGreaterThan(afterMount + 2);
+
+    const beforeFloorCheck = callCountFor('/bingo/screenshots/pending');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(45_000);
+    });
+    expect(callCountFor('/bingo/screenshots/pending')).toBeGreaterThan(beforeFloorCheck);
   });
 });

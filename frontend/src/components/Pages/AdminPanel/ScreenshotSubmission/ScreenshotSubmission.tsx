@@ -28,6 +28,7 @@ const ScreenshotSubmission = () => {
     loading,
     refreshing,
     error,
+    permissionDenied,
     refresh,
     teamsBoardError,
     dismissTeamsBoardError,
@@ -58,6 +59,10 @@ const ScreenshotSubmission = () => {
     );
   }
 
+  if (permissionDenied) {
+    return <PageLayout title="Screenshot Submissions" align="center" permissionDenied />;
+  }
+
   if (error) {
     return (
       <PageLayout title="Screenshot Submissions" align="center">
@@ -84,9 +89,9 @@ const ScreenshotSubmission = () => {
           remembers the old all-tiles-need-review world isn't left wondering
           why a KC/XP screenshot never shows up here. ── */}
       <Alert severity="info" sx={{ width: '100%' }}>
-        KC/XP tiles verify automatically from the hiscores — no review needed. Screenshots
-        here are for <strong>Drops</strong> tiles only, and approving one now requires picking
-        the player who got the drop.
+        KC/XP tiles verify automatically from the hiscores — no review needed. Screenshots here are
+        for <strong>Drops</strong> tiles only, and approving one now requires picking the player who
+        got the drop.
       </Alert>
 
       {/* ── Ended-bingo context line (TEAM-BRIEF.md Sprint 15, Track B item
@@ -165,8 +170,8 @@ const ScreenshotSubmission = () => {
             All caught up
           </Typography>
           <Typography variant="body2" sx={{ color: textSecondary, maxWidth: 360 }}>
-            No drop screenshots are waiting for review right now. New submissions from Discord
-            will show up here automatically — this page polls every 45 seconds.
+            No drop screenshots are waiting for review right now. New submissions from Discord will
+            show up here automatically — this page polls every 45 seconds.
           </Typography>
         </Stack>
       ) : (
@@ -231,9 +236,8 @@ const ScreenshotSubmission = () => {
           <Typography variant="body2" sx={{ color: textSecondary, width: '100%' }}>
             {unattributed.length} approved Drops submission
             {unattributed.length > 1 ? 's were' : ' was'} approved without picking a player —
-            already counted for the team, but won&apos;t show up per-player until attributed
-            here. (KC/XP tiles auto-verify and never need attribution — this list is Drops
-            only.)
+            already counted for the team, but won&apos;t show up per-player until attributed here.
+            (KC/XP tiles auto-verify and never need attribution — this list is Drops only.)
           </Typography>
           <Box
             sx={{
