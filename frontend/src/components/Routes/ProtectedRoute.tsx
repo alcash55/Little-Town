@@ -42,7 +42,9 @@ export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) 
   }
 
   if (!user) {
-    return <Navigate to="/unauthorized" state={{ from: location, reason: 'unauthenticated' }} replace />;
+    return (
+      <Navigate to="/unauthorized" state={{ from: location, reason: 'unauthenticated' }} replace />
+    );
   }
 
   if (!effectiveRole || !allowedRoles.includes(effectiveRole)) {

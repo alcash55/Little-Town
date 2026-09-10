@@ -32,7 +32,12 @@ describe('useBingoLifecycle — End Early', () => {
     mockedFetchWithAuth.mockResolvedValueOnce(
       jsonResponse(200, {
         success: true,
-        data: { id: ACTIVE.id, status: 'complete', endedAt: '2026-08-03T00:00:00.000Z', pendingScreenshots: 3 },
+        data: {
+          id: ACTIVE.id,
+          status: 'complete',
+          endedAt: '2026-08-03T00:00:00.000Z',
+          pendingScreenshots: 3,
+        },
       }),
     );
     const onChanged = vi.fn();
@@ -60,7 +65,9 @@ describe('useBingoLifecycle — End Early', () => {
   });
 
   it('treats a 409 "not active" as information (dialog-closable), not an error', async () => {
-    mockedFetchWithAuth.mockResolvedValueOnce(jsonResponse(409, { success: false, error: 'Bingo is not active' }));
+    mockedFetchWithAuth.mockResolvedValueOnce(
+      jsonResponse(409, { success: false, error: 'Bingo is not active' }),
+    );
     const { result } = renderHook(() => useBingoLifecycle(ACTIVE, vi.fn()));
 
     let closable: boolean | undefined;
@@ -75,7 +82,9 @@ describe('useBingoLifecycle — End Early', () => {
   });
 
   it('surfaces a real failure as endError and reports the dialog should stay open', async () => {
-    mockedFetchWithAuth.mockResolvedValueOnce(jsonResponse(500, { success: false, error: 'Database unavailable' }));
+    mockedFetchWithAuth.mockResolvedValueOnce(
+      jsonResponse(500, { success: false, error: 'Database unavailable' }),
+    );
     const { result } = renderHook(() => useBingoLifecycle(ACTIVE, vi.fn()));
 
     let closable: boolean | undefined;
@@ -183,7 +192,11 @@ describe('useBingoLifecycle — Clone', () => {
     });
 
     expect(closable).toBe(true);
-    expect(result.current.cloneResult).toEqual({ id: 'bingo-3', name: 'Winter Bingo', tilesCloned: 16 });
+    expect(result.current.cloneResult).toEqual({
+      id: 'bingo-3',
+      name: 'Winter Bingo',
+      tilesCloned: 16,
+    });
     expect(onChanged).toHaveBeenCalledTimes(1);
 
     const [url, init] = mockedFetchWithAuth.mock.calls[0];
@@ -260,11 +273,16 @@ describe('useBingoLifecycle — source mirroring', () => {
   // reading `Ended "" early.` once the mirror moved past it, because that
   // alert used to read the bingo's name live off the mirror instead of the
   // name captured at the moment it actually ended.
-  it("keeps endResult.name pointing at the ended bingo even after a later action changes/clears the mirror", async () => {
+  it('keeps endResult.name pointing at the ended bingo even after a later action changes/clears the mirror', async () => {
     mockedFetchWithAuth.mockResolvedValueOnce(
       jsonResponse(200, {
         success: true,
-        data: { id: ACTIVE.id, status: 'complete', endedAt: '2026-08-03T00:00:00.000Z', pendingScreenshots: 0 },
+        data: {
+          id: ACTIVE.id,
+          status: 'complete',
+          endedAt: '2026-08-03T00:00:00.000Z',
+          pendingScreenshots: 0,
+        },
       }),
     );
     const { result } = renderHook(() => useBingoLifecycle(ACTIVE, vi.fn()));
@@ -276,7 +294,10 @@ describe('useBingoLifecycle — source mirroring', () => {
 
     // Clone succeeds (mirror unaffected by this call) then Delete clears it.
     mockedFetchWithAuth.mockResolvedValueOnce(
-      jsonResponse(201, { success: true, data: { id: 'bingo-9', name: 'Next Round', status: 'draft', tilesCloned: 1 } }),
+      jsonResponse(201, {
+        success: true,
+        data: { id: 'bingo-9', name: 'Next Round', status: 'draft', tilesCloned: 1 },
+      }),
     );
     await act(async () => {
       await result.current.cloneBingo({ name: 'Next Round', startDate: 'a', endDate: 'b' });
@@ -285,7 +306,11 @@ describe('useBingoLifecycle — source mirroring', () => {
     mockedFetchWithAuth.mockResolvedValueOnce(
       jsonResponse(200, {
         success: true,
-        data: { deleted: true, id: 'bingo-9', purged: { teams: 0, tiles: 1, players: 0, submissions: 0, storageObjects: 0 } },
+        data: {
+          deleted: true,
+          id: 'bingo-9',
+          purged: { teams: 0, tiles: 1, players: 0, submissions: 0, storageObjects: 0 },
+        },
       }),
     );
     await act(async () => {

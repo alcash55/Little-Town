@@ -11,7 +11,13 @@ const fmtRange = (startIso: string, endIso: string) => {
   const end = new Date(endIso);
   const dateOpts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
   const timeOpts: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: '2-digit' };
-  return `${start.toLocaleDateString(undefined, dateOpts)} ${start.toLocaleTimeString(undefined, timeOpts)} → ${end.toLocaleDateString(undefined, dateOpts)} ${end.toLocaleTimeString(undefined, timeOpts)}`;
+  return `${start.toLocaleDateString(undefined, dateOpts)} ${start.toLocaleTimeString(
+    undefined,
+    timeOpts,
+  )} → ${end.toLocaleDateString(undefined, dateOpts)} ${end.toLocaleTimeString(
+    undefined,
+    timeOpts,
+  )}`;
 };
 
 const ConflictCard = ({ conflict }: { conflict: PlayerConflict }) => {
@@ -26,18 +32,17 @@ const ConflictCard = ({ conflict }: { conflict: PlayerConflict }) => {
       }}
     >
       <CardContent>
-        <Stack
-          direction="row"
-          spacing={1.5}
-          sx={{ alignItems: 'center', flexWrap: 'wrap', mb: 1 }}
-        >
+        <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', flexWrap: 'wrap', mb: 1 }}>
           {isHigh ? (
             <ErrorIcon fontSize="small" sx={{ color: 'error.main' }} />
           ) : (
             <WarningAmberIcon fontSize="small" sx={{ color: 'warning.main' }} />
           )}
           <Typography variant="body1" sx={{ fontWeight: 600 }}>
-            {conflict.rsn} <Typography component="span" sx={{ color: textSecondary }}>×</Typography>{' '}
+            {conflict.rsn}{' '}
+            <Typography component="span" sx={{ color: textSecondary }}>
+              ×
+            </Typography>{' '}
             {conflict.sideRsn}
           </Typography>
           <Chip
@@ -51,8 +56,8 @@ const ConflictCard = ({ conflict }: { conflict: PlayerConflict }) => {
           />
         </Stack>
         <Typography variant="caption" sx={{ color: textSecondary, display: 'block', mb: 1 }}>
-          Main and side account both gained XP during {conflict.windows.length} overlapping
-          window{conflict.windows.length !== 1 ? 's' : ''}.
+          Main and side account both gained XP during {conflict.windows.length} overlapping window
+          {conflict.windows.length !== 1 ? 's' : ''}.
         </Typography>
         <Stack spacing={0.75}>
           {conflict.windows.map((w, i) => (

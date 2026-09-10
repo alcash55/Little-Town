@@ -46,7 +46,10 @@ export const BoardProgressGauge = ({ pointsScored, pointsPossible }: BoardProgre
           },
         }}
       />
-      <Typography variant="caption" sx={{ color: textSecondary, textAlign: 'center', maxWidth: 260 }}>
+      <Typography
+        variant="caption"
+        sx={{ color: textSecondary, textAlign: 'center', maxWidth: 260 }}
+      >
         {exceedsMax
           ? `${pointsScored.toLocaleString()} pts scored — over the ${pointsPossible.toLocaleString()}-pt board max because more than one player can complete the same tile.`
           : `${pointsScored.toLocaleString()} / ${pointsPossible.toLocaleString()} possible points`}
