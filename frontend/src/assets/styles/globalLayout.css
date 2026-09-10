@@ -1,21 +1,20 @@
 html,
 body,
 #root {
-    display: block;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    overflow-x: hidden;
-    overflow-y: hidden;
-    cursor: url('../Images/cursor-dragon-scimitar.png'), auto;
-
+  display: block;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  cursor: url('../Images/cursor-dragon-scimitar.png'), auto;
 }
 img {
-    font-style: italic;
+  font-style: italic;
 }
 
 section {
- background-color: #424242;
+  background-color: #424242;
 }
 
 /* target the scrollbar track */

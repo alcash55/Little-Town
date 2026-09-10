@@ -40,7 +40,11 @@ const CategoryNav = ({ groupedCategories, selectedCategoryId, onSelect }: Catego
       {groupedCategories.map(({ group, categories }) => (
         <Box
           key={group}
-          sx={{ display: 'flex', flexDirection: { xs: 'row', sm: 'column' }, gap: { xs: 1, sm: 0 } }}
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'row', sm: 'column' },
+            gap: { xs: 1, sm: 0 },
+          }}
         >
           <Typography component="p" sx={{ ...groupLabelSx, display: { xs: 'none', sm: 'block' } }}>
             {group}

@@ -5,8 +5,20 @@ import { LoginModalProvider, useLoginModal } from './useLoginModal';
 import { setImpersonationTarget } from '../../utils/impersonation';
 import { AUTH_SESSION_STORAGE_KEY } from '../../utils/authSession';
 
-const ADMIN_USER = { id: 'admin-1', username: 'QaAdminTest', role: 'admin', createdAt: '', updatedAt: '' };
-const PLAIN_USER = { id: 'user-1', username: 'GuySmoocherTest', role: 'user', createdAt: '', updatedAt: '' };
+const ADMIN_USER = {
+  id: 'admin-1',
+  username: 'QaAdminTest',
+  role: 'admin',
+  createdAt: '',
+  updatedAt: '',
+};
+const PLAIN_USER = {
+  id: 'user-1',
+  username: 'GuySmoocherTest',
+  role: 'user',
+  createdAt: '',
+  updatedAt: '',
+};
 
 // The real session lives in an httpOnly cookie the browser attaches
 // automatically (issue #53) — nothing this test can read or set directly.
@@ -20,7 +32,9 @@ const mockMeEndpoint = () =>
   vi.fn(async (url: string) => {
     if (!String(url).includes('/api/auth/me')) return new Response(null, { status: 404 });
     if (currentServerSession) {
-      return new Response(JSON.stringify({ success: true, data: currentServerSession }), { status: 200 });
+      return new Response(JSON.stringify({ success: true, data: currentServerSession }), {
+        status: 200,
+      });
     }
     return new Response(null, { status: 401 });
   });
@@ -51,7 +65,9 @@ const dispatchAuthSessionChange = (serverUser: typeof ADMIN_USER | typeof PLAIN_
     localStorage.setItem(AUTH_SESSION_STORAGE_KEY, String(Date.now() + Math.random()));
   }
   const newValue = localStorage.getItem(AUTH_SESSION_STORAGE_KEY);
-  window.dispatchEvent(new StorageEvent('storage', { key: AUTH_SESSION_STORAGE_KEY, oldValue, newValue }));
+  window.dispatchEvent(
+    new StorageEvent('storage', { key: AUTH_SESSION_STORAGE_KEY, oldValue, newValue }),
+  );
 };
 
 beforeEach(() => {
@@ -156,6 +172,34 @@ describe('LoginModalProvider — cross-tab account switch (bug-report investigat
 
     expect(fetchMock.mock.calls.length).toBe(callsBefore);
     expect(result.current.user?.role).toBe('admin');
+  });
+});
+
+// #45: fetchWithAuth dispatches 'auth:role-stale' on a 403 while the frontend
+// still thinks it holds a role the backend no longer honors (e.g. a demoted
+// admin). This isn't a dead session, so the fix is a fresh /me rehydrate,
+// not a logout.
+describe('LoginModalProvider — auth:role-stale (#45)', () => {
+  it('re-fetches /me on a role-stale event and picks up the demoted role', async () => {
+    currentServerSession = ADMIN_USER;
+    localStorage.setItem(AUTH_SESSION_STORAGE_KEY, '1');
+    const fetchMock = mockMeEndpoint();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { result } = renderHook(() => useLoginModal(), { wrapper });
+    await waitFor(() => expect(result.current.user?.role).toBe('admin'));
+
+    // The backend demoted this account without the session dying — same
+    // cookie, new role — which is what a 403 mid-session actually means.
+    currentServerSession = PLAIN_USER;
+    const callsBefore = fetchMock.mock.calls.length;
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent('auth:role-stale'));
+    });
+
+    await waitFor(() => expect(result.current.user?.role).toBe('user'));
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(callsBefore);
   });
 });
 

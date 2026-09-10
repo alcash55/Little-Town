@@ -91,8 +91,8 @@ export function CloneBingoDialog({
       </DialogTitle>
       <DialogContent>
         <DialogContentText sx={{ color: appColors.textSecondary, mb: 2 }}>
-          Copies &quot;{sourceBingoName}&quot;&apos;s board tiles into a new draft bingo. Teams, players,
-          submissions, and snapshots are never copied.
+          Copies &quot;{sourceBingoName}&quot;&apos;s board tiles into a new draft bingo. Teams,
+          players, submissions, and snapshots are never copied.
         </DialogContentText>
         <Stack spacing={2}>
           <TextField
@@ -136,7 +136,10 @@ export function CloneBingoDialog({
           onClick={() => onConfirm({ name: name.trim(), startDate, endDate })}
           disabled={!isValid || cloning}
           variant="contained"
-          sx={{ bgcolor: appColors.accent, '&:hover': { bgcolor: appColors.accent, opacity: 0.85 } }}
+          sx={{
+            bgcolor: appColors.accent,
+            '&:hover': { bgcolor: appColors.accent, opacity: 0.85 },
+          }}
         >
           {cloning ? 'Cloning…' : 'Clone'}
         </Button>

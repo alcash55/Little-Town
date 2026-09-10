@@ -15,7 +15,13 @@ import {
   useTheme,
 } from '@mui/material';
 import { RsnClaimAdminRow } from './useTeamDrafter';
-import { mutedText, outlinedButtonSx, tableCellSx, textPrimary, textSecondary } from './teamDrafterStyles';
+import {
+  mutedText,
+  outlinedButtonSx,
+  tableCellSx,
+  textPrimary,
+  textSecondary,
+} from './teamDrafterStyles';
 
 export type RsnClaimsListProps = {
   claims: RsnClaimAdminRow[];
@@ -88,7 +94,11 @@ function MobileClaimCard({
           <Box>
             <Typography sx={fieldLabelSx}>Claimed By</Typography>
             <Typography variant="body2" sx={{ color: textPrimary }}>
-              {claim.username || <Box component="span" sx={{ color: mutedText }}>(unknown)</Box>}
+              {claim.username || (
+                <Box component="span" sx={{ color: mutedText }}>
+                  (unknown)
+                </Box>
+              )}
             </Typography>
           </Box>
           <Box>
@@ -152,7 +162,11 @@ export function RsnClaimsList({ claims, onRelease, onReassign }: RsnClaimsListPr
             >
               <TableCell sx={{ ...tableCellSx, whiteSpace: 'nowrap' }}>{claim.rsn}</TableCell>
               <TableCell sx={tableCellSx}>
-                {claim.username || <Box component="span" sx={{ color: mutedText }}>(unknown)</Box>}
+                {claim.username || (
+                  <Box component="span" sx={{ color: mutedText }}>
+                    (unknown)
+                  </Box>
+                )}
               </TableCell>
               <TableCell sx={{ ...tableCellSx, whiteSpace: 'nowrap' }}>
                 {new Date(claim.claimedAt).toLocaleDateString()}
