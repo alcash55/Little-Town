@@ -122,9 +122,7 @@ describe('useBoardBuilder — error-message formatting on submit (bug-report inv
 
     await result.current.submitBoard();
 
-    await waitFor(() =>
-      expect(result.current.submitError).toBe('Failed to save board (HTTP 403)'),
-    );
+    await waitFor(() => expect(result.current.submitError).toBe('Failed to save board (HTTP 403)'));
     expect(result.current.submitError).not.toMatch(/:\s*$/);
   });
 });

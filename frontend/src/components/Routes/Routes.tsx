@@ -31,18 +31,88 @@ export const Routes = createBrowserRouter(
       <Route path="BingoBoard" element={<Pages.BingoBoard />} />
 
       {/* Player routes */}
-      <Route path="BingoRules" element={<ProtectedRoute allowedRoles={['user', 'admin', 'moderator']}><Pages.BingoRules /></ProtectedRoute>} />
-      <Route path="TeamData" element={<ProtectedRoute allowedRoles={['user', 'admin', 'moderator']}><Pages.TeamData /></ProtectedRoute>} />
-      <Route path="BingoScores" element={<ProtectedRoute allowedRoles={['user', 'admin', 'moderator']}><Pages.BingoScores /></ProtectedRoute>} />
+      <Route
+        path="BingoRules"
+        element={
+          <ProtectedRoute allowedRoles={['user', 'admin', 'moderator']}>
+            <Pages.BingoRules />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="TeamData"
+        element={
+          <ProtectedRoute allowedRoles={['user', 'admin', 'moderator']}>
+            <Pages.TeamData />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="BingoScores"
+        element={
+          <ProtectedRoute allowedRoles={['user', 'admin', 'moderator']}>
+            <Pages.BingoScores />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Admin routes */}
-      <Route path="AdminPanel/BingoDetails" element={<ProtectedRoute allowedRoles={['admin']}><Pages.BingoDetails /></ProtectedRoute>} />
-      <Route path="AdminPanel/BoardBuilder" element={<ProtectedRoute allowedRoles={['admin']}><Pages.BoardBuilder /></ProtectedRoute>} />
-      <Route path="AdminPanel/TeamDrafter" element={<ProtectedRoute allowedRoles={['admin']}><Pages.TeamDrafter /></ProtectedRoute>} />
-      <Route path="AdminPanel/ScreenshotSubmission" element={<ProtectedRoute allowedRoles={['admin']}><Pages.ScreenshotSubmission /></ProtectedRoute>} />
-      <Route path="AdminPanel/BingoOverview" element={<ProtectedRoute allowedRoles={['admin']}><Pages.BingoOverview /></ProtectedRoute>} />
-      <Route path="AdminPanel/Maintenance" element={<ProtectedRoute allowedRoles={['admin']}><Pages.Maintenance /></ProtectedRoute>} />
-      <Route path="AdminPanel/UserInvite" element={<ProtectedRoute allowedRoles={['admin']}><Pages.UserInvite /></ProtectedRoute>} />
+      <Route
+        path="AdminPanel/BingoDetails"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Pages.BingoDetails />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="AdminPanel/BoardBuilder"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Pages.BoardBuilder />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="AdminPanel/TeamDrafter"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Pages.TeamDrafter />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="AdminPanel/ScreenshotSubmission"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Pages.ScreenshotSubmission />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="AdminPanel/BingoOverview"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Pages.BingoOverview />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="AdminPanel/Maintenance"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Pages.Maintenance />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="AdminPanel/UserInvite"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <Pages.UserInvite />
+          </ProtectedRoute>
+        }
+      />
 
       <Route path="*" element={<Pages.Error />} />
     </Route>,

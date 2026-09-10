@@ -156,8 +156,12 @@ export const useBingoOverview = () => {
   const isComplete = bingo?.status === 'complete';
   const isPlanned =
     bingo?.status === 'planned' ||
-    (!!bingo && bingo.status !== 'active' && bingo.status !== 'complete' && bingo.status !== 'archived');
-  const endNameMatches = endConfirmName.trim().toLowerCase() === (bingo?.name ?? '').trim().toLowerCase();
+    (!!bingo &&
+      bingo.status !== 'active' &&
+      bingo.status !== 'complete' &&
+      bingo.status !== 'archived');
+  const endNameMatches =
+    endConfirmName.trim().toLowerCase() === (bingo?.name ?? '').trim().toLowerCase();
 
   const applyBingoData = useCallback(
     (data: (BingoConfig & { teamObjects?: BingoTeam[] }) | null) => {
@@ -194,7 +198,9 @@ export const useBingoOverview = () => {
       const json = await res.json();
       const data: LatestBingoResponse | null = json.data ?? null;
       applyBingoData(data?.bingo ?? null);
-      setLatestPendingCount(typeof data?.pendingScreenshots === 'number' ? data.pendingScreenshots : 0);
+      setLatestPendingCount(
+        typeof data?.pendingScreenshots === 'number' ? data.pendingScreenshots : 0,
+      );
       return data?.bingo ?? null;
     } catch {
       setError('Failed to load bingo status.');
@@ -258,7 +264,9 @@ export const useBingoOverview = () => {
         const json = await boardRes.json();
         setBoard(Array.isArray(json.data) ? json.data : []);
       }
-    } catch { /* non-fatal */ }
+    } catch {
+      /* non-fatal */
+    }
   }, []);
 
   // Contract 3: GET /api/admin/bingo/player-stats. The backend agent is implementing
@@ -271,7 +279,9 @@ export const useBingoOverview = () => {
         // 404 = endpoint not implemented yet (expected during parallel development).
         // Any other non-ok status is surfaced so a real backend failure isn't silent.
         setPlayerStats([]);
-        setPlayerStatsError(res.status === 404 ? null : `Failed to load player stats (${res.status}).`);
+        setPlayerStatsError(
+          res.status === 404 ? null : `Failed to load player stats (${res.status}).`,
+        );
         return;
       }
       const json = await res.json();
@@ -457,7 +467,9 @@ export const useBingoOverview = () => {
     setRefreshingStats(true);
     setRefreshStatsMessage(null);
     try {
-      const res = await fetchWithAuth(`${BASE_URL}/bingo/players/refresh/snapshots`, { method: 'POST' });
+      const res = await fetchWithAuth(`${BASE_URL}/bingo/players/refresh/snapshots`, {
+        method: 'POST',
+      });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? res.statusText);
       setRefreshStatsMessage(json.message ?? 'Stats refreshed.');

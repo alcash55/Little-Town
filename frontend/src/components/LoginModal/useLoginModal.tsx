@@ -1,8 +1,23 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  lazy,
+  Suspense,
+} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LoadingContainer } from '../LoadingContainer/LoadingContainer';
 import { clearImpersonationTarget } from '../../utils/impersonation';
-import { markSessionActive, clearSessionMarker, hasSessionMarker, AUTH_SESSION_STORAGE_KEY } from '../../utils/authSession';
+import {
+  markSessionActive,
+  clearSessionMarker,
+  hasSessionMarker,
+  AUTH_SESSION_STORAGE_KEY,
+} from '../../utils/authSession';
 
 type LoginModalContextValue = {
   openLogin: () => void;
@@ -77,11 +92,13 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
   const [authReady, setAuthReady] = useState(false);
   const returnToRef = useRef<string | null>(null);
   const [sessionExpired, setSessionExpired] = useState(false);
-  const [savedUsername, setSavedUsername] = useState(() => localStorage.getItem('rememberedUsername') ?? '');
+  const [savedUsername, setSavedUsername] = useState(
+    () => localStorage.getItem('rememberedUsername') ?? '',
+  );
   const [rememberMe, setRememberMe] = useState(() => !!localStorage.getItem('rememberedUsername'));
   const navigate = useNavigate();
 
-  const BASE_URL = import.meta.env.VITE_BASEURL || "http://localhost:8081"
+  const BASE_URL = import.meta.env.VITE_BASEURL || 'http://localhost:8081';
 
   // Re-validates `user` against whatever token is currently in localStorage —
   // shared by the mount-time rehydration below and the cross-tab storage
@@ -187,63 +204,66 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
     ensureModalImported();
   }, []);
 
-  const loginWithCredentials = useCallback(async (username: string, password: string, rememberMe: boolean) => {
-    if (rememberMe) {
-      localStorage.setItem('rememberedUsername', username);
-      setSavedUsername(username);
-      setRememberMe(true);
-    } else {
-      localStorage.removeItem('rememberedUsername');
-      setSavedUsername('');
-      setRememberMe(false);
-    }
-
-    setErrorMessage(null);
-    if (!username || !password) {
-      setErrorMessage('Please enter both username and password.');
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-
-      const response = await fetch(`${BASE_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ username, password }),
-      });
-
-      const data: LoginResponse = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Login failed');
+  const loginWithCredentials = useCallback(
+    async (username: string, password: string, rememberMe: boolean) => {
+      if (rememberMe) {
+        localStorage.setItem('rememberedUsername', username);
+        setSavedUsername(username);
+        setRememberMe(true);
+      } else {
+        localStorage.removeItem('rememberedUsername');
+        setSavedUsername('');
+        setRememberMe(false);
       }
 
-      // The backend set the token as an httpOnly cookie (issue #53) — this
-      // marker is the cross-tab signal only, never the token itself.
-      markSessionActive();
-      setUser(data.data.user);
-      setIsOpen(false);
-      setSessionExpired(false);
-
-      console.log(`Welcome ${data.data.user.username}`)
-
-      // Navigate back to the page they were on when their token expired
-      if (returnToRef.current) {
-        navigate(returnToRef.current);
-        returnToRef.current = null;
+      setErrorMessage(null);
+      if (!username || !password) {
+        setErrorMessage('Please enter both username and password.');
+        return;
       }
 
-      window.dispatchEvent(new CustomEvent('auth:login', { detail: data.data }));
-    } catch (e) {
-      setErrorMessage(e instanceof Error ? e.message : 'Login failed. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [navigate]);
+      try {
+        setIsSubmitting(true);
+
+        const response = await fetch(`${BASE_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ username, password }),
+        });
+
+        const data: LoginResponse = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || 'Login failed');
+        }
+
+        // The backend set the token as an httpOnly cookie (issue #53) — this
+        // marker is the cross-tab signal only, never the token itself.
+        markSessionActive();
+        setUser(data.data.user);
+        setIsOpen(false);
+        setSessionExpired(false);
+
+        console.log(`Welcome ${data.data.user.username}`);
+
+        // Navigate back to the page they were on when their token expired
+        if (returnToRef.current) {
+          navigate(returnToRef.current);
+          returnToRef.current = null;
+        }
+
+        window.dispatchEvent(new CustomEvent('auth:login', { detail: data.data }));
+      } catch (e) {
+        setErrorMessage(e instanceof Error ? e.message : 'Login failed. Please try again.');
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [navigate],
+  );
 
   const completeSession = useCallback((session: { user: User }) => {
     // The accept-invite response already set the cookie server-side
@@ -271,7 +291,9 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
     // failed request here just leaves a cookie that still expires on its
     // own JWT_EXPIRES_IN schedule, same exposure window as before this
     // change.
-    fetch(`${BASE_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
+    fetch(`${BASE_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' }).catch(
+      () => {},
+    );
 
     // Trigger global auth state update
     window.dispatchEvent(new CustomEvent('auth:logout'));

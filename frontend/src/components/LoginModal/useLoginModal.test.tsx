@@ -5,8 +5,20 @@ import { LoginModalProvider, useLoginModal } from './useLoginModal';
 import { setImpersonationTarget } from '../../utils/impersonation';
 import { AUTH_SESSION_STORAGE_KEY } from '../../utils/authSession';
 
-const ADMIN_USER = { id: 'admin-1', username: 'QaAdminTest', role: 'admin', createdAt: '', updatedAt: '' };
-const PLAIN_USER = { id: 'user-1', username: 'GuySmoocherTest', role: 'user', createdAt: '', updatedAt: '' };
+const ADMIN_USER = {
+  id: 'admin-1',
+  username: 'QaAdminTest',
+  role: 'admin',
+  createdAt: '',
+  updatedAt: '',
+};
+const PLAIN_USER = {
+  id: 'user-1',
+  username: 'GuySmoocherTest',
+  role: 'user',
+  createdAt: '',
+  updatedAt: '',
+};
 
 // The real session lives in an httpOnly cookie the browser attaches
 // automatically (issue #53) — nothing this test can read or set directly.
@@ -20,7 +32,9 @@ const mockMeEndpoint = () =>
   vi.fn(async (url: string) => {
     if (!String(url).includes('/api/auth/me')) return new Response(null, { status: 404 });
     if (currentServerSession) {
-      return new Response(JSON.stringify({ success: true, data: currentServerSession }), { status: 200 });
+      return new Response(JSON.stringify({ success: true, data: currentServerSession }), {
+        status: 200,
+      });
     }
     return new Response(null, { status: 401 });
   });
@@ -51,7 +65,9 @@ const dispatchAuthSessionChange = (serverUser: typeof ADMIN_USER | typeof PLAIN_
     localStorage.setItem(AUTH_SESSION_STORAGE_KEY, String(Date.now() + Math.random()));
   }
   const newValue = localStorage.getItem(AUTH_SESSION_STORAGE_KEY);
-  window.dispatchEvent(new StorageEvent('storage', { key: AUTH_SESSION_STORAGE_KEY, oldValue, newValue }));
+  window.dispatchEvent(
+    new StorageEvent('storage', { key: AUTH_SESSION_STORAGE_KEY, oldValue, newValue }),
+  );
 };
 
 beforeEach(() => {

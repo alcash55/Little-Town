@@ -78,6 +78,7 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
             Little Town
           </Typography>
           <IconButton
+            aria-label="Close menu"
             onClick={closeSideBar}
             sx={{ color: 'white', '&:hover': { bgcolor: '#163a36' } }}
           >

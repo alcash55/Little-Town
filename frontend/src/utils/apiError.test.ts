@@ -18,7 +18,9 @@ describe('describeApiError — error-message formatting (bug-report investigatio
   });
 
   it('prefers the server-provided `error` field over the default reason', async () => {
-    const response = jsonResponse(403, { error: 'User role user is not authorized to access this route' });
+    const response = jsonResponse(403, {
+      error: 'User role user is not authorized to access this route',
+    });
     const info = await describeApiError(response, 'Failed to send bingo details');
     expect(info.message).toBe('User role user is not authorized to access this route (HTTP 403)');
     expect(info.bodyMessage).toBe('User role user is not authorized to access this route');

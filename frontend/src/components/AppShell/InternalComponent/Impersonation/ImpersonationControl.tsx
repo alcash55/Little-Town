@@ -114,7 +114,15 @@ export const ImpersonationControl = ({
         </Typography>
 
         {activeTarget && (
-          <Box sx={{ mb: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+          <Box
+            sx={{
+              mb: 1.5,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 1,
+            }}
+          >
             <Typography variant="body2" sx={{ color: appColors.textSecondary }}>
               Currently: <strong>{activeTarget.label}</strong>
             </Typography>
