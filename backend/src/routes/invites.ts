@@ -10,8 +10,7 @@ import {
   acceptInvite,
   InviteRole,
 } from "../db/invites.js";
-import jwt, { SignOptions } from "jsonwebtoken";
-import { getJwtSecret } from "../lib/jwt.js";
+import { signSession, setAuthCookie } from "../lib/session.js";
 import { ApiResponse, LoginResponse } from "../types/index.js";
 
 const getAuditUserId = (req: Request): string | undefined =>
@@ -103,20 +102,14 @@ publicInviteRoutes.post(
 
     const user = await acceptInvite(token, { username, password, nickname });
 
-    const expiresIn = (process.env.JWT_EXPIRES_IN || "24h") as SignOptions["expiresIn"];
-    const jwtToken = jwt.sign(
-      { id: user.id, username: user.username, role: user.role },
-      getJwtSecret(),
-      { expiresIn },
-    );
-    const decoded = jwt.decode(jwtToken) as { exp?: number } | null;
-    const expiresAt = decoded?.exp
-      ? new Date(decoded.exp * 1000).toISOString()
-      : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    // Same cookie-only session as POST /api/auth/login (issue #53) — no
+    // token in the response body.
+    const { token: jwtToken, expiresAt } = signSession(user);
+    setAuthCookie(res, jwtToken);
 
     const response: ApiResponse<LoginResponse> = {
       success: true,
-      data: { user, token: jwtToken, expiresAt },
+      data: { user, expiresAt },
     };
     res.status(201).json(response);
   }),
