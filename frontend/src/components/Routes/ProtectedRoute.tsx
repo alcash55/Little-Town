@@ -25,14 +25,19 @@ interface ProtectedRouteProps {
  * In development (bun dev), all routes are accessible without auth.
  */
 export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
+  // Hooks run unconditionally, even in the dev bypass below — a component
+  // can't call hooks behind an early return without breaking React's hook
+  // order guarantee (caught by the eslint-plugin-react-hooks rule added in
+  // #46; import.meta.env.DEV never flips mid-session so this was never a
+  // real runtime bug, just a lint violation waiting to become one).
+  const { user, authReady } = useLoginModal();
+  const { role: effectiveRole } = useEffectiveRole();
+  const location = useLocation();
+
   // Bypass auth entirely in local dev
   if (import.meta.env.DEV) {
     return children;
   }
-
-  const { user, authReady } = useLoginModal();
-  const { role: effectiveRole } = useEffectiveRole();
-  const location = useLocation();
 
   // Wait for the mount-time /me rehydration to settle before deciding whether
   // to redirect — otherwise a hard refresh briefly bounces logged-in users to

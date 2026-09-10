@@ -41,15 +41,14 @@ Goal: run repeated bingos with 10–30 Little Town players instead of solo-testi
 - [x] ~~Back off or make adaptive the two 45s admin pollers (~60 req/window from an idle tab)~~ _(shipped 2026-09-10, Sprint 18 — BingoOverview and ScreenshotSubmission both back off past the 45s floor on consecutive unchanged ticks (1.5x, capped at 180s) and reset to the floor the moment something actually changes.)_
 - [x] ~~`fetchWithAuth` guard: on 403 with a role-bearing session, force an auth rehydrate~~ _(shipped 2026-09-10, Sprint 18 — a 403 with a live session marker (and no active impersonation) dispatches `auth:role-stale`, which `LoginModalProvider` uses to re-fetch `/me` instead of trusting the cached role further.)_
 - [x] ~~Rate-limit claim *changes*, not just creation~~ _(no-op, verified 2026-09-10 — `POST /api/onboarding/rsn` already handles both create and move-claim under the same `rsnClaimLimiter`; there's no separate change endpoint to miss it.)_
-- [x] ~~Sweep for the inverse of the Board Builder bug — anything assuming `localStorage.authToken` exists behaves differently under `bun dev`'s auth bypass than in prod~~ _(no-op, verified 2026-09-10 — #53 already removed every live read of `authToken` from localStorage; only historical comments/tests referencing the old bug remain.)_
+- [x] ~~Sweep for the inverse of the Board Builder bug — anything assuming `localStorage.authToken` exists behaves differently under `bun dev`'s auth bypass than in prod~~ _(no-op, verified independently by both the backend and frontend tracks 2026-09-10 — #53 already removed every live read of `authToken` from localStorage; only historical comments/tests referencing the old bug remained. Frontend also fixed one stale doc comment in `impersonation.ts` that still said `fetchWithAuth` reads the token from localStorage.)_
 - [x] ~~Boot-time Discord notification can miss if the bot hasn't finished logging in when a sleeping instance closes a bingo~~ _(shipped 2026-09-10, Sprint 18 — `notifyBingoEndedWithPendingScreenshots` now waits, bounded to 15s, for the gateway login to finish before sending.)_
-- [x] ~~Confirm the onboarding wizard popping over admin pages (accounts created by direct DB insert) is intended~~ — _answered 2026-08-02: not intended, and not cosmetic. Promoted to **Sprint 17 B6 (BUG)** above._
 
 **Performance / build**
-- [ ] 15MB `LittleTownAnimation.gif` on Home — compress or lazy-load. Promote to P0 if signups ever open to the public
-- [ ] Vite 5.4.21 → 6.4.3+ — clears 4 `bun audit` findings (1 high, all dev-server-only)
-- [ ] Add ESLint to `frontend/` (only tsc + prettier today)
-- [ ] Completion engine recomputes per request — caching candidate if timing degrades at real scale
+- [x] ~~15MB `LittleTownAnimation.gif` on Home — compress or lazy-load. Promote to P0 if signups ever open to the public~~ _(shipped 2026-09-10, Sprint 18 #46 — recompressed in place, 15,046,543 → 674,676 bytes. Same file path, no component change needed.)_
+- [x] ~~Vite 5.4.21 → 6.4.3+ — clears 4 `bun audit` findings (1 high, all dev-server-only)~~ _(shipped 2026-09-10, Sprint 18 #46 — `frontend/package.json` pins `^6.4.3`; `vite build` and `bun run dev` both verified against the bumped version.)_
+- [x] ~~Add ESLint to `frontend/` (only tsc + prettier today)~~ _(shipped 2026-09-10, Sprint 18 #46 — `frontend/eslint.config.js` + `bun run lint` script, `typescript-eslint` recommended rules plus `react-hooks`/`react-refresh`. `no-explicit-any` and `no-unused-vars` are warnings, not errors, so existing debt surfaces without failing CI on day one. First real run caught 7 errors: four `PropsWithChildren<{}>` empty-object-type violations and a genuine rules-of-hooks bug in `ProtectedRoute.tsx` (three hooks called after an early return). Both fixed. Clean run: 0 errors, 28 warnings, `tsc --noEmit` clean, 131/131 tests passing.)_
+- [ ] Completion engine recomputes per request — caching candidate if timing degrades at real scale. **Deliberately deferred, Sprint 18 #46**: do not build a cache speculatively. Revisit only when a real event shows measured `/board` or `/team-data` response time growing with roster/tile count, not before — instrument first (a timing log or APM span around `completionEngine.ts`'s per-request computation), then cache/materialize if the numbers say so. Verified fine today at the documented ≤10 teams × ≤25 tiles scale (see line 314 below).
 
 **Data / schema**
 - [ ] `bingo_player_hiscore_history` retention policy — this sprint generates the usage data to decide with
@@ -59,30 +58,30 @@ Goal: run repeated bingos with 10–30 Little Town players instead of solo-testi
 - [ ] `PUT /api/hiscores/:player` has no rate limit — fine today
 
 **Cleanup / docs / a11y** _(batch these into one pass)_
-- [ ] `/api/bingo/team-data` has no frontend consumer — wire up or remove
-- [ ] `/my-team-data` doc comment describes a stale shape
+- [ ] `/api/bingo/team-data` has no frontend consumer — wire up or remove. **Frontend track investigated 2026-09-10 (Sprint 18 #48) and confirmed dead: no page calls it.** The fix lives in `backend/src/routes/bingo.ts`, which is backend-owned per `TEAM-BRIEF.md`'s interface contract, so frontend is flagging rather than editing it. Backend track's call: wire it into a real consumer or delete the route.
+- [ ] `/my-team-data` doc comment describes a stale shape. **Frontend track confirmed 2026-09-10**: the route comment in `backend/src/routes/bingo.ts` (~line 297) still documents `playerProgress[rsn][tileIndex]`/`playerDrops[rsn][tileIndex]`, but the handler now returns per-player `skillDeltas`/`activityDeltas` objects plus a separate drop-status structure. Backend-owned file, flagged not fixed.
 - [ ] Backend README: document the bingo routes incl. `/board`'s optional-auth behavior
 - [ ] frontend README: note that `bun dev` bypasses ProtectedRoute role gating by design
 - [ ] Fresh-clone note: `bun install` in `frontend/` before typecheck/tests work
 - [ ] One dedicated `prettier --write .` pass
-- [ ] `useBoardBuilder.ts` `any` casts for killCount/experience/dropsAmount
-- [ ] `useSidebar.tsx` `SidebarItem` doesn't declare the `roles` field it uses (`as any[]`)
-- [ ] `vite.config.ts:11` comment still names `@mui/x-data-grid` (removed in Sprint 10)
-- [ ] `teamDrafterStyles.ts` literal `#2A9D8F` hovers/focus states → `appColors.accent`
+- [x] ~~`useBoardBuilder.ts` `any` casts for killCount/experience/dropsAmount~~ _(shipped 2026-09-10, Sprint 18 #48 — checkpoint `43f433f` replaced all three casts with the real `Tile` union's own field types and a narrowed `unknown` + `Array.isArray` check on the item-autocomplete fetch. No `any` left in `useBoardBuilder.ts` or `BoardBuilder.tsx`.)_
+- [x] ~~`useSidebar.tsx` `SidebarItem` doesn't declare the `roles` field it uses (`as any[]`)~~ _(already correct as of 2026-09-10 — `SidebarItem` has declared `roles?: SidebarRole[]` since the type was introduced (commit `b585af8`); no `as any[]` cast exists in the file. Closing without a code change.)_
+- [x] ~~`vite.config.ts:11` comment still names `@mui/x-data-grid` (removed in Sprint 10)~~ _(shipped 2026-09-10, Sprint 18 #46 — checkpoint `43f433f` corrected the comment to name only `@mui/material` and `@mui/x-date-pickers`.)_
+- [x] ~~`teamDrafterStyles.ts` literal `#2A9D8F` hovers/focus states → `appColors.accent`~~ _(shipped 2026-09-10, Sprint 18 #48 — checkpoint `43f433f` replaced every literal in `teamDrafterStyles.ts`, `DrafterTab.tsx`, and `SortableItem.tsx` with `appColors.accent`.)_
 - [ ] SideBar mobile drawer close button has no aria-label
 - [ ] LoginModal `validateDOMNesting` (`<h6>` in `<h2>`) — same one-liner as the OnboardingWizard fix
 - [ ] Unauthorized page: stale "Access Denied" flashes after clearing impersonation
 - [ ] Cross-tab redirect shows "Login Required" instead of "Access Denied" (cosmetic; access correctly blocked)
-- [ ] `bingoArtEntities.ts` `calvarion` apostrophe vs the real hiscores name — art won't exact-match
+- [x] ~~`bingoArtEntities.ts` `calvarion` apostrophe vs the real hiscores name — art won't exact-match~~ _(closed 2026-09-10, no fix needed — this note had the apostrophe direction backwards. The entry's `canonical: "Calvar'ion"` already matches the real hiscores name (confirmed against `HISCORE_NAME_ALIASES` in `completionEngine.ts`, whose legacy key is the wrong wiki-scrape spelling `cal'varion` and whose value is the correct `calvar'ion`, and against `hiscoreVocab.test.ts`'s fixture data). Never edited since the entry was authored. The stale note is what needed fixing, not the code.)_
 - [ ] Deadman/Soul Wars art was hand-downsized; a bare `art:bingo` re-run refetches full size
-- [ ] `imageLinks.test.ts` prints a noisy expected ECONNRESET stack mid-run
-- [ ] BingoBoard `maxWidth: 900` leaves dead space on wide desktops now that tiles carry art
+- [ ] `imageLinks.test.ts` prints a noisy expected ECONNRESET stack mid-run — lives in `backend/tests/unit/`, backend-owned, flagged not fixed by the frontend track 2026-09-10.
+- [x] ~~BingoBoard `maxWidth: 900` leaves dead space on wide desktops now that tiles carry art~~ _(already fixed in an earlier sprint — `BingoBoard.tsx` uses a named `BOARD_MAX_WIDTH = 1100` constant, not a bare `900` literal. Confirmed 2026-09-10; no code change needed.)_
 - [ ] `manualChunks` split for TeamData's 421KB DataGrid chunk — only once a second consumer exists
-- [ ] Duplicate-username error via `accept_invite` RPC reads "field already exists"
-- [ ] Merge `protect`/`optionalAuth` shared logic if more public-read endpoints appear
-- [ ] Team Drafter: surface which pool entries were self-claimed vs admin-entered
+- [ ] Duplicate-username error via `accept_invite` RPC reads "field already exists". **Frontend track confirmed 2026-09-10**: `backend/src/middleware/errorHandler.ts` (~line 38) builds `` `${field} already exists` `` straight from the Postgres constraint name instead of a friendly field label. Backend-owned file, flagged not fixed.
+- [x] ~~Merge `protect`/`optionalAuth` shared logic if more public-read endpoints appear~~ _(reviewed 2026-09-10, no merge — still exactly one public-read endpoint (`GET /api/bingo/board`), so the stated trigger condition for merging hasn't fired. `backend/src/middleware/auth.ts` is backend-owned regardless; this is a record of the decision, not a code change.)_
+- [x] ~~Team Drafter: surface which pool entries were self-claimed vs admin-entered~~ _(shipped 2026-09-10, Sprint 18 #48 — checkpoint `43f433f` added `unclaimedRsnSet` to `useTeamDrafter.ts` and a warning icon + tooltip on unclaimed pool chips in `SortableItem.tsx`, wired through `DrafterTab.tsx`.)_
 - [ ] ScreenshotSubmission page refactor now that the attribution flow has settled
-- [ ] Login rate limit (10/15min per IP) has no env override for scripted E2E
+- [ ] Login rate limit (10/15min per IP) has no env override for scripted E2E. **Frontend track confirmed 2026-09-10**: the limiter is configured in `backend/src/index.ts`, backend-owned. Flagged not fixed.
 - [x] ~~Confirm the onboarding wizard auto-opening on ANY route (not just Home) is intentional~~ — _same root cause as **Sprint 17 B6 (BUG)**; folded into it._
 
 **Test coverage**

@@ -84,7 +84,7 @@ function ensureModalImported() {
   }
 }
 
-export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) => {
+export const LoginModalProvider = ({ children }: React.PropsWithChildren) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

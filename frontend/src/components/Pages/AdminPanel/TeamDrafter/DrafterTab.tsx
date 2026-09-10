@@ -23,6 +23,7 @@ import { DraftItems, BingoTeam } from './useTeamDrafter';
 import { DroppableContainer } from './DroppableContainer';
 import { SortableItem } from './SortableItem';
 import { outlinedButtonSx, textPrimary } from './teamDrafterStyles';
+import { appColors } from '../../../../layout/Theme/appColors';
 
 export type DrafterTabProps = {
   teams: BingoTeam[];
@@ -40,6 +41,8 @@ export type DrafterTabProps = {
   resetDraft: () => void;
   loadingBingo: boolean;
   bingoError: string | null;
+  /** RSNs with no rsn_claims row yet (admin-entered, not self-claimed). */
+  unclaimedRsnSet: Set<string>;
 };
 
 export function DrafterTab({
@@ -57,6 +60,7 @@ export function DrafterTab({
   resetDraft,
   loadingBingo,
   bingoError,
+  unclaimedRsnSet,
 }: DrafterTabProps) {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const lastOverId = useRef<UniqueIdentifier | null>(null);
@@ -160,7 +164,7 @@ export function DrafterTab({
   if (loadingBingo) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', pt: 6 }}>
-        <CircularProgress sx={{ color: '#2A9D8F' }} />
+        <CircularProgress sx={{ color: appColors.accent }} />
       </Box>
     );
   }
@@ -200,7 +204,7 @@ export function DrafterTab({
           <Box sx={{ width: { xs: '100%', md: '26%', lg: '20%' }, minWidth: 170 }}>
             <DroppableContainer id="pool" label="Player Pool" items={draftItems['pool'] ?? []}>
               {(draftItems['pool'] ?? []).map((rsn) => (
-                <SortableItem key={rsn} id={rsn} />
+                <SortableItem key={rsn} id={rsn} isUnclaimed={unclaimedRsnSet.has(rsn)} />
               ))}
             </DroppableContainer>
           </Box>
@@ -238,7 +242,7 @@ export function DrafterTab({
           {activeId ? (
             <Chip
               label={String(activeId)}
-              sx={{ backgroundColor: '#2A9D8F', color: textPrimary, cursor: 'grabbing' }}
+              sx={{ backgroundColor: appColors.accent, color: textPrimary, cursor: 'grabbing' }}
             />
           ) : null}
         </DragOverlay>

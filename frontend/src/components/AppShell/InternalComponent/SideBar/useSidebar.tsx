@@ -149,7 +149,7 @@ const allSidebarItems: SidebarItem[] = [
   },
 ];
 
-export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
+export const SidebarProvider = ({ children }: PropsWithChildren) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [sidebar, setSidebar] = useState<SidebarItem[]>([]);
   // Effective role, not the raw session role (TEAM-BRIEF.md Sprint 10, Track
