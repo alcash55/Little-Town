@@ -12,7 +12,12 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { LoadingContainer } from '../LoadingContainer/LoadingContainer';
 import { clearImpersonationTarget } from '../../utils/impersonation';
-import { markSessionActive, clearSessionMarker, hasSessionMarker, AUTH_SESSION_STORAGE_KEY } from '../../utils/authSession';
+import {
+  markSessionActive,
+  clearSessionMarker,
+  hasSessionMarker,
+  AUTH_SESSION_STORAGE_KEY,
+} from '../../utils/authSession';
 
 type LoginModalContextValue = {
   openLogin: () => void;
@@ -286,7 +291,9 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
     // failed request here just leaves a cookie that still expires on its
     // own JWT_EXPIRES_IN schedule, same exposure window as before this
     // change.
-    fetch(`${BASE_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
+    fetch(`${BASE_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' }).catch(
+      () => {},
+    );
 
     // Trigger global auth state update
     window.dispatchEvent(new CustomEvent('auth:logout'));
