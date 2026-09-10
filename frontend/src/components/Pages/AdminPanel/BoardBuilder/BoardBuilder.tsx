@@ -400,8 +400,8 @@ const BoardBuilder = () => {
                   label="Kill Count"
                   type="number"
                   fullWidth
-                  value={(editingTile.tile as any).killCount}
-                  onChange={(e) => updateEditingTile({ killCount: Number(e.target.value) } as any)}
+                  value={editingTile.tile.killCount}
+                  onChange={(e) => updateEditingTile({ killCount: Number(e.target.value) })}
                 />
               )}
               {editingTile.tile.type === 'Experience' && (
@@ -409,8 +409,8 @@ const BoardBuilder = () => {
                   label="Experience"
                   type="number"
                   fullWidth
-                  value={(editingTile.tile as any).experience}
-                  onChange={(e) => updateEditingTile({ experience: Number(e.target.value) } as any)}
+                  value={editingTile.tile.experience}
+                  onChange={(e) => updateEditingTile({ experience: Number(e.target.value) })}
                 />
               )}
               {editingTile.tile.type === 'Drops' && (
@@ -418,9 +418,9 @@ const BoardBuilder = () => {
                   label="Drops Amount"
                   type="number"
                   fullWidth
-                  value={(editingTile.tile as any).dropsAmount}
+                  value={editingTile.tile.dropsAmount}
                   onChange={(e) =>
-                    updateEditingTile({ dropsAmount: Number(e.target.value) } as any)
+                    updateEditingTile({ dropsAmount: Number(e.target.value) })
                   }
                 />
               )}

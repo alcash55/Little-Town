@@ -10,6 +10,7 @@
     "preview": "VITE_BASEURL=http://localhost:8081 vite build --mode production && vite preview",
     "preview:remote": "vite build --mode production && vite preview",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx}\"",
+    "lint": "eslint .",
     "art:bingo": "bun run src/components/Pages/BingoBoard/download-bingo-art.ts",
     "test": "vitest run"
   },
@@ -31,14 +32,20 @@
     "react-router-dom": "^6.12.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9",
     "@testing-library/react": "^16.3.2",
     "@types/react": "^18.0.28",
     "@types/react-dom": "^18.0.11",
     "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9",
+    "eslint-plugin-react-hooks": "^5",
+    "eslint-plugin-react-refresh": "^0.4",
+    "globals": "^15",
     "happy-dom": "^20.10.6",
     "prettier": "^2.8.8",
     "typescript": "^5.9.3",
-    "vite": "^5.4.20",
+    "typescript-eslint": "^8",
+    "vite": "^6.4.3",
     "vitest": "^3.2.4"
   }
 }

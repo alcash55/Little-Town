@@ -8,8 +8,8 @@ export default defineConfig({
   },
   resolve: {
     // Force a single module instance for @emotion/react and @emotion/styled.
-    // @mui/material, @mui/x-data-grid and @mui/x-date-pickers each declare their
-    // own semver-range peer dependency on these packages; without `dedupe`, Vite's
+    // @mui/material and @mui/x-date-pickers each declare their own
+    // semver-range peer dependency on these packages; without `dedupe`, Vite's
     // dev pre-bundling (and Rollup's production chunking, since pages are
     // React.lazy-split) can resolve/bundle a package more than once even when
     // node_modules only has one physical copy on disk, which is what triggers

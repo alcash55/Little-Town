@@ -74,8 +74,9 @@ export const useBoardBuilder = () => {
         headers: { 'User-Agent': 'https://littletown.gay/' },
       });
       if (!res.ok) throw new Error(`Failed to fetch items: ${res.status}`);
-      const data = await res.json();
-      return data.map((d: any) => d.name);
+      const data: unknown = await res.json();
+      if (!Array.isArray(data)) throw new Error('Unexpected item mapping response shape');
+      return (data as Array<{ name: string }>).map((d) => d.name);
     });
 
   // On mount: fetch existing board from backend, fallback to localStorage, load autocomplete data
