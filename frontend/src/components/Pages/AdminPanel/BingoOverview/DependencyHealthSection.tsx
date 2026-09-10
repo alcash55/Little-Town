@@ -99,4 +99,3 @@ export const DependencyHealthSection = ({ health, healthError }: DependencyHealt
     </Box>
   );
 };
-

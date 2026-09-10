@@ -59,6 +59,14 @@ export interface AdminUserOption {
  * /admin/rsn-claims gives the claimed set) — this is the client-side string
  * match the brief points at, kept in lockstep with the server's own
  * normalization so it doesn't silently drift out of sync.
+ *
+ * This is a duplicate, not a shared import: the frontend build can't pull
+ * from backend/src (different runtime, no shared package boundary between
+ * the two). If you change this function, change backend/src/lib/rsn.ts's
+ * canonicalizeRsn + normalizeRsn to match, or the two silently drift.
+ * useTeamDrafter.test.ts imports the backend module directly by relative
+ * path and asserts byte-identical output on a shared fixture list, so a
+ * drift fails a test instead of failing silently in production.
  */
 export function normalizeRsnForMatch(rsn: string): string {
   return rsn.replace(/_/g, ' ').trim().replace(/\s+/g, ' ').toLowerCase();
@@ -106,6 +114,10 @@ export const useTeamDrafter = () => {
   const [teams, setTeams] = useState<BingoTeam[]>([]);
   const [loadingBingo, setLoadingBingo] = useState(true);
   const [bingoError, setBingoError] = useState<string | null>(null);
+  // True when the gating GET (bingo details) 401/403'd. The page shows
+  // PageLayout's permission-denied state instead of an empty drafter (same
+  // pattern as BingoDetails/BoardBuilder/BingoOverview).
+  const [permissionDenied, setPermissionDenied] = useState(false);
 
   // ── Draft (DnD) state ─────────────────────────────────
   /**
@@ -207,7 +219,15 @@ export const useTeamDrafter = () => {
     setBingoError(null);
     try {
       const res = await fetchWithAuth(`${BASE_URL}/bingo/details`);
-      if (!res.ok) throw new Error(`Failed to load bingo details: ${res.statusText}`);
+      if (!res.ok) {
+        const info = await describeApiError(res, 'Failed to load bingo details');
+        if (info.isPermissionError) {
+          setPermissionDenied(true);
+          return [];
+        }
+        throw new Error(info.message);
+      }
+      setPermissionDenied(false);
       const json = await res.json();
       const bingo = json.data;
 
@@ -217,7 +237,7 @@ export const useTeamDrafter = () => {
       setTeams(teamObjs);
       return teamObjs;
     } catch (e) {
-      setBingoError(String(e));
+      setBingoError(e instanceof Error ? e.message : String(e));
       return [];
     } finally {
       setLoadingBingo(false);
@@ -432,7 +452,11 @@ export const useTeamDrafter = () => {
         { headers: { Accept: 'application/json', 'User-Agent': 'LittleTown/1.0' } },
       );
       if (!res.ok) return null;
-      const data = await res.json() as Array<{ oldName: string; newName: string; status: string }>;
+      const data = (await res.json()) as Array<{
+        oldName: string;
+        newName: string;
+        status: string;
+      }>;
       if (!data.length) return null;
       // Prefer approved over pending; within each status take the most recent (first)
       const approved = data.find((n) => n.status === 'approved');
@@ -453,7 +477,9 @@ export const useTeamDrafter = () => {
    */
   const tryAddPlayer = async (rsn: string): Promise<AddResult> => {
     const hiscoreRes = await fetchWithAuth(
-      `${import.meta.env.VITE_BASEURL || 'http://localhost:8081'}/api/hiscores/${encodeURIComponent(rsn)}`,
+      `${import.meta.env.VITE_BASEURL || 'http://localhost:8081'}/api/hiscores/${encodeURIComponent(
+        rsn,
+      )}`,
     );
 
     // Player not on hiscores — check WOM for a name change
@@ -726,7 +752,9 @@ export const useTeamDrafter = () => {
 
       try {
         const res = await fetchWithAuth(
-          `${BASE_URL}/bingo/players/${encodeURIComponent(sideAccountPlayer.rsn)}/side-accounts/${sideAccountId}`,
+          `${BASE_URL}/bingo/players/${encodeURIComponent(
+            sideAccountPlayer.rsn,
+          )}/side-accounts/${sideAccountId}`,
           { method: 'DELETE' },
         );
         if (!res.ok) throw new Error(`Failed to remove side account: ${res.statusText}`);
@@ -754,11 +782,9 @@ export const useTeamDrafter = () => {
 
   const draftIsDirty = !draftsEqual(draftItems, savedDraftItems);
 
-  const submitTeamsDisabled =
-    submitting || !poolIsEmpty || (teamsEverSubmitted && !draftIsDirty);
+  const submitTeamsDisabled = submitting || !poolIsEmpty || (teamsEverSubmitted && !draftIsDirty);
 
-  const submitTeamsLabel =
-    teamsEverSubmitted && draftIsDirty ? 'Update Teams' : 'Submit Teams';
+  const submitTeamsLabel = teamsEverSubmitted && draftIsDirty ? 'Update Teams' : 'Submit Teams';
 
   /**
    * Normalized RSNs with a current claim, for the "unclaimed pool entries"
@@ -787,10 +813,7 @@ export const useTeamDrafter = () => {
     [unclaimedPlayers],
   );
 
-  const teamNameById = useMemo(
-    () => Object.fromEntries(teams.map((t) => [t.id, t.name])),
-    [teams],
-  );
+  const teamNameById = useMemo(() => Object.fromEntries(teams.map((t) => [t.id, t.name])), [teams]);
 
   return {
     // Shared
@@ -802,6 +825,7 @@ export const useTeamDrafter = () => {
     teamNameById,
     loadingBingo,
     bingoError,
+    permissionDenied,
 
     // Draft (DnD)
     draftItems,
