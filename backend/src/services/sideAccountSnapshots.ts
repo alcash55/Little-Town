@@ -1,4 +1,4 @@
-import { getSideAccounts, savePlayerSnapshot, clearStartSnapshot, type BingoPlayer } from "../db/players.js";
+import { getAllSideAccounts, savePlayerSnapshot, clearStartSnapshot, type BingoPlayer } from "../db/players.js";
 import { mapWithConcurrency, HISCORE_CONCURRENCY } from "../lib/concurrency.js";
 import { hiscores } from "./hiscores.js";
 import { checkSideAccountRsnChange, RsnChangeSource } from "./rsnChangeDetection.js";
@@ -136,6 +136,15 @@ export async function snapshotSideAccountTasks(
  * "start" + "current" for activation/retake, mirroring how main-account
  * snapshots are taken).
  *
+ * Fetches side accounts for the whole bingo in one `getAllSideAccounts(
+ * bingoId)` call (#55) rather than one `getSideAccounts` query per player —
+ * `players` is filtered down to afterward in memory, so a caller passing a
+ * subset of the bingo's roster (e.g. retake-start-snapshots' "just the
+ * still-missing ones") still only snapshots that subset's side accounts,
+ * same as before. `playerSnapshotCron.ts` runs this every 20 minutes for
+ * every player in the active bingo, so this is the one call site where the
+ * per-row query pattern actually cost something at scale.
+ *
  * Because every caller here runs this as a separate phase strictly after its
  * own main-account pass (never concurrently with it), the peak number of
  * in-flight OSRS requests at any instant never exceeds HISCORE_CONCURRENCY,
@@ -145,6 +154,7 @@ export async function snapshotSideAccountTasks(
  * array, never as a rejection.
  */
 export async function snapshotAllSideAccounts(
+  bingoId: string,
   players: Pick<BingoPlayer, "id">[],
   types: Array<"start" | "current">,
   source: RsnChangeSource,
@@ -152,12 +162,11 @@ export async function snapshotAllSideAccounts(
 ): Promise<SideSnapshotResult[]> {
   if (!players.length) return [];
 
-  const perPlayerSideAccounts = await Promise.all(
-    players.map(async (player) => ({ playerId: player.id, sideAccounts: await getSideAccounts(player.id) })),
-  );
+  const sideAccountsByPlayer = await getAllSideAccounts(bingoId);
+  const playerIds = new Set(players.map((p) => p.id));
 
-  const tasks = perPlayerSideAccounts.flatMap(({ playerId, sideAccounts }) =>
-    sideAccounts.map((sideAccount) => ({ playerId, sideAccount })),
+  const tasks = Object.entries(sideAccountsByPlayer).flatMap(([playerId, sideAccounts]) =>
+    playerIds.has(playerId) ? sideAccounts.map((sideAccount) => ({ playerId, sideAccount })) : [],
   );
 
   return snapshotSideAccountTasks(tasks, types, source, retakeExisting);

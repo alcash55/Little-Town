@@ -181,6 +181,7 @@ describe.skipIf(!suite)("bingo activation retakes existing start snapshots (D2)"
       .single();
 
     await snapshotStartAndCurrent(
+      bingo.id,
       [{ id: playerId, bingo_id: bingo.id, team_id: null, captain_team_id: null, rsn, registered_by: null, registered_at: new Date().toISOString() }],
       "drafter",
     );

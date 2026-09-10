@@ -1,8 +1,21 @@
 import { HiscoreData } from "../types/index.js";
+import { getCachedHiscoreData, upsertHiscoreCache } from "../db/hiscoreCache.js";
 
 const HISCORES_URL = "https://secure.runescape.com/m=hiscore_oldschool/index_lite.json";
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1500;
+
+// #56: hiscore_cache existed fully wired in migrations (schema, RLS, grants)
+// but nothing ever read or wrote it — every hiscores() caller (registration,
+// the 20-minute cron, activation, the public lookup proxy, RSN-change
+// detection) hit the live OSRS API on every call, with no fallback if OSRS
+// had a rough afternoon. Deliberately short relative to the 20-minute cron
+// cadence: this cache is a load/resilience layer underneath hiscores(), not
+// a second source of truth — bingo_player_hiscores' snapshots (taken at
+// fixed points: registration, activation, each cron tick) are what scoring
+// actually reads, so a few minutes of cache staleness here never reaches
+// them.
+const CACHE_TTL_MS = 5 * 60 * 1000;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -64,14 +77,49 @@ async function getHiscoreData(rsn: string): Promise<{
  * Fetch and format OSRS hiscores for a given RSN.
  *
  * Returns null if the player is unranked / not found on the OSRS hiscores.
- * Throws only on genuine network / server failures (after retries).
+ * Throws only on genuine network / server failures (after retries) AND no
+ * cached fallback exists for this RSN.
+ *
+ * Cache read/write policy (#56):
+ *   - A cache hit within CACHE_TTL_MS short-circuits the live call entirely.
+ *   - A ranked result is written through to the cache on every live success.
+ *   - An unranked (404/null) result is NEVER cached — a 404 is a
+ *     substantive "not found" outcome that services/rsnChangeDetection.ts
+ *     already handles carefully (WOM rename lookup, rsn_change_log); this
+ *     cache must never paper over that by serving a stale "found" or "not
+ *     found" answer for a name that's actually changed.
+ *   - If the live call throws after retries, an existing cached entry (of
+ *     any age) is served as a stale-but-available fallback instead of
+ *     failing outright — logged loudly so it's visible in ops, not silent.
+ *     With no cached entry at all, the failure still propagates as before.
  *
  * @see https://runescape.wiki/w/Application_programming_interface#Hiscores_Lite_2
  */
 export async function hiscores(rsn: string): Promise<HiscoreData | null> {
-  const raw = await getHiscoreData(rsn);
+  const cached = await getCachedHiscoreData(rsn).catch((e) => {
+    console.error(`[hiscores] Failed to read hiscore_cache for "${rsn}" — falling through to a live call:`, e);
+    return null;
+  });
 
-  if (!raw) return null; // unranked player
+  if (cached && Date.now() - new Date(cached.updatedAt).getTime() < CACHE_TTL_MS) {
+    return { ...cached.data, updatedAt: new Date(cached.data.updatedAt) };
+  }
+
+  let raw: Awaited<ReturnType<typeof getHiscoreData>>;
+  try {
+    raw = await getHiscoreData(rsn);
+  } catch (e) {
+    if (cached) {
+      console.warn(
+        `[hiscores] Live lookup for "${rsn}" failed after retries — serving the cached snapshot from ` +
+          `${cached.updatedAt} instead of failing outright.`,
+      );
+      return { ...cached.data, updatedAt: new Date(cached.data.updatedAt) };
+    }
+    throw e;
+  }
+
+  if (!raw) return null; // unranked player — never cached, see doc comment above
 
   const formattedActivities = raw.activities.map(({ id, name, rank, score }) => ({
     id,
@@ -80,10 +128,18 @@ export async function hiscores(rsn: string): Promise<HiscoreData | null> {
     kc: score,
   }));
 
-  return {
+  const formatted: HiscoreData = {
     name: raw.name,
     skills: raw.skills,
     activities: formattedActivities,
     updatedAt: new Date(),
   };
+
+  await upsertHiscoreCache(rsn, formatted).catch((e) => {
+    // Cache-write failure must never fail the lookup itself — the caller
+    // already has real, live data at this point.
+    console.error(`[hiscores] Failed to write hiscore_cache for "${rsn}" (non-fatal):`, e);
+  });
+
+  return formatted;
 }
