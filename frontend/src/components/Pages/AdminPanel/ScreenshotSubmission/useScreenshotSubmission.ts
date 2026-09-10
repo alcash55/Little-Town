@@ -85,7 +85,7 @@ export type ReviewBingoContext = {
   endDate: string;
 };
 
-const omitKey = <T,>(map: Record<string, T>, key: string): Record<string, T> => {
+const omitKey = <T>(map: Record<string, T>, key: string): Record<string, T> => {
   const next = { ...map };
   delete next[key];
   return next;
@@ -235,7 +235,12 @@ export const useScreenshotSubmission = () => {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      await Promise.all([fetchPending(), fetchUnattributed(), fetchTeamsAndBoard(), fetchPlayers()]);
+      await Promise.all([
+        fetchPending(),
+        fetchUnattributed(),
+        fetchTeamsAndBoard(),
+        fetchPlayers(),
+      ]);
       setLoading(false);
     };
     load();
@@ -314,10 +319,10 @@ export const useScreenshotSubmission = () => {
               }
             : {};
 
-        const res = await fetchWithAuth(
-          `${BASE_URL}/bingo/screenshots/${submissionId}/${action}`,
-          { method: 'POST', body: JSON.stringify(body) },
-        );
+        const res = await fetchWithAuth(`${BASE_URL}/bingo/screenshots/${submissionId}/${action}`, {
+          method: 'POST',
+          body: JSON.stringify(body),
+        });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
           throw new Error(err.error ?? res.statusText);
@@ -364,10 +369,10 @@ export const useScreenshotSubmission = () => {
       setAttributionError((prev) => omitKey(prev, submissionId));
 
       try {
-        const res = await fetchWithAuth(
-          `${BASE_URL}/bingo/screenshots/${submissionId}/attribute`,
-          { method: 'PATCH', body: JSON.stringify({ playerId }) },
-        );
+        const res = await fetchWithAuth(`${BASE_URL}/bingo/screenshots/${submissionId}/attribute`, {
+          method: 'PATCH',
+          body: JSON.stringify({ playerId }),
+        });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
           throw new Error(err.error ?? res.statusText);
@@ -398,10 +403,7 @@ export const useScreenshotSubmission = () => {
     () => board.filter((t): t is BoardTile & { id: string } => !!t.id),
     [board],
   );
-  const tileOptions = useMemo(
-    () => idTiles.filter((t) => t.type === 'Drops'),
-    [idTiles],
-  );
+  const tileOptions = useMemo(() => idTiles.filter((t) => t.type === 'Drops'), [idTiles]);
 
   return {
     pending,

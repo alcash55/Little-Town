@@ -22,7 +22,9 @@ const jsonResponse = (body: unknown) => new Response(JSON.stringify(body), { sta
  */
 function installRouter(overrides: Record<string, unknown> = {}) {
   const defaults: Record<string, unknown> = {
-    '/bingo/details': { data: { id: 'bingo-1', name: 'Test Bingo', status: 'active', teamObjects: [] } },
+    '/bingo/details': {
+      data: { id: 'bingo-1', name: 'Test Bingo', status: 'active', teamObjects: [] },
+    },
     '/bingo/players': { data: [] },
     '/bingo/board': { data: [] },
     '/bingo/player-stats': { data: [] },
@@ -122,9 +124,30 @@ describe('useBingoOverview KPI totals — attribution-gap fallback', () => {
     installRouter({
       '/bingo/team-stats': {
         data: [
-          { teamId: 't1', teamName: 'Team 1', tilesCompleted: 1, totalPoints: 20, unattributedTiles: 0, unattributedPoints: 0 },
-          { teamId: 't2', teamName: 'Team 2', tilesCompleted: 1, totalPoints: 20, unattributedTiles: 1, unattributedPoints: 20 },
-          { teamId: 't3', teamName: 'Team 3', tilesCompleted: 1, totalPoints: 20, unattributedTiles: 1, unattributedPoints: 20 },
+          {
+            teamId: 't1',
+            teamName: 'Team 1',
+            tilesCompleted: 1,
+            totalPoints: 20,
+            unattributedTiles: 0,
+            unattributedPoints: 0,
+          },
+          {
+            teamId: 't2',
+            teamName: 'Team 2',
+            tilesCompleted: 1,
+            totalPoints: 20,
+            unattributedTiles: 1,
+            unattributedPoints: 20,
+          },
+          {
+            teamId: 't3',
+            teamName: 'Team 3',
+            tilesCompleted: 1,
+            totalPoints: 20,
+            unattributedTiles: 1,
+            unattributedPoints: 20,
+          },
         ],
       },
     });
@@ -149,9 +172,7 @@ describe('useBingoOverview — unresolvable tiles warning (TEAM-BRIEF.md Sprint 
     installRouter({
       '/bingo/team-stats': {
         data: [],
-        unresolvableTiles: [
-          { id: 'tile-9', task: 'Kill the big boss thing', type: 'Kill Count' },
-        ],
+        unresolvableTiles: [{ id: 'tile-9', task: 'Kill the big boss thing', type: 'Kill Count' }],
       },
     });
 
@@ -163,7 +184,7 @@ describe('useBingoOverview — unresolvable tiles warning (TEAM-BRIEF.md Sprint 
     ]);
   });
 
-  it('defaults to an empty list when the field is absent (today\'s pre-Track-A backend)', async () => {
+  it("defaults to an empty list when the field is absent (today's pre-Track-A backend)", async () => {
     installRouter({
       '/bingo/team-stats': { data: [] },
     });
@@ -303,11 +324,29 @@ describe('useBingoOverview — /bingo/latest fallback and ended-banner logic (TE
       },
       '/bingo/player-stats': {
         data: [
-          { rsn: 'Zezima', teamName: 'A', tilesCompleted: 4, totalPoints: 80, lastSeen: null, sideAccounts: [], rsnStale: false, rsnStaleSince: null },
+          {
+            rsn: 'Zezima',
+            teamName: 'A',
+            tilesCompleted: 4,
+            totalPoints: 80,
+            lastSeen: null,
+            sideAccounts: [],
+            rsnStale: false,
+            rsnStaleSince: null,
+          },
         ],
       },
       '/bingo/team-stats': {
-        data: [{ teamId: 't1', teamName: 'A', tilesCompleted: 4, totalPoints: 80, unattributedTiles: 0, unattributedPoints: 0 }],
+        data: [
+          {
+            teamId: 't1',
+            teamName: 'A',
+            tilesCompleted: 4,
+            totalPoints: 80,
+            unattributedTiles: 0,
+            unattributedPoints: 0,
+          },
+        ],
       },
     });
 

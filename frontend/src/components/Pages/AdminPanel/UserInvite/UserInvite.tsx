@@ -18,7 +18,7 @@ const UserInvite = () => {
   const invite = useUserInvite();
 
   return (
-    <PageLayout title="User Invites" maxWidth="full">
+    <PageLayout title="User Invites" maxWidth="full" permissionDenied={invite.permissionDenied}>
       <Typography variant="body2" sx={{ color: appColors.textSecondary, textAlign: 'center' }}>
         Generate single-use links to onboard new members, and manage existing ones.
       </Typography>

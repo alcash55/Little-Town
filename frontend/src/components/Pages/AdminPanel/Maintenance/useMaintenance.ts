@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchWithAuth } from '../../../../utils/fetchWithAuth';
+import { describeApiError } from '../../../../utils/apiError';
 
 const BASE_URL = `${import.meta.env.VITE_BASEURL || 'http://localhost:8081'}/api/admin`;
 
@@ -39,7 +40,7 @@ export const MAINTENANCE_JOBS: readonly MaintenanceJob[] = [
     id: 'player-snapshot-refresh',
     name: 'Player Snapshot Refresh',
     description:
-      "Pulls fresh OSRS hiscores data for every tracked player and stores a new snapshot. Calls the live hiscores API once per player, so it can take a moment.",
+      'Pulls fresh OSRS hiscores data for every tracked player and stores a new snapshot. Calls the live hiscores API once per player, so it can take a moment.',
     path: '/bingo/players/refresh/snapshots',
   },
   {
@@ -74,9 +75,18 @@ const initialRunning: Record<MaintenanceJobId, boolean> = {
  */
 export const useMaintenance = () => {
   const [running, setRunning] = useState<Record<MaintenanceJobId, boolean>>(initialRunning);
-  const [results, setResults] = useState<Partial<Record<MaintenanceJobId, MaintenanceJobResult>>>({});
+  const [results, setResults] = useState<Partial<Record<MaintenanceJobId, MaintenanceJobResult>>>(
+    {},
+  );
   const [activeBingoId, setActiveBingoId] = useState<string | null>(null);
   const [activeBingoLoading, setActiveBingoLoading] = useState(true);
+  // True when the gating GET (bingo details) 401/403'd. This is also the
+  // only fetch this page makes on mount, so it doubles as the page's
+  // permission check. Distinct from a genuine "no active bingo" (retake
+  // snapshots just stays disabled), since a caller who can't be here
+  // shouldn't see a page full of runnable job cards either (same pattern as
+  // BingoDetails/BoardBuilder/BingoOverview).
+  const [permissionDenied, setPermissionDenied] = useState(false);
 
   // Resolved once on mount, the same way BingoDetails/BingoOverview find "the
   // current bingo" — this page has no other reason to fetch bingo state.
@@ -85,9 +95,16 @@ export const useMaintenance = () => {
     (async () => {
       try {
         const res = await fetchWithAuth(`${BASE_URL}/bingo/details`);
-        if (!res.ok) return;
+        if (!res.ok) {
+          const info = await describeApiError(res, 'Failed to load bingo details');
+          if (!cancelled && info.isPermissionError) setPermissionDenied(true);
+          return;
+        }
         const json = await res.json();
-        if (!cancelled) setActiveBingoId(json.data?.id ?? null);
+        if (!cancelled) {
+          setPermissionDenied(false);
+          setActiveBingoId(json.data?.id ?? null);
+        }
       } catch {
         /* non-fatal: the retake-snapshots job just stays disabled */
       } finally {
@@ -167,5 +184,6 @@ export const useMaintenance = () => {
     dismissResult,
     activeBingoId,
     activeBingoLoading,
+    permissionDenied,
   };
 };

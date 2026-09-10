@@ -21,7 +21,10 @@ const CATEGORICAL_SERIES_COLORS = [
   '#d95926', // orange
 ];
 
-const compactXp = new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 });
+const compactXp = new Intl.NumberFormat(undefined, {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+});
 
 const BingoScores = () => {
   const { teams, loading, error, refetch } = useBingoScores();
@@ -82,10 +85,15 @@ const BingoScores = () => {
   if (!hasHistory) {
     return (
       <PageLayout title="Total Team XP" align="center">
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5, py: 4 }}>
+        <Box
+          sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5, py: 4 }}
+        >
           <ShowChartIcon sx={{ fontSize: 48, color: appColors.mutedText }} />
           <Typography variant="h6">No team XP history yet</Typography>
-          <Typography variant="body2" sx={{ color: appColors.textSecondary, textAlign: 'center', maxWidth: 420 }}>
+          <Typography
+            variant="body2"
+            sx={{ color: appColors.textSecondary, textAlign: 'center', maxWidth: 420 }}
+          >
             Once the bingo is active and player snapshots start rolling in, each team's total XP
             gained will show up here.
           </Typography>

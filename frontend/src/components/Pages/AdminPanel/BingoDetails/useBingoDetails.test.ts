@@ -163,7 +163,9 @@ describe('useBingoDetails — error-message formatting on submit (bug-report inv
 
   it('surfaces the server error body verbatim (with status) when creation fails with a real error', async () => {
     mockedFetchWithAuth.mockResolvedValueOnce(jsonResponse(404, {}));
-    mockedFetchWithAuth.mockResolvedValueOnce(jsonResponse(400, { error: 'End date must be after start date' }));
+    mockedFetchWithAuth.mockResolvedValueOnce(
+      jsonResponse(400, { error: 'End date must be after start date' }),
+    );
 
     const { result } = renderHook(() => useBingoDetails());
     await waitFor(() => expect(result.current.isBingo).toBe(false));

@@ -7,8 +7,20 @@ import { setImpersonationTarget } from '../../utils/impersonation';
 const ADMIN_TOKEN = 'admin-token';
 const USER_TOKEN = 'user-token';
 
-const ADMIN_USER = { id: 'admin-1', username: 'QaAdminTest', role: 'admin', createdAt: '', updatedAt: '' };
-const PLAIN_USER = { id: 'user-1', username: 'GuySmoocherTest', role: 'user', createdAt: '', updatedAt: '' };
+const ADMIN_USER = {
+  id: 'admin-1',
+  username: 'QaAdminTest',
+  role: 'admin',
+  createdAt: '',
+  updatedAt: '',
+};
+const PLAIN_USER = {
+  id: 'user-1',
+  username: 'GuySmoocherTest',
+  role: 'user',
+  createdAt: '',
+  updatedAt: '',
+};
 
 const mockMeEndpoint = () =>
   vi.fn(async (_url: string, init?: RequestInit) => {
@@ -52,7 +64,7 @@ afterEach(() => {
 // localStorage, which is shared across tabs, but nothing previously told
 // this tab to re-check it. See useLoginModal.tsx's `storage` listener.
 describe('LoginModalProvider — cross-tab account switch (bug-report investigation, prod incident)', () => {
-  it("re-validates `user` against the backend when another tab rotates the shared token (admin -> plain user)", async () => {
+  it('re-validates `user` against the backend when another tab rotates the shared token (admin -> plain user)', async () => {
     localStorage.setItem('authToken', ADMIN_TOKEN);
     vi.stubGlobal('fetch', mockMeEndpoint());
 

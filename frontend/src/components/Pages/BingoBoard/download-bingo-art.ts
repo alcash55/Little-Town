@@ -36,17 +36,17 @@
  * or, from `frontend/`, the equivalent package.json script:
  *   bun run art:bingo -- --only zulrah,cox
  */
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { BINGO_ART_ENTITIES } from "../../../data/bingoArtEntities.ts";
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { BINGO_ART_ENTITIES } from '../../../data/bingoArtEntities.ts';
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../../..");
-const OUT_DIR = path.join(REPO_ROOT, "frontend/src/assets/Images/bosses");
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../..');
+const OUT_DIR = path.join(REPO_ROOT, 'frontend/src/assets/Images/bosses');
 
-const WIKI_BASE = "https://oldschool.runescape.wiki/images/";
+const WIKI_BASE = 'https://oldschool.runescape.wiki/images/';
 const USER_AGENT =
-  "LittleTown-BingoArtBot/1.0 (https://littletown.gay/; contact: luckybuck228@gmail.com) - one-time curated asset fetch, see frontend/src/components/Pages/BingoBoard/download-bingo-art.ts";
+  'LittleTown-BingoArtBot/1.0 (https://littletown.gay/; contact: luckybuck228@gmail.com) - one-time curated asset fetch, see frontend/src/components/Pages/BingoBoard/download-bingo-art.ts';
 const REQUEST_DELAY_MS = 350; // polite: sequential, small gap between requests
 
 function sleep(ms: number): Promise<void> {
@@ -56,12 +56,12 @@ function sleep(ms: number): Promise<void> {
 function wikiFileUrl(wikiFile: string): string {
   // Encode each path segment so spaces/apostrophes/parens survive, but
   // don't touch the literal ".png"/".gif" extension or already-safe chars.
-  return WIKI_BASE + wikiFile.split("/").map(encodeURIComponent).join("/");
+  return WIKI_BASE + wikiFile.split('/').map(encodeURIComponent).join('/');
 }
 
 interface DownloadResult {
   slug: string;
-  status: "ok" | "skipped" | "failed";
+  status: 'ok' | 'skipped' | 'failed';
   detail?: string;
 }
 
@@ -69,70 +69,88 @@ async function downloadOne(
   entity: (typeof BINGO_ART_ENTITIES)[number],
   skipExisting: boolean,
 ): Promise<DownloadResult> {
-  const ext = path.extname(entity.wikiFile) || ".png";
+  const ext = path.extname(entity.wikiFile) || '.png';
   const destPath = path.join(OUT_DIR, `${entity.slug}${ext}`);
 
   if (skipExisting && existsSync(destPath)) {
-    return { slug: entity.slug, status: "skipped", detail: "already on disk" };
+    return { slug: entity.slug, status: 'skipped', detail: 'already on disk' };
   }
 
   const url = wikiFileUrl(entity.wikiFile);
   try {
     const res = await fetch(url, {
-      headers: { "User-Agent": USER_AGENT },
+      headers: { 'User-Agent': USER_AGENT },
       signal: AbortSignal.timeout(20_000),
     });
     if (!res.ok) {
-      return { slug: entity.slug, status: "failed", detail: `HTTP ${res.status} for ${url}` };
+      return { slug: entity.slug, status: 'failed', detail: `HTTP ${res.status} for ${url}` };
     }
     const buf = new Uint8Array(await res.arrayBuffer());
     if (buf.byteLength < 100) {
       // The wiki serves a tiny text/error body (not a real image) for a
       // missing file rather than always 404ing — guard against silently
       // committing a broken/placeholder asset.
-      return { slug: entity.slug, status: "failed", detail: `suspiciously small response (${buf.byteLength} bytes) for ${url}` };
+      return {
+        slug: entity.slug,
+        status: 'failed',
+        detail: `suspiciously small response (${buf.byteLength} bytes) for ${url}`,
+      };
     }
     mkdirSync(OUT_DIR, { recursive: true });
     writeFileSync(destPath, buf);
-    return { slug: entity.slug, status: "ok" };
+    return { slug: entity.slug, status: 'ok' };
   } catch (e) {
-    return { slug: entity.slug, status: "failed", detail: e instanceof Error ? e.message : String(e) };
+    return {
+      slug: entity.slug,
+      status: 'failed',
+      detail: e instanceof Error ? e.message : String(e),
+    };
   }
 }
 
 async function main() {
   const args = process.argv.slice(2);
-  const onlyIdx = args.indexOf("--only");
-  const onlySlugs = onlyIdx !== -1 ? new Set(args[onlyIdx + 1].split(",").map((s) => s.trim())) : null;
-  const skipExisting = args.includes("--skip-existing");
+  const onlyIdx = args.indexOf('--only');
+  const onlySlugs =
+    onlyIdx !== -1 ? new Set(args[onlyIdx + 1].split(',').map((s) => s.trim())) : null;
+  const skipExisting = args.includes('--skip-existing');
 
-  const entities = onlySlugs ? BINGO_ART_ENTITIES.filter((e) => onlySlugs.has(e.slug)) : BINGO_ART_ENTITIES;
+  const entities = onlySlugs
+    ? BINGO_ART_ENTITIES.filter((e) => onlySlugs.has(e.slug))
+    : BINGO_ART_ENTITIES;
 
   if (onlySlugs) {
     const found = new Set(entities.map((e) => e.slug));
     for (const slug of onlySlugs) {
-      if (!found.has(slug)) console.warn(`[download-bingo-art] no entity with slug "${slug}" in bingoArtEntities.ts`);
+      if (!found.has(slug))
+        console.warn(`[download-bingo-art] no entity with slug "${slug}" in bingoArtEntities.ts`);
     }
   }
 
-  console.log(`Fetching ${entities.length} asset(s) into ${path.relative(REPO_ROOT, OUT_DIR)}/ ...`);
+  console.log(
+    `Fetching ${entities.length} asset(s) into ${path.relative(REPO_ROOT, OUT_DIR)}/ ...`,
+  );
 
   const results: DownloadResult[] = [];
   for (const entity of entities) {
     const result = await downloadOne(entity, skipExisting);
     results.push(result);
-    const label = result.status === "ok" ? "OK" : result.status === "skipped" ? "skip" : "FAIL";
-    console.log(`  [${label}] ${entity.slug} (${entity.wikiFile})${result.detail ? ` — ${result.detail}` : ""}`);
-    if (result.status !== "skipped") await sleep(REQUEST_DELAY_MS);
+    const label = result.status === 'ok' ? 'OK' : result.status === 'skipped' ? 'skip' : 'FAIL';
+    console.log(
+      `  [${label}] ${entity.slug} (${entity.wikiFile})${
+        result.detail ? ` — ${result.detail}` : ''
+      }`,
+    );
+    if (result.status !== 'skipped') await sleep(REQUEST_DELAY_MS);
   }
 
-  const ok = results.filter((r) => r.status === "ok").length;
-  const skipped = results.filter((r) => r.status === "skipped").length;
-  const failed = results.filter((r) => r.status === "failed");
+  const ok = results.filter((r) => r.status === 'ok').length;
+  const skipped = results.filter((r) => r.status === 'skipped').length;
+  const failed = results.filter((r) => r.status === 'failed');
 
   console.log(`\nDone: ${ok} downloaded, ${skipped} skipped, ${failed.length} failed.`);
   if (failed.length) {
-    console.log("Failed entries (fix the wikiFile in bingoArtEntities.ts and re-run with --only):");
+    console.log('Failed entries (fix the wikiFile in bingoArtEntities.ts and re-run with --only):');
     for (const f of failed) console.log(`  - ${f.slug}: ${f.detail}`);
     process.exitCode = 1;
   }

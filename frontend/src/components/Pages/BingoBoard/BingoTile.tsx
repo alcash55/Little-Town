@@ -170,7 +170,8 @@ export const BingoTile = ({
   // See `tierValue` above: `null` preserves the original viewport-driven
   // {xs, sm} responsiveness (mobile, or desktop before the fit-to-viewport
   // hook has measured); a concrete tier applies once `size` is JS-computed.
-  const sizeTier: SizeTier | null = size == null ? null : size < COMPACT_TILE_THRESHOLD ? 'xs' : 'sm';
+  const sizeTier: SizeTier | null =
+    size == null ? null : size < COMPACT_TILE_THRESHOLD ? 'xs' : 'sm';
 
   // Fallback item-icon lookup (TEAM-BRIEF.md Sprint 9, Track B item 2):
   // only Drops tiles that didn't already resolve curated art need it, so
@@ -301,8 +302,7 @@ export const BingoTile = ({
             // white ring instead (~6:1 / ~5.2:1 respectively) so the keyboard-focus
             // state stays legible on every tile, not just empty ones.
             '&:focus-visible': {
-              borderColor:
-                completed || pending ? theme.palette.common.white : appColors.accent,
+              borderColor: completed || pending ? theme.palette.common.white : appColors.accent,
               boxShadow:
                 completed || pending
                   ? `0 0 0 3px ${alpha(theme.palette.common.white, 0.75)}`
@@ -413,7 +413,9 @@ export const BingoTile = ({
               backdropFilter: hasVisual ? 'blur(1px)' : undefined,
             }}
           >
-            <StarIcon sx={{ fontSize: tierValue({ xs: 10, sm: 12 }, sizeTier), color: '#FFD700' }} />
+            <StarIcon
+              sx={{ fontSize: tierValue({ xs: 10, sm: 12 }, sizeTier), color: '#FFD700' }}
+            />
             <Typography
               sx={{
                 fontSize: tierValue({ xs: 9, sm: 10.5 }, sizeTier),
@@ -444,7 +446,10 @@ export const BingoTile = ({
               })}
             >
               <TaskAltIcon
-                sx={{ fontSize: tierValue({ xs: 14, sm: 18 }, sizeTier), color: appColors.textPrimary }}
+                sx={{
+                  fontSize: tierValue({ xs: 14, sm: 18 }, sizeTier),
+                  color: appColors.textPrimary,
+                }}
               />
             </Box>
           )}
@@ -474,7 +479,10 @@ export const BingoTile = ({
               })}
             >
               <HourglassTopIcon
-                sx={{ fontSize: tierValue({ xs: 14, sm: 18 }, sizeTier), color: appColors.textPrimary }}
+                sx={{
+                  fontSize: tierValue({ xs: 14, sm: 18 }, sizeTier),
+                  color: appColors.textPrimary,
+                }}
               />
             </Box>
           )}

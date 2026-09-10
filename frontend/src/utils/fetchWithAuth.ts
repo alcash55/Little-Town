@@ -12,10 +12,7 @@ import { getImpersonationTarget } from './impersonation';
  * picks up an active admin "view as user" override automatically, with no
  * per-call wiring required.
  */
-export const fetchWithAuth = async (
-  url: string,
-  options: RequestInit = {}
-): Promise<Response> => {
+export const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
   const token = localStorage.getItem('authToken');
   const impersonationTarget = getImpersonationTarget();
 
@@ -37,7 +34,7 @@ export const fetchWithAuth = async (
       window.dispatchEvent(
         new CustomEvent('auth:expired', {
           detail: { returnTo: window.location.pathname },
-        })
+        }),
       );
     }
   }
