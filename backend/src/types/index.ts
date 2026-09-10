@@ -67,9 +67,11 @@ export interface LoginRequest {
   password: string;
 }
 
+// The JWT itself is never in this response body (issue #53) — it's set as
+// an httpOnly cookie by setAuthCookie (see lib/session.ts) instead, so it
+// isn't readable by client-side JS.
 export interface LoginResponse {
   user: User;
-  token: string;
   expiresAt: string;
 }
 

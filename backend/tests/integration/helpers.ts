@@ -365,6 +365,8 @@ export function signTestToken(user: TestUser): string {
 export interface TestHttpResponse {
   status: number;
   body: any;
+  /** Raw response headers (Node's lowercase-keyed shape), for tests that need e.g. Set-Cookie. */
+  headers: NodeJS.Dict<string | string[]>;
 }
 
 export interface JsonRequestOptions {
@@ -394,7 +396,7 @@ export function jsonRequest(
       res.on("data", (chunk) => (raw += chunk));
       res.on("end", () => {
         try {
-          resolve({ status: res.statusCode ?? 0, body: raw ? JSON.parse(raw) : undefined });
+          resolve({ status: res.statusCode ?? 0, body: raw ? JSON.parse(raw) : undefined, headers: res.headers });
         } catch (e) {
           reject(e);
         }

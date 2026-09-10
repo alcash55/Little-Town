@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useNavigate } from 'react-router-dom';
 import { LoadingContainer } from '../LoadingContainer/LoadingContainer';
 import { clearImpersonationTarget } from '../../utils/impersonation';
+import { markSessionActive, clearSessionMarker, hasSessionMarker, AUTH_SESSION_STORAGE_KEY } from '../../utils/authSession';
 
 type LoginModalContextValue = {
   openLogin: () => void;
@@ -12,16 +13,18 @@ type LoginModalContextValue = {
   errorMessage: string | null;
   loginWithCredentials: (username: string, password: string, rememberMe: boolean) => Promise<void>;
   /**
-   * Drops a fully-formed session (user + token) straight into state without
-   * hitting /api/auth/login — used by the invite-accept flow, whose
+   * Drops a fully-formed session (user) straight into state without hitting
+   * /api/auth/login — used by the invite-accept flow, whose
    * POST /api/invites/:token/accept response is shaped identically to a
    * login response (same JWT-signing code path server-side) so the new user
    * lands signed in immediately instead of being bounced to a login step.
+   * The token itself is never part of this — both endpoints set it as an
+   * httpOnly cookie (issue #53), never in the response body.
    */
-  completeSession: (session: { user: User; token: string }) => void;
+  completeSession: (session: { user: User }) => void;
   user: User | null;
   logout: () => void;
-  /** False until the mount-time /me rehydration has settled (or immediately true when there's no stored token). */
+  /** False until the mount-time /me rehydration has settled (or immediately true when there's no session marker). */
   authReady: boolean;
 };
 
@@ -39,7 +42,6 @@ interface LoginResponse {
   success: boolean;
   data: {
     user: User;
-    token: string;
     expiresAt: string;
   };
   error?: string;
@@ -86,73 +88,68 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
   // listener further down, so both paths treat the backend's /me response as
   // the single source of truth for "who am I" instead of trusting a token's
   // embedded claims or a previous render's state.
-  const rehydrateFromToken = useCallback(
-    (token: string | null): Promise<void> => {
-      if (!token) {
-        setUser(null);
-        return Promise.resolve();
-      }
-      return fetch(`${BASE_URL}/api/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` },
+  //
+  // The token itself is an httpOnly cookie now (issue #53) — unreadable by
+  // this code, sent automatically by the browser via `credentials:
+  // 'include'`. There is nothing left to pass in; a call either succeeds
+  // (valid cookie) or 401s (missing/invalid/expired).
+  const rehydrateSession = useCallback((): Promise<void> => {
+    return fetch(`${BASE_URL}/api/auth/me`, { credentials: 'include' })
+      .then((res) => {
+        if (res.ok) return res.json();
+        // No/invalid/expired cookie — clean up silently (no expiry modal on boot)
+        clearSessionMarker();
+        setSessionExpired(false);
+        return null;
       })
-        .then((res) => {
-          if (res.ok) return res.json();
-          // Token is invalid or expired — clean up silently (no expiry modal on boot)
-          localStorage.removeItem('authToken');
-          setSessionExpired(false);
-          return null;
-        })
-        .then((data) => setUser(data?.data ?? null))
-        .catch(() => {
-          localStorage.removeItem('authToken');
-          setUser(null);
-        });
-    },
-    [BASE_URL],
-  );
+      .then((data) => setUser(data?.data ?? null))
+      .catch(() => {
+        clearSessionMarker();
+        setUser(null);
+      });
+  }, [BASE_URL]);
 
-  // On mount, rehydrate user from existing token
+  // On mount, rehydrate user from an existing session cookie. Gated on the
+  // local "did we last think we were logged in" marker rather than always
+  // firing — an anonymous visitor shouldn't pay for a network round trip
+  // just to be told "no session" every single page load.
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (!token || user) {
+    if (!hasSessionMarker() || user) {
       setAuthReady(true);
       return;
     }
-    rehydrateFromToken(token).finally(() => setAuthReady(true));
+    rehydrateSession().finally(() => setAuthReady(true));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Cross-tab account switch (bug report, prod incident): `authToken` lives in
-  // localStorage, which is shared by every tab/window on the same origin —
-  // but each tab's React `user` state is its own in-memory copy, set once at
-  // login/mount and never re-checked against the storage it was read from.
-  // Before this listener, a tab left open on an admin page (e.g. Board
-  // Builder) kept rendering as admin — sidebar, forms, submit buttons and
-  // all — even after a DIFFERENT tab in the same browser logged out and back
-  // in as a different (non-admin) account, because that second login only
-  // updates the token in shared storage, not this tab's React state. Any
-  // request the stale tab then fired (fetchWithAuth always reads the token
-  // fresh from localStorage) went out authenticated as the NEW account,
-  // while the UI kept behaving as the OLD one — a real user could watch an
-  // admin-looking page 403 on submit with no indication the account
-  // underneath it had changed. The `storage` event fires in every other tab
-  // the instant one tab's localStorage write commits (never in the tab that
-  // made the write), so listening for the `authToken` key here closes the
-  // gap: every open tab re-validates `user` (and drops any impersonation
-  // override, which is real-admin-gated and must not survive an account
-  // change) the moment the shared token rotates, which in turn makes
-  // ProtectedRoute/useSidebar (both driven by useEffectiveRole -> this
-  // `user`) immediately re-evaluate and redirect/hide admin UI if the new
-  // token belongs to a lower-privileged account.
+  // Cross-tab account switch (bug report, prod incident): the previous
+  // version of this comment described `authToken` living in localStorage,
+  // shared across every tab/window on the same origin, with each tab's
+  // React `user` state as its own in-memory copy set once at login/mount
+  // and never re-checked. That gap is now structural in the other
+  // direction too — the token is an httpOnly cookie (issue #53), which the
+  // browser also shares across every tab, but which fires NO `storage`
+  // event when it changes (cookies never do). So `authSession` (see
+  // utils/authSession.ts) exists specifically to keep firing that signal:
+  // every login/logout bumps it, and every open tab listens for the bump
+  // and re-validates `user` (and drops any impersonation override, which is
+  // real-admin-gated and must not survive an account change) against the
+  // backend's /me response — the same "ask the server, don't trust local
+  // state" fix as before, just keyed off a marker instead of the token
+  // value itself.
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key !== 'authToken' || e.newValue === e.oldValue) return;
+      if (e.key !== AUTH_SESSION_STORAGE_KEY) return;
       clearImpersonationTarget();
-      rehydrateFromToken(e.newValue);
+      if (e.newValue === null) {
+        setUser(null);
+        return;
+      }
+      rehydrateSession();
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [rehydrateFromToken]);
+  }, [rehydrateSession]);
 
   const openLogin = useCallback(() => {
     ensureModalImported();
@@ -166,7 +163,7 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
       if (import.meta.env.DEV) return;
 
       const path = (e as CustomEvent<{ returnTo: string }>).detail?.returnTo ?? null;
-      localStorage.removeItem('authToken');
+      clearSessionMarker();
       clearImpersonationTarget();
       setUser(null);
       returnToRef.current = path;
@@ -215,6 +212,7 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ username, password }),
       });
 
@@ -224,8 +222,9 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
         throw new Error(data.error || 'Login failed');
       }
 
-      // Store token and user data
-      localStorage.setItem('authToken', data.data.token);
+      // The backend set the token as an httpOnly cookie (issue #53) — this
+      // marker is the cross-tab signal only, never the token itself.
+      markSessionActive();
       setUser(data.data.user);
       setIsOpen(false);
       setSessionExpired(false);
@@ -246,8 +245,10 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
     }
   }, [navigate]);
 
-  const completeSession = useCallback((session: { user: User; token: string }) => {
-    localStorage.setItem('authToken', session.token);
+  const completeSession = useCallback((session: { user: User }) => {
+    // The accept-invite response already set the cookie server-side
+    // (issue #53) — this marker is the cross-tab signal only.
+    markSessionActive();
     setUser(session.user);
     setIsOpen(false);
     setSessionExpired(false);
@@ -257,16 +258,24 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('authToken');
     // Override survives a refresh but never a logout (TEAM-BRIEF.md Track C
     // item 1) — clear it before the auth state flips so no further request
     // can go out carrying a stale X-Impersonate-User-Id.
     clearImpersonationTarget();
+    clearSessionMarker();
     setUser(null);
+
+    // The token is an httpOnly cookie now (issue #53) — this tab can't drop
+    // it itself, so logout has to ask the backend to clear it. Best-effort:
+    // local state has already flipped by the time this resolves, and a
+    // failed request here just leaves a cookie that still expires on its
+    // own JWT_EXPIRES_IN schedule, same exposure window as before this
+    // change.
+    fetch(`${BASE_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
 
     // Trigger global auth state update
     window.dispatchEvent(new CustomEvent('auth:logout'));
-  }, []);
+  }, [BASE_URL]);
 
   const value = useMemo(
     () => ({
