@@ -95,7 +95,7 @@ const Home = () => {
       >
         {gangIcons.map(({ src, label }) => (
           <img
-            aria-label={`Little Town ${label} logo`}
+            alt={`Little Town ${label} logo`}
             key={label}
             width="25"
             height="auto"
