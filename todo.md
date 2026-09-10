@@ -37,12 +37,12 @@ Goal: run repeated bingos with 10–30 Little Town players instead of solo-testi
 ## Sprint 18 — hardening for repeat events
 
 **Correctness / robustness**
-- [ ] `express-rate-limit` 7.5.1 → 8.x for `ipKeyGenerator` (correct IPv6 keying) — touches all four limiters, do it deliberately
-- [ ] Back off or make adaptive the two 45s admin pollers (~60 req/window from an idle tab)
-- [ ] `fetchWithAuth` guard: on 403 with a role-bearing session, force an auth rehydrate
-- [ ] Rate-limit claim *changes*, not just creation
-- [ ] Sweep for the inverse of the Board Builder bug — anything assuming `localStorage.authToken` exists behaves differently under `bun dev`'s auth bypass than in prod
-- [ ] Boot-time Discord notification can miss if the bot hasn't finished logging in when a sleeping instance closes a bingo
+- [x] ~~`express-rate-limit` 7.5.1 → 8.x for `ipKeyGenerator` (correct IPv6 keying) — touches all four limiters, do it deliberately~~ _(shipped 2026-09-10, Sprint 18 — bumped to 8.7.0; `rateLimitKey`'s IP fallback now goes through `ipKeyGenerator` so an IPv6 caller keys on its /64 prefix, the other three limiters pick this up for free from v8's own default keyGenerator. Direct unit test on same-/64 vs. different-/64 keys. Makes Dependabot #63 redundant.)_
+- [x] ~~Back off or make adaptive the two 45s admin pollers (~60 req/window from an idle tab)~~ _(shipped 2026-09-10, Sprint 18 — BingoOverview and ScreenshotSubmission both back off past the 45s floor on consecutive unchanged ticks (1.5x, capped at 180s) and reset to the floor the moment something actually changes.)_
+- [x] ~~`fetchWithAuth` guard: on 403 with a role-bearing session, force an auth rehydrate~~ _(shipped 2026-09-10, Sprint 18 — a 403 with a live session marker (and no active impersonation) dispatches `auth:role-stale`, which `LoginModalProvider` uses to re-fetch `/me` instead of trusting the cached role further.)_
+- [x] ~~Rate-limit claim *changes*, not just creation~~ _(no-op, verified 2026-09-10 — `POST /api/onboarding/rsn` already handles both create and move-claim under the same `rsnClaimLimiter`; there's no separate change endpoint to miss it.)_
+- [x] ~~Sweep for the inverse of the Board Builder bug — anything assuming `localStorage.authToken` exists behaves differently under `bun dev`'s auth bypass than in prod~~ _(no-op, verified 2026-09-10 — #53 already removed every live read of `authToken` from localStorage; only historical comments/tests referencing the old bug remain.)_
+- [x] ~~Boot-time Discord notification can miss if the bot hasn't finished logging in when a sleeping instance closes a bingo~~ _(shipped 2026-09-10, Sprint 18 — `notifyBingoEndedWithPendingScreenshots` now waits, bounded to 15s, for the gateway login to finish before sending.)_
 - [x] ~~Confirm the onboarding wizard popping over admin pages (accounts created by direct DB insert) is intended~~ — _answered 2026-08-02: not intended, and not cosmetic. Promoted to **Sprint 17 B6 (BUG)** above._
 
 **Performance / build**
