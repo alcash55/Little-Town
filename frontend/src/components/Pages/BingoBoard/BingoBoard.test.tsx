@@ -36,7 +36,10 @@ beforeEach(() => {
 describe('BingoBoard — ended state (TEAM-BRIEF.md Sprint 15)', () => {
   it('renders the ended state with the bingo name and end date, not the generic "no active bingo" copy', async () => {
     mockedFetchWithAuth.mockResolvedValue(
-      jsonResponse({ active: false, ended: { name: 'Summer Bingo', endDate: '2026-06-30T12:00:00.000Z' } }),
+      jsonResponse({
+        active: false,
+        ended: { name: 'Summer Bingo', endDate: '2026-06-30T12:00:00.000Z' },
+      }),
     );
 
     renderBoard();

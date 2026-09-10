@@ -75,7 +75,7 @@ export const useInviteAccept = () => {
     setCheckState('checking');
     try {
       const res = await fetch(`${BASE_URL}/api/invites/${encodeURIComponent(token)}`);
-      const json: ValidateJson = await res.json().catch(() => ({}) as ValidateJson);
+      const json: ValidateJson = await res.json().catch(() => ({} as ValidateJson));
       if (!res.ok) throw new Error('Invite lookup failed');
 
       if (json.valid) {
@@ -113,7 +113,7 @@ export const useInviteAccept = () => {
         });
         const json: AcceptSuccessJson | AcceptErrorJson = await res
           .json()
-          .catch(() => ({}) as AcceptErrorJson);
+          .catch(() => ({} as AcceptErrorJson));
 
         if (res.ok && 'data' in json && json.data) {
           completeSession({ user: json.data.user });

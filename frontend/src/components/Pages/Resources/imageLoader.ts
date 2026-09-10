@@ -7,10 +7,10 @@
  * Assets live under `src/assets/Images/resources/**` (R2.a).
  */
 
-const realImages = import.meta.glob(
-  '/src/assets/Images/resources/**/*.{png,jpg,jpeg,webp,gif}',
-  { eager: true, import: 'default' },
-) as Record<string, string>;
+const realImages = import.meta.glob('/src/assets/Images/resources/**/*.{png,jpg,jpeg,webp,gif}', {
+  eager: true,
+  import: 'default',
+}) as Record<string, string>;
 
 function keyAfter(fullPath: string, marker: string): string | null {
   const idx = fullPath.indexOf(marker);
