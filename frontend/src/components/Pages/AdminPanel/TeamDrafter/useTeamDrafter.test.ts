@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useTeamDrafter, normalizeRsnForMatch } from './useTeamDrafter';
+// Cross-package import by relative path, not a published module — the
+// frontend build never ships this file, but a test file can reach across
+// the repo to compare the two copies directly (issue #49). If this import
+// starts failing to resolve, backend/src/lib/rsn.ts moved or was renamed;
+// update the path rather than deleting the test.
+import { canonicalizeRsn, normalizeRsn } from '../../../../../../backend/src/lib/rsn';
 
 // Every request goes through fetchWithAuth — mocked so these tests never
 // touch the network (same convention as useBingoOverview.test.ts /
@@ -81,6 +87,32 @@ describe('normalizeRsnForMatch', () => {
     expect(normalizeRsnForMatch('  Zezima  ')).toBe('zezima');
     expect(normalizeRsnForMatch('B0aty')).toBe('b0aty');
     expect(normalizeRsnForMatch('Multi   Space')).toBe('multi space');
+  });
+
+  // Issue #49: normalizeRsnForMatch duplicates backend/src/lib/rsn.ts's
+  // canonicalizeRsn + normalizeRsn rather than importing them (the frontend
+  // build can't reach into backend/src). This test imports the real backend
+  // module by relative path and runs both implementations over the same
+  // fixture list, so if either side changes without the other, this fails
+  // instead of the two silently drifting apart in production.
+  it('is byte-identical to backend canonicalizeRsn + normalizeRsn for every fixture', () => {
+    const fixtures = [
+      'Lynx_Titan',
+      '  Zezima  ',
+      'B0aty',
+      'Multi   Space',
+      'UPPER_CASE_NAME',
+      'trailing_',
+      '_leading',
+      'a',
+      '  ',
+      'Mixed_Case Name  With_Both',
+    ];
+
+    for (const raw of fixtures) {
+      const backendResult = normalizeRsn(canonicalizeRsn(raw));
+      expect(normalizeRsnForMatch(raw)).toBe(backendResult);
+    }
   });
 });
 
