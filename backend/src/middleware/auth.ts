@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../lib/jwt.js";
+import { getRequestToken } from "../lib/session.js";
 import { AppError } from "./errorHandler.js";
 import { User } from "../types/index.js";
 import { findUserById } from "../db/users.js";
@@ -93,14 +94,7 @@ export const protect = async (
   res: Response,
   next: NextFunction
 ) => {
-  let token: string | undefined;
-
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer")
-  ) {
-    token = req.headers.authorization.split(" ")[1];
-  }
+  const token = getRequestToken(req);
 
   if (!token) {
     if (
@@ -175,14 +169,7 @@ export const optionalAuth = async (
   res: Response,
   next: NextFunction
 ) => {
-  let token: string | undefined;
-
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer")
-  ) {
-    token = req.headers.authorization.split(" ")[1];
-  }
+  const token = getRequestToken(req);
 
   if (!token) {
     return next();
