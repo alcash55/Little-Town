@@ -89,7 +89,7 @@ const readRecord = (key: string): OnboardingRecord | null => {
  * marked checked immediately regardless of route, so this never re-opens
  * something the user already dismissed.
  */
-export const OnboardingProvider = ({ children }: PropsWithChildren<{}>) => {
+export const OnboardingProvider = ({ children }: PropsWithChildren) => {
   const { user, authReady } = useLoginModal();
   const location = useLocation();
   const [open, setOpen] = useState(false);
