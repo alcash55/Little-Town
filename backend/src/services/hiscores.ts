@@ -1,5 +1,6 @@
 import { HiscoreData } from "../types/index.js";
 import { getCachedHiscoreData, upsertHiscoreCache } from "../db/hiscoreCache.js";
+import { resolveHiscoreWithCache } from "./hiscoreCacheStrategy.js";
 
 const HISCORES_URL = "https://secure.runescape.com/m=hiscore_oldschool/index_lite.json";
 const MAX_RETRIES = 3;
@@ -96,29 +97,16 @@ async function getHiscoreData(rsn: string): Promise<{
  * @see https://runescape.wiki/w/Application_programming_interface#Hiscores_Lite_2
  */
 export async function hiscores(rsn: string): Promise<HiscoreData | null> {
-  const cached = await getCachedHiscoreData(rsn).catch((e) => {
-    console.error(`[hiscores] Failed to read hiscore_cache for "${rsn}" — falling through to a live call:`, e);
-    return null;
+  return resolveHiscoreWithCache(rsn, CACHE_TTL_MS, {
+    getCached: () => getCachedHiscoreData(rsn),
+    fetchLive: () => fetchAndFormatLive(rsn),
+    upsertCache: (data) => upsertHiscoreCache(rsn, data),
   });
+}
 
-  if (cached && Date.now() - new Date(cached.updatedAt).getTime() < CACHE_TTL_MS) {
-    return { ...cached.data, updatedAt: new Date(cached.data.updatedAt) };
-  }
-
-  let raw: Awaited<ReturnType<typeof getHiscoreData>>;
-  try {
-    raw = await getHiscoreData(rsn);
-  } catch (e) {
-    if (cached) {
-      console.warn(
-        `[hiscores] Live lookup for "${rsn}" failed after retries — serving the cached snapshot from ` +
-          `${cached.updatedAt} instead of failing outright.`,
-      );
-      return { ...cached.data, updatedAt: new Date(cached.data.updatedAt) };
-    }
-    throw e;
-  }
-
+/** Fetches raw hiscores from the OSRS API and shapes them into `HiscoreData`. */
+async function fetchAndFormatLive(rsn: string): Promise<HiscoreData | null> {
+  const raw = await getHiscoreData(rsn);
   if (!raw) return null; // unranked player — never cached, see doc comment above
 
   const formattedActivities = raw.activities.map(({ id, name, rank, score }) => ({
@@ -128,18 +116,10 @@ export async function hiscores(rsn: string): Promise<HiscoreData | null> {
     kc: score,
   }));
 
-  const formatted: HiscoreData = {
+  return {
     name: raw.name,
     skills: raw.skills,
     activities: formattedActivities,
     updatedAt: new Date(),
   };
-
-  await upsertHiscoreCache(rsn, formatted).catch((e) => {
-    // Cache-write failure must never fail the lookup itself — the caller
-    // already has real, live data at this point.
-    console.error(`[hiscores] Failed to write hiscore_cache for "${rsn}" (non-fatal):`, e);
-  });
-
-  return formatted;
 }
