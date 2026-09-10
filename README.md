@@ -17,7 +17,7 @@ A web app for tracking [OSRS Bingo Competitions](https://www.youtube.com/watch?v
 | **Backend**    | Node.js, Express, TypeScript              |
 | **Database**   | Supabase (Postgres)                       |
 | **Auth**       | JWT with role-based access control        |
-| **Deployment** | Cloudflare (frontend), Render (backend)   |
+| **Deployment** | Cloudflare (frontend), Supabase (backend) |
 
 ## Repository Structure
 
@@ -54,20 +54,13 @@ Quick start:
 
 ```bash
 # Terminal 1 — Backend
-cd backend
-bun install
-bun run dev:reset   # first time: starts Supabase, resets the DB, builds, and runs the API
-bun run dev          # after first time
+npm run local:reset   # first time
+npm run local         # after first time
 
 # Terminal 2 — Frontend
 cd frontend
-bun install
-bun run dev
+bun dev
 ```
-
-These are the same commands documented in [`backend/README.md`](./backend/README.md) and
-[`frontend/README.md`](./frontend/README.md). See those for environment variables and the
-full script list.
 
 ## Links
 
