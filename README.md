@@ -17,7 +17,7 @@ A web app for tracking [OSRS Bingo Competitions](https://www.youtube.com/watch?v
 | **Backend**    | Node.js, Express, TypeScript              |
 | **Database**   | Supabase (Postgres)                       |
 | **Auth**       | JWT with role-based access control        |
-| **Deployment** | Cloudflare (frontend), Supabase (backend) |
+| **Deployment** | Cloudflare (frontend), Render (backend)   |
 
 ## Repository Structure
 
@@ -50,17 +50,25 @@ Both the frontend and backend need to be running locally. See each package's REA
 
 **Backend requires WSL2 and Docker Desktop.** Do not run backend commands from Git Bash or PowerShell.
 
-Quick start:
+Both packages need `bun install` before their scripts, including tests and
+`tsc --noEmit`, will work. Quick start:
 
 ```bash
 # Terminal 1 — Backend
-npm run local:reset   # first time
-npm run local         # after first time
+cd backend
+bun install
+bun run dev:reset   # first time: starts Supabase, resets the DB, builds, and runs the API
+bun run dev         # after that
 
 # Terminal 2 — Frontend
 cd frontend
-bun dev
+bun install
+bun run dev
 ```
+
+See [`backend/README.md`](./backend/README.md) and
+[`frontend/README.md`](./frontend/README.md) for environment variables and
+the full script list.
 
 ## Links
 
