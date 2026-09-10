@@ -9,6 +9,17 @@ import { PendingScreenshotSubmission } from '../ScreenshotSubmission/useScreensh
 const BASE_URL = `${import.meta.env.VITE_BASEURL || 'http://localhost:8081'}/api/admin`;
 const BINGO_BASE_URL = `${import.meta.env.VITE_BASEURL || 'http://localhost:8081'}/api/bingo`;
 
+// #45: an admin tab left open and idle polled all five of these endpoints
+// every 45s regardless of whether anything on the page had changed, which
+// is where the "~60 requests/window doing nothing" complaint came from.
+// BASE_POLL_INTERVAL_MS is the floor (first tick, and any tick after a real
+// change); each consecutive no-change tick backs off by POLL_BACKOFF_FACTOR
+// up to MAX_POLL_INTERVAL_MS, and any observed change resets straight back
+// to the floor so a genuinely busy page never lags behind real activity.
+const BASE_POLL_INTERVAL_MS = 45_000;
+const MAX_POLL_INTERVAL_MS = 180_000;
+const POLL_BACKOFF_FACTOR = 1.5;
+
 // Contract 3 (TEAM-BRIEF.md, Sprint 5 Track A item 1): GET /api/admin/bingo/player-stats
 // -> { success: true, data: PlayerStat[] }. `minutesOnline` from the old type is DROPPED —
 // there is no data source for it. rsnStale/rsnStaleSince surface RSN-change detection: true
@@ -285,8 +296,10 @@ export const useBingoOverview = () => {
         return;
       }
       const json = await res.json();
-      setPlayerStats(Array.isArray(json.data) ? json.data : []);
+      const data = Array.isArray(json.data) ? json.data : [];
+      setPlayerStats(data);
       setPlayerStatsError(null);
+      fingerprintPartsRef.current.playerStats = JSON.stringify(data);
     } catch {
       setPlayerStats([]);
       setPlayerStatsError('Failed to load player stats.');
@@ -306,10 +319,13 @@ export const useBingoOverview = () => {
         return;
       }
       const json = await res.json();
-      setTeamStats(Array.isArray(json.data) ? json.data : []);
+      const data = Array.isArray(json.data) ? json.data : [];
+      setTeamStats(data);
       // See UnresolvableTile's doc comment above — additive sibling field on
       // the same response, not nested under `data`.
-      setUnresolvableTiles(Array.isArray(json.unresolvableTiles) ? json.unresolvableTiles : []);
+      const unresolvable = Array.isArray(json.unresolvableTiles) ? json.unresolvableTiles : [];
+      setUnresolvableTiles(unresolvable);
+      fingerprintPartsRef.current.teamStats = JSON.stringify({ data, unresolvable });
     } catch {
       setTeamStats([]);
       setUnresolvableTiles([]);
@@ -321,7 +337,9 @@ export const useBingoOverview = () => {
       const res = await fetchWithAuth(`${BASE_URL}/bingo/screenshots/pending`);
       if (!res.ok) return;
       const json = await res.json();
-      setPendingScreenshots(Array.isArray(json.data) ? json.data : []);
+      const data = Array.isArray(json.data) ? json.data : [];
+      setPendingScreenshots(data);
+      fingerprintPartsRef.current.pendingScreenshots = JSON.stringify(data);
     } catch {
       /* non-fatal: the pending-review banner just keeps its last known count */
     }
@@ -339,8 +357,10 @@ export const useBingoOverview = () => {
         return;
       }
       const json = await res.json();
-      setHealth(Array.isArray(json.services) ? json.services : []);
+      const services = Array.isArray(json.services) ? json.services : [];
+      setHealth(services);
       setHealthError(null);
+      fingerprintPartsRef.current.health = JSON.stringify(services);
     } catch {
       setHealthError('Failed to load dependency health.');
     }
@@ -362,8 +382,10 @@ export const useBingoOverview = () => {
         return;
       }
       const json = await res.json();
-      setConflicts(Array.isArray(json.conflicts) ? json.conflicts : []);
+      const data = Array.isArray(json.conflicts) ? json.conflicts : [];
+      setConflicts(data);
       setConflictsError(null);
+      fingerprintPartsRef.current.conflicts = JSON.stringify(data);
     } catch {
       setConflictsError('Failed to load conflicts.');
     }
@@ -411,6 +433,13 @@ export const useBingoOverview = () => {
   // card on this page (teamStats was already polled; playerStats was not) — the fix
   // below makes it match teamStats' freshness instead of silently lagging behind it.
   const pollingRef = useRef(false);
+  // Filled in by each fetch* function above as it succeeds; compared tick to
+  // tick so pollTick can tell "nothing changed" from "something changed"
+  // without a dedicated endpoint for it (#45).
+  const fingerprintPartsRef = useRef<Record<string, string>>({});
+  const lastFingerprintRef = useRef<string | null>(null);
+  const nextDelayRef = useRef(BASE_POLL_INTERVAL_MS);
+
   const pollTick = useCallback(async () => {
     if (pollingRef.current) return;
     pollingRef.current = true;
@@ -422,22 +451,41 @@ export const useBingoOverview = () => {
         fetchTeamStats(),
         fetchPlayerStats(),
       ]);
+
+      const fingerprint = JSON.stringify(fingerprintPartsRef.current);
+      const unchanged = lastFingerprintRef.current !== null && fingerprint === lastFingerprintRef.current;
+      lastFingerprintRef.current = fingerprint;
+
+      nextDelayRef.current = unchanged
+        ? Math.min(nextDelayRef.current * POLL_BACKOFF_FACTOR, MAX_POLL_INTERVAL_MS)
+        : BASE_POLL_INTERVAL_MS;
     } finally {
       pollingRef.current = false;
     }
   }, [fetchPendingScreenshots, fetchHealth, fetchConflicts, fetchTeamStats, fetchPlayerStats]);
 
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let stopped = false;
+
+    const scheduleNext = () => {
+      if (stopped) return;
+      timer = setTimeout(async () => {
+        await pollTick();
+        scheduleNext();
+      }, nextDelayRef.current);
+    };
 
     const start = () => {
-      if (interval) return;
-      interval = setInterval(pollTick, 45_000);
+      if (timer) return;
+      stopped = false;
+      scheduleNext();
     };
     const stop = () => {
-      if (!interval) return;
-      clearInterval(interval);
-      interval = null;
+      stopped = true;
+      if (!timer) return;
+      clearTimeout(timer);
+      timer = null;
     };
 
     const handleVisibility = () => {

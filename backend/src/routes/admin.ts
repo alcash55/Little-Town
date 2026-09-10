@@ -506,7 +506,7 @@ router.post(
     // retakes those players' side accounts (best-effort — never affects
     // `succeeded`/`failed` below, which are main-account only).
     const { succeeded, failed, results, sideResults } = missing.length
-      ? await snapshotStartAndCurrent(missing, "drafter")
+      ? await snapshotStartAndCurrent(bingoId, missing, "drafter")
       : { succeeded: 0, failed: [] as string[], results: [] as PlayerSnapshotResult[], sideResults: [] as SideSnapshotResult[] };
 
     // Extended sweep: side accounts missing a start snapshot on players

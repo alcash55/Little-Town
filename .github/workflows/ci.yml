@@ -37,6 +37,14 @@ on:
   push:
     branches: ["main"]
 
+# #61: without this, every push to an open PR queued a second full backend
+# run (local Supabase stack included) on top of the still-running first one
+# instead of replacing it. Scoped to the ref so pushes to different PRs
+# still run in parallel with each other.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 

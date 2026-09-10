@@ -194,6 +194,20 @@ export const LoginModalProvider = ({ children }: React.PropsWithChildren<{}>) =>
     return () => window.removeEventListener('auth:expired', handleExpired);
   }, [navigate]);
 
+  // Listen for a stale-role 403 dispatched by fetchWithAuth (#45). The
+  // session cookie is still valid here, only the cached role is wrong, so
+  // this re-asks /me instead of logging the user out — a demoted admin
+  // loses their stale "admin" state the moment the backend actually
+  // disagrees with it, rather than on the next full page load.
+  useEffect(() => {
+    const handleRoleStale = () => {
+      rehydrateSession();
+    };
+
+    window.addEventListener('auth:role-stale', handleRoleStale);
+    return () => window.removeEventListener('auth:role-stale', handleRoleStale);
+  }, [rehydrateSession]);
+
   const closeLogin = useCallback(() => {
     setIsOpen(false);
     setErrorMessage(null);
