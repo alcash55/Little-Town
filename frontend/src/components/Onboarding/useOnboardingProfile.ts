@@ -59,13 +59,20 @@ export const useOnboardingProfile = (enabled: boolean): OnboardingProfile => {
         // wizard should alarm the user with.
         if (res.status === 404) {
           if (!cancelled) {
-            setState({ loading: false, error: null, teamId: null, teamName: null, rsns: [], settled: true });
+            setState({
+              loading: false,
+              error: null,
+              teamId: null,
+              teamName: null,
+              rsns: [],
+              settled: true,
+            });
           }
           return;
         }
 
         if (!res.ok) {
-          const json = await res.json().catch(() => ({}) as { error?: string });
+          const json = await res.json().catch(() => ({} as { error?: string }));
           throw new Error(json.error ?? res.statusText);
         }
 
@@ -76,7 +83,7 @@ export const useOnboardingProfile = (enabled: boolean): OnboardingProfile => {
             loading: false,
             error: null,
             teamId: data?.teamId ?? null,
-            teamName: data?.teamId ? (data.teamName ?? null) : null,
+            teamName: data?.teamId ? data.teamName ?? null : null,
             rsns: (data?.players ?? []).map((p) => p.rsn),
             settled: true,
           });
