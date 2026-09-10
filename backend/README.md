@@ -127,6 +127,39 @@ SUPABASE_SERVICE_ROLE_KEY=<hosted service role key>
 | GET    | `/api/hiscores/skills/list`     | None     | List of all OSRS skills (scraped from wiki)     |
 | GET    | `/api/hiscores/activities/list` | None     | List of all OSRS activities (scraped from wiki) |
 
+### Bingo
+
+| Method | Path                          | Auth              | Description                                        |
+| ------ | ----------------------------- | ------------------ | --------------------------------------------------- |
+| GET    | `/api/bingo/board`            | Optional           | Active bingo board and tiles. See below.             |
+| GET    | `/api/bingo/team-data`        | Required           | Bingo-relevant skill/activity deltas for every team, grouped by team. |
+| GET    | `/api/bingo/my-team-data`     | Required           | Progress for the caller's own team: players, tiles, and per-tile completion. |
+| GET    | `/api/bingo/team-xp-history`  | Required           | Bucketed team XP history for the `BingoScores` chart. |
+| GET    | `/api/bingo/:bingoId/conflicts` | admin, moderator | Main/side accounts of the same player gaining XP in overlapping windows. |
+
+`GET /board` is the one bingo read route that does not require login, via
+`optionalAuth` rather than the router-level `protect` every other route
+below it uses. A request with no token, an invalid token, or an expired
+token is always treated as anonymous, never a 401. Anonymous callers get
+the same board layout, tasks, and points as any authenticated non-member;
+what differs is `myTeam`, which is `null` for them and every tile's
+`completedByMyTeam`/`pendingByMyTeam`, which are `false`. The per-team
+lookup query never runs for an anonymous caller, so there is no path where
+an anonymous request resolves to someone else's team. Response shape:
+
+```
+{ active: false }
+{ active: false, ended: { name, endDate } }   // most recent bingo has ended
+{ active: true,
+  bingo: { id, name, boardSize },
+  myTeam: { id, name } | null,
+  tiles: [{ id, task, type, points, targetValue, completedByMyTeam, pendingByMyTeam }] }
+```
+
+`active` means `bingo.status === 'active'` specifically, not `draft`. See
+`src/routes/bingo.ts` for the full contract history; it is a frozen public
+response shape and additive-only.
+
 ### Admin
 
 All admin routes require a valid JWT with role `admin` or `moderator`.
