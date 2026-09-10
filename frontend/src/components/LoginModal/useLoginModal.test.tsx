@@ -32,7 +32,9 @@ const mockMeEndpoint = () =>
   vi.fn(async (url: string) => {
     if (!String(url).includes('/api/auth/me')) return new Response(null, { status: 404 });
     if (currentServerSession) {
-      return new Response(JSON.stringify({ success: true, data: currentServerSession }), { status: 200 });
+      return new Response(JSON.stringify({ success: true, data: currentServerSession }), {
+        status: 200,
+      });
     }
     return new Response(null, { status: 401 });
   });
@@ -63,7 +65,9 @@ const dispatchAuthSessionChange = (serverUser: typeof ADMIN_USER | typeof PLAIN_
     localStorage.setItem(AUTH_SESSION_STORAGE_KEY, String(Date.now() + Math.random()));
   }
   const newValue = localStorage.getItem(AUTH_SESSION_STORAGE_KEY);
-  window.dispatchEvent(new StorageEvent('storage', { key: AUTH_SESSION_STORAGE_KEY, oldValue, newValue }));
+  window.dispatchEvent(
+    new StorageEvent('storage', { key: AUTH_SESSION_STORAGE_KEY, oldValue, newValue }),
+  );
 };
 
 beforeEach(() => {
