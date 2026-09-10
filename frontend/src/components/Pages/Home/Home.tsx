@@ -53,11 +53,25 @@ const playerButtons = [
   },
 ];
 
+// Explicit, reviewed accessible name per icon, not derived from the asset
+// filename. A sliced filename was previously announced verbatim to screen
+// reader users, including one that read "Little Town cum logo" (see #59).
+const gangIcons = [
+  { src: cat, label: 'cat' },
+  { src: cum, label: 'relish' },
+  { src: fish, label: 'fish' },
+  { src: skull, label: 'skull' },
+  { src: ketchup, label: 'ketchup' },
+  { src: redHat, label: 'red hat' },
+  { src: foot, label: 'foot' },
+  { src: astral, label: 'astral' },
+  { src: blackHeart, label: 'black heart' },
+];
+
 const Home = () => {
   const theme = useTheme();
   const isTablet = useMediaQuery(theme.breakpoints.down(630));
   const { user } = useLoginModal();
-  const gangIcons = [cat, cum, fish, skull, ketchup, redHat, foot, astral, blackHeart];
 
   /**
    * Only show pages the user has permissions to see
@@ -79,13 +93,13 @@ const Home = () => {
           p: 1,
         }}
       >
-        {gangIcons.map((name, index) => (
+        {gangIcons.map(({ src, label }) => (
           <img
-            aria-label={`Little Town ${name.slice(19, name.length - 4)} logo`}
-            key={index}
+            aria-label={`Little Town ${label} logo`}
+            key={label}
             width="25"
             height="auto"
-            src={name}
+            src={src}
           />
         ))}
       </Box>

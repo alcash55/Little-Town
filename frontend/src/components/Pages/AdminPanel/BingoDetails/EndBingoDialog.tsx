@@ -26,7 +26,14 @@ export type EndBingoDialogProps = {
  * dialog only needs to show a genuine failure inline so the admin can retry
  * without re-opening it.
  */
-export function EndBingoDialog({ open, bingoName, ending, error, onClose, onConfirm }: EndBingoDialogProps) {
+export function EndBingoDialog({
+  open,
+  bingoName,
+  ending,
+  error,
+  onClose,
+  onConfirm,
+}: EndBingoDialogProps) {
   return (
     <Dialog
       open={open}
@@ -42,8 +49,8 @@ export function EndBingoDialog({ open, bingoName, ending, error, onClose, onConf
       </DialogTitle>
       <DialogContent>
         <DialogContentText sx={{ color: appColors.textSecondary }}>
-          Teams stop earning points immediately and the bingo moves to Complete. This does not delete any data —
-          submissions already in review stay reviewable afterward.
+          Teams stop earning points immediately and the bingo moves to Complete. This does not
+          delete any data — submissions already in review stay reviewable afterward.
         </DialogContentText>
         {error && (
           <Alert severity="error" sx={{ mt: 2 }}>

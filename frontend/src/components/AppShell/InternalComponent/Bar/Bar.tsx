@@ -80,6 +80,7 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
           >
             <IconButton
               aria-label="Toggle Sidebar"
+              aria-expanded={openSidebar}
               size="large"
               onClick={toggleSidebar}
               sx={{

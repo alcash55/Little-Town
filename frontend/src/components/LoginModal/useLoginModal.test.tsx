@@ -5,8 +5,20 @@ import { LoginModalProvider, useLoginModal } from './useLoginModal';
 import { setImpersonationTarget } from '../../utils/impersonation';
 import { AUTH_SESSION_STORAGE_KEY } from '../../utils/authSession';
 
-const ADMIN_USER = { id: 'admin-1', username: 'QaAdminTest', role: 'admin', createdAt: '', updatedAt: '' };
-const PLAIN_USER = { id: 'user-1', username: 'GuySmoocherTest', role: 'user', createdAt: '', updatedAt: '' };
+const ADMIN_USER = {
+  id: 'admin-1',
+  username: 'QaAdminTest',
+  role: 'admin',
+  createdAt: '',
+  updatedAt: '',
+};
+const PLAIN_USER = {
+  id: 'user-1',
+  username: 'GuySmoocherTest',
+  role: 'user',
+  createdAt: '',
+  updatedAt: '',
+};
 
 // The real session lives in an httpOnly cookie the browser attaches
 // automatically (issue #53) — nothing this test can read or set directly.

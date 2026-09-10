@@ -19,7 +19,7 @@ import { hasSessionMarker, clearSessionMarker } from './authSession';
  */
 export const fetchWithAuth = async (
   url: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<Response> => {
   const impersonationTarget = getImpersonationTarget();
   // Read before the request goes out — if the response 401s, "did we think
@@ -44,7 +44,7 @@ export const fetchWithAuth = async (
       window.dispatchEvent(
         new CustomEvent('auth:expired', {
           detail: { returnTo: window.location.pathname },
-        })
+        }),
       );
     }
   }
