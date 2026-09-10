@@ -105,7 +105,7 @@ export async function refreshAllPlayerSnapshots(): Promise<{
   // sideAccountSnapshots.ts for why this keeps peak in-flight OSRS requests
   // capped at HISCORE_CONCURRENCY rather than doubling it). A failed side
   // lookup never affects `succeeded`/`failed` above.
-  const sideResults = await snapshotAllSideAccounts(players, ["current"], "cron");
+  const sideResults = await snapshotAllSideAccounts(bingo.id, players, ["current"], "cron");
   const sideFailed = sideResults.filter((r) => !r.ok);
 
   console.log(
