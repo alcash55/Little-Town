@@ -58,6 +58,7 @@ export default function TeamDrafter() {
             resetDraft={hook.resetDraft}
             loadingBingo={hook.loadingBingo}
             bingoError={hook.bingoError}
+            unclaimedRsnSet={hook.unclaimedRsnSet}
           />
         </Stack>
       )}
