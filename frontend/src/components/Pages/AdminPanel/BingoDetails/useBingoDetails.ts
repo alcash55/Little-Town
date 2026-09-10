@@ -116,7 +116,8 @@ export const useBingoDetails = () => {
       const info = await describeApiError(response, 'Failed to create bingo details');
       throw new Error(info.message);
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Unable to reach the server. Please try again.';
+      const message =
+        e instanceof Error ? e.message : 'Unable to reach the server. Please try again.';
       setSubmitError(message);
       console.error(`Unable to send details: ${message}`);
       return false;
@@ -142,7 +143,8 @@ export const useBingoDetails = () => {
       const info = await describeApiError(response, 'Failed to modify bingo details');
       throw new Error(info.message);
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Unable to reach the server. Please try again.';
+      const message =
+        e instanceof Error ? e.message : 'Unable to reach the server. Please try again.';
       setSubmitError(message);
       console.error(`Unable to update details: ${message}`);
       return false;

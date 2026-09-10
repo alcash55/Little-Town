@@ -74,7 +74,14 @@ const LoginModal = ({
       }}
     >
       <DialogTitle>
-        <Typography variant="h6" color="white">
+        {/* DialogTitle already wraps its children in its own <h2> (an
+            internal Typography variant="h6" component="h2"). Nesting a
+            second variant="h6" Typography here — which defaults to an
+            <h6> element — inside that <h2> is invalid HTML and triggers
+            React's validateDOMNesting warning. component="span" keeps the
+            h6 look without emitting a second heading element (same fix as
+            OnboardingWizard.tsx). */}
+        <Typography variant="h6" component="span" color="white">
           Login
         </Typography>
       </DialogTitle>

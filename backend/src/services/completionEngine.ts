@@ -47,6 +47,7 @@ import {
   getAllPlayerSnapshots,
   getAllSideAccounts,
   getSideAccountSnapshotsBulk,
+  type BingoPlayer,
   type PlayerSnapshot,
 } from "../db/players.js";
 
@@ -351,11 +352,29 @@ async function getApprovedDropsTileIdsByTeam(
 }
 
 /**
- * Loads every registered player's account snapshots (main + side accounts)
- * for a bingo, shaped for the pure engine above. Fixed number of bulk
- * queries regardless of player/side-account count (TEAM-BRIEF.md item 6).
+ * One registered player's account snapshots (main + side), plus the display
+ * metadata (`player`, raw main `start`/`current`) that `EnginePlayer` alone
+ * doesn't carry. `accounts` is the same `[mainAccount, ...sideAccounts]`
+ * shape `loadEnginePlayers` collapses down to — this is the richer form for
+ * callers (roster/team-data routes) that need both a player's real name/
+ * flags AND side-account-inclusive deltas.
  */
-export async function loadEnginePlayers(bingoId: string): Promise<EnginePlayer[]> {
+export interface PlayerRosterEntry {
+  player: BingoPlayer;
+  start: PlayerSnapshot | null;
+  current: PlayerSnapshot | null;
+  accounts: AccountSnapshots[];
+}
+
+/**
+ * Loads every registered player's account snapshots (main + side accounts)
+ * for a bingo. Fixed number of bulk queries regardless of player/side-
+ * account count (TEAM-BRIEF.md item 6). Shared by `loadEnginePlayers` (the
+ * engine's own bare `EnginePlayer[]` shape) and `loadPlayerRosterWithAccounts`
+ * (the richer shape roster-display routes need) so both draw on the same
+ * batched load instead of one of them re-querying `getAllPlayerSnapshots`.
+ */
+async function loadPlayerRoster(bingoId: string): Promise<PlayerRosterEntry[]> {
   const [snapshotRows, sideAccountsByPlayer] = await Promise.all([
     getAllPlayerSnapshots(bingoId),
     getAllSideAccounts(bingoId),
@@ -366,7 +385,7 @@ export async function loadEnginePlayers(bingoId: string): Promise<EnginePlayer[]
   );
   const sideSnapshotsById = await getSideAccountSnapshotsBulk(allSideAccountIds);
 
-  return snapshotRows.map(({ player, start, current }): EnginePlayer => {
+  return snapshotRows.map(({ player, start, current }): PlayerRosterEntry => {
     const mainAccount: AccountSnapshots = { start: toSnapshotLike(start), current: toSnapshotLike(current) };
     const sideAccounts: AccountSnapshots[] = (sideAccountsByPlayer[player.id] ?? []).map((sideAccount) => {
       const pair = sideSnapshotsById.get(sideAccount.id);
@@ -375,8 +394,27 @@ export async function loadEnginePlayers(bingoId: string): Promise<EnginePlayer[]
         current: toSnapshotLike(pair?.current ?? null),
       };
     });
-    return { playerId: player.id, teamId: player.team_id, accounts: [mainAccount, ...sideAccounts] };
+    return { player, start, current, accounts: [mainAccount, ...sideAccounts] };
   });
+}
+
+export async function loadEnginePlayers(bingoId: string): Promise<EnginePlayer[]> {
+  const roster = await loadPlayerRoster(bingoId);
+  return roster.map(({ player, accounts }) => ({ playerId: player.id, teamId: player.team_id, accounts }));
+}
+
+/**
+ * Roster data for routes that display a per-player breakdown (`/team-data`,
+ * `/my-team-data`) — same batched load as `loadEnginePlayers`, not collapsed
+ * down to its bare `playerId`/`teamId`/`accounts` shape. Feeds `#54`'s fix:
+ * those routes used to derive skill/activity deltas from `start`/`current`
+ * directly (main account only), so a team with a side account showed a
+ * roster sum lower than the engine's own team total for the same tile. Pair
+ * this with `playerMetricDelta` (summed across `accounts`, side accounts
+ * included) instead of recomputing the delta by hand.
+ */
+export async function loadPlayerRosterWithAccounts(bingoId: string): Promise<PlayerRosterEntry[]> {
+  return loadPlayerRoster(bingoId);
 }
 
 /**

@@ -21,7 +21,7 @@ import express from "express";
 import cors from "cors";
 import http from "node:http";
 
-import { CORS_ALLOWED_HEADERS, REQUIRED_CUSTOM_HEADERS } from "../../src/config/cors.js";
+import { CORS_ALLOWED_HEADERS, REQUIRED_CUSTOM_HEADERS, buildDevCorsOrigins, DEV_CORS_PORT_RANGE } from "../../src/config/cors.js";
 import { startTestServer } from "../integration/helpers.js";
 
 const ORIGIN = "http://localhost:3000";
@@ -117,5 +117,83 @@ describe("CORS preflight — custom request headers", () => {
     // own configured allowlist, not whatever the client happened to ask for.
     const allowed = await allowedByPreflight("X-Not-A-Real-Header");
     expect(allowed).not.toContain("x-not-a-real-header");
+  });
+});
+
+/**
+ * Dev CORS origin allowlist (issue #49). index.ts hardcoded :3000, which
+ * CORS-blocked any second dev frontend on another port. buildDevCorsOrigins()
+ * replaced that with a bounded localhost port range -- still an allowlist,
+ * never a blanket allow, so an out-of-range origin must still be rejected.
+ */
+function buildRangeApp(origins: string[]) {
+  const app = express();
+  app.use(
+    cors({
+      origin(origin, callback) {
+        if (!origin || origins.includes(origin)) return callback(null, true);
+        callback(new Error(`CORS origin not allowed: ${origin}`));
+      },
+      credentials: true,
+    }),
+  );
+  app.get('/ping', (_req, res) => res.json({ ok: true }));
+  return app;
+}
+
+function originHeader(port: number, origin: string): Promise<{ status: number; allowOrigin?: string }> {
+  return new Promise((resolve, reject) => {
+    const req = http.request(
+      { host: '127.0.0.1', port, path: '/ping', method: 'GET', headers: { Origin: origin } },
+      (res) => {
+        res.resume();
+        res.on('end', () =>
+          resolve({
+            status: res.statusCode ?? 0,
+            allowOrigin: res.headers['access-control-allow-origin'] as string | undefined,
+          }),
+        );
+      },
+    );
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+describe('buildDevCorsOrigins (issue #49)', () => {
+  test('covers every port in the bounded range on both localhost and 127.0.0.1', () => {
+    const origins = buildDevCorsOrigins();
+    for (let port = DEV_CORS_PORT_RANGE.start; port <= DEV_CORS_PORT_RANGE.end; port++) {
+      expect(origins).toContain(`http://localhost:${port}`);
+      expect(origins).toContain(`http://127.0.0.1:${port}`);
+    }
+  });
+
+  test('does not include a port outside the declared range', () => {
+    const origins = buildDevCorsOrigins();
+    expect(origins).not.toContain(`http://localhost:${DEV_CORS_PORT_RANGE.end + 1}`);
+    expect(origins).not.toContain('http://localhost:4000');
+  });
+
+  test('an origin within the range is allowed by a real cross-origin request', async () => {
+    const started = await startTestServer(buildRangeApp(buildDevCorsOrigins()));
+    try {
+      const inRangePort = DEV_CORS_PORT_RANGE.start + 1;
+      const res = await originHeader(started.port, `http://localhost:${inRangePort}`);
+      expect(res.status).toBe(200);
+      expect(res.allowOrigin).toBe(`http://localhost:${inRangePort}`);
+    } finally {
+      started.server.close();
+    }
+  });
+
+  test('an origin outside the range is still rejected, not blanket-allowed', async () => {
+    const started = await startTestServer(buildRangeApp(buildDevCorsOrigins()));
+    try {
+      const res = await originHeader(started.port, 'http://localhost:4000');
+      expect(res.allowOrigin).toBeUndefined();
+    } finally {
+      started.server.close();
+    }
   });
 });

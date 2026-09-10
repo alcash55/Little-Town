@@ -5,11 +5,19 @@ import { useMaintenance } from './useMaintenance';
 import { MaintenanceJobCard } from './MaintenanceJobCard';
 
 const Maintenance = () => {
-  const { jobs, running, results, runJob, dismissResult, activeBingoId, activeBingoLoading } =
-    useMaintenance();
+  const {
+    jobs,
+    running,
+    results,
+    runJob,
+    dismissResult,
+    activeBingoId,
+    activeBingoLoading,
+    permissionDenied,
+  } = useMaintenance();
 
   return (
-    <PageLayout title="Maintenance" maxWidth="full">
+    <PageLayout title="Maintenance" maxWidth="full" permissionDenied={permissionDenied}>
       <Typography variant="body2" sx={{ color: textSecondary, textAlign: 'center' }}>
         Manually re-run background jobs that normally happen on a schedule.
       </Typography>
