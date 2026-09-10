@@ -175,7 +175,7 @@ export const darkTheme = createTheme({
   },
 });
 
-export function ThemeProvider({ children }: React.PropsWithChildren<{}>) {
+export function ThemeProvider({ children }: React.PropsWithChildren) {
   return (
     <MuiThemeProvider theme={darkTheme}>
       <CssBaseline>{children}</CssBaseline>

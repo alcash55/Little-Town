@@ -4,9 +4,8 @@
  *
  * The active target is persisted in `sessionStorage` — it survives a page
  * refresh but not a new tab/window or logout (LoginModalProvider.logout()
- * clears it explicitly). `fetchWithAuth` reads it directly, the same way it
- * already reads the auth token from `localStorage`, so every API call made
- * through the app's single fetch wrapper automatically carries
+ * clears it explicitly). `fetchWithAuth` reads it directly, so every API
+ * call made through the app's single fetch wrapper automatically carries
  * `X-Impersonate-User-Id` while an override is active — callers never wire
  * the header in per-call.
  *
