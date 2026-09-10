@@ -159,6 +159,34 @@ describe('LoginModalProvider — cross-tab account switch (bug-report investigat
   });
 });
 
+// #45: fetchWithAuth dispatches 'auth:role-stale' on a 403 while the frontend
+// still thinks it holds a role the backend no longer honors (e.g. a demoted
+// admin). This isn't a dead session, so the fix is a fresh /me rehydrate,
+// not a logout.
+describe('LoginModalProvider — auth:role-stale (#45)', () => {
+  it('re-fetches /me on a role-stale event and picks up the demoted role', async () => {
+    currentServerSession = ADMIN_USER;
+    localStorage.setItem(AUTH_SESSION_STORAGE_KEY, '1');
+    const fetchMock = mockMeEndpoint();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { result } = renderHook(() => useLoginModal(), { wrapper });
+    await waitFor(() => expect(result.current.user?.role).toBe('admin'));
+
+    // The backend demoted this account without the session dying — same
+    // cookie, new role — which is what a 403 mid-session actually means.
+    currentServerSession = PLAIN_USER;
+    const callsBefore = fetchMock.mock.calls.length;
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent('auth:role-stale'));
+    });
+
+    await waitFor(() => expect(result.current.user?.role).toBe('user'));
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(callsBefore);
+  });
+});
+
 describe('LoginModalProvider — mount without a prior session', () => {
   it('does not call /api/auth/me when there is no authSession marker (anonymous visitor)', async () => {
     const fetchMock = mockMeEndpoint();

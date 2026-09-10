@@ -8,6 +8,12 @@ const BASE_URL = `${import.meta.env.VITE_BASEURL || 'http://localhost:8081'}/api
 
 /** Auto-poll interval for pending screenshots, per TEAM-BRIEF contract 6. */
 const POLL_INTERVAL_MS = 45_000;
+// #45: an idle admin tab polled at this same flat interval forever, whether
+// or not the worklist had actually changed. See useBingoOverview.ts's
+// matching comment for the full rationale — same fix, same constants,
+// applied to this page's own poller.
+const MAX_POLL_INTERVAL_MS = 180_000;
+const POLL_BACKOFF_FACTOR = 1.5;
 
 /**
  * GET /bingo/players (see BingoOverview/useBingoOverview.ts) returns rows
@@ -141,13 +147,20 @@ export const useScreenshotSubmission = () => {
   /** Mirrors `reviewing` for the poll loop, so the interval isn't rebuilt on every review. */
   const reviewingRef = useRef<{ id: string; action: ReviewAction } | null>(null);
 
+  // Filled in by fetchPending/fetchUnattributed as they succeed; compared
+  // tick to tick so the poll loop below can tell "nothing changed" from
+  // "something changed" (#45).
+  const fingerprintPartsRef = useRef<Record<string, string>>({});
+
   const fetchPending = useCallback(async () => {
     try {
       const res = await fetchWithAuth(`${BASE_URL}/bingo/screenshots/pending`);
       if (!res.ok) throw new Error(`Failed to load pending screenshots: ${res.statusText}`);
       const json = await res.json();
-      setPending(Array.isArray(json.data) ? json.data : []);
+      const data = Array.isArray(json.data) ? json.data : [];
+      setPending(data);
       setError(null);
+      fingerprintPartsRef.current.pending = JSON.stringify(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load pending screenshots.');
     }
@@ -166,8 +179,10 @@ export const useScreenshotSubmission = () => {
         return;
       }
       const json = await res.json();
-      setUnattributed(Array.isArray(json.data) ? json.data : []);
+      const data = Array.isArray(json.data) ? json.data : [];
+      setUnattributed(data);
       setUnattributedError(null);
+      fingerprintPartsRef.current.unattributed = JSON.stringify(data);
     } catch (e) {
       setUnattributedError(
         e instanceof Error ? e.message : 'Failed to load the attribution worklist.',
@@ -257,18 +272,47 @@ export const useScreenshotSubmission = () => {
     reviewingRef.current = reviewing;
   }, [reviewing]);
 
-  // Auto-poll pending screenshots per TEAM-BRIEF contract 6: 45s interval,
-  // paused while a review is in flight, a manual refresh is already running,
-  // or the tab is hidden. Cleaned up on unmount.
+  // Auto-poll pending screenshots per TEAM-BRIEF contract 6: floor of 45s,
+  // paused while a review is in flight, a manual refresh is already
+  // running, or the tab is hidden. Backs off past the floor on consecutive
+  // unchanged ticks and resets the moment something changes (#45). Cleaned
+  // up on unmount.
+  const lastFingerprintRef = useRef<string | null>(null);
+  const nextDelayRef = useRef(POLL_INTERVAL_MS);
+
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (document.visibilityState === 'hidden') return;
-      if (reviewingRef.current) return;
-      if (refreshingRef.current) return;
-      fetchPending();
-      fetchUnattributed();
-    }, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const scheduleNext = () => {
+      timer = setTimeout(tick, nextDelayRef.current);
+    };
+
+    const tick = async () => {
+      if (document.visibilityState === 'hidden' || reviewingRef.current || refreshingRef.current) {
+        // Skipped, not backed off — a paused tick shouldn't count as "no
+        // change" (there was no observation at all), so retry at the same
+        // delay instead of widening it further.
+        scheduleNext();
+        return;
+      }
+
+      await Promise.all([fetchPending(), fetchUnattributed()]);
+
+      const fingerprint = JSON.stringify(fingerprintPartsRef.current);
+      const unchanged = lastFingerprintRef.current !== null && fingerprint === lastFingerprintRef.current;
+      lastFingerprintRef.current = fingerprint;
+
+      nextDelayRef.current = unchanged
+        ? Math.min(nextDelayRef.current * POLL_BACKOFF_FACTOR, MAX_POLL_INTERVAL_MS)
+        : POLL_INTERVAL_MS;
+
+      scheduleNext();
+    };
+
+    scheduleNext();
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [fetchPending, fetchUnattributed]);
 
   const dismissTeamsBoardError = useCallback(() => setTeamsBoardError(null), []);

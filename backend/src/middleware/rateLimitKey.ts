@@ -1,4 +1,5 @@
 import { Request } from "express";
+import { ipKeyGenerator } from "express-rate-limit";
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../lib/jwt.js";
 import { getRequestToken } from "../lib/session.js";
@@ -24,18 +25,15 @@ import { getRequestToken } from "../lib/session.js";
  * user's bucket instead of their own. Any invalid, expired, malformed, or
  * absent token falls through to IP keying, same as an anonymous caller.
  *
- * IP fallback note: express-rate-limit is pinned to 7.5.1 here (see
- * backend/package.json / bun.lock) — the `ipKeyGenerator` IPv6-subnet
- * helper TEAM-BRIEF.md names does not exist in the 7.x line at all (it
- * ships starting in 8.0.0; confirmed against the installed package and via
- * a scratch install of 8.6.1 — see Sprint 16 backend report). v7's own
- * *default* keyGenerator uses raw `request.ip` for IPv6 exactly like this
- * fallback does, and that is exactly what the other three IP-keyed
- * limiters already in index.ts (login/invite/hiscores-lookup) rely on — so
- * this fallback carries no new IPv6 weakness relative to the rest of the
- * file. Upgrading to v8 for real IPv6 subnet-aware keying across all four
- * limiters is a reasonable follow-up but is a bigger, cross-cutting change
- * than this sprint's fix.
+ * IP fallback note (#45): express-rate-limit is now on 8.x, so the IP
+ * fallback goes through `ipKeyGenerator`, which normalizes an IPv6 address
+ * to its /64 prefix instead of keying on the full 128-bit address. A raw
+ * IPv6 address is unstable per-request for a lot of real clients (privacy
+ * extensions, per-request assignment from some ISPs/VPNs), and a caller who
+ * gets a new address on every single request was landing in a fresh,
+ * always-empty bucket, silently escaping the limit entirely. `req.ip` is
+ * fine as-is for IPv4, so this only changes behavior for the IPv6 case —
+ * see rateLimitKey.test.ts for both.
  */
 export function rateLimitKey(req: Request): string {
   const token = getRequestToken(req);
@@ -50,5 +48,5 @@ export function rateLimitKey(req: Request): string {
     }
   }
 
-  return `ip:${req.ip ?? "unknown"}`;
+  return `ip:${ipKeyGenerator(req.ip ?? "unknown")}`;
 }
