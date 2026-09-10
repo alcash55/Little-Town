@@ -43,7 +43,10 @@ export type CloneResult = { id: string; name: string; tilesCloned: number };
  *    it just created — the closest equivalent to "route the admin to the
  *    new draft" available without a per-bingo-id URL to navigate to.
  */
-export const useBingoLifecycle = (source: LifecycleBingo | null, onChanged: () => void | Promise<void>) => {
+export const useBingoLifecycle = (
+  source: LifecycleBingo | null,
+  onChanged: () => void | Promise<void>,
+) => {
   const [bingo, setBingo] = useState<LifecycleBingo | null>(source);
 
   useEffect(() => {
@@ -133,7 +136,9 @@ export const useBingoLifecycle = (source: LifecycleBingo | null, onChanged: () =
         await onChanged();
         return true;
       } catch (e) {
-        setDeleteError(e instanceof Error ? e.message : 'Unable to reach the server. Please try again.');
+        setDeleteError(
+          e instanceof Error ? e.message : 'Unable to reach the server. Please try again.',
+        );
         return false;
       } finally {
         setDeleting(false);
@@ -176,11 +181,17 @@ export const useBingoLifecycle = (source: LifecycleBingo | null, onChanged: () =
           throw new Error(info.message);
         }
         const json = await res.json();
-        setCloneResult({ id: json.data.id, name: json.data.name, tilesCloned: json.data.tilesCloned });
+        setCloneResult({
+          id: json.data.id,
+          name: json.data.name,
+          tilesCloned: json.data.tilesCloned,
+        });
         await onChanged();
         return true;
       } catch (e) {
-        setCloneError(e instanceof Error ? e.message : 'Unable to reach the server. Please try again.');
+        setCloneError(
+          e instanceof Error ? e.message : 'Unable to reach the server. Please try again.',
+        );
         return false;
       } finally {
         setCloning(false);

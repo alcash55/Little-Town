@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchWithAuth } from '../../../../utils/fetchWithAuth';
+import { describeApiError } from '../../../../utils/apiError';
 
 const BASE_URL = `${import.meta.env.VITE_BASEURL || 'http://localhost:8081'}/api/admin/invites`;
 
@@ -73,6 +74,10 @@ export const useUserInvite = () => {
   const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // True when the gating GET (invite list) 401/403'd. The page shows
+  // PageLayout's permission-denied state instead of an empty invite list
+  // (same pattern as BingoDetails/BoardBuilder/BingoOverview).
+  const [permissionDenied, setPermissionDenied] = useState(false);
 
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
@@ -86,10 +91,16 @@ export const useUserInvite = () => {
     setError(null);
     try {
       const res = await fetchWithAuth(BASE_URL);
-      const json: ListInvitesJson = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(json.error ?? res.statusText);
+        const info = await describeApiError(res, 'Failed to load invites');
+        if (info.isPermissionError) {
+          setPermissionDenied(true);
+          return;
+        }
+        throw new Error(info.message);
       }
+      setPermissionDenied(false);
+      const json: ListInvitesJson = await res.json().catch(() => ({}));
       setInvites(Array.isArray(json.invites) ? json.invites : []);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load invites.');
@@ -142,7 +153,7 @@ export const useUserInvite = () => {
     try {
       const res = await fetchWithAuth(`${BASE_URL}/${id}`, { method: 'DELETE' });
       if (!res.ok) {
-        const json = await res.json().catch(() => ({}) as { error?: string });
+        const json = await res.json().catch(() => ({} as { error?: string }));
         throw new Error(json.error ?? res.statusText);
       }
       setInvites((prev) =>
@@ -163,6 +174,7 @@ export const useUserInvite = () => {
     invites,
     loading,
     error,
+    permissionDenied,
     generating,
     generateError,
     justCreated,

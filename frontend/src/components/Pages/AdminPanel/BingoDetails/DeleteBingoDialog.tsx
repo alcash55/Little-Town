@@ -61,8 +61,8 @@ export function DeleteBingoDialog({
       </DialogTitle>
       <DialogContent>
         <DialogContentText sx={{ color: appColors.textSecondary, mb: 2 }}>
-          This permanently deletes the bingo and everything tied to it — teams, tiles, players, submissions, and
-          any stored screenshots. <strong>This cannot be undone.</strong>
+          This permanently deletes the bingo and everything tied to it — teams, tiles, players,
+          submissions, and any stored screenshots. <strong>This cannot be undone.</strong>
         </DialogContentText>
         <DialogContentText sx={{ color: appColors.textSecondary, mb: 1.5 }}>
           Type the bingo&apos;s name exactly to confirm:

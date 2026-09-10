@@ -24,10 +24,7 @@ import { hasSessionMarker, clearSessionMarker } from './authSession';
  * picks up an active admin "view as user" override automatically, with no
  * per-call wiring required.
  */
-export const fetchWithAuth = async (
-  url: string,
-  options: RequestInit = {}
-): Promise<Response> => {
+export const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
   const impersonationTarget = getImpersonationTarget();
   // Read before the request goes out — if the response 401s, "did we think
   // we had a session" has to reflect the state at the time of the call, not
@@ -51,7 +48,7 @@ export const fetchWithAuth = async (
       window.dispatchEvent(
         new CustomEvent('auth:expired', {
           detail: { returnTo: window.location.pathname },
-        })
+        }),
       );
     }
   }

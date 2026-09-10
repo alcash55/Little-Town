@@ -17,7 +17,11 @@ import { Link as RouterLink } from 'react-router-dom';
 import { appColors } from '../../../layout/Theme';
 import { useLoginModal } from '../../LoginModal/useLoginModal';
 import { OnboardingProfile } from '../useOnboardingProfile';
-import { RsnConfirmation, SOFT_PASS_AFTER_FAILURES, filterAccountDerivedRsns } from '../useRsnConfirmation';
+import {
+  RsnConfirmation,
+  SOFT_PASS_AFTER_FAILURES,
+  filterAccountDerivedRsns,
+} from '../useRsnConfirmation';
 
 interface Props {
   profile: OnboardingProfile;
@@ -73,8 +77,8 @@ const RsnStep = ({ profile, rsn }: Props) => {
               is informational only rather than blocking the input. */}
           {error && (
             <Alert severity="warning" sx={{ width: '100%', mb: 1.5 }}>
-              Couldn't load your team roster for suggestions ({error}) — you can still type your
-              RSN below.
+              Couldn't load your team roster for suggestions ({error}) — you can still type your RSN
+              below.
             </Alert>
           )}
 
@@ -88,7 +92,8 @@ const RsnStep = ({ profile, rsn }: Props) => {
           )}
 
           <Typography variant="body2" sx={{ color: appColors.textSecondary, mb: 1.5 }}>
-            Type your real RuneScape name{suggestions.length > 0 ? ', or pick it below if it’s already listed' : ''}:
+            Type your real RuneScape name
+            {suggestions.length > 0 ? ', or pick it below if it’s already listed' : ''}:
           </Typography>
 
           <Autocomplete
@@ -157,8 +162,8 @@ const RsnStep = ({ profile, rsn }: Props) => {
 
             {status === 'taken' && (
               <Alert severity="error" icon={<BlockIcon fontSize="small" />}>
-                "{selected}" is already claimed by a different account. If that's you under
-                another login, reach out to an admin on Discord.
+                "{selected}" is already claimed by a different account. If that's you under another
+                login, reach out to an admin on Discord.
               </Alert>
             )}
 
@@ -183,8 +188,8 @@ const RsnStep = ({ profile, rsn }: Props) => {
 
             {status === 'soft-passed' && (
               <Alert severity="info">
-                Continuing without verification — the tracking service kept failing, not your
-                name. You can always sort out a mismatch later via Team Drafter.
+                Continuing without verification — the tracking service kept failing, not your name.
+                You can always sort out a mismatch later via Team Drafter.
               </Alert>
             )}
           </Box>

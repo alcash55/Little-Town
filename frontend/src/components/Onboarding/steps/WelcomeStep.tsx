@@ -9,10 +9,10 @@ const WelcomeStep = () => (
       What is Little Town Bingo?
     </Typography>
     <Typography variant="body2" sx={{ color: appColors.textSecondary, maxWidth: 420 }}>
-      Little Town Bingo is a team OSRS event — your team races to complete tiles on a shared
-      board by hitting XP and kill-count goals, or by submitting drop screenshots for admin
-      review. This quick tour points you at your team, where to check scores, and where to find
-      tips before you start.
+      Little Town Bingo is a team OSRS event — your team races to complete tiles on a shared board
+      by hitting XP and kill-count goals, or by submitting drop screenshots for admin review. This
+      quick tour points you at your team, where to check scores, and where to find tips before you
+      start.
     </Typography>
   </Stack>
 );

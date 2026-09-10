@@ -35,7 +35,15 @@ function installRouter(overrides: Record<string, Response | (() => Response)> = 
     // now, not /bingo/details — see useScreenshotSubmission's
     // fetchTeamsAndBoard doc comment.
     '/bingo/latest': {
-      data: { bingo: { name: 'Test Bingo', status: 'active', endDate: '2026-07-30T00:00:00.000Z', teamObjects: [] }, pendingScreenshots: 0 },
+      data: {
+        bingo: {
+          name: 'Test Bingo',
+          status: 'active',
+          endDate: '2026-07-30T00:00:00.000Z',
+          teamObjects: [],
+        },
+        pendingScreenshots: 0,
+      },
     },
     '/bingo/board': { data: [] },
     '/bingo/players': { data: [] },
@@ -248,7 +256,12 @@ describe('useScreenshotSubmission — approve requires player (TEAM-BRIEF.md Spr
     installRouter({
       '/bingo/screenshots/pending': jsonResponse(200, {
         data: [
-          { id: 'sub-1', imageUrl: null, submittedBy: 'Discord', submittedAt: '2026-07-08T00:00:00.000Z' },
+          {
+            id: 'sub-1',
+            imageUrl: null,
+            submittedBy: 'Discord',
+            submittedAt: '2026-07-08T00:00:00.000Z',
+          },
         ],
       }),
       '/bingo/screenshots/sub-1/approve': () => {
@@ -331,7 +344,13 @@ describe('useScreenshotSubmission — /bingo/latest consumption (TEAM-BRIEF.md S
       '/bingo/latest': () =>
         jsonResponse(200, {
           data: {
-            bingo: { id: 'bingo-9', name: 'Test Bingo', status, endDate: '2026-06-30T00:00:00.000Z', teamObjects: [] },
+            bingo: {
+              id: 'bingo-9',
+              name: 'Test Bingo',
+              status,
+              endDate: '2026-06-30T00:00:00.000Z',
+              teamObjects: [],
+            },
             pendingScreenshots: 0,
           },
         }),

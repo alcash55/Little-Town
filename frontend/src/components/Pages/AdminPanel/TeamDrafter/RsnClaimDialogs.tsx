@@ -44,7 +44,13 @@ export function ReleaseRsnClaimDialog({
   onClose,
 }: ReleaseRsnClaimDialogProps) {
   return (
-    <Dialog open onClose={onClose} maxWidth="sm" fullWidth slotProps={{ paper: { sx: dialogPaperSx } }}>
+    <Dialog
+      open
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      slotProps={{ paper: { sx: dialogPaperSx } }}
+    >
       <DialogTitle sx={{ fontFamily: "'pacifico', cursive", color: textPrimary }}>
         Release RSN Claim
       </DialogTitle>
@@ -58,8 +64,8 @@ export function ReleaseRsnClaimDialog({
           Release <strong>{claim.rsn}</strong> from <strong>{claim.username}</strong>?
         </Typography>
         <Typography variant="body2" sx={{ color: textSecondary }}>
-          This unlinks the account immediately. {claim.username} will need to re-claim {claim.rsn}
-          {' '}from onboarding before they see their team data again, and anyone can claim it in the
+          This unlinks the account immediately. {claim.username} will need to re-claim {claim.rsn}{' '}
+          from onboarding before they see their team data again, and anyone can claim it in the
           meantime.
         </Typography>
       </DialogContent>
@@ -120,7 +126,13 @@ export function ReassignRsnClaimDialog({
   onClose,
 }: ReassignRsnClaimDialogProps) {
   return (
-    <Dialog open onClose={onClose} maxWidth="sm" fullWidth slotProps={{ paper: { sx: dialogPaperSx } }}>
+    <Dialog
+      open
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      slotProps={{ paper: { sx: dialogPaperSx } }}
+    >
       <DialogTitle sx={{ fontFamily: "'pacifico', cursive", color: textPrimary }}>
         Reassign RSN Claim
       </DialogTitle>

@@ -37,3 +37,25 @@ export const REQUIRED_CUSTOM_HEADERS: ReadonlyArray<{ header: string; usedBy: st
   { header: "X-Impersonate-User-Id", usedBy: "admin impersonation ('view as user')" },
   { header: "X-Confirm-Delete", usedBy: "DELETE /api/admin/bingo/:bingoId confirmation gate" },
 ];
+
+/**
+ * Dev-only CORS origin allowlist (issue #49). Was hardcoded to :3000, which
+ * CORS-blocked any second frontend dev server on another port -- e.g. an
+ * agent driving a real browser against the same local backend a person is
+ * already using on :3000. Widened to a bounded range of localhost ports
+ * rather than a blanket allow, since this still ships in every non-
+ * production build; index.ts only calls this outside NODE_ENV=production.
+ *
+ * Range covers Vite's default (3000) plus enough headroom for a few
+ * concurrent dev servers (worktrees, agents) without opening to arbitrary
+ * ports.
+ */
+export const DEV_CORS_PORT_RANGE = { start: 3000, end: 3009 } as const;
+
+export function buildDevCorsOrigins(): string[] {
+  const origins: string[] = [];
+  for (let port = DEV_CORS_PORT_RANGE.start; port <= DEV_CORS_PORT_RANGE.end; port++) {
+    origins.push(`http://localhost:${port}`, `http://127.0.0.1:${port}`);
+  }
+  return origins;
+}
