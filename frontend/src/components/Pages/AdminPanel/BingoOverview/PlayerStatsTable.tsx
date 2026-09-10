@@ -30,9 +30,7 @@ export type PlayerStatsTableProps = {
  */
 export const PlayerStatsTable = ({ playerStats }: PlayerStatsTableProps) => {
   if (playerStats.length === 0) {
-    return (
-      <Typography sx={{ p: 2, color: textSecondary }}>No player data yet.</Typography>
-    );
+    return <Typography sx={{ p: 2, color: textSecondary }}>No player data yet.</Typography>;
   }
 
   return (
