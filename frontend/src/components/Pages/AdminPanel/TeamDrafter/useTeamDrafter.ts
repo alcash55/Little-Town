@@ -787,6 +787,18 @@ export const useTeamDrafter = () => {
     [unclaimedPlayers],
   );
 
+  /**
+   * Same unclaimed set as `unclaimedPlayerIds`, keyed by the raw RSN string
+   * instead of the player id (TEAM-BRIEF.md #48, "self-claimed vs
+   * admin-entered"). The Drafter tab's DnD pool tracks RSNs, not player ids
+   * (see `buildDraftItems`), so this is the lookup that tab needs to show
+   * the same "no linked account yet" signal Player Management already has.
+   */
+  const unclaimedRsnSet = useMemo(
+    () => new Set(unclaimedPlayers.map((p) => p.rsn)),
+    [unclaimedPlayers],
+  );
+
   const teamNameById = useMemo(
     () => Object.fromEntries(teams.map((t) => [t.id, t.name])),
     [teams],
@@ -857,6 +869,7 @@ export const useTeamDrafter = () => {
     loadRsnClaims,
     unclaimedPlayers,
     unclaimedPlayerIds,
+    unclaimedRsnSet,
     adminUsers,
     loadingAdminUsers,
     adminUsersError,
