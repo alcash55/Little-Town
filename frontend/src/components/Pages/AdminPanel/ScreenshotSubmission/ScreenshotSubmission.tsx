@@ -28,6 +28,7 @@ const ScreenshotSubmission = () => {
     loading,
     refreshing,
     error,
+    permissionDenied,
     refresh,
     teamsBoardError,
     dismissTeamsBoardError,
@@ -56,6 +57,10 @@ const ScreenshotSubmission = () => {
         <CircularProgress sx={{ color: appColors.accent }} />
       </PageLayout>
     );
+  }
+
+  if (permissionDenied) {
+    return <PageLayout title="Screenshot Submissions" align="center" permissionDenied />;
   }
 
   if (error) {

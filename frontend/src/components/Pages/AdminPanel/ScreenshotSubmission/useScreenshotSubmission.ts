@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchWithAuth } from '../../../../utils/fetchWithAuth';
+import { describeApiError } from '../../../../utils/apiError';
 import { BingoPlayer, BingoTeam } from '../TeamDrafter/useTeamDrafter';
 import { Tile } from '../BoardBuilder/useBoardBuilder';
 import { BingoConfig } from '../BingoDetails/useBingoDetails';
@@ -103,6 +104,12 @@ export const useScreenshotSubmission = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // True when the gating GET (pending screenshots) 401/403'd (#44 sweep,
+  // same pattern as Maintenance/useMaintenance.ts). An admin-only page that
+  // shows a generic "Failed to load" alert on a 403 reads as a broken page
+  // rather than as "you don't have access", so it needs PageLayout's
+  // dedicated permission-denied state instead.
+  const [permissionDenied, setPermissionDenied] = useState(false);
 
   /** Non-fatal: fetchTeamsAndBoard failures, surfaced as a dismissible Alert
    * distinct from the fatal page-level `error` above. */
@@ -144,9 +151,18 @@ export const useScreenshotSubmission = () => {
   const fetchPending = useCallback(async () => {
     try {
       const res = await fetchWithAuth(`${BASE_URL}/bingo/screenshots/pending`);
-      if (!res.ok) throw new Error(`Failed to load pending screenshots: ${res.statusText}`);
+      if (!res.ok) {
+        const info = await describeApiError(res, 'Failed to load pending screenshots');
+        if (info.isPermissionError) {
+          setPermissionDenied(true);
+          setError(null);
+          return;
+        }
+        throw new Error(info.message);
+      }
       const json = await res.json();
       setPending(Array.isArray(json.data) ? json.data : []);
+      setPermissionDenied(false);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load pending screenshots.');
@@ -423,6 +439,7 @@ export const useScreenshotSubmission = () => {
     loading,
     refreshing,
     error,
+    permissionDenied,
     refresh,
 
     attributionSelection,
