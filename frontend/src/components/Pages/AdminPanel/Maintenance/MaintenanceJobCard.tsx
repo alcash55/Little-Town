@@ -1,4 +1,12 @@
-import { Alert, Button, Card, CardContent, CircularProgress, Tooltip, Typography } from '@mui/material';
+import {
+  Alert,
+  Button,
+  Card,
+  CardContent,
+  CircularProgress,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import SyncIcon from '@mui/icons-material/Sync';
 import { appColors } from '../../../../layout/Theme';
 import { textPrimary, textSecondary } from '../TeamDrafter/teamDrafterStyles';
@@ -70,7 +78,10 @@ export function MaintenanceJobCard({
         </Tooltip>
 
         {result && (
-          <Alert severity={result.status === 'success' ? 'success' : 'error'} onClose={onDismissResult}>
+          <Alert
+            severity={result.status === 'success' ? 'success' : 'error'}
+            onClose={onDismissResult}
+          >
             <Typography variant="body2">{result.message}</Typography>
             <Typography variant="caption" sx={{ display: 'block', opacity: 0.8, mt: 0.25 }}>
               {fmt(result.at)}
