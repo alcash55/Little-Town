@@ -42,7 +42,7 @@ on:
 # instead of replacing it. Scoped to the ref so pushes to different PRs
 # still run in parallel with each other.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
