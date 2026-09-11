@@ -46,11 +46,7 @@ export function BingoLifecycle({ source, onChanged }: BingoLifecycleProps) {
 
   const hasBingo = !!lc.bingo;
   const hasAnyResult =
-    !!lc.endResult ||
-    !!lc.endInfo ||
-    !!lc.deleteResult ||
-    !!lc.cloneResult ||
-    lc.cloneConflict;
+    !!lc.endResult || !!lc.endInfo || !!lc.deleteResult || !!lc.cloneResult || lc.cloneConflict;
 
   if (!hasBingo && !hasAnyResult) return null;
 
@@ -66,7 +62,11 @@ export function BingoLifecycle({ source, onChanged }: BingoLifecycleProps) {
     if (ok) setDeleteOpen(false);
   };
 
-  const handleCloneConfirm = async (input: { name: string; startDate: string; endDate: string }) => {
+  const handleCloneConfirm = async (input: {
+    name: string;
+    startDate: string;
+    endDate: string;
+  }) => {
     const closable = await lc.cloneBingo(input);
     if (closable) setCloneOpen(false);
   };
@@ -77,7 +77,10 @@ export function BingoLifecycle({ source, onChanged }: BingoLifecycleProps) {
 
       {lc.bingo && (
         <>
-          <Typography variant="h2" sx={{ fontSize: 20, color: appColors.textPrimary, textAlign: 'center' }}>
+          <Typography
+            variant="h2"
+            sx={{ fontSize: 20, color: appColors.textPrimary, textAlign: 'center' }}
+          >
             Bingo Lifecycle
           </Typography>
           <Typography variant="body2" sx={{ color: appColors.textSecondary, textAlign: 'center' }}>
@@ -110,13 +113,21 @@ export function BingoLifecycle({ source, onChanged }: BingoLifecycleProps) {
             </Button>
           </Stack>
 
-          <Box sx={{ width: '100%', border: '1px solid', borderColor: 'error.main', borderRadius: 1, p: 2 }}>
+          <Box
+            sx={{
+              width: '100%',
+              border: '1px solid',
+              borderColor: 'error.main',
+              borderRadius: 1,
+              p: 2,
+            }}
+          >
             <Typography variant="body2" sx={{ color: 'error.main', fontWeight: 700, mb: 1 }}>
               Danger zone
             </Typography>
             <Typography variant="body2" sx={{ color: appColors.textSecondary, mb: 1.5 }}>
-              Permanently deletes this bingo and everything tied to it — teams, tiles, players, submissions, and
-              stored screenshots. This cannot be undone.
+              Permanently deletes this bingo and everything tied to it — teams, tiles, players,
+              submissions, and stored screenshots. This cannot be undone.
             </Typography>
             <Button
               variant="contained"
@@ -158,7 +169,8 @@ export function BingoLifecycle({ source, onChanged }: BingoLifecycleProps) {
       {lc.deleteResult && (
         <Alert severity="success" onClose={lc.dismissDeleteResult} sx={{ width: '100%' }}>
           Deleted 1 bingo, {lc.deleteResult.teams} team{lc.deleteResult.teams === 1 ? '' : 's'},{' '}
-          {lc.deleteResult.tiles} tile{lc.deleteResult.tiles === 1 ? '' : 's'}, {lc.deleteResult.players} player
+          {lc.deleteResult.tiles} tile{lc.deleteResult.tiles === 1 ? '' : 's'},{' '}
+          {lc.deleteResult.players} player
           {lc.deleteResult.players === 1 ? '' : 's'}, {lc.deleteResult.submissions} submission
           {lc.deleteResult.submissions === 1 ? '' : 's'}, {lc.deleteResult.storageObjects} image
           {lc.deleteResult.storageObjects === 1 ? '' : 's'}.
@@ -167,8 +179,10 @@ export function BingoLifecycle({ source, onChanged }: BingoLifecycleProps) {
 
       {lc.cloneResult && (
         <Alert severity="success" onClose={lc.dismissCloneResult} sx={{ width: '100%' }}>
-          Cloned into new draft &quot;{lc.cloneResult.name}&quot; — {lc.cloneResult.tilesCloned} tile
-          {lc.cloneResult.tilesCloned === 1 ? '' : 's'} copied. It&apos;s now loaded above for editing.
+          Cloned into new draft &quot;{lc.cloneResult.name}&quot; — {lc.cloneResult.tilesCloned}{' '}
+          tile
+          {lc.cloneResult.tilesCloned === 1 ? '' : 's'} copied. It&apos;s now loaded above for
+          editing.
         </Alert>
       )}
       {lc.cloneConflict && (

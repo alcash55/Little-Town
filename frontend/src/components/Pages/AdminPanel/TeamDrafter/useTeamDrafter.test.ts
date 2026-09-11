@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useTeamDrafter, normalizeRsnForMatch } from './useTeamDrafter';
+// Cross-package import by relative path, not a published module — the
+// frontend build never ships this file, but a test file can reach across
+// the repo to compare the two copies directly (issue #49). If this import
+// starts failing to resolve, backend/src/lib/rsn.ts moved or was renamed;
+// update the path rather than deleting the test.
+import { canonicalizeRsn, normalizeRsn } from '../../../../../../backend/src/lib/rsn';
 
 // Every request goes through fetchWithAuth — mocked so these tests never
 // touch the network (same convention as useBingoOverview.test.ts /
@@ -25,21 +31,63 @@ const BINGO_DETAILS = {
 
 const PLAYERS = {
   data: [
-    { player: { id: 'p-zezima', bingo_id: 'bingo-1', team_id: 'team-1', captain_team_id: null, rsn: 'Zezima', registered_by: null, registered_at: '2026-01-01' } },
-    { player: { id: 'p-woox', bingo_id: 'bingo-1', team_id: 'team-1', captain_team_id: null, rsn: 'Woox', registered_by: null, registered_at: '2026-01-01' } },
+    {
+      player: {
+        id: 'p-zezima',
+        bingo_id: 'bingo-1',
+        team_id: 'team-1',
+        captain_team_id: null,
+        rsn: 'Zezima',
+        registered_by: null,
+        registered_at: '2026-01-01',
+      },
+    },
+    {
+      player: {
+        id: 'p-woox',
+        bingo_id: 'bingo-1',
+        team_id: 'team-1',
+        captain_team_id: null,
+        rsn: 'Woox',
+        registered_by: null,
+        registered_at: '2026-01-01',
+      },
+    },
     // Underscore + trailing space variant to prove the match survives it —
     // mirrors backend/src/lib/rsn.ts canonicalizeRsn's underscore-as-space rule.
-    { player: { id: 'p-lynx', bingo_id: 'bingo-1', team_id: 'team-1', captain_team_id: null, rsn: 'Lynx_Titan', registered_by: null, registered_at: '2026-01-01' } },
+    {
+      player: {
+        id: 'p-lynx',
+        bingo_id: 'bingo-1',
+        team_id: 'team-1',
+        captain_team_id: null,
+        rsn: 'Lynx_Titan',
+        registered_by: null,
+        registered_at: '2026-01-01',
+      },
+    },
   ],
 };
 
 const RSN_CLAIMS = {
   data: [
-    { userId: 'u-linked', username: 'Linkeduser', rsn: 'Zezima', rsnNormalized: 'zezima', claimedAt: '2026-01-02' },
+    {
+      userId: 'u-linked',
+      username: 'Linkeduser',
+      rsn: 'Zezima',
+      rsnNormalized: 'zezima',
+      claimedAt: '2026-01-02',
+    },
     // Claim's stored rsn/rsnNormalized already reflects the canonical "Lynx Titan"
     // form (spaces, not underscores) — proving the pool's underscore variant
     // still matches via normalizeRsnForMatch.
-    { userId: 'u-lynx', username: 'Lynxuser', rsn: 'Lynx Titan', rsnNormalized: 'lynx titan', claimedAt: '2026-01-03' },
+    {
+      userId: 'u-lynx',
+      username: 'Lynxuser',
+      rsn: 'Lynx Titan',
+      rsnNormalized: 'lynx titan',
+      claimedAt: '2026-01-03',
+    },
   ],
 };
 
@@ -81,6 +129,32 @@ describe('normalizeRsnForMatch', () => {
     expect(normalizeRsnForMatch('  Zezima  ')).toBe('zezima');
     expect(normalizeRsnForMatch('B0aty')).toBe('b0aty');
     expect(normalizeRsnForMatch('Multi   Space')).toBe('multi space');
+  });
+
+  // Issue #49: normalizeRsnForMatch duplicates backend/src/lib/rsn.ts's
+  // canonicalizeRsn + normalizeRsn rather than importing them (the frontend
+  // build can't reach into backend/src). This test imports the real backend
+  // module by relative path and runs both implementations over the same
+  // fixture list, so if either side changes without the other, this fails
+  // instead of the two silently drifting apart in production.
+  it('is byte-identical to backend canonicalizeRsn + normalizeRsn for every fixture', () => {
+    const fixtures = [
+      'Lynx_Titan',
+      '  Zezima  ',
+      'B0aty',
+      'Multi   Space',
+      'UPPER_CASE_NAME',
+      'trailing_',
+      '_leading',
+      'a',
+      '  ',
+      'Mixed_Case Name  With_Both',
+    ];
+
+    for (const raw of fixtures) {
+      const backendResult = normalizeRsn(canonicalizeRsn(raw));
+      expect(normalizeRsnForMatch(raw)).toBe(backendResult);
+    }
   });
 });
 
@@ -135,7 +209,8 @@ describe('useTeamDrafter — RSN claims admin (TEAM-BRIEF.md Sprint 17, Track B2
         // rsn-claims deliberately never resolves within this test, so
         // loadingRsnClaims stays true for the whole assertion window.
         if (method === 'GET' && url.endsWith('/rsn-claims')) return new Promise<Response>(() => {});
-        if (method === 'GET' && url.includes('/bingo/details')) return jsonResponse(200, BINGO_DETAILS);
+        if (method === 'GET' && url.includes('/bingo/details'))
+          return jsonResponse(200, BINGO_DETAILS);
         if (method === 'GET' && url.includes('/bingo/players')) return jsonResponse(200, PLAYERS);
         return jsonResponse(200, { data: [] });
       });
@@ -170,7 +245,10 @@ describe('useTeamDrafter — RSN claims admin (TEAM-BRIEF.md Sprint 17, Track B2
         await result.current.confirmReleaseClaim();
       });
 
-      expect(deleteCall).toEqual({ url: expect.stringContaining('/rsn-claims/zezima'), method: 'DELETE' });
+      expect(deleteCall).toEqual({
+        url: expect.stringContaining('/rsn-claims/zezima'),
+        method: 'DELETE',
+      });
       expect(result.current.releaseClaimTarget).toBeNull();
       expect(result.current.releaseClaimError).toBeNull();
     });
@@ -178,7 +256,9 @@ describe('useTeamDrafter — RSN claims admin (TEAM-BRIEF.md Sprint 17, Track B2
     it('surfaces a release failure without closing the dialog', async () => {
       installRouter([
         (url, options) =>
-          options?.method === 'DELETE' ? jsonResponse(404, { success: false, error: 'No RSN claim found for "zezima"' }) : null,
+          options?.method === 'DELETE'
+            ? jsonResponse(404, { success: false, error: 'No RSN claim found for "zezima"' })
+            : null,
       ]);
       const { result } = renderHook(() => useTeamDrafter());
       await waitFor(() => expect(result.current.loadingRsnClaims).toBe(false));
@@ -200,7 +280,10 @@ describe('useTeamDrafter — RSN claims admin (TEAM-BRIEF.md Sprint 17, Track B2
         (url, options) => {
           if (options?.method === 'PATCH') {
             patchBody = JSON.parse(options.body as string);
-            return jsonResponse(200, { success: true, data: { rsn: 'Zezima', userId: 'u-target' } });
+            return jsonResponse(200, {
+              success: true,
+              data: { rsn: 'Zezima', userId: 'u-target' },
+            });
           }
           return null;
         },

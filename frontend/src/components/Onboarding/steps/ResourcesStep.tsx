@@ -17,8 +17,8 @@ const ResourcesStep = ({ onNavigateAway }: Props) => {
         Tips &amp; strategies
       </Typography>
       <Typography variant="body2" sx={{ color: appColors.textSecondary, maxWidth: 380 }}>
-        The Resources page has tips, strats, RuneLite marker configs, and screenshots for the
-        bosses and skills on the board — worth a look before you start grinding tiles.
+        The Resources page has tips, strats, RuneLite marker configs, and screenshots for the bosses
+        and skills on the board — worth a look before you start grinding tiles.
       </Typography>
       <Button
         variant="contained"
@@ -26,7 +26,11 @@ const ResourcesStep = ({ onNavigateAway }: Props) => {
           onNavigateAway();
           navigate('/Resources');
         }}
-        sx={{ bgcolor: appColors.accent, color: appColors.textPrimary, '&:hover': { bgcolor: appColors.accent, opacity: 0.85 } }}
+        sx={{
+          bgcolor: appColors.accent,
+          color: appColors.textPrimary,
+          '&:hover': { bgcolor: appColors.accent, opacity: 0.85 },
+        }}
       >
         Open Resources
       </Button>

@@ -13,7 +13,9 @@ export type InvalidReason = 'expired' | 'used' | 'revoked' | 'unknown';
  *
  *   GET  /api/invites/:token          -> { valid, reason?, role? }
  *   POST /api/invites/:token/accept   { username, password, nickname? }
- *                                      -> 201 { success: true, data: { user, token, expiresAt } }
+ *                                      -> 201 { success: true, data: { user, expiresAt } }
+ *                                         (the JWT itself is set as an httpOnly cookie —
+ *                                         issue #53 — never in this body)
  *                                      -> 404/410 { error, code } for a token that's gone bad
  *                                      -> 400 { error, code? } for a rejected username/password
  */
@@ -25,7 +27,7 @@ type ValidateJson = {
 
 type AcceptSuccessJson = {
   success: true;
-  data: { user: User; token: string; expiresAt: string };
+  data: { user: User; expiresAt: string };
 };
 
 type AcceptErrorJson = {
@@ -73,7 +75,7 @@ export const useInviteAccept = () => {
     setCheckState('checking');
     try {
       const res = await fetch(`${BASE_URL}/api/invites/${encodeURIComponent(token)}`);
-      const json: ValidateJson = await res.json().catch(() => ({}) as ValidateJson);
+      const json: ValidateJson = await res.json().catch(() => ({} as ValidateJson));
       if (!res.ok) throw new Error('Invite lookup failed');
 
       if (json.valid) {
@@ -102,6 +104,7 @@ export const useInviteAccept = () => {
         const res = await fetch(`${BASE_URL}/api/invites/${encodeURIComponent(token)}/accept`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             username,
             password,
@@ -110,10 +113,10 @@ export const useInviteAccept = () => {
         });
         const json: AcceptSuccessJson | AcceptErrorJson = await res
           .json()
-          .catch(() => ({}) as AcceptErrorJson);
+          .catch(() => ({} as AcceptErrorJson));
 
         if (res.ok && 'data' in json && json.data) {
-          completeSession({ user: json.data.user, token: json.data.token });
+          completeSession({ user: json.data.user });
           // Land straight in the app rather than showing our own "you're in"
           // screen — OnboardingProvider (see components/Onboarding) already
           // auto-opens its welcome wizard for a user's first authenticated

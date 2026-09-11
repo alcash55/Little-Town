@@ -51,6 +51,7 @@ export interface PlayerSnapshotResult {
  * accounts; side-account results are reported separately in `sideResults`.
  */
 export async function snapshotStartAndCurrent(
+  bingoId: string,
   players: BingoPlayer[],
   source: RsnChangeSource,
   retakeExisting = false,
@@ -93,7 +94,7 @@ export async function snapshotStartAndCurrent(
   // the same retakeExisting treatment as their parent — they feed the same
   // team-total math (services/completionEngine.ts), so an activation must
   // rebaseline them too, not just the primary account.
-  const sideResults = await snapshotAllSideAccounts(players, ["start", "current"], source, retakeExisting);
+  const sideResults = await snapshotAllSideAccounts(bingoId, players, ["start", "current"], source, retakeExisting);
 
   return { succeeded, failed, results, sideResults };
 }
@@ -112,7 +113,7 @@ export async function takeActivationSnapshots(
   // retakeExisting: true — see snapshotStartAndCurrent's doc comment.
   // Activation is the only call site that should ever move an existing
   // start baseline.
-  return snapshotStartAndCurrent(players, source, true);
+  return snapshotStartAndCurrent(bingoId, players, source, true);
 }
 
 function toPlayerSnapshotResults(

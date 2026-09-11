@@ -127,6 +127,39 @@ SUPABASE_SERVICE_ROLE_KEY=<hosted service role key>
 | GET    | `/api/hiscores/skills/list`     | None     | List of all OSRS skills (scraped from wiki)     |
 | GET    | `/api/hiscores/activities/list` | None     | List of all OSRS activities (scraped from wiki) |
 
+### Bingo
+
+| Method | Path                          | Auth              | Description                                        |
+| ------ | ----------------------------- | ------------------ | --------------------------------------------------- |
+| GET    | `/api/bingo/board`            | Optional           | Active bingo board and tiles. See below.             |
+| GET    | `/api/bingo/team-data`        | Required           | Bingo-relevant skill/activity deltas for every team, grouped by team. |
+| GET    | `/api/bingo/my-team-data`     | Required           | Progress for the caller's own team: players, tiles, and per-tile completion. |
+| GET    | `/api/bingo/team-xp-history`  | Required           | Bucketed team XP history for the `BingoScores` chart. |
+| GET    | `/api/bingo/:bingoId/conflicts` | admin, moderator | Main/side accounts of the same player gaining XP in overlapping windows. |
+
+`GET /board` is the one bingo read route that does not require login, via
+`optionalAuth` rather than the router-level `protect` every other route
+below it uses. A request with no token, an invalid token, or an expired
+token is always treated as anonymous, never a 401. Anonymous callers get
+the same board layout, tasks, and points as any authenticated non-member;
+what differs is `myTeam`, which is `null` for them and every tile's
+`completedByMyTeam`/`pendingByMyTeam`, which are `false`. The per-team
+lookup query never runs for an anonymous caller, so there is no path where
+an anonymous request resolves to someone else's team. Response shape:
+
+```
+{ active: false }
+{ active: false, ended: { name, endDate } }   // most recent bingo has ended
+{ active: true,
+  bingo: { id, name, boardSize },
+  myTeam: { id, name } | null,
+  tiles: [{ id, task, type, points, targetValue, completedByMyTeam, pendingByMyTeam }] }
+```
+
+`active` means `bingo.status === 'active'` specifically, not `draft`. See
+`src/routes/bingo.ts` for the full contract history; it is a frozen public
+response shape and additive-only.
+
 ### Admin
 
 All admin routes require a valid JWT with role `admin` or `moderator`.
@@ -231,3 +264,28 @@ TEST_SUPABASE_URL=http://127.0.0.1:54321 \
 TEST_SUPABASE_SERVICE_ROLE_KEY=<local service_role key from db:status> \
 bun test             # explicit override, e.g. in CI
 ```
+
+### CI (issue #41)
+
+`.github/workflows/ci.yml`'s `backend` job starts the local Supabase stack
+itself (`bun x supabase start` — a fresh CI runner has Docker already, and a
+first start on an empty volume applies every migration plus `seed.sql`, same
+as `db:reset`) and points `TEST_SUPABASE_URL`/`TEST_SUPABASE_SERVICE_ROLE_KEY`
+at it before running `bun test`. Chosen over a dedicated hosted Supabase
+project used only for CI because it needs no secrets, no external dependency,
+and no rotation discipline — the cost is a slower CI run (the stack has to
+boot), which was worth it here.
+
+Two extra guardrails beyond just setting the env vars, both landed because a
+"looks green" CI run is exactly what issue #41 was about:
+
+- A reachability check (`curl` against the local REST endpoint) runs before
+  the test step and fails the job outright if the stack isn't actually up,
+  rather than letting `tests/integration/helpers.ts`'s own reachability
+  check quietly skip every integration test the way it's designed to for a
+  developer's local machine.
+- A step after the test run parses `bun test`'s own `<N> skip` summary line
+  and fails the job if it's above a small buffer (10, for tests that skip
+  for a real, current reason — see the workflow file's comment). This is the
+  actual regression guard: it's what would have caught 287/526 skipping
+  silently in the first place.

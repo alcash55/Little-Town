@@ -85,7 +85,11 @@ export function RsnClaimsTab(props: ReturnType<typeof useTeamDrafter>) {
           <Typography variant="h2" sx={{ fontSize: 20, mb: 0.5, color: textPrimary }}>
             RSN Claims{' '}
             {!loadingRsnClaims && (
-              <Typography component="span" variant="body1" sx={{ color: textSecondary, fontSize: 14 }}>
+              <Typography
+                component="span"
+                variant="body1"
+                sx={{ color: textSecondary, fontSize: 14 }}
+              >
                 ({rsnClaims.length})
               </Typography>
             )}

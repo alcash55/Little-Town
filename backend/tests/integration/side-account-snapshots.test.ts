@@ -118,7 +118,7 @@ describe.skipIf(!suite)("snapshotStartAndCurrent — side accounts (activation /
   });
 
   test("activation writes start+current snapshots for the resolvable side account", async () => {
-    const { succeeded, failed, sideResults } = await snapshotStartAndCurrent([player], "drafter");
+    const { succeeded, failed, sideResults } = await snapshotStartAndCurrent(bingo.id, [player], "drafter");
 
     // Main account unaffected by side-account outcomes either way.
     expect(succeeded).toBe(1);
@@ -142,7 +142,7 @@ describe.skipIf(!suite)("snapshotStartAndCurrent — side accounts (activation /
   test("a failed side lookup does not touch the parent player's own snapshot rows", async () => {
     // Re-run (as retake-start-snapshots would) — main account's start row
     // must stay exactly one row (idempotent), unaffected by the still-bad side account.
-    await snapshotStartAndCurrent([player], "drafter");
+    await snapshotStartAndCurrent(bingo.id, [player], "drafter");
     expect(await countHiscoreRows(player.id, "start")).toBe(1);
     expect(await countHiscoreRows(player.id, "current")).toBe(1);
   });
@@ -160,7 +160,7 @@ describe.skipIf(!suite)("snapshotStartAndCurrent — side accounts (activation /
   test("fixing the bad side account's RSN and retaking succeeds without duplicating the good one's rows", async () => {
     unresolvableRsns.delete(badSideRsn);
 
-    const { sideResults } = await snapshotStartAndCurrent([player], "drafter");
+    const { sideResults } = await snapshotStartAndCurrent(bingo.id, [player], "drafter");
     const badResult = sideResults.find((r) => r.sideAccountId === badSideId)!;
     expect(badResult.ok).toBe(true);
 

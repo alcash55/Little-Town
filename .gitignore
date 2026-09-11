@@ -1,3 +1,4 @@
 
 # Agent worktrees (never commit)
 .claude/worktrees/
+.playwright-cli/

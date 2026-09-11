@@ -1,8 +1,7 @@
 import { Router, Request, Response } from "express";
-import jwt, { SignOptions } from "jsonwebtoken";
-import { getJwtSecret } from "../lib/jwt.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { protect } from "../middleware/auth.js";
+import { signSession, setAuthCookie, clearAuthCookie } from "../lib/session.js";
 import {
   ApiResponse,
   LoginRequest,
@@ -36,26 +35,17 @@ router.post(
       });
     }
 
-    // Generate JWT token
-    const expiresIn = (process.env.JWT_EXPIRES_IN || "24h") as SignOptions["expiresIn"];
-    const token = jwt.sign(
-      { id: user.id, username: user.username, role: user.role },
-      getJwtSecret(),
-      { expiresIn },
-    );
-
-    // Read the actual `exp` claim back off the token so expiresAt always
-    // matches what was signed, regardless of JWT_EXPIRES_IN's format.
-    const decoded = jwt.decode(token) as { exp?: number } | null;
-    const expiresAt = decoded?.exp
-      ? new Date(decoded.exp * 1000).toISOString()
-      : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    // Issue #53: the token travels only as an httpOnly cookie, never in the
+    // response body — a script running on the page (XSS, a compromised
+    // dependency, a browser extension) cannot read an httpOnly cookie the
+    // way it could read localStorage.
+    const { token, expiresAt } = signSession(user);
+    setAuthCookie(res, token);
 
     const response: ApiResponse<LoginResponse> = {
       success: true,
       data: {
         user,
-        token,
         expiresAt,
       },
     };
@@ -78,11 +68,15 @@ router.get(
   }),
 );
 
-// Logout route (client-side token removal)
+// Logout route — clears the httpOnly auth cookie server-side. Required now
+// that the token isn't in localStorage: the frontend has no other way to
+// drop a cookie it can't read (issue #53).
 router.post(
   "/logout",
   protect,
   asyncHandler(async (req: Request, res: Response) => {
+    clearAuthCookie(res);
+
     const response: ApiResponse = {
       success: true,
       message: "Logged out successfully",

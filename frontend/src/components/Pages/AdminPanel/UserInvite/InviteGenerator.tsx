@@ -15,12 +15,7 @@ import {
 } from '@mui/material';
 import LinkIcon from '@mui/icons-material/Link';
 import { appColors } from '../../../../layout/Theme';
-import {
-  EXPIRY_PRESETS,
-  INVITE_ROLES,
-  Invite,
-  InviteRole,
-} from './useUserInvite';
+import { EXPIRY_PRESETS, INVITE_ROLES, Invite, InviteRole } from './useUserInvite';
 import InviteCopyButton from './InviteCopyButton';
 
 const DEFAULT_ROLE: InviteRole = 'user';
@@ -56,7 +51,11 @@ const InviteGenerator = ({
           Generate an invite link
         </Typography>
 
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: { sm: 'center' } }}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={2}
+          sx={{ alignItems: { sm: 'center' } }}
+        >
           <FormControl size="small" sx={{ minWidth: 160 }}>
             <InputLabel id="invite-role-label">Role</InputLabel>
             <Select

@@ -98,11 +98,19 @@ const InviteList = ({
           <Table size="small" aria-label="Invite links">
             <TableHead>
               <TableRow>
-                <TableCell sx={{ color: appColors.textSecondary, fontWeight: 700 }}>Status</TableCell>
+                <TableCell sx={{ color: appColors.textSecondary, fontWeight: 700 }}>
+                  Status
+                </TableCell>
                 <TableCell sx={{ color: appColors.textSecondary, fontWeight: 700 }}>Role</TableCell>
-                <TableCell sx={{ color: appColors.textSecondary, fontWeight: 700 }}>Created</TableCell>
-                <TableCell sx={{ color: appColors.textSecondary, fontWeight: 700 }}>Expires</TableCell>
-                <TableCell sx={{ color: appColors.textSecondary, fontWeight: 700 }}>Used by</TableCell>
+                <TableCell sx={{ color: appColors.textSecondary, fontWeight: 700 }}>
+                  Created
+                </TableCell>
+                <TableCell sx={{ color: appColors.textSecondary, fontWeight: 700 }}>
+                  Expires
+                </TableCell>
+                <TableCell sx={{ color: appColors.textSecondary, fontWeight: 700 }}>
+                  Used by
+                </TableCell>
                 <TableCell align="right" sx={{ color: appColors.textSecondary, fontWeight: 700 }}>
                   Actions
                 </TableCell>
@@ -120,13 +128,23 @@ const InviteList = ({
                     <TableCell sx={{ color: appColors.textPrimary, textTransform: 'capitalize' }}>
                       {invite.role}
                     </TableCell>
-                    <TableCell sx={{ color: appColors.textSecondary }}>{fmt(invite.createdAt)}</TableCell>
-                    <TableCell sx={{ color: appColors.textSecondary }}>{fmt(invite.expiresAt)}</TableCell>
-                    <TableCell sx={{ color: appColors.textSecondary }}>{invite.usedBy ?? '—'}</TableCell>
+                    <TableCell sx={{ color: appColors.textSecondary }}>
+                      {fmt(invite.createdAt)}
+                    </TableCell>
+                    <TableCell sx={{ color: appColors.textSecondary }}>
+                      {fmt(invite.expiresAt)}
+                    </TableCell>
+                    <TableCell sx={{ color: appColors.textSecondary }}>
+                      {invite.usedBy ?? '—'}
+                    </TableCell>
                     <TableCell align="right">
                       <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'flex-end' }}>
                         <InviteCopyButton url={invite.url} label="invite link" />
-                        <Tooltip title={status === 'active' ? 'Revoke' : 'Only active invites can be revoked'}>
+                        <Tooltip
+                          title={
+                            status === 'active' ? 'Revoke' : 'Only active invites can be revoked'
+                          }
+                        >
                           <span>
                             <Button
                               size="small"

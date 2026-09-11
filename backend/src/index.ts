@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { assertEnvironmentSafety } from "./config/envGuard.js";
-import { CORS_ALLOWED_HEADERS } from "./config/cors.js";
+import { CORS_ALLOWED_HEADERS, buildDevCorsOrigins } from "./config/cors.js";
 assertEnvironmentSafety();
 import express, { Request, Response } from "express";
 import cors from "cors";
@@ -8,6 +8,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { rateLimitKey } from "./middleware/rateLimitKey.js";
+import { loginLimiter } from "./middleware/loginLimiter.js";
 import authRoutes from "./routes/auth.js";
 import hiscoresRoutes from "./routes/hiscores.js";
 import adminRoutes from "./routes/admin.js";
@@ -35,15 +36,10 @@ const configuredCorsOrigins = [
   .map((value) => value.trim())
   .filter(Boolean);
 
-const devCorsOrigins = [
-  "http://localhost:3000",
-  "http://127.0.0.1:3000",
-];
-
 const allowedCorsOrigins =
   process.env.NODE_ENV === "production"
     ? configuredCorsOrigins
-    : Array.from(new Set([...configuredCorsOrigins, ...devCorsOrigins]));
+    : Array.from(new Set([...configuredCorsOrigins, ...buildDevCorsOrigins()]));
 
 // Security middleware
 app.use(helmet());
@@ -100,15 +96,6 @@ const limiter = rateLimit({
 });
 app.use("/api/", limiter);
 
-// Stricter limiter on the login route to slow down credential stuffing/brute
-// force — fixed 15 min window regardless of RATE_LIMIT_WINDOW_MS.
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10, // limit each IP to 10 login attempts per 15 minutes
-  message: {
-    error: "Too many login attempts from this IP, please try again later.",
-  },
-});
 app.use("/api/auth/login", loginLimiter);
 
 // Public invite lookup/accept has no auth of its own beyond the token
