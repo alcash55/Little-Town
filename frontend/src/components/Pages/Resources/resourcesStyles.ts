@@ -1,4 +1,8 @@
-import { textPrimary, textSecondary, subtleBorder } from '../AdminPanel/TeamDrafter/teamDrafterStyles';
+import {
+  textPrimary,
+  textSecondary,
+  subtleBorder,
+} from '../AdminPanel/TeamDrafter/teamDrafterStyles';
 
 export { textPrimary, textSecondary, subtleBorder };
 

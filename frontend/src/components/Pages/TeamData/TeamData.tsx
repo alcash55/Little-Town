@@ -162,8 +162,8 @@ const TeamData = () => {
         <Typography
           sx={{ color: appColors.textSecondary, textAlign: 'center', width: '100%', mt: 4 }}
         >
-          Your RSN is confirmed, but you haven't been drafted onto a team yet — check back once
-          an admin sets up teams.
+          Your RSN is confirmed, but you haven't been drafted onto a team yet — check back once an
+          admin sets up teams.
         </Typography>
       )}
 

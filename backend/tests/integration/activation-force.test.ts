@@ -148,7 +148,7 @@ describe.skipIf(!suite)("activateBingoWithSnapshots + snapshotStartAndCurrent (r
   });
 
   test("retake-start-snapshots equivalent while still unresolvable: no snapshot, RSN change logged", async () => {
-    const { succeeded, failed } = await snapshotStartAndCurrent([badPlayer], "drafter");
+    const { succeeded, failed } = await snapshotStartAndCurrent(bingo.id, [badPlayer], "drafter");
     expect(succeeded).toBe(0);
     expect(failed).toHaveLength(1);
     expect(await countHiscoreRows(badPlayer.id, "start")).toBe(0);
@@ -165,7 +165,7 @@ describe.skipIf(!suite)("activateBingoWithSnapshots + snapshotStartAndCurrent (r
   test("retake after the RSN starts resolving: snapshot is taken exactly once", async () => {
     unresolvableRsns.delete(badRsn);
 
-    const first = await snapshotStartAndCurrent([badPlayer], "drafter");
+    const first = await snapshotStartAndCurrent(bingo.id, [badPlayer], "drafter");
     expect(first.succeeded).toBe(1);
     expect(await countHiscoreRows(badPlayer.id, "start")).toBe(1);
 
@@ -180,13 +180,13 @@ describe.skipIf(!suite)("activateBingoWithSnapshots + snapshotStartAndCurrent (r
     expect(data).toBeNull();
 
     // Idempotency: calling again must not create a duplicate start row.
-    const second = await snapshotStartAndCurrent([badPlayer], "drafter");
+    const second = await snapshotStartAndCurrent(bingo.id, [badPlayer], "drafter");
     expect(second.succeeded).toBe(1);
     expect(await countHiscoreRows(badPlayer.id, "start")).toBe(1);
   });
 
   test("calling with an empty player list is a no-op, not an error", async () => {
-    const outcome = await snapshotStartAndCurrent([], "drafter");
+    const outcome = await snapshotStartAndCurrent(bingo.id, [], "drafter");
     expect(outcome).toEqual({ succeeded: 0, failed: [], results: [], sideResults: [] });
   });
 });

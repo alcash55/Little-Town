@@ -3,7 +3,7 @@ import { asyncHandler } from "../middleware/errorHandler.js";
 import { protect, authorize, optionalAuth } from "../middleware/auth.js";
 import { ApiResponse } from "../types/index.js";
 import { getActiveBingo, getActiveBingoBoard, getLatestBingo } from "../db/bingos.js";
-import { getAllPlayerSnapshots, resolveMyBingoPlayer } from "../db/players.js";
+import { resolveMyBingoPlayer } from "../db/players.js";
 import {
   buildDropStatusByRsn,
   buildBoardTileCompletion,
@@ -12,7 +12,14 @@ import {
 import { getBingoConflicts } from "../db/conflicts.js";
 import { getTeamXpHistory } from "../db/teamXpHistory.js";
 import { getDb } from "../db/client.js";
-import { computeBingoCompletion, normalizeTaskText, type EngineTile } from "../services/completionEngine.js";
+import {
+  computeBingoCompletion,
+  loadPlayerRosterWithAccounts,
+  normalizeTaskText,
+  playerMetricDelta,
+  type EngineTile,
+  type EnginePlayer,
+} from "../services/completionEngine.js";
 
 const router = Router();
 
@@ -213,7 +220,7 @@ router.get(
     const filterSkills = trackedSkills.size > 0;
     const filterActivities = trackedActivities.size > 0;
 
-    const rows = await getAllPlayerSnapshots(bingo.id);
+    const rows = await loadPlayerRosterWithAccounts(bingo.id);
 
     // Build teamId -> name lookup
     const teamNameById: Record<string, string> = {};
@@ -221,18 +228,29 @@ router.get(
       teamNameById[t.id] = t.name;
     }
 
-    const playerData = rows.map(({ player, start, current }) => {
+    const playerData = rows.map(({ player, start, current, accounts }) => {
+      // Delta math goes through playerMetricDelta (services/completionEngine.ts)
+      // rather than diffing start/current by hand, so a side account's gains
+      // land in this roster sum exactly like they do in the engine's own
+      // teamProgress figure for the same tile (#54 — the two used to
+      // disagree because this loop only ever read the main account).
+      const enginePlayer: EnginePlayer = { playerId: player.id, teamId: player.team_id, accounts };
+
       // Skill XP deltas — only for skills referenced by an Experience tile.
       // Keyed by normalizeTaskText(curr.name) (D1 fix, TEAM-BRIEF.md Sprint
       // 14) — see the /my-team-data block below for the full rationale;
-      // this roster block carries the identical bug/fix.
+      // this roster block carries the identical bug/fix. Names are
+      // discovered from the main account's current snapshot only (every
+      // OSRS account returns the same fixed skill/activity list, so this
+      // doesn't miss a side-account-only metric — see buildHiscoreVocab's
+      // doc comment).
       const skillDeltas: Record<string, number> = {};
       if (start?.skills && current?.skills) {
         for (const curr of current.skills as Array<{ id: number; name: string; xp: number }>) {
           if (filterSkills && !trackedSkills.has(curr.name.toLowerCase())) continue;
-          const startSkill = (start.skills as typeof curr[]).find((s) => s.id === curr.id);
-          const delta = curr.xp - (startSkill?.xp ?? curr.xp);
-          if (delta > 0) skillDeltas[normalizeTaskText(curr.name)] = delta;
+          const normalizedName = normalizeTaskText(curr.name);
+          const delta = playerMetricDelta(enginePlayer, { kind: "skill", normalizedName });
+          if (delta > 0) skillDeltas[normalizedName] = delta;
         }
       }
 
@@ -241,9 +259,9 @@ router.get(
       if (start?.activities && current?.activities) {
         for (const curr of current.activities as Array<{ id: number; name: string; kc: number }>) {
           if (filterActivities && !trackedActivities.has(curr.name.toLowerCase())) continue;
-          const startAct = (start.activities as typeof curr[]).find((a) => a.id === curr.id);
-          const delta = curr.kc - (startAct?.kc ?? curr.kc);
-          if (delta > 0) activityDeltas[normalizeTaskText(curr.name)] = delta;
+          const normalizedName = normalizeTaskText(curr.name);
+          const delta = playerMetricDelta(enginePlayer, { kind: "activity", normalizedName });
+          if (delta > 0) activityDeltas[normalizedName] = delta;
         }
       }
 
@@ -336,7 +354,7 @@ router.get(
     const filterActivities = trackedActivities.size > 0;
 
     // Get all snapshots, filtered to this team
-    const rows = await getAllPlayerSnapshots(bingo.id);
+    const rows = await loadPlayerRosterWithAccounts(bingo.id);
     const teamNameById: Record<string, string> = {};
     for (const t of bingo.teamObjects ?? []) teamNameById[t.id] = t.name;
 
@@ -358,14 +376,21 @@ router.get(
     // convention end to end, producer (here) and consumer
     // (frontend/.../TeamData/helpers.ts's getTileCell, which now looks up
     // by normalizeTaskText(tile.task) instead of the raw tile.task).
-    const playerData = teamRows.map(({ player, start, current }) => {
+    //
+    // Delta math goes through playerMetricDelta rather than diffing start/
+    // current by hand, so this per-player breakdown sums to the same figure
+    // as `teamProgress` below for the same tile (#54 — side accounts used to
+    // be summed into teamProgress but not into this breakdown).
+    const playerData = teamRows.map(({ player, start, current, accounts }) => {
+      const enginePlayer: EnginePlayer = { playerId: player.id, teamId: player.team_id, accounts };
+
       const skillDeltas: Record<string, number> = {};
       if (start?.skills && current?.skills) {
         for (const curr of current.skills as Array<{ id: number; name: string; xp: number }>) {
           if (filterSkills && !trackedSkills.has(curr.name.toLowerCase())) continue;
-          const startSkill = (start.skills as typeof curr[]).find((s) => s.id === curr.id);
-          const delta = curr.xp - (startSkill?.xp ?? curr.xp);
-          if (delta > 0) skillDeltas[normalizeTaskText(curr.name)] = delta;
+          const normalizedName = normalizeTaskText(curr.name);
+          const delta = playerMetricDelta(enginePlayer, { kind: "skill", normalizedName });
+          if (delta > 0) skillDeltas[normalizedName] = delta;
         }
       }
 
@@ -373,9 +398,9 @@ router.get(
       if (start?.activities && current?.activities) {
         for (const curr of current.activities as Array<{ id: number; name: string; kc: number }>) {
           if (filterActivities && !trackedActivities.has(curr.name.toLowerCase())) continue;
-          const startAct = (start.activities as typeof curr[]).find((a) => a.id === curr.id);
-          const delta = curr.kc - (startAct?.kc ?? curr.kc);
-          if (delta > 0) activityDeltas[normalizeTaskText(curr.name)] = delta;
+          const normalizedName = normalizeTaskText(curr.name);
+          const delta = playerMetricDelta(enginePlayer, { kind: "activity", normalizedName });
+          if (delta > 0) activityDeltas[normalizedName] = delta;
         }
       }
 

@@ -83,7 +83,7 @@ describe('getTileCell — Drops tiles (dropStatus key casing)', () => {
 // normalizeTaskText — this suite pins the exact prod repro shape plus the
 // shared normalizer contract itself.
 describe('normalizeTaskText', () => {
-  it('mirrors backend/src/services/completionEngine.ts\'s normalizeTaskText exactly: trim, lowercase, collapse whitespace', () => {
+  it("mirrors backend/src/services/completionEngine.ts's normalizeTaskText exactly: trim, lowercase, collapse whitespace", () => {
     expect(normalizeTaskText('Hitpoints')).toBe('hitpoints');
     expect(normalizeTaskText('  General   Graardor  ')).toBe('general graardor');
   });

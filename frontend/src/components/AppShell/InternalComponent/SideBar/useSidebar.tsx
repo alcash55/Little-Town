@@ -90,18 +90,18 @@ const allSidebarItems: SidebarItem[] = [
       {
         title: 'Bingo Overview',
         href: '/AdminPanel/BingoOverview',
-        icon: <QueryStats />
+        icon: <QueryStats />,
       },
       {
         title: 'Maintenance',
         href: '/AdminPanel/Maintenance',
-        icon: <Build />
+        icon: <Build />,
       },
       {
         title: 'User Invites',
         href: '/AdminPanel/UserInvite',
-        icon: <PersonAddAlt1 />
-      }
+        icon: <PersonAddAlt1 />,
+      },
     ],
   },
   {
@@ -140,7 +140,6 @@ const allSidebarItems: SidebarItem[] = [
     href: '/Resources',
     icon: <DriveFileMove />,
     roles: ['public', 'user', 'admin', 'moderator'],
-
   },
   {
     title: 'Discord',
@@ -150,7 +149,7 @@ const allSidebarItems: SidebarItem[] = [
   },
 ];
 
-export const SidebarProvider = ({ children }: PropsWithChildren<{}>) => {
+export const SidebarProvider = ({ children }: PropsWithChildren) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [sidebar, setSidebar] = useState<SidebarItem[]>([]);
   // Effective role, not the raw session role (TEAM-BRIEF.md Sprint 10, Track

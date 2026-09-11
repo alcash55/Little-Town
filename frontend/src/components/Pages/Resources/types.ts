@@ -5,21 +5,9 @@
  * with this shape; do not drift without updating the brief.
  */
 
-export type SectionKind =
-  | 'guides'
-  | 'tileMarkers'
-  | 'dataSheets'
-  | 'media'
-  | 'tools'
-  | 'text';
+export type SectionKind = 'guides' | 'tileMarkers' | 'dataSheets' | 'media' | 'tools' | 'text';
 
-export type LinkKind =
-  | 'youtube'
-  | 'streamable'
-  | 'imgur'
-  | 'sheet'
-  | 'wiki'
-  | 'other';
+export type LinkKind = 'youtube' | 'streamable' | 'imgur' | 'sheet' | 'wiki' | 'other';
 
 export type RuneliteKind = 'npcMarkers' | 'tileMarkers' | 'other';
 

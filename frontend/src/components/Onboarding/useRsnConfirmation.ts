@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchWithAuth } from '../../utils/fetchWithAuth';
 
-const ONBOARDING_BASE_URL = `${import.meta.env.VITE_BASEURL || 'http://localhost:8081'}/api/onboarding`;
+const ONBOARDING_BASE_URL = `${
+  import.meta.env.VITE_BASEURL || 'http://localhost:8081'
+}/api/onboarding`;
 
 /**
  * After this many consecutive claim-service failures (network error, or an
@@ -160,7 +162,7 @@ export const useRsnConfirmation = (): RsnConfirmation => {
 
       const json: ClaimSuccessJson & ClaimErrorJson = await res
         .json()
-        .catch(() => ({}) as ClaimSuccessJson & ClaimErrorJson);
+        .catch(() => ({} as ClaimSuccessJson & ClaimErrorJson));
       const outcome = classifyClaimStatus(res.status, json.code);
 
       if (outcome === 'down') {

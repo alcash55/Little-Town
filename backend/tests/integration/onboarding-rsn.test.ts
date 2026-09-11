@@ -52,6 +52,7 @@ import {
   insertTestBingo,
   deleteTestBingo,
   countBingoPlayerRows,
+  getBingoPlayerRsnSpellings,
   uniqueSuffix,
   type BingoRow,
 } from "./helpers.js";
@@ -345,10 +346,18 @@ describe.skipIf(!stack.reachable)("POST /api/onboarding/rsn", () => {
     expect(status).toBe(200);
     expect(body.alreadyTracked).toBe(true);
 
-    // Still exactly one pool row for this RSN (case-insensitively) — no
-    // duplicate "OnboardPreRegXYZ" row alongside the original lowercase one.
+    // Still exactly one pool row for this RSN, and it still carries the
+    // original lowercase spelling, so the pre-registered row was linked
+    // rather than replaced by a differently-cased duplicate.
+    //
+    // Counting by the mixed-case spelling cannot show this any more.
+    // `bingo_players.rsn` became `citext` in 20260910000000, so `.eq()`
+    // matches every casing and that count is now 1 by design. Asserting the
+    // stored spelling is what still distinguishes "reused" from "replaced".
     expect(await countBingoPlayerRows(bingo.id, preRegistered.toLowerCase())).toBe(1);
-    expect(await countBingoPlayerRows(bingo.id, preRegistered)).toBe(0);
+    expect(await getBingoPlayerRsnSpellings(bingo.id, preRegistered)).toEqual([
+      preRegistered.toLowerCase(),
+    ]);
   });
 
   test("pool membership: claimed RSN is present in the active bingo's player pool with no team assigned", async () => {

@@ -123,16 +123,18 @@ const TeamRoster = ({ teams, players }: { teams: BingoTeam[]; players: BingoPlay
                   {members.map((p) => {
                     const isCaptain = p.captain_team_id === team.id;
                     return (
-                      <Stack key={p.rsn} direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
+                      <Stack
+                        key={p.rsn}
+                        direction="row"
+                        spacing={0.75}
+                        sx={{ alignItems: 'center' }}
+                      >
                         {isCaptain && (
                           <Tooltip title="Captain">
                             <StarIcon sx={{ fontSize: 13, color: '#FFD700' }} />
                           </Tooltip>
                         )}
-                        <Typography
-                          variant="body2"
-                          sx={{ fontWeight: isCaptain ? 600 : 400 }}
-                        >
+                        <Typography variant="body2" sx={{ fontWeight: isCaptain ? 600 : 400 }}>
                           {p.rsn}
                         </Typography>
                       </Stack>
@@ -282,9 +284,7 @@ const BingoOverview = () => {
   // page render as if there's definitely no bingo (same pattern as
   // BingoDetails/BoardBuilder — bug-report investigation, prod incident).
   if (permissionDenied) {
-    return (
-      <PageLayout title="Bingo Overview" align="center" permissionDenied />
-    );
+    return <PageLayout title="Bingo Overview" align="center" permissionDenied />;
   }
 
   if (error) {
@@ -460,8 +460,8 @@ const BingoOverview = () => {
           sx={{ width: '100%' }}
         >
           <Typography variant="body2" sx={{ fontWeight: 700 }}>
-            Bingo ended with {latestPendingCount} screenshot{latestPendingCount > 1 ? 's' : ''} awaiting
-            review
+            Bingo ended with {latestPendingCount} screenshot{latestPendingCount > 1 ? 's' : ''}{' '}
+            awaiting review
           </Typography>
         </Alert>
       )}
@@ -487,8 +487,8 @@ const BingoOverview = () => {
       {/* ── RSN-stale alert ── */}
       {staleCount > 0 && (
         <Alert severity="warning" icon={<GppMaybeIcon />} sx={{ width: '100%' }}>
-          {staleCount} player{staleCount > 1 ? 's have' : ' has'} an RSN that may have changed —
-          see the flagged rows in Player Stats below.
+          {staleCount} player{staleCount > 1 ? 's have' : ' has'} an RSN that may have changed — see
+          the flagged rows in Player Stats below.
         </Alert>
       )}
       {/* ── Player stats load failure (distinct from the fatal page error above) ── */}
@@ -524,9 +524,9 @@ const BingoOverview = () => {
           sx={{ width: '100%' }}
         >
           {unattributedTiles} Drops tile completion{unattributedTiles > 1 ? 's are' : ' is'} not
-          linked to a specific player (approved without picking one) — counted in the totals
-          above, but won&apos;t appear in the Player Stats table below until fixed on the
-          Screenshot Submissions page&apos;s &quot;Needs Player Attribution&quot; list.
+          linked to a specific player (approved without picking one) — counted in the totals above,
+          but won&apos;t appear in the Player Stats table below until fixed on the Screenshot
+          Submissions page&apos;s &quot;Needs Player Attribution&quot; list.
         </Alert>
       )}
       {/* ── Unresolvable tiles: trackable-type (Kill Count/Experience) tiles
@@ -565,8 +565,17 @@ const BingoOverview = () => {
 
       {/* ── Summary stat tiles (KPI row) ── */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, width: '100%' }}>
-        <StatTile icon={<EmojiEventsIcon />} label="Bingo" value={bingo.name} sub={fmt(bingo.endDate)} />
-        <StatTile icon={<ScoreboardIcon />} label="Total Points Scored" value={totalPoints.toLocaleString()} />
+        <StatTile
+          icon={<EmojiEventsIcon />}
+          label="Bingo"
+          value={bingo.name}
+          sub={fmt(bingo.endDate)}
+        />
+        <StatTile
+          icon={<ScoreboardIcon />}
+          label="Total Points Scored"
+          value={totalPoints.toLocaleString()}
+        />
         <StatTile icon={<GridViewIcon />} label="Tiles Completed" value={tilesCompleted} />
         <StatTile icon={<PeopleIcon />} label="Players" value={players.length} />
       </Box>

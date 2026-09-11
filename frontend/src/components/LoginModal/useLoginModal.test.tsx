@@ -3,22 +3,38 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { LoginModalProvider, useLoginModal } from './useLoginModal';
 import { setImpersonationTarget } from '../../utils/impersonation';
+import { AUTH_SESSION_STORAGE_KEY } from '../../utils/authSession';
 
-const ADMIN_TOKEN = 'admin-token';
-const USER_TOKEN = 'user-token';
+const ADMIN_USER = {
+  id: 'admin-1',
+  username: 'admin',
+  role: 'admin',
+  createdAt: '',
+  updatedAt: '',
+};
+const PLAIN_USER = {
+  id: 'user-1',
+  username: 'user',
+  role: 'user',
+  createdAt: '',
+  updatedAt: '',
+};
 
-const ADMIN_USER = { id: 'admin-1', username: 'QaAdminTest', role: 'admin', createdAt: '', updatedAt: '' };
-const PLAIN_USER = { id: 'user-1', username: 'GuySmoocherTest', role: 'user', createdAt: '', updatedAt: '' };
+// The real session lives in an httpOnly cookie the browser attaches
+// automatically (issue #53) — nothing this test can read or set directly.
+// Stand-in for "whichever user the backend's cookie currently resolves to",
+// so GET /api/auth/me's mock below can answer the way the real endpoint
+// would once its cookie changes, without this test needing a real cookie
+// jar.
+let currentServerSession: typeof ADMIN_USER | typeof PLAIN_USER | null = null;
 
 const mockMeEndpoint = () =>
-  vi.fn(async (_url: string, init?: RequestInit) => {
-    const headers = init?.headers as Record<string, string> | undefined;
-    const auth = headers?.Authorization;
-    if (auth === `Bearer ${ADMIN_TOKEN}`) {
-      return new Response(JSON.stringify({ success: true, data: ADMIN_USER }), { status: 200 });
-    }
-    if (auth === `Bearer ${USER_TOKEN}`) {
-      return new Response(JSON.stringify({ success: true, data: PLAIN_USER }), { status: 200 });
+  vi.fn(async (url: string) => {
+    if (!String(url).includes('/api/auth/me')) return new Response(null, { status: 404 });
+    if (currentServerSession) {
+      return new Response(JSON.stringify({ success: true, data: currentServerSession }), {
+        status: 200,
+      });
     }
     return new Response(null, { status: 401 });
   });
@@ -29,15 +45,35 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
   </MemoryRouter>
 );
 
-const dispatchAuthTokenChange = (oldValue: string | null, newValue: string | null) => {
-  if (newValue === null) localStorage.removeItem('authToken');
-  else localStorage.setItem('authToken', newValue);
-  window.dispatchEvent(new StorageEvent('storage', { key: 'authToken', oldValue, newValue }));
+/**
+ * Simulates what a DIFFERENT tab does on login/logout: changes which user
+ * the (shared, cookie-based) session resolves to, then bumps the
+ * `authSession` localStorage marker the way markSessionActive()/
+ * clearSessionMarker() do, and fires the `storage` event this tab's
+ * listener reacts to — real browsers fire `storage` in every other
+ * same-origin tab the instant one tab's write commits (never in the tab
+ * that made it); happy-dom doesn't do this automatically for same-document
+ * writes, so it's dispatched by hand here, same as the old token-based
+ * version of this test did.
+ */
+const dispatchAuthSessionChange = (serverUser: typeof ADMIN_USER | typeof PLAIN_USER | null) => {
+  currentServerSession = serverUser;
+  const oldValue = localStorage.getItem(AUTH_SESSION_STORAGE_KEY);
+  if (serverUser === null) {
+    localStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
+  } else {
+    localStorage.setItem(AUTH_SESSION_STORAGE_KEY, String(Date.now() + Math.random()));
+  }
+  const newValue = localStorage.getItem(AUTH_SESSION_STORAGE_KEY);
+  window.dispatchEvent(
+    new StorageEvent('storage', { key: AUTH_SESSION_STORAGE_KEY, oldValue, newValue }),
+  );
 };
 
 beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
+  currentServerSession = null;
 });
 
 afterEach(() => {
@@ -48,12 +84,13 @@ afterEach(() => {
 // admin-only page kept its React `user` state (and therefore
 // ProtectedRoute/useSidebar's effective-role decision) frozen at whatever it
 // was on mount, even after a DIFFERENT tab in the same browser logged out
-// and back in as a different account — because `authToken` lives in
-// localStorage, which is shared across tabs, but nothing previously told
-// this tab to re-check it. See useLoginModal.tsx's `storage` listener.
+// and back in as a different account. See useLoginModal.tsx's `storage`
+// listener and utils/authSession.ts for why this is keyed off a
+// non-sensitive marker rather than the token itself now.
 describe('LoginModalProvider — cross-tab account switch (bug-report investigation, prod incident)', () => {
-  it("re-validates `user` against the backend when another tab rotates the shared token (admin -> plain user)", async () => {
-    localStorage.setItem('authToken', ADMIN_TOKEN);
+  it("re-validates `user` against the backend when another tab's session changes (admin -> plain user)", async () => {
+    currentServerSession = ADMIN_USER;
+    localStorage.setItem(AUTH_SESSION_STORAGE_KEY, '1');
     vi.stubGlobal('fetch', mockMeEndpoint());
 
     const { result } = renderHook(() => useLoginModal(), { wrapper });
@@ -61,35 +98,36 @@ describe('LoginModalProvider — cross-tab account switch (bug-report investigat
     await waitFor(() => expect(result.current.authReady).toBe(true));
     expect(result.current.user?.role).toBe('admin');
 
-    // Simulate the OTHER tab's login: it writes the new token to shared
-    // storage. Real browsers fire `storage` in every other same-origin tab
-    // the instant that write commits (never in the tab that made it) — we
-    // dispatch it by hand here since happy-dom doesn't do this automatically
-    // for same-document writes.
     act(() => {
-      dispatchAuthTokenChange(ADMIN_TOKEN, USER_TOKEN);
+      dispatchAuthSessionChange(PLAIN_USER);
     });
 
     await waitFor(() => expect(result.current.user?.role).toBe('user'));
-    expect(result.current.user?.username).toBe('GuySmoocherTest');
+    // Assert the id rather than the username. Both fixtures take their names
+    // from seed.sql now, where the plain user's username and role are both
+    // "user", so a username assertion here could not tell the two fields
+    // apart and would still pass if the hook returned the wrong one.
+    expect(result.current.user?.id).toBe('user-1');
   });
 
   it('re-validates in the other direction too (plain user -> admin)', async () => {
-    localStorage.setItem('authToken', USER_TOKEN);
+    currentServerSession = PLAIN_USER;
+    localStorage.setItem(AUTH_SESSION_STORAGE_KEY, '1');
     vi.stubGlobal('fetch', mockMeEndpoint());
 
     const { result } = renderHook(() => useLoginModal(), { wrapper });
     await waitFor(() => expect(result.current.user?.role).toBe('user'));
 
     act(() => {
-      dispatchAuthTokenChange(USER_TOKEN, ADMIN_TOKEN);
+      dispatchAuthSessionChange(ADMIN_USER);
     });
 
     await waitFor(() => expect(result.current.user?.role).toBe('admin'));
   });
 
-  it('drops any active impersonation override once the shared token rotates to a different account', async () => {
-    localStorage.setItem('authToken', ADMIN_TOKEN);
+  it('drops any active impersonation override once another tab changes the session', async () => {
+    currentServerSession = ADMIN_USER;
+    localStorage.setItem(AUTH_SESSION_STORAGE_KEY, '1');
     setImpersonationTarget({ id: 'target-1', label: 'Someone', role: 'user' });
     vi.stubGlobal('fetch', mockMeEndpoint());
 
@@ -98,29 +136,31 @@ describe('LoginModalProvider — cross-tab account switch (bug-report investigat
     expect(sessionStorage.getItem('impersonation:target')).not.toBeNull();
 
     act(() => {
-      dispatchAuthTokenChange(ADMIN_TOKEN, USER_TOKEN);
+      dispatchAuthSessionChange(PLAIN_USER);
     });
 
     await waitFor(() => expect(result.current.user?.role).toBe('user'));
     expect(sessionStorage.getItem('impersonation:target')).toBeNull();
   });
 
-  it('logs this tab out when another tab logs out (authToken removed from shared storage)', async () => {
-    localStorage.setItem('authToken', ADMIN_TOKEN);
+  it('logs this tab out when another tab logs out (authSession marker cleared)', async () => {
+    currentServerSession = ADMIN_USER;
+    localStorage.setItem(AUTH_SESSION_STORAGE_KEY, '1');
     vi.stubGlobal('fetch', mockMeEndpoint());
 
     const { result } = renderHook(() => useLoginModal(), { wrapper });
     await waitFor(() => expect(result.current.user?.role).toBe('admin'));
 
     act(() => {
-      dispatchAuthTokenChange(ADMIN_TOKEN, null);
+      dispatchAuthSessionChange(null);
     });
 
     await waitFor(() => expect(result.current.user).toBeNull());
   });
 
   it('ignores storage events for unrelated keys', async () => {
-    localStorage.setItem('authToken', ADMIN_TOKEN);
+    currentServerSession = ADMIN_USER;
+    localStorage.setItem(AUTH_SESSION_STORAGE_KEY, '1');
     const fetchMock = mockMeEndpoint();
     vi.stubGlobal('fetch', fetchMock);
 
@@ -136,5 +176,46 @@ describe('LoginModalProvider — cross-tab account switch (bug-report investigat
 
     expect(fetchMock.mock.calls.length).toBe(callsBefore);
     expect(result.current.user?.role).toBe('admin');
+  });
+});
+
+// #45: fetchWithAuth dispatches 'auth:role-stale' on a 403 while the frontend
+// still thinks it holds a role the backend no longer honors (e.g. a demoted
+// admin). This isn't a dead session, so the fix is a fresh /me rehydrate,
+// not a logout.
+describe('LoginModalProvider — auth:role-stale (#45)', () => {
+  it('re-fetches /me on a role-stale event and picks up the demoted role', async () => {
+    currentServerSession = ADMIN_USER;
+    localStorage.setItem(AUTH_SESSION_STORAGE_KEY, '1');
+    const fetchMock = mockMeEndpoint();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { result } = renderHook(() => useLoginModal(), { wrapper });
+    await waitFor(() => expect(result.current.user?.role).toBe('admin'));
+
+    // The backend demoted this account without the session dying — same
+    // cookie, new role — which is what a 403 mid-session actually means.
+    currentServerSession = PLAIN_USER;
+    const callsBefore = fetchMock.mock.calls.length;
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent('auth:role-stale'));
+    });
+
+    await waitFor(() => expect(result.current.user?.role).toBe('user'));
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(callsBefore);
+  });
+});
+
+describe('LoginModalProvider — mount without a prior session', () => {
+  it('does not call /api/auth/me when there is no authSession marker (anonymous visitor)', async () => {
+    const fetchMock = mockMeEndpoint();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { result } = renderHook(() => useLoginModal(), { wrapper });
+
+    await waitFor(() => expect(result.current.authReady).toBe(true));
+    expect(result.current.user).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

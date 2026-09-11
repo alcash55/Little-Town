@@ -323,6 +323,28 @@ export async function countBingoPlayerRows(bingoId: string, rsn: string): Promis
   return count ?? 0;
 }
 
+/**
+ * The exact `rsn` spellings stored for a bingo, matched case-insensitively.
+ *
+ * `bingo_players.rsn` is `citext` since 20260910000000, so `.eq("rsn", ...)`
+ * matches regardless of case and counting rows can no longer tell you which
+ * spelling landed in the table. Use this when a test needs to prove that an
+ * existing row was reused rather than replaced by a differently-cased one.
+ */
+export async function getBingoPlayerRsnSpellings(
+  bingoId: string,
+  rsn: string,
+): Promise<string[]> {
+  const { data, error } = await getDb()
+    .from("bingo_players")
+    .select("rsn")
+    .eq("bingo_id", bingoId)
+    .eq("rsn", rsn);
+
+  if (error) throw new Error(`Failed to read player rows for "${rsn}": ${error.message}`);
+  return (data ?? []).map((row) => row.rsn as string);
+}
+
 // -------------------------------------------------------
 // Minimal HTTP test harness for route-level tests (guard checks, authz,
 // status codes) — TEAM-BRIEF.md Sprint 17, Track A1. Same shape as the
@@ -365,6 +387,8 @@ export function signTestToken(user: TestUser): string {
 export interface TestHttpResponse {
   status: number;
   body: any;
+  /** Raw response headers (Node's lowercase-keyed shape), for tests that need e.g. Set-Cookie. */
+  headers: NodeJS.Dict<string | string[]>;
 }
 
 export interface JsonRequestOptions {
@@ -394,7 +418,7 @@ export function jsonRequest(
       res.on("data", (chunk) => (raw += chunk));
       res.on("end", () => {
         try {
-          resolve({ status: res.statusCode ?? 0, body: raw ? JSON.parse(raw) : undefined });
+          resolve({ status: res.statusCode ?? 0, body: raw ? JSON.parse(raw) : undefined, headers: res.headers });
         } catch (e) {
           reject(e);
         }
