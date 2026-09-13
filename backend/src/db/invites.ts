@@ -224,7 +224,7 @@ export async function acceptInvite(
     }
     // Anything else (e.g. a 23505 unique-violation on a duplicate username)
     // is thrown as-is, preserving `.code`, so errorHandler's Postgres-code
-    // mapping (e.g. "username already exists") actually fires.
+    // mapping (e.g. "That username is already taken.") actually fires.
     throw error;
   }
   if (!data) throw new Error("accept_invite returned no user");
