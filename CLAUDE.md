@@ -166,23 +166,7 @@ Run the checks for whichever side you touched before reporting work as done. A p
 
 ## Pages
 
-| Route | Access | Description |
-|---|---|---|
-| `/` | public | Home |
-| `/Resources` | public | Guides, strats, tiles, RuneLite marker payloads |
-| `/BingoBoard` | public | Active bingo board (anonymous = no team highlighting) |
-| `/invite/:token` | public | Accept an invite |
-| `/unauthorized` | public | Access denied |
-| `/BingoRules` | user+ | Competition rules |
-| `/BingoScores` | user+ | Team scores and leaderboard |
-| `/TeamData` | user+ | Per-team hiscore data |
-| `/AdminPanel/BingoDetails` | admin | Set up a new bingo event |
-| `/AdminPanel/BoardBuilder` | admin | Build the tile board |
-| `/AdminPanel/TeamDrafter` | admin | Draft and manage teams |
-| `/AdminPanel/ScreenshotSubmission` | admin | Review submitted screenshots |
-| `/AdminPanel/BingoOverview` | admin | KPIs, charts, dependency health |
-| `/AdminPanel/Maintenance` | admin | Manually trigger cron jobs |
-| `/AdminPanel/UserInvite` | admin | Generate / revoke invites |
+Route table lives in [root `README.md`](./README.md#pages) now, so it costs context in one place instead of two. `tools/check-pages-doc.ts` fails CI if it drifts from `Routes.tsx`.
 
 ---
 
