@@ -117,6 +117,7 @@ const LoginModal = ({
             fullWidth
             size="small"
             autoFocus
+            autoComplete="username"
             sx={{
               '& .MuiOutlinedInput-root': {
                 color: 'white',
@@ -143,6 +144,7 @@ const LoginModal = ({
             onChange={(e) => setPassword(e.target.value)}
             fullWidth
             size="small"
+            autoComplete="current-password"
             sx={{
               '& .MuiOutlinedInput-root': {
                 color: 'white',
