@@ -132,7 +132,6 @@ SUPABASE_SERVICE_ROLE_KEY=<hosted service role key>
 | Method | Path                          | Auth              | Description                                        |
 | ------ | ----------------------------- | ------------------ | --------------------------------------------------- |
 | GET    | `/api/bingo/board`            | Optional           | Active bingo board and tiles. See below.             |
-| GET    | `/api/bingo/team-data`        | Required           | Bingo-relevant skill/activity deltas for every team, grouped by team. |
 | GET    | `/api/bingo/my-team-data`     | Required           | Progress for the caller's own team: players, tiles, and per-tile completion. |
 | GET    | `/api/bingo/team-xp-history`  | Required           | Bucketed team XP history for the `BingoScores` chart. |
 | GET    | `/api/bingo/:bingoId/conflicts` | admin, moderator | Main/side accounts of the same player gaining XP in overlapping windows. |
@@ -215,6 +214,7 @@ Local dev seed users (created by `db:reset`):
 | `DISCORD_ENABLED`           | Set to `true` (or run with `NODE_ENV=production`) to allow the Discord screenshot bot to log in at all. Positive opt-in, checked before token/channel presence — required since Sprint 9 caused duplicate real-bot logins on every local start otherwise. | No |
 | `DISCORD_BOT_TOKEN`         | Discord bot token for the screenshot ingest service. Optional — if unset (along with `DISCORD_SCREENSHOT_CHANNEL_ID`), or if `DISCORD_ENABLED` isn't `true`, the service logs one warning on startup and does not run; the admin screenshot review API still works. Never log this value. | No |
 | `DISCORD_SCREENSHOT_CHANNEL_ID` | Discord channel ID the bot watches for screenshot attachments      | No                      |
+| `LOGIN_RATE_LIMIT_MAX_OVERRIDE` | Raises the login attempt ceiling (default 10 per 15 min per IP) for a scripted end-to-end suite. Ignored in production; clamped at 300 outside it. See `middleware/loginLimiter.ts`. | No |
 
 ## Scripts
 
