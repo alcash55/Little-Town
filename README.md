@@ -27,19 +27,30 @@ backend/ Express API — auth, bingo management, OSRS hiscore integration
 
 ## Pages
 
-| Route                              | Description                            |
-| ---------------------------------- | -------------------------------------- |
-| `/`                                | Home                                   |
-| `/BingoBoard`                      | The active bingo board                 |
-| `/BingoScores`                     | Team scores and leaderboard            |
-| `/BingoRules`                      | Competition rules                      |
-| `/TeamData`                        | Per-team hiscore data                  |
-| `/AdminPanel/BingoDetails`         | Set up a new bingo event               |
-| `/AdminPanel/BoardBuilder`         | Build the tile board                   |
-| `/AdminPanel/TeamDrafter`          | Draft and manage teams                 |
-| `/AdminPanel/ScreenshotSubmission` | Submit screenshots for tile completion |
+This table is the source of truth for the app's routes. `CLAUDE.md` points
+here instead of keeping its own copy, and `tools/check-pages-doc.ts` fails
+CI if the two ever drift apart again. Verified against
+[`frontend/src/components/Routes/Routes.tsx`](./frontend/src/components/Routes/Routes.tsx).
 
-Admin panel routes require login with an `admin` or `moderator` account.
+| Route                               | Access | Description                                            |
+| ------------------------------------ | ------ | ------------------------------------------------------- |
+| `/`                                  | public | Home                                                     |
+| `/Resources`                         | public | Guides, strats, tiles, RuneLite marker payloads          |
+| `/BingoBoard`                        | public | Active bingo board (anonymous = no team highlighting)    |
+| `/invite/:token`                     | public | Accept an invite                                         |
+| `/unauthorized`                      | public | Access denied                                            |
+| `/BingoRules`                        | user+  | Competition rules                                        |
+| `/BingoScores`                       | user+  | Team scores and leaderboard                              |
+| `/TeamData`                          | user+  | Per-team hiscore data                                    |
+| `/AdminPanel/BingoDetails`           | admin  | Set up a new bingo event                                 |
+| `/AdminPanel/BoardBuilder`           | admin  | Build the tile board                                     |
+| `/AdminPanel/TeamDrafter`            | admin  | Draft and manage teams                                   |
+| `/AdminPanel/ScreenshotSubmission`   | admin  | Review submitted screenshots                             |
+| `/AdminPanel/BingoOverview`          | admin  | KPIs, charts, dependency health                          |
+| `/AdminPanel/Maintenance`            | admin  | Manually trigger cron jobs                               |
+| `/AdminPanel/UserInvite`             | admin  | Generate / revoke invites                                |
+
+`user+` accepts `user`, `moderator`, or `admin`. Admin panel routes require `admin` specifically.
 
 ## Local Development
 
