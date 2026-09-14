@@ -86,5 +86,8 @@ Sprint 17, Track A2, contract A4 (admin release/reassign) adds:
   checked up front and re-checked via the 23505 the UPDATE would raise on a race; 404
   (`RSN_CLAIM_NOT_FOUND`) if `rsnNormalized` doesn't exist
 
-(`players.ts`'s `findBingoPlayerCaseInsensitive`, added the same sprint, also feeds
-`POST /api/onboarding/rsn` — see `routes/onboarding.ts`.)
+`players.ts`'s `getBingoPlayer` also feeds `POST /api/onboarding/rsn` — see `routes/onboarding.ts`.
+Its lookup is case-insensitive on its own since `bingo_players.rsn` became `citext`
+(`supabase/migrations/20260910000000_bingo_players_citext_rsn.sql`); the file used to carry a
+separate `findBingoPlayerCaseInsensitive` `ILIKE` workaround for this, removed once the migration
+made it redundant.
