@@ -146,7 +146,8 @@ curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:54321/rest/v1/
 
 # 5. Run the tests and read the skip count
 bun test
-# Expect roughly 0 skip. Hundreds of skips means step 4 is failing.
+# Expect close to 0 skip. Hundreds of skips means the integration suite didn't
+# run. See "Hundreds of integration tests skip" below.
 ```
 
 To run the API by hand once the stack is up, use `bun run dev`. It reuses the
@@ -185,14 +186,35 @@ nothing.
 `curl` against port 54321 fails with exit code 56 (connection reset) or 7.
 This happens after Docker Desktop cold-starts and restarts the containers on
 its own, leaving the port mapping stale. Integration tests don't fail in this
-state. They skip, so `bun test` still exits 0 with hundreds of skips. Restart
-the stack, which keeps your data:
+state. They skip, so `bun test` still exits 0. Restart the stack, which keeps
+your data:
 
 ```bash
 bun run db:stop && bun run db:start
 ```
 
 `bun run dev` does this check and restart for you.
+
+**Hundreds of integration tests skip.**
+`bun test` exits 0, but the summary shows hundreds of skips. The integration
+suite checks once per run whether Supabase is reachable, and skips everything
+if that check fails. Two known causes make it fail, and they need different
+fixes, so check which one you have before acting:
+
+1. The stack really is unreachable. Run step 4 above. If `curl` doesn't print
+   `200`, fix that first, using the entry above.
+2. The stack is fine, but a unit test's mocked `fetch` leaked into the
+   reachability check. It depends on the order bun runs test files in, so it
+   comes and goes between identical runs. Tracked in
+   [#101](https://github.com/alcash55/Little-Town/issues/101). To confirm, run
+   the suites separately and compare:
+
+   ```bash
+   bun test tests/integration   # skips gone here means cause 2
+   ```
+
+Don't assume cause 1 because Docker was down recently. That guess has been
+wrong before.
 
 **`db:start` says a port is already allocated.**
 Another Supabase project or an old container holds 54321 to 54324. Find it with

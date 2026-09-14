@@ -153,7 +153,7 @@ bun run dev           # Vite on http://localhost:3000
 
 Supabase: `bun run db:start` / `db:reset` / `db:push` / `db:status` (from `backend/`).
 
-If `docker` says it "could not be found in this WSL 2 distro", Docker Desktop isn't running; the WSL integration toggle is not the cause. If `bun test` shows hundreds of skips, the Supabase port is stale: `bun run db:stop && bun run db:start`. Manual steps and checks: [`backend/README.md`](./backend/README.md#docker-desktop-and-wsl).
+If `docker` says it "could not be found in this WSL 2 distro", Docker Desktop isn't running; the WSL integration toggle is not the cause. If `bun test` shows hundreds of skips, the integration suite didn't run: either the Supabase port is unreachable (`curl` port 54321, then `bun run db:stop && bun run db:start`) or a leaked `fetch` mock broke the reachability check ([#101](https://github.com/alcash55/Little-Town/issues/101)). Check which before fixing. Manual steps and checks: [`backend/README.md`](./backend/README.md#docker-desktop-and-wsl).
 
 ## Checks
 
