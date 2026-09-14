@@ -121,9 +121,9 @@ fi
 
 # When Docker Desktop cold-starts, it restarts the Supabase containers on its
 # own and they report healthy, but the host port can be left resetting every
-# connection. `supabase status` still prints the URLs, and the integration
-# tests quietly skip against it (299 skips on 2026-09-14, #87). A stop/start
-# rebuilds the port mapping and keeps the data volume.
+# connection (curl exit 56, seen 2026-09-14, #87). `supabase status` still
+# prints the URLs, and integration tests skip instead of failing against it.
+# A stop/start rebuilds the port mapping and keeps the data volume.
 if command -v curl >/dev/null 2>&1 && ! curl -s -m 5 -o /dev/null "$API_URL/rest/v1/"; then
   echo "Supabase API at $API_URL is not answering. Restarting the local stack..."
   npx supabase stop >/dev/null
