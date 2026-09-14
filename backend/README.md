@@ -17,8 +17,8 @@ A Bun.js/Express backend API for the Little Town application with JWT authentica
 
 - Node.js 20+
 - Bun.js
-- Docker Desktop for local database development
-  > **WSL note:** Open Docker Desktop on Windows, go to Settings → Resources → WSL Integration, and toggle on your distro (e.g. Ubuntu). Then run `wsl --shutdown` in PowerShell and reopen your WSL terminal. Confirm Docker is reachable with `docker info`.
+- Docker Desktop for local database development, set up once as described in
+  [Docker Desktop and WSL](#docker-desktop-and-wsl)
 
 ## Quick Start (WSL)
 
@@ -95,6 +95,114 @@ bun run db:status     # Show local URLs and API keys
 bun run db:reset      # Wipe DB and re-apply all migrations (re-seeds test users)
 bun run db:push       # Push migrations to linked hosted Supabase project
 ```
+
+`db:stop` keeps the database volume, so the next `db:start` comes back with the
+same data. Only `db:reset` wipes it.
+
+## Docker Desktop and WSL
+
+The local Supabase stack is a set of Docker containers. On this project's
+Windows + WSL2 setup, Docker runs inside Docker Desktop on Windows, and WSL
+borrows it. `bun run dev` handles the common failures below on its own. This
+section is for running and testing the stack by hand, and for when the script
+gives up.
+
+### One-time setup
+
+Do all three. The first two are what keep this from breaking again after a
+reboot ([#87](https://github.com/alcash55/Little-Town/issues/87)).
+
+1. Docker Desktop → **Settings → General** → turn on "Start Docker Desktop when
+   you sign in to your computer". Apply.
+2. Windows **Settings → Apps → Startup** → make sure **Docker Desktop** is on.
+   Task Manager's Startup tab can disable it separately from step 1, and either
+   one being off stops it launching.
+3. Docker Desktop → **Settings → Resources → WSL integration** → turn on your
+   distro (e.g. `Ubuntu`). Apply, then run `wsl --shutdown` in PowerShell and
+   reopen the WSL terminal.
+
+### Start everything by hand
+
+Run these from a WSL terminal in `backend/`, in order. Each step has a check,
+so you know which layer failed.
+
+```bash
+# 1. Docker Desktop is running on Windows
+tasklist.exe | grep -i "Docker Desktop.exe"
+# Nothing printed? Start it, then wait 60 to 90 seconds:
+cmd.exe /c start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"
+
+# 2. WSL can reach the Docker engine
+docker info --format '{{.ServerVersion}} {{.OperatingSystem}}'
+# Expect a version followed by "Docker Desktop"
+
+# 3. The Supabase containers are up
+bun run db:start
+docker ps --format '{{.Names}}\t{{.Status}}' | grep little_town
+
+# 4. The API port actually answers (this is the step people skip)
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:54321/rest/v1/
+# Expect 200. Anything else, see "Supabase looks up but nothing connects" below.
+
+# 5. Run the tests and read the skip count
+bun test
+# Expect roughly 0 skip. Hundreds of skips means step 4 is failing.
+```
+
+To run the API by hand once the stack is up, use `bun run dev`. It reuses the
+running containers rather than starting new ones.
+
+### Poking at the database
+
+`psql` is not installed in WSL, so run it inside the database container:
+
+```bash
+docker exec -it supabase_db_little_town_backend psql -U postgres
+docker exec supabase_db_little_town_backend psql -U postgres -c 'select count(*) from bingo_players'
+```
+
+Studio at `http://127.0.0.1:54323` does the same thing in a browser.
+
+For container logs, `docker logs --tail 50 supabase_<service>_little_town_backend`,
+where `<service>` is `db`, `rest`, `kong`, `auth`, and so on. Kong is the
+gateway on port 54321, so its log shows every API request that got through.
+
+### Troubleshooting
+
+**"The command 'docker' could not be found in this WSL 2 distro."**
+Docker Desktop is not running. Do step 1 above. The message suggests turning
+on WSL integration, but it prints that no matter what the cause is. Inside WSL,
+`/usr/bin/docker` links into `/mnt/wsl/docker-desktop/cli-tools/`, which only
+exists while the app runs. When the link is dangling, `docker` falls through to
+a Windows-side script at
+`/mnt/c/Program Files/Docker/Docker/resources/bin/docker` that always prints
+this text. Only suspect the integration toggle if `tasklist.exe` shows Docker
+Desktop running and `ls /mnt/wsl/docker-desktop/cli-tools/usr/bin/docker` finds
+nothing.
+
+**Supabase looks up but nothing connects.**
+`docker ps` shows every container healthy and `db:status` prints URLs, but
+`curl` against port 54321 fails with exit code 56 (connection reset) or 7.
+This happens after Docker Desktop cold-starts and restarts the containers on
+its own, leaving the port mapping stale. Integration tests don't fail in this
+state. They skip, so `bun test` still exits 0 with hundreds of skips. Restart
+the stack, which keeps your data:
+
+```bash
+bun run db:stop && bun run db:start
+```
+
+`bun run dev` does this check and restart for you.
+
+**`db:start` says a port is already allocated.**
+Another Supabase project or an old container holds 54321 to 54324. Find it with
+`docker ps --format '{{.Names}}\t{{.Ports}}' | grep 5432`, and stop that
+project with `bun x supabase stop --project-id <id>`.
+
+**Docker Desktop takes focus when it starts.**
+Its window opens on launch, including when `bun run dev` starts it for you.
+Turning on "Start Docker Desktop when you sign in" gets that out of the way at
+login.
 
 ## Hosted Supabase
 
