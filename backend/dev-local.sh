@@ -20,7 +20,9 @@ Usage:
   bash dev-local.sh          Start Supabase, export local env, build, and run API
   bash dev-local.sh --reset  Also reset local DB and apply migrations first
 
-Run this from WSL. Docker Desktop must be running with WSL integration enabled.
+Run this from WSL. If Docker Desktop is not running, this starts it and waits.
+To run or debug Docker and Supabase by hand, see "Docker Desktop and WSL"
+in backend/README.md.
 This script never overwrites an existing .env file.
 HELP
       exit 0
@@ -50,13 +52,45 @@ extract_status_value() {
 
 need_command npm
 need_command npx
-need_command docker
 
-if ! docker info >/dev/null 2>&1; then
-  echo "Docker is not reachable from WSL."
-  echo "Start Docker Desktop, then enable: Settings -> Resources -> WSL integration."
+# Docker Desktop mounts its CLI into the distro at this path only while the app
+# is running, and /usr/bin/docker is a symlink into it. With the app stopped the
+# symlink dangles, `docker` falls through to the Windows-side shim, and that shim
+# prints "could not be found in this WSL 2 distro... activate the WSL
+# integration". The integration was on every time that message showed up (#87):
+# the app just hadn't started. So check for the app before blaming the toggle.
+DOCKER_DESKTOP_CLI=/mnt/wsl/docker-desktop/cli-tools/usr/bin/docker
+DOCKER_DESKTOP_EXE='C:\Program Files\Docker\Docker\Docker Desktop.exe'
+
+ensure_docker() {
+  if docker info >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if [ ! -e "$DOCKER_DESKTOP_CLI" ] && command -v cmd.exe >/dev/null 2>&1; then
+    echo "Docker Desktop is not running. Starting it (its window may take focus)..."
+    cmd.exe /c start "" "$DOCKER_DESKTOP_EXE" >/dev/null 2>&1 || true
+    for _ in $(seq 1 60); do
+      if docker info >/dev/null 2>&1; then
+        echo "Docker is up."
+        return 0
+      fi
+      sleep 3
+    done
+    echo "Docker Desktop did not come up within 3 minutes."
+    echo "Open it on Windows and check it finished starting, then rerun."
+    echo "To stop this recurring: Docker Desktop -> Settings -> General ->"
+    echo "'Start Docker Desktop when you sign in to your computer'."
+    exit 1
+  fi
+
+  echo "Docker Desktop is running but not reachable from this distro."
+  echo "Enable it for this distro: Settings -> Resources -> WSL integration,"
+  echo "apply, then run 'wsl --shutdown' in PowerShell and reopen the terminal."
   exit 1
-fi
+}
+
+ensure_docker
 
 if [ ! -d node_modules ]; then
   echo "Installing dependencies..."
@@ -83,6 +117,21 @@ if [ -z "$API_URL" ] || [ -z "$SERVICE_ROLE_KEY" ]; then
   echo "Could not read local Supabase URL/key from 'npx supabase status -o env'."
   echo "$STATUS"
   exit 1
+fi
+
+# When Docker Desktop cold-starts, it restarts the Supabase containers on its
+# own and they report healthy, but the host port can be left resetting every
+# connection. `supabase status` still prints the URLs, and the integration
+# tests quietly skip against it (299 skips on 2026-09-14, #87). A stop/start
+# rebuilds the port mapping and keeps the data volume.
+if command -v curl >/dev/null 2>&1 && ! curl -s -m 5 -o /dev/null "$API_URL/rest/v1/"; then
+  echo "Supabase API at $API_URL is not answering. Restarting the local stack..."
+  npx supabase stop >/dev/null
+  npx supabase start >/dev/null
+  if ! curl -s -m 5 -o /dev/null "$API_URL/rest/v1/"; then
+    echo "Supabase API at $API_URL still is not answering after a restart."
+    exit 1
+  fi
 fi
 
 export NODE_ENV="${NODE_ENV:-development}"
