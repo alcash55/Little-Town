@@ -62,3 +62,35 @@ Cloudflare Pages build environment, not read from a committed file —
 `frontend/.env.production` is a local-only convenience file for developers
 building/previewing a prod-like bundle on their own machine, never committed
 (see `.gitignore`).
+
+## Analytics
+
+The Cloudflare Web Analytics beacon lives in
+`src/utils/cloudflareAnalyticsPlugin.ts`, a Vite plugin wired into
+`vite.config.ts`. It injects a `<script defer src="https://static.cloudflareinsights.com/beacon.min.js">`
+tag into `index.html` for production builds only (`apply: 'build'`, Vite's
+own command gate, so `bun run dev` never emits it and never pollutes the
+analytics with local sessions).
+
+It's manual rather than the Cloudflare dashboard's automatic edge injection
+([#88](https://github.com/alcash55/Little-Town/issues/88)). That injection
+pinned an `integrity` hash to a versionless beacon URL, so the hash went
+stale the moment Cloudflare shipped a newer beacon build and the browser
+logged a CORS-and-SRI-mismatch error on every single page load, for every
+visitor, indefinitely. The manual snippet has:
+
+- No `integrity` attribute. There's nothing to pin a hash against on a URL
+  Cloudflare can update at will.
+- `defer`, not `type="module"` (the form in
+  [#109](https://github.com/alcash55/Little-Town/issues/109)'s paste).
+  Module scripts fetch in CORS mode, which was the exact failure #88
+  reported. `defer` gets the same non-blocking load over a plain
+  `<script src>` fetch, which isn't CORS-gated.
+
+The site token (`CF_BEACON_TOKEN` in the plugin file) is public: Web
+Analytics tokens are meant to ship to every visitor's browser, so it's fine
+committed in source.
+
+**Automatic edge injection must stay off** in the Cloudflare dashboard
+(Pages project or zone, Speed, Web Analytics). If it's ever turned back on,
+the page loads two beacons.
