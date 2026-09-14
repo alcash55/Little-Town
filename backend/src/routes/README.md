@@ -66,7 +66,9 @@ contract). `protect`-gated (effective-user aware — impersonation applies) plus
 limit (same posture as `hiscores.ts`'s public proxy limiter, since this route also drives a
 server-side hiscores lookup). Validates the RSN against the OSRS hiscores server-side, records
 the caller's ownership in `db/rsnClaims.ts`, and create-or-finds the corresponding
-`bingo_players` row in the current active/draft bingo's pool (case-insensitively, via
-`db/players.ts`'s `findBingoPlayerCaseInsensitive`, so an admin-pre-registered RSN gets linked
-rather than duplicated). See the route file's header comment and
-`supabase/migrations/20260715000000_rsn_claims.sql` for the full design writeup.
+`bingo_players` row in the current active/draft bingo's pool via `db/players.ts`'s
+`getBingoPlayer`, case-insensitively — `bingo_players.rsn` is `citext`
+(`supabase/migrations/20260910000000_bingo_players_citext_rsn.sql`), so an admin-pre-registered
+RSN gets linked rather than duplicated with no separate lookup path needed. See the route file's
+header comment and `supabase/migrations/20260715000000_rsn_claims.sql` for the full design
+writeup.
