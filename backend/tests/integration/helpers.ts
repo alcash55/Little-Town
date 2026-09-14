@@ -39,6 +39,19 @@ import type { BingoStatus } from "../../src/types/index.js";
 
 const execFileAsync = promisify(execFile);
 
+/**
+ * Captured at module load, before any test file's `beforeEach` can run.
+ * `getLocalStackConfig()`'s reachability probe below used to read the bare
+ * `fetch` global at call time. `resolveCredentialsFromCli()` awaits a
+ * subprocess first, which is long enough to yield the event loop to other
+ * test files; if `tests/unit/dependencyHealth.test.ts`'s `globalThis.fetch`
+ * mock happened to be active when execution resumed, the probe rejected
+ * against a stub that only knows three unrelated hostnames, and the false
+ * "unreachable" verdict got cached for the rest of the process (#101). This
+ * reference can't be swapped out from under it.
+ */
+const nativeFetch = globalThis.fetch;
+
 export interface LocalStackConfig {
   reachable: boolean;
   reason?: string;
@@ -104,6 +117,11 @@ function assertNotAccidentalProd(url: string, explicitOverride: boolean): void {
 
 let cachedConfig: Promise<LocalStackConfig> | null = null;
 
+/** Test-only: forces the next `getLocalStackConfig()` call to re-resolve instead of reusing the cache. */
+export function _resetLocalStackConfigForTests(): void {
+  cachedConfig = null;
+}
+
 export function getLocalStackConfig(): Promise<LocalStackConfig> {
   if (!cachedConfig) {
     cachedConfig = (async (): Promise<LocalStackConfig> => {
@@ -122,7 +140,7 @@ export function getLocalStackConfig(): Promise<LocalStackConfig> {
       assertNotAccidentalProd(creds.url, testEnvCreds !== null);
 
       try {
-        const res = await fetch(`${creds.url}/rest/v1/`, {
+        const res = await nativeFetch(`${creds.url}/rest/v1/`, {
           headers: { apikey: creds.key },
           signal: AbortSignal.timeout(5_000),
         });
@@ -153,6 +171,27 @@ export function getLocalStackConfig(): Promise<LocalStackConfig> {
     })();
   }
   return cachedConfig;
+}
+
+/**
+ * Independent, uncached reachability check against `config.url`, using the
+ * same pinned `nativeFetch` reference `getLocalStackConfig()` uses. Exists
+ * for `localStackConfigLeak.test.ts`'s guard: if this ever disagrees with a
+ * cached "unreachable" verdict, something poisoned the cache earlier in the
+ * process (see #101) and the run should fail loudly instead of silently
+ * skipping every integration test.
+ */
+export async function probeStackReachableNow(config: LocalStackConfig): Promise<boolean> {
+  if (!config.serviceRoleKey) return false;
+  try {
+    const res = await nativeFetch(`${config.url}/rest/v1/`, {
+      headers: { apikey: config.serviceRoleKey },
+      signal: AbortSignal.timeout(5_000),
+    });
+    return res.status < 500;
+  } catch {
+    return false;
+  }
 }
 
 /** True when a bingo somewhere in the shared local stack already has status='active'. */
