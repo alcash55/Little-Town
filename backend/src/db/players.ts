@@ -96,39 +96,6 @@ export async function getBingoPlayer(bingoId: string, rsn: string): Promise<Bing
 }
 
 /**
- * Get a single player by RSN within a bingo, case-insensitively. Used by
- * POST /api/onboarding/rsn (TEAM-BRIEF.md Sprint 11, Track A) so an
- * admin-pre-registered "zezima" gets LINKED when a user later claims
- * "Zezima" through onboarding, rather than creating a second, case-variant
- * pool row — bingo_players' own UNIQUE (bingo_id, rsn) is case-sensitive
- * (an existing, pre-this-sprint limitation; not touched here), so
- * `registerBingoPlayer` alone can't de-dupe across casing on its own.
- *
- * `.ilike` escaped for `%`/`_` (Postgres ILIKE wildcards) so this is a
- * case-insensitive EQUALS, not a pattern match — a literal RSN containing
- * either character (disallowed by lib/rsn.ts's isPlausibleRsn for new
- * claims, but bingo_players predates that check) can't accidentally widen
- * the match.
- */
-export async function findBingoPlayerCaseInsensitive(
-  bingoId: string,
-  rsn: string,
-): Promise<BingoPlayer | null> {
-  const db = getDb();
-  const escaped = rsn.replace(/[\\%_]/g, (c) => `\\${c}`);
-  const { data, error } = await db
-    .from("bingo_players")
-    .select("*")
-    .eq("bingo_id", bingoId)
-    .ilike("rsn", escaped)
-    .limit(1)
-    .maybeSingle();
-
-  if (error) throw new Error(`Failed to look up player "${rsn}": ${error.message}`);
-  return data as BingoPlayer | null;
-}
-
-/**
  * Resolves "which bingo_players row is ME" for a logged-in user — used by
  * GET /api/bingo/board and GET /api/bingo/my-team-data to find the caller's
  * own team. Two sources, in priority order:
@@ -162,7 +129,9 @@ export async function resolveMyBingoPlayer(
 ): Promise<BingoPlayer | null> {
   const claim = await findRsnClaimByUser(userId);
   if (claim) {
-    const claimed = await findBingoPlayerCaseInsensitive(bingoId, claim.rsn);
+    // getBingoPlayer's plain .eq() is case-insensitive on its own since
+    // rsn became citext (20260910000000) — no ILIKE workaround needed.
+    const claimed = await getBingoPlayer(bingoId, claim.rsn);
     if (claimed) return claimed;
     // Claimed an RSN, but it isn't (yet) in THIS bingo's player pool —
     // fall through to the registered_by fallback rather than returning
