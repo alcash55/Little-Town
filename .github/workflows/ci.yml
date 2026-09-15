@@ -147,3 +147,24 @@ jobs:
       WORKING_DIRECTORY: frontend
       PACKAGE_MANAGER: bun
       BUN_VERSION: "1.3.14"
+
+  # #76: README.md's Pages table and CLAUDE.md's used to drift apart by
+  # hand. CLAUDE.md now just points at the README instead of keeping its
+  # own copy, which removes one of the two things that could drift, but
+  # the README can still fall behind Routes.tsx whenever a route changes.
+  # This job catches that case in CI instead of waiting for someone to
+  # notice on their own.
+  docs-drift:
+    name: docs — README Pages table matches Routes.tsx
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+
+      - name: Check README Pages table against Routes.tsx
+        run: bun run tools/check-pages-doc.ts

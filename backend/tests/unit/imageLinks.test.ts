@@ -269,4 +269,26 @@ describe("downloadImgurImage", () => {
     const result = await downloadImgurImage(candidate);
     expect(result).toEqual({ ok: false, reason: "network_error" });
   });
+
+  test("network error is logged by message only, not the Error object's stack (#86)", async () => {
+    globalThis.fetch = mock(() => Promise.reject(new Error("ECONNRESET"))) as unknown as typeof fetch;
+    const errorSpy = mock(() => undefined);
+    const originalConsoleError = console.error;
+    console.error = errorSpy as unknown as typeof console.error;
+
+    try {
+      await downloadImgurImage(candidate);
+    } finally {
+      console.error = originalConsoleError;
+    }
+
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    const loggedArgs = errorSpy.mock.calls[0];
+    // A single string argument means the message was interpolated in, not
+    // an Error instance handed to console.error (which prints its stack).
+    expect(loggedArgs).toHaveLength(1);
+    expect(typeof loggedArgs[0]).toBe("string");
+    expect(loggedArgs[0]).toContain("ECONNRESET");
+    expect(loggedArgs[0]).not.toContain("\n    at ");
+  });
 });

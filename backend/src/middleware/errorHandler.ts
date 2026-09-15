@@ -31,11 +31,16 @@ export const errorHandler = (
     method: req.method,
   });
 
-  // Supabase/Postgres unique constraint violation (e.g. duplicate username/email)
+  // Supabase/Postgres unique constraint violation (e.g. duplicate username/
+  // email, most commonly hit via the accept_invite RPC during signup — see
+  // that migration's doc comment). The old message ("username already
+  // exists") echoed the raw constraint column instead of writing to the
+  // person hitting it, so this now reads as a sentence someone would
+  // actually say (#86).
   if ((err as any).code === "23505") {
     const detail = (err as any).detail || "";
-    const field = detail.match(/\(([^)]+)\)/)?.[1] ?? "field";
-    error = new AppError(`${field} already exists`, 400, "DUPLICATE_KEY");
+    const field = detail.match(/\(([^)]+)\)/)?.[1] ?? "value";
+    error = new AppError(`That ${field} is already taken.`, 400, "DUPLICATE_KEY");
   }
 
   // Supabase/Postgres foreign key violation (e.g. referencing a non-existent bingo/user)

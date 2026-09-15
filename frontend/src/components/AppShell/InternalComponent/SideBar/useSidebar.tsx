@@ -54,6 +54,19 @@ const initialContext = {
 
 export const SidebarContext = createContext<LTSidebarContext>(initialContext);
 
+/**
+ * Pure filtering decision behind `SidebarProvider` — split out so the
+ * role-gating logic is unit-testable without rendering the provider or
+ * mocking `useEffectiveRole`. `role` is the value `useEffectiveRole` (or its
+ * `?? 'public'` fallback) resolves to; a top-level item is visible only when
+ * its own `roles` list includes it. Children never get filtered
+ * individually (see the `roles` doc comment on `SidebarItem` above).
+ */
+export const filterSidebarByRole = (
+  items: SidebarItem[],
+  role: SidebarRole,
+): SidebarItem[] => items.filter((item) => item.roles?.includes(role));
+
 const allSidebarItems: SidebarItem[] = [
   {
     title: 'Home',
@@ -161,15 +174,15 @@ export const SidebarProvider = ({ children }: PropsWithChildren) => {
 
   useEffect(() => {
     setLoading(true);
-    // In local dev (bun dev), show all sidebar items regardless of role
-    if (import.meta.env.DEV) {
-      setSidebar(allSidebarItems);
-      setLoading(false);
-      return;
-    }
+    // #80: this used to short-circuit to the unfiltered list in local dev
+    // (`import.meta.env.DEV`), on the theory that a dev shouldn't need to
+    // log in just to see the admin entries. That bypass is what let a
+    // logged-out visitor see Admin Panel in the mobile drawer whenever the
+    // app ran under `bun run dev` — filtering has to hold in every mode.
+    // `backend/supabase/seed.sql` seeds an admin login (admin/password) for
+    // local testing instead.
     const roleForFilter: SidebarRole = effectiveRole ?? 'public';
-    const filtered = allSidebarItems.filter((item) => item.roles?.includes(roleForFilter));
-    setSidebar(filtered);
+    setSidebar(filterSidebarByRole(allSidebarItems, roleForFilter));
     setLoading(false);
   }, [effectiveRole]);
 

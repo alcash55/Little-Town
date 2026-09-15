@@ -153,6 +153,8 @@ bun run dev           # Vite on http://localhost:3000
 
 Supabase: `bun run db:start` / `db:reset` / `db:push` / `db:status` (from `backend/`).
 
+If `docker` says it "could not be found in this WSL 2 distro", Docker Desktop isn't running; the WSL integration toggle is not the cause. If `bun test` shows hundreds of skips, the integration suite didn't run: either the Supabase port is unreachable (`curl` port 54321, then `bun run db:stop && bun run db:start`) or a leaked `fetch` mock broke the reachability check ([#101](https://github.com/alcash55/Little-Town/issues/101)). Check which before fixing. Manual steps and checks: [`backend/README.md`](./backend/README.md#docker-desktop-and-wsl).
+
 ## Checks
 
 ```bash
@@ -166,23 +168,7 @@ Run the checks for whichever side you touched before reporting work as done. A p
 
 ## Pages
 
-| Route | Access | Description |
-|---|---|---|
-| `/` | public | Home |
-| `/Resources` | public | Guides, strats, tiles, RuneLite marker payloads |
-| `/BingoBoard` | public | Active bingo board (anonymous = no team highlighting) |
-| `/invite/:token` | public | Accept an invite |
-| `/unauthorized` | public | Access denied |
-| `/BingoRules` | user+ | Competition rules |
-| `/BingoScores` | user+ | Team scores and leaderboard |
-| `/TeamData` | user+ | Per-team hiscore data |
-| `/AdminPanel/BingoDetails` | admin | Set up a new bingo event |
-| `/AdminPanel/BoardBuilder` | admin | Build the tile board |
-| `/AdminPanel/TeamDrafter` | admin | Draft and manage teams |
-| `/AdminPanel/ScreenshotSubmission` | admin | Review submitted screenshots |
-| `/AdminPanel/BingoOverview` | admin | KPIs, charts, dependency health |
-| `/AdminPanel/Maintenance` | admin | Manually trigger cron jobs |
-| `/AdminPanel/UserInvite` | admin | Generate / revoke invites |
+Route table lives in [root `README.md`](./README.md#pages) now, so it costs context in one place instead of two. `tools/check-pages-doc.ts` fails CI if it drifts from `Routes.tsx`.
 
 ---
 
