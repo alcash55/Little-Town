@@ -32,12 +32,26 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import http from "node:http";
 import jwt from "jsonwebtoken";
+import { SQL } from "bun";
 
 import { getDb } from "../../src/db/client.js";
 import { getJwtSecret } from "../../src/lib/jwt.js";
 import type { BingoStatus } from "../../src/types/index.js";
 
 const execFileAsync = promisify(execFile);
+
+/**
+ * Captured at module load, before any test file's `beforeEach` can run.
+ * `getLocalStackConfig()`'s reachability probe below used to read the bare
+ * `fetch` global at call time. `resolveCredentialsFromCli()` awaits a
+ * subprocess first, which is long enough to yield the event loop to other
+ * test files; if `tests/unit/dependencyHealth.test.ts`'s `globalThis.fetch`
+ * mock happened to be active when execution resumed, the probe rejected
+ * against a stub that only knows three unrelated hostnames, and the false
+ * "unreachable" verdict got cached for the rest of the process (#101). This
+ * reference can't be swapped out from under it.
+ */
+const nativeFetch = globalThis.fetch;
 
 export interface LocalStackConfig {
   reachable: boolean;
@@ -104,6 +118,11 @@ function assertNotAccidentalProd(url: string, explicitOverride: boolean): void {
 
 let cachedConfig: Promise<LocalStackConfig> | null = null;
 
+/** Test-only: forces the next `getLocalStackConfig()` call to re-resolve instead of reusing the cache. */
+export function _resetLocalStackConfigForTests(): void {
+  cachedConfig = null;
+}
+
 export function getLocalStackConfig(): Promise<LocalStackConfig> {
   if (!cachedConfig) {
     cachedConfig = (async (): Promise<LocalStackConfig> => {
@@ -122,7 +141,7 @@ export function getLocalStackConfig(): Promise<LocalStackConfig> {
       assertNotAccidentalProd(creds.url, testEnvCreds !== null);
 
       try {
-        const res = await fetch(`${creds.url}/rest/v1/`, {
+        const res = await nativeFetch(`${creds.url}/rest/v1/`, {
           headers: { apikey: creds.key },
           signal: AbortSignal.timeout(5_000),
         });
@@ -153,6 +172,171 @@ export function getLocalStackConfig(): Promise<LocalStackConfig> {
     })();
   }
   return cachedConfig;
+}
+
+/**
+ * Independent, uncached reachability check against `config.url`, using the
+ * same pinned `nativeFetch` reference `getLocalStackConfig()` uses. Exists
+ * for `localStackConfigLeak.test.ts`'s guard: if this ever disagrees with a
+ * cached "unreachable" verdict, something poisoned the cache earlier in the
+ * process (see #101) and the run should fail loudly instead of silently
+ * skipping every integration test.
+ */
+export async function probeStackReachableNow(config: LocalStackConfig): Promise<boolean> {
+  if (!config.serviceRoleKey) return false;
+  try {
+    const res = await nativeFetch(`${config.url}/rest/v1/`, {
+      headers: { apikey: config.serviceRoleKey },
+      signal: AbortSignal.timeout(5_000),
+    });
+    return res.status < 500;
+  } catch {
+    return false;
+  }
+}
+
+// -------------------------------------------------------
+// getLatestBingo() isolation lock (#49).
+//
+// getLatestBingo() (src/db/bingos.ts) picks the single most-recently-created
+// row across the whole `bingos` table, not scoped to any one test's own
+// fixtures. Two getLatestBingo()-dependent tests each inserting a bingo and
+// then asserting they get it back are racy against each other whenever they
+// run concurrently against the same shared stack — including across two
+// separate `bun test` processes (see TEAM-BRIEF.md's "one shared database"
+// note): whichever insert lands last wins, so an un-serialized pair can
+// observe the other's row instead of its own.
+// -------------------------------------------------------
+
+/**
+ * Arbitrary but fixed 64-bit key for the advisory lock every
+ * getLatestBingo()-dependent test contends for. Only needs to stay stable
+ * and not collide with some other advisory lock this codebase might one day
+ * take — there's no other one today.
+ */
+const GET_LATEST_BINGO_LOCK_KEY = 49_102_602;
+
+let cachedDbUrl: Promise<string | null> | null = null;
+
+/**
+ * Raw Postgres connection string for the same local stack
+ * `getLocalStackConfig()` targets, resolved independently of whichever path
+ * resolved the REST url/key — `TEST_SUPABASE_URL`/`KEY`, when set, don't
+ * necessarily point at a target with direct Postgres access (e.g. a
+ * disposable hosted project behind a connection pooler). Preferring:
+ *   1. `TEST_SUPABASE_DB_URL`, if set — an explicit companion to a
+ *      `TEST_SUPABASE_URL` override.
+ *   2. `bun x supabase status -o env`'s own `DB_URL` — the same local CLI
+ *      stack `getLocalStackConfig()` falls back to. This is what CI's
+ *      backend job actually runs against even though it sets
+ *      `TEST_SUPABASE_URL`/`KEY` explicitly (`.github/workflows/ci.yml`
+ *      resolves both from the same locally-started stack), so this still
+ *      finds the right database there without a third CI env var.
+ */
+async function resolveDbUrl(): Promise<string | null> {
+  if (!cachedDbUrl) {
+    cachedDbUrl = (async (): Promise<string | null> => {
+      if (process.env.TEST_SUPABASE_DB_URL) return process.env.TEST_SUPABASE_DB_URL;
+      try {
+        const { stdout } = await execFileAsync("bun", ["x", "supabase", "status", "-o", "env"], {
+          cwd: BACKEND_DIR,
+          timeout: 15_000,
+        });
+        return stdout.match(/^DB_URL="([^"]*)"/m)?.[1] ?? null;
+      } catch {
+        return null;
+      }
+    })();
+  }
+  return cachedDbUrl;
+}
+
+/** Test-only: forces the next `resolveDbUrl()`/`withGetLatestBingoLock()` call to re-resolve. */
+export function _resetDbUrlCacheForTests(): void {
+  cachedDbUrl = null;
+}
+
+const DEFAULT_LOCK_TIMEOUT_MS = 20_000;
+
+/**
+ * Wrap the insert-then-assert critical section of a getLatestBingo()-
+ * dependent test in this so only one such test, across every process
+ * sharing the stack, runs it at a time:
+ *
+ *   await withGetLatestBingoLock(async () => {
+ *     const bingo = await insertTestBingo(`test-${uniqueSuffix()}`);
+ *     expect((await getLatestBingo())?.id).toBe(bingo.id);
+ *   });
+ *
+ * Backed by a session-scoped `pg_advisory_lock` on its own dedicated
+ * connection — PostgREST's pooled connections can't hold one across the
+ * callback. `lock_timeout` bounds the wait: a holder that's stuck or
+ * crashed without releasing fails the waiter loudly after `timeoutMs`
+ * instead of hanging the run. (Postgres also auto-releases the lock if the
+ * holder's own connection drops, e.g. its process crashes outright — a
+ * second line of defense behind the timeout.)
+ */
+export async function withGetLatestBingoLock<T>(
+  fn: () => Promise<T>,
+  options: { timeoutMs?: number } = {},
+): Promise<T> {
+  const timeoutMs = Math.max(0, Math.trunc(options.timeoutMs ?? DEFAULT_LOCK_TIMEOUT_MS));
+  const dbUrl = await resolveDbUrl();
+  if (!dbUrl) {
+    throw new Error(
+      "withGetLatestBingoLock: could not resolve a raw Postgres connection string — set " +
+        "TEST_SUPABASE_DB_URL, or start the local stack via `bun run db:start` " +
+        "(`bun x supabase status` failed).",
+    );
+  }
+
+  const sql = new SQL(dbUrl);
+  try {
+    // lock_timeout can't be bound as a query parameter (Postgres doesn't
+    // accept placeholders in SET); timeoutMs is internally controlled and
+    // coerced to a non-negative integer above, so building the statement
+    // directly is safe here.
+    await sql.unsafe(`SET lock_timeout = ${timeoutMs}`);
+    try {
+      await sql`SELECT pg_advisory_lock(${GET_LATEST_BINGO_LOCK_KEY})`;
+    } catch (err) {
+      throw new Error(
+        `withGetLatestBingoLock: failed to acquire the getLatestBingo() isolation lock within ` +
+          `${timeoutMs}ms — a stuck or crashed holder likely never released it: ${String(err)}`,
+      );
+    }
+    try {
+      return await fn();
+    } finally {
+      await sql`SELECT pg_advisory_unlock(${GET_LATEST_BINGO_LOCK_KEY})`;
+    }
+  } finally {
+    await sql.end();
+  }
+}
+
+/**
+ * Test-only: opens a dedicated connection and acquires the getLatestBingo()
+ * lock without a timeout, and without ever calling `withGetLatestBingoLock`,
+ * to simulate a stuck or crashed holder for
+ * `getLatestBingoLock.test.ts`'s timeout proof. The caller must always
+ * `release()`, even on failure — until then this connection holds the lock
+ * for real, on the shared stack, blocking every other track's
+ * getLatestBingo()-dependent test too.
+ */
+export async function _acquireStuckGetLatestBingoLockForTests(): Promise<{ release: () => Promise<void> }> {
+  const dbUrl = await resolveDbUrl();
+  if (!dbUrl) {
+    throw new Error("_acquireStuckGetLatestBingoLockForTests: could not resolve a raw Postgres connection string.");
+  }
+  const sql = new SQL(dbUrl);
+  await sql`SELECT pg_advisory_lock(${GET_LATEST_BINGO_LOCK_KEY})`;
+  return {
+    release: async () => {
+      await sql`SELECT pg_advisory_unlock(${GET_LATEST_BINGO_LOCK_KEY})`;
+      await sql.end();
+    },
+  };
 }
 
 /** True when a bingo somewhere in the shared local stack already has status='active'. */

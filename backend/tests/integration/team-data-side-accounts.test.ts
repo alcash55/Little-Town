@@ -1,12 +1,16 @@
 /**
- * #54 — the specific regression this issue is about: `GET /team-data` and
- * `GET /my-team-data` used to build their per-player skill/activity delta
- * breakdown from `getAllPlayerSnapshots()` directly (main account only),
- * while the authoritative `teamProgress` figure for the same tile already
- * went through `completionEngine.ts`'s `playerMetricDelta` (side accounts
+ * #54 — the specific regression this issue is about: `GET /my-team-data`
+ * used to build its per-player skill/activity delta breakdown from
+ * `getAllPlayerSnapshots()` directly (main account only), while the
+ * authoritative `teamProgress` figure for the same tile already went
+ * through `completionEngine.ts`'s `playerMetricDelta` (side accounts
  * included). A team with at least one side account could see a tile marked
  * complete, or `teamProgress` higher than what its own per-player rows
  * summed to, with nothing on the page explaining the gap.
+ *
+ * `GET /team-data` had the same bug and was covered here too until #86
+ * removed the route (no frontend consumer, confirmed by grep across this
+ * repo and every other repo on disk).
  *
  * Real Express app + real router + real DB, same technique as
  * bingo-board.test.ts. Skips cleanly if the shared local stack isn't up or
@@ -129,7 +133,7 @@ afterAll(async () => {
   );
 });
 
-describe.skipIf(!suite)("GET /team-data, /my-team-data — side accounts reconcile with teamProgress (#54)", () => {
+describe.skipIf(!suite)("GET /my-team-data — side accounts reconcile with teamProgress (#54)", () => {
   let bingo: BingoRow;
   let team: BingoTeamRow;
   let tile: { id: string; task: string };
@@ -163,25 +167,6 @@ describe.skipIf(!suite)("GET /team-data, /my-team-data — side accounts reconci
     const side = await addSideAccount(playerId, `SideAlt${uniqueSuffix()}`, undefined, owner.id);
     await savePlayerSnapshot(playerId, "start", killCountData("side", 0), side.id);
     await savePlayerSnapshot(playerId, "current", killCountData("side", 5), side.id);
-  });
-
-  test("/team-data: the sum of per-player activityDeltas for the tile equals 15 (main + side)", async () => {
-    const { status, body } = await request("/api/bingo/team-data", signToken(owner));
-    expect(status).toBe(200);
-
-    const teamRow = body.data.teams.find((t: any) => t.teamId === team.id);
-    expect(teamRow).toBeDefined();
-
-    const normalizedTask = tile.task.toLowerCase();
-    const summedDelta = teamRow.players.reduce(
-      (sum: number, p: any) => sum + (p.activityDeltas?.[normalizedTask] ?? 0),
-      0,
-    );
-    // Main account +10, side account +5, same real person, same tile —
-    // this is exactly the sum services/completionEngine.ts's own
-    // teamProgress figure produces for it (proven against /my-team-data
-    // below).
-    expect(summedDelta).toBe(15);
   });
 
   test("/my-team-data: teamProgress for the tile equals the sum of the per-player breakdown", async () => {

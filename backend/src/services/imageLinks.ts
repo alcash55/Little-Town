@@ -196,7 +196,13 @@ export async function downloadImgurImage(candidate: ImgurCandidate): Promise<Img
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
   } catch (e) {
-    console.error(`[discordScreenshots] Imgur fetch failed for id ${candidate.id}:`, e);
+    // A dropped connection or timeout here is expected and already handled
+    // (network_error just means "skip this one") — logging the Error object
+    // itself prints its full stack, which is noise for something this
+    // routine (#86; imageLinks.test.ts's ECONNRESET case was the visible
+    // symptom). The message is enough to tell one failure mode from another.
+    const message = e instanceof Error ? e.message : String(e);
+    console.error(`[discordScreenshots] Imgur fetch failed for id ${candidate.id}: ${message}`);
     return { ok: false, reason: "network_error" };
   }
 
@@ -260,7 +266,9 @@ export async function downloadImgurImage(candidate: ImgurCandidate): Promise<Img
       chunks.push(Buffer.from(value));
     }
   } catch (e) {
-    console.error(`[discordScreenshots] Imgur ${candidate.id} stream read failed:`, e);
+    // Same reasoning as the fetch-failure catch above — message only, no stack.
+    const message = e instanceof Error ? e.message : String(e);
+    console.error(`[discordScreenshots] Imgur ${candidate.id} stream read failed: ${message}`);
     return { ok: false, reason: "network_error" };
   }
 

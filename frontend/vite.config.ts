@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { cloudflareAnalyticsPlugin } from './src/utils/cloudflareAnalyticsPlugin';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -18,7 +19,10 @@ export default defineConfig({
     // every consumer to the same resolved instance everywhere.
     dedupe: ['@emotion/react', '@emotion/styled'],
   },
-  plugins: [react()],
+  // cloudflareAnalyticsPlugin() only injects its beacon tag under
+  // `vite build` (see the plugin's own `apply: 'build'`); `bun run dev`
+  // never emits it. See src/utils/cloudflareAnalyticsPlugin.ts.
+  plugins: [react(), cloudflareAnalyticsPlugin()],
   server: {
     port: 3000,
     open: '/',
