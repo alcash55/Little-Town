@@ -6,11 +6,7 @@ import { validateBody, rsnClaimSchema } from "../lib/validation.js";
 import { canonicalizeRsn, normalizeRsn, isPlausibleRsn } from "../lib/rsn.js";
 import { hiscores } from "../services/hiscores.js";
 import { getActiveBingo } from "../db/bingos.js";
-import {
-  registerBingoPlayer,
-  findBingoPlayerCaseInsensitive,
-  savePlayerSnapshot,
-} from "../db/players.js";
+import { registerBingoPlayer, getBingoPlayer, savePlayerSnapshot } from "../db/players.js";
 import { findRsnClaim, upsertRsnClaim } from "../db/rsnClaims.js";
 
 const router = Router();
@@ -55,9 +51,10 @@ const rsnClaimLimiter = rateLimit({
 //      409 RSN_TAKEN. Re-claiming your own RSN is a no-op 200
 //      (idempotent); claiming a different RSN than one you already hold
 //      MOVES your claim (one claim per user — see the migration header).
-//   5. Create-or-find the bingo_players pool row (case-insensitively, so
-//      an admin-pre-registered "zezima" gets LINKED rather than
-//      duplicated by a user who types "Zezima") with no team assigned.
+//   5. Create-or-find the bingo_players pool row (case-insensitively — rsn
+//      is citext, see 20260910000000 — so an admin-pre-registered "zezima"
+//      gets LINKED rather than duplicated by a user who types "Zezima")
+//      with no team assigned.
 // -------------------------------------------------------
 router.post(
   "/rsn",
@@ -117,7 +114,7 @@ router.post(
 
     await upsertRsnClaim(userId, canonical, rsnNormalized);
 
-    const existingPoolEntry = await findBingoPlayerCaseInsensitive(bingo.id, canonical);
+    const existingPoolEntry = await getBingoPlayer(bingo.id, canonical);
     const rsnForPool = existingPoolEntry?.rsn ?? canonical;
     const player = await registerBingoPlayer(bingo.id, rsnForPool, undefined, userId);
 

@@ -186,140 +186,21 @@ router.get(
 router.use(protect);
 
 /**
- * GET /api/bingo/team-data
- *
- * Returns progress data for the active bingo, filtered to only the skills
- * and activities that correspond to tiles on the bingo board. This avoids
- * leaking irrelevant stat changes and keeps the response focused.
- *
- * Each player row contains the delta between their start and current
- * snapshots (XP gained, KC gained per activity).
- *
- * Deliberately does NOT expose which specific tiles a team is targeting,
- * keeping team tactics private.
- */
-router.get(
-  "/team-data",
-  asyncHandler(async (req: Request, res: Response) => {
-    const bingo = await getActiveBingo();
-
-    if (!bingo?.id) {
-      return res.status(404).json({ success: false, error: "No active bingo found" });
-    }
-
-    // Load the board tiles so we can restrict tracked stats to bingo-relevant ones
-    const tiles = await getActiveBingoBoard();
-    // Derive tracked skill names (Experience tiles) and activity names (Kill Count tiles)
-    const trackedSkills = new Set<string>();
-    const trackedActivities = new Set<string>();
-    for (const tile of tiles) {
-      if (tile.type === "Experience") trackedSkills.add(tile.task.toLowerCase());
-      if (tile.type === "Kill Count") trackedActivities.add(tile.task.toLowerCase());
-    }
-    // If the board is empty (not yet built), fall back to showing everything
-    const filterSkills = trackedSkills.size > 0;
-    const filterActivities = trackedActivities.size > 0;
-
-    const rows = await loadPlayerRosterWithAccounts(bingo.id);
-
-    // Build teamId -> name lookup
-    const teamNameById: Record<string, string> = {};
-    for (const t of bingo.teamObjects ?? []) {
-      teamNameById[t.id] = t.name;
-    }
-
-    const playerData = rows.map(({ player, start, current, accounts }) => {
-      // Delta math goes through playerMetricDelta (services/completionEngine.ts)
-      // rather than diffing start/current by hand, so a side account's gains
-      // land in this roster sum exactly like they do in the engine's own
-      // teamProgress figure for the same tile (#54 — the two used to
-      // disagree because this loop only ever read the main account).
-      const enginePlayer: EnginePlayer = { playerId: player.id, teamId: player.team_id, accounts };
-
-      // Skill XP deltas — only for skills referenced by an Experience tile.
-      // Keyed by normalizeTaskText(curr.name) (D1 fix, TEAM-BRIEF.md Sprint
-      // 14) — see the /my-team-data block below for the full rationale;
-      // this roster block carries the identical bug/fix. Names are
-      // discovered from the main account's current snapshot only (every
-      // OSRS account returns the same fixed skill/activity list, so this
-      // doesn't miss a side-account-only metric — see buildHiscoreVocab's
-      // doc comment).
-      const skillDeltas: Record<string, number> = {};
-      if (start?.skills && current?.skills) {
-        for (const curr of current.skills as Array<{ id: number; name: string; xp: number }>) {
-          if (filterSkills && !trackedSkills.has(curr.name.toLowerCase())) continue;
-          const normalizedName = normalizeTaskText(curr.name);
-          const delta = playerMetricDelta(enginePlayer, { kind: "skill", normalizedName });
-          if (delta > 0) skillDeltas[normalizedName] = delta;
-        }
-      }
-
-      // Activity KC deltas — only for activities referenced by a Kill Count tile
-      const activityDeltas: Record<string, number> = {};
-      if (start?.activities && current?.activities) {
-        for (const curr of current.activities as Array<{ id: number; name: string; kc: number }>) {
-          if (filterActivities && !trackedActivities.has(curr.name.toLowerCase())) continue;
-          const normalizedName = normalizeTaskText(curr.name);
-          const delta = playerMetricDelta(enginePlayer, { kind: "activity", normalizedName });
-          if (delta > 0) activityDeltas[normalizedName] = delta;
-        }
-      }
-
-      const teamId = player.team_id;
-      const teamName = teamId ? (teamNameById[teamId] ?? "Unassigned") : "Unassigned";
-
-      return {
-        rsn: player.rsn,
-        teamId,
-        teamName,
-        isCaptain: !!player.captain_team_id,
-        snapshotTakenAt: current?.taken_at ?? null,
-        skillDeltas,
-        activityDeltas,
-      };
-    });
-
-    // Group players by team
-    const teamMap: Record<
-      string,
-      { teamId: string | null; teamName: string; players: typeof playerData }
-    > = {};
-    for (const p of playerData) {
-      const key = p.teamId ?? "unassigned";
-      if (!teamMap[key]) {
-        teamMap[key] = { teamId: p.teamId, teamName: p.teamName, players: [] };
-      }
-      teamMap[key].players.push(p);
-    }
-
-    const teams = Object.values(teamMap).sort((a, b) =>
-      a.teamName.localeCompare(b.teamName),
-    );
-
-    const response: ApiResponse = {
-      success: true,
-      data: {
-        bingoName: bingo.name,
-        startDate: bingo.startDate,
-        endDate: bingo.endDate,
-        teams,
-      },
-    };
-
-    res.status(200).json(response);
-  }),
-);
-
-
-/**
  * GET /api/bingo/my-team-data
  *
- * Returns bingo progress for the current user's team only.
- * Shape:
- *   - players[]  — one row per player on the team
- *   - tiles[]    — ordered tile list (columns)
- *   - For KC/XP tiles: playerProgress[rsn][tileIndex] = numeric delta
- *   - For Drops tiles: playerDrops[rsn][tileIndex] = 'approved' | 'pending' | null
+ * Returns bingo progress for the current user's team only. Response shape
+ * (data):
+ *   - bingoName, startDate, endDate — the active bingo
+ *   - teamId, teamName — the caller's team (null/"Unassigned" if unrostered)
+ *   - tiles[]   — board order, each { task, type, points, target,
+ *     completed, teamProgress }. `teamProgress` is null for Drops tiles
+ *     (dropStatus on each player covers those instead); `completed` mirrors
+ *     an approved Drops submission or the engine's KC/XP threshold.
+ *   - players[] — one row per team member: { rsn, playerId, teamId,
+ *     teamName, isCaptain, snapshotTakenAt, skillDeltas, activityDeltas,
+ *     dropStatus }. `skillDeltas`/`activityDeltas` are keyed by
+ *     normalizeTaskText(name); `dropStatus` is keyed by tile task, each
+ *     value 'approved' | 'pending' | undefined.
  *
  * The caller's own player row is resolved via resolveMyBingoPlayer()
  * (db/players.ts) — rsn_claims first, falling back to an unambiguous
