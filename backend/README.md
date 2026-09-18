@@ -317,6 +317,25 @@ bucket, and inserted as a `pending` row in `bingo_submissions` (deduped on `disc
 so re-scans are safe). Approving/denying a submission via the admin API reacts 👍/👎 on the
 original Discord message, best-effort (never blocks the review).
 
+#### Setting up the bot for a bingo
+
+Do this before each bingo that takes screenshot submissions. It is not needed between bingos.
+
+1. **Create or reuse the bot.** In the [Discord Developer Portal](https://discord.com/developers/applications), open the application, go to **Bot**, and copy the token. Under **Privileged Gateway Intents**, turn on **Message Content Intent**. Without it the bot sees messages but not their attachments, so nothing is ingested.
+2. **Invite it to the server.** Open this URL with the application's ID in place of `APP_ID`, pick the server, and authorize:
+
+   ```
+   https://discord.com/oauth2/authorize?client_id=APP_ID&scope=bot&permissions=68672
+   ```
+
+   `68672` grants exactly what the code uses: View Channel, Send Messages (the bingo-ended notice), Add Reactions (the approve and deny reactions), and Read Message History (the 100-message backfill on startup).
+3. **Pick the channel and set its permissions.** The bot has no role check. It ingests every image posted in the channel by anyone who isn't a bot. The channel's permissions are the only control over who can submit. Give Send Messages and Attach Files to the bingo participants' role only. If the channel is private, add the bot, or the role Discord created for it, to the channel with the four permissions above.
+4. **Copy the channel ID.** In Discord, turn on **Settings > Advanced > Developer Mode**, then right-click the channel and choose **Copy Channel ID**.
+5. **Set the production env vars on Render** and redeploy: `DISCORD_BOT_TOKEN` and `DISCORD_SCREENSHOT_CHANNEL_ID`. On startup the Render log should show `[discordScreenshots] Logged in as <bot name>` and then `Backfill complete (N messages scanned)`. If it says ingest is disabled, one of the two variables is missing.
+6. **Test it.** Post one image in the channel. It should appear as a pending submission under the admin screenshot review. Approving it adds a 👍 reaction to the Discord message.
+
+Between bingos, unset `DISCORD_SCREENSHOT_CHANNEL_ID` or leave the channel read-only, so stray images don't pile up as pending submissions.
+
 ## Authentication
 
 Include the JWT in all protected requests:
