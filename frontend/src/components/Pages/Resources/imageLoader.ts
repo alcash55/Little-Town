@@ -7,9 +7,13 @@
  * Assets live under `src/assets/Images/resources/**` (R2.a).
  */
 
+// `?no-inline` keeps every image a separate file. Without it, Vite base64-inlines
+// anything under `build.assetsInlineLimit` (4 kB) into the Resources JS chunk,
+// which added ~21 kB of image data to the script whether or not a card showed.
 const realImages = import.meta.glob('/src/assets/Images/resources/**/*.{png,jpg,jpeg,webp,gif}', {
   eager: true,
   import: 'default',
+  query: '?no-inline',
 }) as Record<string, string>;
 
 function keyAfter(fullPath: string, marker: string): string | null {
