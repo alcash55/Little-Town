@@ -32,8 +32,9 @@ describe('gangIcons', () => {
     expect(stale, 'remove these from GANG_LABELS').toEqual([]);
   });
 
-  it('announces cum.svg as "relish", not its filename (#59)', () => {
-    expect(gangIcons.find((icon) => icon.name === 'cum')?.label).toBe('relish');
+  // guthix.svg was cum.svg, whose filename once reached screen readers (#59).
+  it('announces guthix.svg as "guthix"', () => {
+    expect(gangIcons.find((icon) => icon.name === 'guthix')?.label).toBe('guthix');
   });
 
   // Vite inlines svgs under the 4 kB asset limit as data URIs and emits the
