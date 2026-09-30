@@ -1,10 +1,10 @@
 import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { GANG_LABELS, gangIcons } from './gangIcons';
+import { gangIcons, labelFromFilename } from './gangIcons';
 
-// Read from disk rather than trusting the glob, so a file the glob misses and
-// a file with no reviewed label both show up here.
+// Read from disk rather than trusting the glob, so a file the glob misses
+// shows up here.
 const gangsDir = resolve(__dirname, '../../../assets/Images/gangs');
 const filesOnDisk = readdirSync(gangsDir)
   .filter((file) => file.endsWith('.svg'))
@@ -19,22 +19,33 @@ describe('gangIcons', () => {
     ).toEqual(filesOnDisk);
   });
 
-  it('has a reviewed label for every file in gangs/', () => {
-    const unlabeled = filesOnDisk.filter((name) => !(name in GANG_LABELS));
+  // The filename is what screen readers hear, and one once read "Little Town
+  // cum logo" (#59). Pinning the list makes a new or renamed file fail here
+  // until someone has looked at what it will announce.
+  it('announces exactly these labels', () => {
     expect(
-      unlabeled,
-      'add each of these to GANG_LABELS in gangIcons.ts; the filename is never used as alt text (#59)',
-    ).toEqual([]);
+      gangIcons.map((icon) => icon.label),
+      'a gang file was added or renamed; check its label reads well aloud, then update this list',
+    ).toEqual([
+      'astral',
+      'black heart',
+      'cat',
+      'fish',
+      'foot',
+      'guthix',
+      'ketchup',
+      'red hat',
+      'skull',
+    ]);
   });
 
-  it('has no label left over for a file that is gone', () => {
-    const stale = Object.keys(GANG_LABELS).filter((name) => !filesOnDisk.includes(name));
-    expect(stale, 'remove these from GANG_LABELS').toEqual([]);
-  });
-
-  // guthix.svg was cum.svg, whose filename once reached screen readers (#59).
-  it('announces guthix.svg as "guthix"', () => {
-    expect(gangIcons.find((icon) => icon.name === 'guthix')?.label).toBe('guthix');
+  it.each([
+    ['cat', 'cat'],
+    ['blackHeart', 'black heart'],
+    ['redHat', 'red hat'],
+    ['bigRedHat', 'big red hat'],
+  ])('turns the filename %s into the label "%s"', (name, label) => {
+    expect(labelFromFilename(name)).toBe(label);
   });
 
   // Vite inlines svgs under the 4 kB asset limit as data URIs and emits the
