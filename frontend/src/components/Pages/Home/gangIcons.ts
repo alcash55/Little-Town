@@ -12,9 +12,9 @@ export const GANG_LABELS: Record<string, string> = {
   astral: 'astral',
   blackHeart: 'black heart',
   cat: 'cat',
-  cum: 'relish',
   fish: 'fish',
   foot: 'foot',
+  guthix: 'guthix',
   ketchup: 'ketchup',
   redHat: 'red hat',
   skull: 'skull',
@@ -33,4 +33,6 @@ export const gangIcons: GangIcon[] = Object.entries(gangFiles)
     const name = path.slice(path.lastIndexOf('/') + 1).replace(/\.svg$/, '');
     return { name, src, label: GANG_LABELS[name] };
   })
-  .sort((a, b) => a.name.localeCompare(b.name));
+  // Plain code-unit order rather than localeCompare, so the row comes out the
+  // same on every machine and CI runner.
+  .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
