@@ -71,14 +71,7 @@ const Home = () => {
         }}
       >
         {gangIcons.map(({ name, src, label }) => (
-          <img
-            // An unlabelled icon is decorative rather than named after its file (#59).
-            alt={label ? `Little Town ${label} logo` : ''}
-            key={name}
-            width="25"
-            height="auto"
-            src={src}
-          />
+          <img alt={`Little Town ${label} logo`} key={name} width="25" height="auto" src={src} />
         ))}
       </Box>
     </Slide>
