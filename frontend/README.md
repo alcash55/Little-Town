@@ -26,12 +26,16 @@ local dev — see [`../backend/README.md`](../backend/README.md)).
 | `bun run preview:remote` | Explicit escape hatch: builds and previews using the real `.env.production` value (the deployed prod API). Only use this deliberately. |
 | `bun run test`          | Vitest.                                                                                           |
 
-`bun run dev` bypasses `ProtectedRoute`'s role gating entirely: every route
-renders regardless of login state or role, because `import.meta.env.DEV`
-short-circuits the check before it looks at the user (see
-`src/components/Routes/ProtectedRoute.tsx`). Gating is enforced in
-`bun run build`/`bun run preview` and in the deployed app, never in the dev
-server. Use `preview` when you need to see the real auth behavior locally.
+The sidebar filters links by the signed-in user's role in every mode.
+To test admin navigation locally, run the local backend and Supabase stack
+as described in [`backend/README.md`](../backend/README.md), then sign in
+with the seeded admin account defined in
+[`backend/supabase/seed.sql`](../backend/supabase/seed.sql).
+
+`ProtectedRoute` still allows direct route access in Vite development mode.
+That shortcut does not grant an admin role or expose admin sidebar links.
+Use `bun run preview` with the local backend to test the production route
+checks locally.
 
 ## Environment variables
 
