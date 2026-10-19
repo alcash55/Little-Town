@@ -139,7 +139,7 @@ app.use("/api/invites", publicInviteRoutes);
 app.use("/api/onboarding", onboardingRoutes);
 
 // 404 handler
-app.use("*", (req: Request, res: Response) => {
+app.use((req: Request, res: Response) => {
   res.status(404).json({
     success: false,
     error: `Route ${req.originalUrl} not found`,
