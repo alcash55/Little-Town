@@ -5,7 +5,7 @@ import { mapWithConcurrency } from "../lib/concurrency.js";
 import { hiscores } from "./hiscores.js";
 import { checkRsnChange } from "./rsnChangeDetection.js";
 import { snapshotAllSideAccounts } from "./sideAccountSnapshots.js";
-import { completeEndedBingos } from "./bingoLifecycle.js";
+import { completeEndedBingos, deleteExpiredHiscoreHistory } from "./bingoLifecycle.js";
 
 const INTERVAL_MS = 20 * 60 * 1000; // 20 minutes
 
@@ -178,6 +178,7 @@ async function tick(): Promise<void> {
     // isBingoPastEnd's doc comment for the belt-and-braces D3 freeze this
     // sits alongside).
     await completeEndedBingos();
+    await deleteExpiredHiscoreHistory();
     await autoActivateDueBingos();
     await refreshAllPlayerSnapshots();
   } catch (e) {

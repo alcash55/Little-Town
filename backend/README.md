@@ -307,6 +307,23 @@ All admin routes require a valid JWT with role `admin` or `moderator`.
 | POST   | `/api/admin/bingo/screenshots/:id/approve`    | admin, moderator | Approve a submission; body `{ tileId, teamId }` (admin assigns which tile/team it counts for) |
 | POST   | `/api/admin/bingo/screenshots/:id/deny`       | admin, moderator | Deny a submission                            |
 
+### Hiscore history retention
+
+The existing 20-minute stats cron and server boot lifecycle check delete
+`bingo_player_hiscore_history` for completed bingos more than five days after
+`end_date`. Main and side account history share this policy. Current/start
+snapshots, scores, players, and submissions remain unchanged.
+
+The cutoff uses the current `end_date` on every run, so an extension delays
+cleanup. A completed bingo without `end_date` uses `updated_at` from its
+completion transition. Later edits also move that fallback timestamp.
+
+`GET /api/admin/bingo/latest` includes `historyDeletionAt`, an ISO timestamp
+while the latest bingo is complete and inside its retention window, otherwise
+`null`. Bingo Overview polls it and warns admins of the exact UTC deletion
+date. Apply migration `20261019000000_hiscore_history_retention.sql` before
+running the updated backend.
+
 ### Discord screenshot ingest
 
 When `DISCORD_BOT_TOKEN` and `DISCORD_SCREENSHOT_CHANNEL_ID` are both set, a discord.js gateway
