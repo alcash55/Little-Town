@@ -18,9 +18,8 @@ name: CI
 # 14.26.4 -> 14.27.0), with no warning. That defeats the entire contract of
 # --frozen-lockfile while still reporting success.
 #
-# Neither workspace has a `lint` or `typecheck` script -- the reusable
-# workflow skips both automatically since neither script name exists in
-# either package.json.
+# The frontend reusable workflow detects its lint and typecheck scripts
+# and runs both before tests and the production build.
 #
 # `backend` does NOT use the shared reusable workflow (unlike `frontend`
 # below) -- issue #41. 287 of 526 backend integration tests self-skip
