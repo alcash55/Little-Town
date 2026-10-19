@@ -111,6 +111,7 @@ export type PlayerConflict = {
 type LatestBingoResponse = {
   bingo: (BingoConfig & { teamObjects?: BingoTeam[] }) | null;
   pendingScreenshots: number;
+  historyDeletionAt: string | null;
 };
 
 export const useBingoOverview = () => {
@@ -144,6 +145,7 @@ export const useBingoOverview = () => {
   // Track A's review-endpoint audit) so the ended-banner's count reflects the
   // frozen contract's own field rather than a second derived source.
   const [latestPendingCount, setLatestPendingCount] = useState(0);
+  const [historyDeletionAt, setHistoryDeletionAt] = useState<string | null>(null);
 
   // Tracks the active bingo id across renders without re-subscribing the poll
   // effect below every time `bingo` changes.
@@ -203,12 +205,15 @@ export const useBingoOverview = () => {
         }
         applyBingoData(null);
         setLatestPendingCount(0);
+        setHistoryDeletionAt(null);
         return null;
       }
       setPermissionDenied(false);
       const json = await res.json();
       const data: LatestBingoResponse | null = json.data ?? null;
       applyBingoData(data?.bingo ?? null);
+      setHistoryDeletionAt(data?.historyDeletionAt ?? null);
+      fingerprintPartsRef.current.bingo = JSON.stringify(data);
       setLatestPendingCount(
         typeof data?.pendingScreenshots === 'number' ? data.pendingScreenshots : 0,
       );
@@ -247,6 +252,7 @@ export const useBingoOverview = () => {
       if (data) {
         applyBingoData(data);
         setLatestPendingCount(0);
+        setHistoryDeletionAt(null);
         return data;
       }
       // No active/draft bingo — /bingo/details is active|draft-only by
@@ -444,6 +450,7 @@ export const useBingoOverview = () => {
     if (pollingRef.current) return;
     pollingRef.current = true;
     try {
+      await fetchBingo();
       await Promise.all([
         fetchPendingScreenshots(),
         fetchHealth(),
@@ -462,7 +469,7 @@ export const useBingoOverview = () => {
     } finally {
       pollingRef.current = false;
     }
-  }, [fetchPendingScreenshots, fetchHealth, fetchConflicts, fetchTeamStats, fetchPlayerStats]);
+  }, [fetchBingo, fetchPendingScreenshots, fetchHealth, fetchConflicts, fetchTeamStats, fetchPlayerStats]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -586,6 +593,7 @@ export const useBingoOverview = () => {
     isComplete,
     isPlanned,
     latestPendingCount,
+    historyDeletionAt,
     // Start now
     startingNow,
     startError,
