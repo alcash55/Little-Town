@@ -24,7 +24,12 @@ export default function TeamDrafter() {
             <Badge
               color="warning"
               badgeContent={hook.unclaimedPlayers.length}
-              sx={{ '& .MuiBadge-badge': { right: -12, top: -2 } }}
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 1,
+                '& .MuiBadge-badge': { position: 'static', transform: 'none' },
+              }}
             >
               RSN Claims
             </Badge>
