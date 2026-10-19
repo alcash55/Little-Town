@@ -183,3 +183,27 @@ export async function endBingoEarly(
 
   return { id: updated.id, name: updated.name, pendingCount, endedAt };
 }
+
+/** Delete expired main/side-account history atomically against live bingo dates. */
+export async function deleteExpiredHiscoreHistory(now: Date = new Date()): Promise<number> {
+  const { data, error } = await getDb().rpc("delete_expired_hiscore_history", {
+    p_now: now.toISOString(),
+  });
+  if (error) throw new Error(`Failed to delete expired hiscore history: ${error.message}`);
+  return data ?? 0;
+}
+
+/** The dashboard uses the same five-day cutoff as the retention RPC. */
+export function getHiscoreHistoryDeletionDate(
+  bingo: { status?: string; endDate?: string | null; updatedAt?: string } | null,
+  now: Date = new Date(),
+): string | null {
+  if (bingo?.status !== "complete") return null;
+  // A manually completed bingo with no end_date uses updated_at from the
+  // completion transition. Later edits also move this fallback timestamp.
+  const endedAt = bingo.endDate ?? bingo.updatedAt;
+  if (!endedAt) return null;
+  const deletion = new Date(endedAt).getTime() + 5 * 24 * 60 * 60 * 1000;
+  if (!Number.isFinite(deletion) || deletion < now.getTime()) return null;
+  return new Date(deletion).toISOString();
+}
