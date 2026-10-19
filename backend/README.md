@@ -307,6 +307,23 @@ All admin routes require a valid JWT with role `admin` or `moderator`.
 | POST   | `/api/admin/bingo/screenshots/:id/approve`    | admin, moderator | Approve a submission; body `{ tileId, teamId }` (admin assigns which tile/team it counts for) |
 | POST   | `/api/admin/bingo/screenshots/:id/deny`       | admin, moderator | Deny a submission                            |
 
+### Hiscore history retention
+
+The existing 20-minute stats cron and server boot lifecycle check delete
+`bingo_player_hiscore_history` for completed bingos more than five days after
+`end_date`. Main and side account history share this policy. Current/start
+snapshots, scores, players, and submissions remain unchanged.
+
+The cutoff uses the current `end_date` on every run, so an extension delays
+cleanup. A completed bingo without `end_date` uses `updated_at` from its
+completion transition. Later edits also move that fallback timestamp.
+
+`GET /api/admin/bingo/latest` includes `historyDeletionAt`, an ISO timestamp
+while the latest bingo is complete and inside its retention window, otherwise
+`null`. Bingo Overview polls it and warns admins of the exact UTC deletion
+date. Apply migration `20261019000000_hiscore_history_retention.sql` before
+running the updated backend.
+
 ### Discord screenshot ingest
 
 When `DISCORD_BOT_TOKEN` and `DISCORD_SCREENSHOT_CHANNEL_ID` are both set, a discord.js gateway
@@ -316,6 +333,25 @@ Each image attachment is downloaded, uploaded to the private `screenshots` Supab
 bucket, and inserted as a `pending` row in `bingo_submissions` (deduped on `discord_message_id`,
 so re-scans are safe). Approving/denying a submission via the admin API reacts 👍/👎 on the
 original Discord message, best-effort (never blocks the review).
+
+#### Setting up the bot for a bingo
+
+Do this before each bingo that takes screenshot submissions. It is not needed between bingos.
+
+1. **Create or reuse the bot.** In the [Discord Developer Portal](https://discord.com/developers/applications), open the application, go to **Bot**, and copy the token. Under **Privileged Gateway Intents**, turn on **Message Content Intent**. Without it the bot sees messages but not their attachments, so nothing is ingested.
+2. **Invite it to the server.** Open this URL with the application's ID in place of `APP_ID`, pick the server, and authorize:
+
+   ```
+   https://discord.com/oauth2/authorize?client_id=APP_ID&scope=bot&permissions=68672
+   ```
+
+   `68672` grants exactly what the code uses: View Channel, Send Messages (the bingo-ended notice), Add Reactions (the approve and deny reactions), and Read Message History (the 100-message backfill on startup).
+3. **Pick the channel and set its permissions.** The bot has no role check. It ingests every image posted in the channel by anyone who isn't a bot. The channel's permissions are the only control over who can submit. Give Send Messages and Attach Files to the bingo participants' role only. If the channel is private, add the bot, or the role Discord created for it, to the channel with the four permissions above.
+4. **Copy the channel ID.** In Discord, turn on **Settings > Advanced > Developer Mode**, then right-click the channel and choose **Copy Channel ID**.
+5. **Set the production env vars on Render** and redeploy: `DISCORD_BOT_TOKEN` and `DISCORD_SCREENSHOT_CHANNEL_ID`. On startup the Render log should show `[discordScreenshots] Logged in as <bot name>` and then `Backfill complete (N messages scanned)`. If it says ingest is disabled, one of the two variables is missing.
+6. **Test it.** Post one image in the channel. It should appear as a pending submission under the admin screenshot review. Approving it adds a 👍 reaction to the Discord message.
+
+Between bingos, unset `DISCORD_SCREENSHOT_CHANNEL_ID` or leave the channel read-only, so stray images don't pile up as pending submissions.
 
 ## Authentication
 
@@ -394,6 +430,32 @@ TEST_SUPABASE_URL=http://127.0.0.1:54321 \
 TEST_SUPABASE_SERVICE_ROLE_KEY=<local service_role key from db:status> \
 bun test             # explicit override, e.g. in CI
 ```
+
+### Unit module mocks
+
+Bun's `mock.module` registrations affect the entire test process, and
+`mock.restore()` does not restore replaced modules. Suites that use module
+mocks run as child Bun processes through `tests/unit/runIsolatedUnitTests.ts`.
+The `.test.ts` entry points remain part of plain `bun test`; their
+`.fixture.ts` files execute only when explicitly passed to the child runner.
+Child failures, timeouts, and skipped tests fail the parent test. Child test
+output is printed so individual cases and counts remain visible.
+
+Audit for #108:
+
+| Isolated suite | Replaced modules |
+| --- | --- |
+| `dependencyHealth` | `db/client`, `db/staticData`, `services/hiscores` |
+| `getLatestBingo` | `db/client` |
+| `discordScreenshots` | `db/client`, `db/bingoSubmissions`, `db/bingos` |
+| `hiscoresRateLimit` | `services/hiscores` |
+| `hiscoreVocab` | `services/hiscores` |
+| `staticDataCron` | `services/hiscores`, `db/staticData` |
+
+`tests/integration/dbClientLeak.test.ts` checks that integration tests receive
+an actual `SupabaseClient`. A leaked query-builder stub produces an explicit
+module-leak error before obscure missing-method failures. Like other database
+integration tests, this check requires a reachable local stack.
 
 ### CI (issue #41)
 

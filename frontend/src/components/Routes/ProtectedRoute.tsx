@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useLoginModal } from '../LoginModal/useLoginModal';
 import { LoadingContainer } from '../LoadingContainer/LoadingContainer';
@@ -6,7 +7,7 @@ import { useEffectiveRole } from '../../utils/useEffectiveRole';
 type Role = 'admin' | 'user' | 'moderator';
 
 interface ProtectedRouteProps {
-  children: JSX.Element;
+  children: ReactElement;
   allowedRoles: Role[];
 }
 

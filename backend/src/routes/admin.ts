@@ -72,7 +72,7 @@ import {
 import { getPlayerStats, PlayerStat, getTeamStatsWithUnresolvable } from "../db/playerStats.js";
 import { reactToSubmissionMessage } from "../services/discordScreenshots.js";
 import { getDependencyHealth } from "../services/dependencyHealth.js";
-import { endBingoEarly } from "../services/bingoLifecycle.js";
+import { endBingoEarly, getHiscoreHistoryDeletionDate } from "../services/bingoLifecycle.js";
 import { deleteBingoWithPurge } from "../services/bingoDelete.js";
 import {
   listRsnClaims,
@@ -166,9 +166,9 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const bingo = await getLatestBingo();
     const pendingScreenshots = bingo?.id ? await countPendingSubmissions(bingo.id) : 0;
-    const response: ApiResponse<{ bingo: BingoConfig | null; pendingScreenshots: number }> = {
+    const response: ApiResponse<{ bingo: BingoConfig | null; pendingScreenshots: number; historyDeletionAt: string | null }> = {
       success: true,
-      data: { bingo, pendingScreenshots },
+      data: { bingo, pendingScreenshots, historyDeletionAt: getHiscoreHistoryDeletionDate(bingo) },
     };
     res.status(200).json(response);
   }),
