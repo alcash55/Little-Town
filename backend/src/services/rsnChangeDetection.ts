@@ -237,7 +237,7 @@ async function checkRsnChangeForSubject(
 
     if (renameResult) {
       try {
-        if (subject.kind === "player") await updatePlayerRsn(subject.id, renameResult.newRsn);
+        if (subject.kind === "player") await updatePlayerRsn(subject.id, subject.rsn, renameResult.newRsn);
         else await updateSideAccountRsn(subject.id, renameResult.newRsn);
         await resolveRsnChangeAutoRename(row.id, renameResult.newRsn);
 
