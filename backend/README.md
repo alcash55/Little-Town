@@ -414,6 +414,32 @@ TEST_SUPABASE_SERVICE_ROLE_KEY=<local service_role key from db:status> \
 bun test             # explicit override, e.g. in CI
 ```
 
+### Unit module mocks
+
+Bun's `mock.module` registrations affect the entire test process, and
+`mock.restore()` does not restore replaced modules. Suites that use module
+mocks run as child Bun processes through `tests/unit/runIsolatedUnitTests.ts`.
+The `.test.ts` entry points remain part of plain `bun test`; their
+`.fixture.ts` files execute only when explicitly passed to the child runner.
+Child failures, timeouts, and skipped tests fail the parent test. Child test
+output is printed so individual cases and counts remain visible.
+
+Audit for #108:
+
+| Isolated suite | Replaced modules |
+| --- | --- |
+| `dependencyHealth` | `db/client`, `db/staticData`, `services/hiscores` |
+| `getLatestBingo` | `db/client` |
+| `discordScreenshots` | `db/client`, `db/bingoSubmissions`, `db/bingos` |
+| `hiscoresRateLimit` | `services/hiscores` |
+| `hiscoreVocab` | `services/hiscores` |
+| `staticDataCron` | `services/hiscores`, `db/staticData` |
+
+`tests/integration/dbClientLeak.test.ts` checks that integration tests receive
+an actual `SupabaseClient`. A leaked query-builder stub produces an explicit
+module-leak error before obscure missing-method failures. Like other database
+integration tests, this check requires a reachable local stack.
+
 ### CI (issue #41)
 
 `.github/workflows/ci.yml`'s `backend` job starts the local Supabase stack
