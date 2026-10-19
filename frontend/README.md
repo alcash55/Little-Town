@@ -11,7 +11,7 @@ cp .env.example .env
 ```
 
 `bun install` is required before any script below, including `bun run test`
-and `tsc --noEmit`, will run.
+and `bun run typecheck`, will run. Use Node.js 22.12 or later for this tooling.
 
 Edit `.env` and set `VITE_BASEURL` to the backend API URL (`http://localhost:8081` for
 local dev — see [`../backend/README.md`](../backend/README.md)).
@@ -21,10 +21,16 @@ local dev — see [`../backend/README.md`](../backend/README.md)).
 | Script                 | Description                                                                                     |
 | ----------------------- | ------------------------------------------------------------------------------------------------ |
 | `bun run dev`           | Vite dev server on `http://localhost:3000`. Mode is `development` — never touches `.env.production`. |
-| `bun run build`         | Production build (`tsc && vite build --mode production`) — loads `.env.production`.              |
+| `bun run build`         | TypeScript 7 check followed by the production Vite build. Loads `.env.production`.              |
+| `bun run typecheck`     | TypeScript 7 native compiler, with no emitted files.                                             |
 | `bun run preview`       | **Safe default.** Builds and serves the build locally, forcing `VITE_BASEURL=http://localhost:8081` regardless of `.env.production`. |
 | `bun run preview:remote` | Explicit escape hatch: builds and previews using the real `.env.production` value (the deployed prod API). Only use this deliberately. |
 | `bun run test`          | Vitest.                                                                                           |
+
+The native TypeScript 7 compiler is installed as `typescript-native` and
+called explicitly by `typecheck`. ESLint uses the `typescript` package at
+version 6 because its parser still depends on that compiler API. Use
+`bun run typecheck` to check the app with the production compiler.
 
 The sidebar filters links by the signed-in user's role in every mode.
 To test admin navigation locally, run the local backend and Supabase stack
