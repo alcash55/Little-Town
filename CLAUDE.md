@@ -10,8 +10,8 @@ Little-Town is a full-stack OSRS Bingo Competition tracker.
 
 | Layer | Technology |
 |---|---|
-| **Frontend** | React 18, TypeScript 5, **MUI v9**, Vite, Bun, React Router v6, dnd-kit, `@mui/x-charts` |
-| **Backend** | Bun + Express 4, TypeScript 5, Supabase (Postgres), JWT, bcrypt, Puppeteer |
+| **Frontend** | React 19, TypeScript 7, **MUI v9**, Vite, Bun, React Router v7, dnd-kit, `@mui/x-charts` |
+| **Backend** | Bun + Express 5, TypeScript 7, Supabase (Postgres), JWT, bcrypt, Puppeteer |
 | **Deployment** | Cloudflare (frontend), Supabase (database), Render (APIs) |
 
 MUI is **v9** (upgraded from v5 in Sprint 5) — v5-era APIs and codemod-outdated patterns are wrong here.
@@ -159,10 +159,13 @@ If `docker` says it "could not be found in this WSL 2 distro", Docker Desktop is
 
 ```bash
 cd backend  && bun test && bun x tsc --noEmit
-cd frontend && bun run test && bun x tsc --noEmit
+cd frontend && bun run test && bun run typecheck
 ```
 
 Run the checks for whichever side you touched before reporting work as done. A passing build is not proof the UI works — verify UI changes in a real browser.
+
+Frontend `typecheck` calls the TypeScript 7 native compiler explicitly.
+Its separate TypeScript 6 package supplies the API required by ESLint.
 
 ---
 
