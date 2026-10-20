@@ -6,7 +6,8 @@
   "homepage": "https://littletown.gay/",
   "scripts": {
     "dev": "bunx --bun vite",
-    "build": "tsc && vite build --mode production",
+    "build": "npm run typecheck && vite build --mode production",
+    "typecheck": "node node_modules/typescript-native/bin/tsc --noEmit",
     "preview": "VITE_BASEURL=http://localhost:8081 vite build --mode production && vite preview",
     "preview:remote": "vite build --mode production && vite preview",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx}\"",
@@ -27,25 +28,26 @@
     "@mui/x-charts": "^9.9.0",
     "@mui/x-date-pickers": "^9.9.0",
     "date-fns": "^3.6.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.12.0"
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router-dom": "^7.18.4"
   },
   "devDependencies": {
     "@eslint/js": "^9",
     "@testing-library/react": "^16.3.2",
-    "@types/react": "^18.0.28",
-    "@types/react-dom": "^18.0.11",
-    "@vitejs/plugin-react": "^4.3.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
     "eslint": "^9",
     "eslint-plugin-react-hooks": "^5",
     "eslint-plugin-react-refresh": "^0.4",
     "globals": "^15",
     "happy-dom": "^20.10.6",
     "prettier": "^2.8.8",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.2",
+    "typescript-native": "npm:typescript@^7.0.2",
     "typescript-eslint": "^8",
-    "vite": "^6.4.3",
-    "vitest": "^3.2.4"
+    "vite": "^8.3.1",
+    "vitest": "^5.0.5"
   }
 }

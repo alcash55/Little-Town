@@ -242,6 +242,7 @@ const BingoOverview = () => {
     isComplete,
     isPlanned,
     latestPendingCount,
+    historyDeletionAt,
     startingNow,
     startError,
     startNow,
@@ -428,6 +429,13 @@ const BingoOverview = () => {
   // ── Active bingo dashboard ───────────────────────────────────────────────
   return (
     <PageLayout title="Bingo Overview" maxWidth="full">
+      {isComplete && historyDeletionAt && (
+        <Alert severity="warning" icon={<WarningAmberIcon />} sx={{ width: '100%' }}>
+          Hiscore history for {bingo.name} is scheduled for deletion on{' '}
+          <time dateTime={historyDeletionAt}>{new Date(historyDeletionAt).toUTCString()}</time>.
+          {' '}Export or review this bingo's scores before then.
+        </Alert>
+      )}
       {/* ── Stats refresh feedback ── */}
       {refreshStatsMessage && (
         <Alert

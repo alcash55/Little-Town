@@ -228,7 +228,10 @@ export async function updatePlayerCaptain(
 }
 
 /**
- * Update a player's on-file RSN. Used only by the automatic Wise Old Man
+ * Update a player's on-file RSN and its existing ownership claim atomically.
+ * Preserves the player id, team, snapshots, claimant and original claim time.
+ * Rejects stale confirmations and destination ownership collisions.
+ * Used only by the automatic Wise Old Man
  * rename resolution flow (services/rsnChangeDetection.ts) after a candidate
  * new name has been confirmed to resolve on the OSRS hiscores — there is no
  * manual "rename" admin action today (an admin fixes a bad RSN by removing
@@ -240,13 +243,14 @@ export async function updatePlayerCaptain(
  * than letting it bubble up as an unrelated 500 (see checkRsnChange, which
  * catches this and falls back to the unresolved-log path).
  */
-export async function updatePlayerRsn(playerId: string, newRsn: string): Promise<BingoPlayer> {
+export async function updatePlayerRsn(playerId: string, oldRsn: string, newRsn: string): Promise<BingoPlayer> {
   const db = getDb();
   const { data, error } = await db
-    .from("bingo_players")
-    .update({ rsn: newRsn })
-    .eq("id", playerId)
-    .select()
+    .rpc("rename_confirmed_player_rsn", {
+      p_player_id: playerId,
+      p_old_rsn: oldRsn,
+      p_new_rsn: newRsn,
+    })
     .single();
 
   if (error || !data) throw new Error(`Failed to update RSN for player ${playerId}: ${error?.message}`);

@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import BlockIcon from '@mui/icons-material/Block';
@@ -9,7 +10,7 @@ import { InvalidReason } from './useInviteAccept';
 
 const REASON_CONTENT: Record<
   InvalidReason,
-  { icon: JSX.Element; title: string; description: string }
+  { icon: ReactElement; title: string; description: string }
 > = {
   expired: {
     icon: <AccessTimeIcon fontSize="inherit" />,
