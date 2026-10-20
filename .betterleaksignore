@@ -1,5 +1,5 @@
 # Exact Betterleaks fingerprints for verified test, documentation, and public beacon false positives.
-# Keep credential and private-key findings active until the exposed historic GCP key is revoked.
+# Historic 2023 service-account key is rejected by Google OAuth (invalid_grant); account is absent in Cloud IAM.
 094226b5d2151dba75fc7a3ab0834e3e9c8327a7:backend/tests/integration/invites.test.ts:generic-password:142
 094226b5d2151dba75fc7a3ab0834e3e9c8327a7:backend/tests/integration/invites.test.ts:generic-password:154
 094226b5d2151dba75fc7a3ab0834e3e9c8327a7:backend/tests/integration/invites.test.ts:generic-password:165
@@ -43,3 +43,7 @@ ed885b5c843b41dd2d535a48d2152173a5176d82:backend/tests/integration/invites.test.
 ed885b5c843b41dd2d535a48d2152173a5176d82:backend/tests/integration/invites.test.ts:generic-password:165
 ed885b5c843b41dd2d535a48d2152173a5176d82:backend/tests/integration/invites.test.ts:generic-password:185
 fb478702c39082ca8369779cb72516efdbfae9a3:frontend/src/utils/cloudflareAnalyticsPlugin.ts:generic-api-key:14
+e29d84ffe0ccee6fa4ba87fdaba90255413e50fa:frontend/src/components/pages/TeamProgress/credentials.json:gcp-service-account:1
+e29d84ffe0ccee6fa4ba87fdaba90255413e50fa:frontend/src/components/pages/TeamProgress/credentials.json:private-key:5
+fa8be584f5e8575c784fc36a6336920fb21dc2f9:frontend/src/components/pages/TeamProgress/credentials.json:gcp-service-account:1
+fa8be584f5e8575c784fc36a6336920fb21dc2f9:frontend/src/components/pages/TeamProgress/credentials.json:private-key:5
