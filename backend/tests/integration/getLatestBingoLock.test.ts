@@ -14,6 +14,8 @@
 import { describe, expect, test } from "bun:test";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
+import { SQL } from "bun";
 
 import {
   _acquireStuckGetLatestBingoLockForTests,
@@ -54,6 +56,69 @@ async function runLockWorker(holdMs: number): Promise<WorkerResult> {
 }
 
 describe.skipIf(!stack.reachable)("withGetLatestBingoLock", () => {
+  test(
+    "latest-bingo route suites wait for the lock and pass in separate concurrent processes",
+    async () => {
+      const dbUrl = process.env.TEST_SUPABASE_DB_URL ?? execFileSync(
+        "bun", ["x", "supabase", "status", "-o", "env"],
+        { cwd: BACKEND_DIR, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+      ).match(/^DB_URL="([^"]*)"/m)?.[1];
+      if (!dbUrl) throw new Error("Could not resolve the local Postgres URL");
+      const sql = new SQL(dbUrl);
+      const results: Promise<{ file: string; exitCode: number; output: string }>[] = [];
+      let completed = 0;
+      try {
+        await withGetLatestBingoLock(async () => {
+          for (const file of ["bingo-latest", "bingo-board-ended", "review-after-complete"]) {
+            const child = Bun.spawn(["bun", "test", `tests/integration/${file}.test.ts`], {
+              cwd: BACKEND_DIR,
+              env: {
+                ...process.env,
+                TEST_SUPABASE_URL: stack.url,
+                TEST_SUPABASE_SERVICE_ROLE_KEY: stack.serviceRoleKey,
+                TEST_SUPABASE_DB_URL: dbUrl,
+              },
+              stdout: "pipe",
+              stderr: "pipe",
+            });
+            results.push(Promise.all([
+              child.exited,
+              new Response(child.stdout).text(),
+              new Response(child.stderr).text(),
+            ]).then(([exitCode, stdout, stderr]) => {
+              completed++;
+              return { file, exitCode, output: stdout + stderr };
+            }));
+          }
+
+          // All three real suites must wait before setting up their fixtures.
+          // A suite that omits the wrapper finishes while this lock is held.
+          const deadline = Date.now() + 12_000;
+          while (true) {
+            const [row] = await sql<{ count: number }[]>`
+              SELECT count(*)::int AS count FROM pg_locks
+              WHERE locktype = 'advisory' AND objid = 49102602 AND NOT granted
+            `;
+            if (row.count === 3) break;
+            expect(completed, "a route suite ran without waiting for the held lock").toBe(0);
+            expect(Date.now(), "all three route suites must wait for the lock").toBeLessThan(deadline);
+            await Bun.sleep(25);
+          }
+        });
+
+        for (const result of await Promise.all(results)) {
+          expect(result.exitCode, `${result.file}: ${result.output}`).toBe(0);
+          expect(result.output).not.toContain("(skip)");
+          expect(result.output).toContain("0 fail");
+        }
+      } finally {
+        await Promise.all(results);
+        await sql.end();
+      }
+    },
+    30_000,
+  );
+
   test(
     "two concurrent processes serialize instead of overlapping",
     async () => {
