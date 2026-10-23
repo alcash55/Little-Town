@@ -10,10 +10,10 @@
  *
  * Runs against the real bingos/bingo_players/bingo_player_side_accounts/
  * bingo_player_hiscores/bingo_player_hiscore_history tables on the local
- * Supabase stack — only services/hiscores.ts (the real OSRS network call)
- * is mocked.
+ * Supabase stack. OSRS hiscores and declared WOM no-rename responses are mocked.
  */
-import { describe, test, expect, afterAll, beforeEach, mock } from "bun:test";
+import { describe, test, expect, afterAll, afterEach, beforeEach, mock } from "bun:test";
+import { stubWomMisses } from "./womFetchStub.js";
 
 import { getDb } from "../../src/db/client.js";
 import { registerBingoPlayer, addSideAccount, type BingoPlayer } from "../../src/db/players.js";
@@ -41,7 +41,7 @@ if (stack.reachable && preexistingActive) {
 const suite = stack.reachable && !preexistingActive;
 
 // -------------------------------------------------------
-// Mock services/hiscores.ts — the only network-touching dependency.
+// Mock services/hiscores.ts. RSN misses also trigger the WOM fetch stub below.
 // -------------------------------------------------------
 
 function fakeHiscoreData(name: string): HiscoreData {
@@ -86,9 +86,12 @@ async function countHistoryRows(sideAccountId: string): Promise<number> {
   return count ?? 0;
 }
 
+let wom: ReturnType<typeof stubWomMisses>;
 beforeEach(() => {
   hiscoresMock.mockClear();
+  wom = stubWomMisses(stack.url);
 });
+afterEach(() => wom.restore());
 
 const createdBingoIds: string[] = [];
 
@@ -118,7 +121,9 @@ describe.skipIf(!suite)("snapshotStartAndCurrent — side accounts (activation /
   });
 
   test("activation writes start+current snapshots for the resolvable side account", async () => {
+    wom.allowedRsns.add(badSideRsn);
     const { succeeded, failed, sideResults } = await snapshotStartAndCurrent(bingo.id, [player], "drafter");
+    expect(wom.usernames).toEqual([badSideRsn]);
 
     // Main account unaffected by side-account outcomes either way.
     expect(succeeded).toBe(1);
@@ -203,10 +208,12 @@ describe.skipIf(!suite)("refreshAllPlayerSnapshots (cron) — side accounts", ()
 
   test("a failed side-account lookup on a cron tick does not fail the main player's refresh", async () => {
     unresolvableRsns.add(sideRsn);
+    wom.allowedRsns.add(sideRsn);
 
     const { succeeded, failed } = await refreshAllPlayerSnapshots();
     expect(succeeded).toBe(1); // main account still refreshed
     expect(failed).toHaveLength(0);
+    expect(wom.usernames).toEqual([sideRsn]);
 
     // Side account's 'current' row from the previous successful tick is
     // left as-is (upsert never ran) — not deleted, not corrupted.
