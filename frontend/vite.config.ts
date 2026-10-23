@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { cloudflareAnalyticsPlugin } from './src/utils/cloudflareAnalyticsPlugin';
+import { productionApiUrlPlugin } from './src/utils/productionApiUrlPlugin';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -22,7 +23,7 @@ export default defineConfig({
   // cloudflareAnalyticsPlugin() only injects its beacon tag under
   // `vite build` (see the plugin's own `apply: 'build'`); `bun run dev`
   // never emits it. See src/utils/cloudflareAnalyticsPlugin.ts.
-  plugins: [react(), cloudflareAnalyticsPlugin()],
+  plugins: [react(), productionApiUrlPlugin(), cloudflareAnalyticsPlugin()],
   server: {
     port: 3000,
     open: '/',
