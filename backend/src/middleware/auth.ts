@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { z } from "zod";
 import { getJwtSecret } from "../lib/jwt.js";
 import { getRequestToken } from "../lib/session.js";
 import { AppError } from "./errorHandler.js";
@@ -52,6 +53,7 @@ declare global {
 // -------------------------------------------------------
 
 const IMPERSONATE_HEADER = "x-impersonate-user-id";
+const impersonationTargetSchema = z.guid();
 
 async function applyImpersonation(req: Request): Promise<void> {
   const realUser = req.user!;
@@ -70,7 +72,17 @@ async function applyImpersonation(req: Request): Promise<void> {
   // the admin's own id).
   if (targetId === realUser.id) return;
 
-  const target = await findUserById(targetId);
+  // Validate the untrusted header before Postgres can reject it as a UUID.
+  if (!impersonationTargetSchema.safeParse(targetId).success) {
+    throw new AppError("Impersonation target not found", 400, "IMPERSONATION_TARGET_NOT_FOUND");
+  }
+
+  let target: User | null;
+  try {
+    target = await findUserById(targetId);
+  } catch (error) {
+    throw authLookupFailure(req, error);
+  }
   if (!target) {
     throw new AppError("Impersonation target not found", 400, "IMPERSONATION_TARGET_NOT_FOUND");
   }
@@ -98,6 +110,13 @@ function logAuthFailure(req: Request, reason: AuthFailureReason, error?: unknown
     typeof error.code === "string" && /^[A-Z0-9_]{1,24}$/.test(error.code)
       ? error.code : undefined;
   console.warn("[auth]", { reason, method: req.method, code });
+}
+
+function authLookupFailure(req: Request, error: unknown): AppError {
+  logAuthFailure(req, "lookup_error", error);
+  // An outage does not invalidate the browser's session. A 503 also avoids
+  // the frontend's 401 handler clearing the user and reopening login.
+  return new AppError("Authentication service unavailable. Please try again.", 503, "AUTH_LOOKUP_FAILED");
 }
 
 export const protect = async (
@@ -147,10 +166,7 @@ export const protect = async (
     }
     req.user = user;
   } catch (error) {
-    logAuthFailure(req, "lookup_error", error);
-    // An outage does not invalidate the browser's session. A 503 also avoids
-    // the frontend's 401 handler clearing the user and reopening login.
-    return next(new AppError("Authentication service unavailable. Please try again.", 503, "AUTH_LOOKUP_FAILED"));
+    return next(authLookupFailure(req, error));
   }
 
   // Kept outside the jwt/lookup try/catch above so applyImpersonation's own
