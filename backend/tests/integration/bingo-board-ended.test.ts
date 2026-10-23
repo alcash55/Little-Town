@@ -22,6 +22,7 @@ import { errorHandler } from "../../src/middleware/errorHandler.js";
 import bingoRoutes from "../../src/routes/bingo.js";
 import {
   getLocalStackConfig,
+  withGetLatestBingoLock,
   hasPreexistingActiveBingo,
   insertTestBingo,
   deleteTestBingo,
@@ -41,6 +42,8 @@ const suite = stack.reachable && !preexistingActive;
 
 let server: http.Server;
 let port: number;
+const releaseBingoLock = Promise.withResolvers<void>();
+let bingoLock: Promise<void> | undefined;
 const createdBingoIds: string[] = [];
 
 function request(path: string): Promise<{ status: number; body: any }> {
@@ -57,6 +60,13 @@ function request(path: string): Promise<{ status: number; body: any }> {
 
 beforeAll(async () => {
   if (!suite) return;
+  // Fixtures span multiple tests, so keep the lock until afterAll cleans up.
+  const acquired = Promise.withResolvers<void>();
+  bingoLock = withGetLatestBingoLock(async () => {
+    acquired.resolve();
+    await releaseBingoLock.promise;
+  });
+  await Promise.race([acquired.promise, bingoLock]);
   const app = express();
   app.use("/api/bingo", bingoRoutes);
   app.use(errorHandler);
@@ -64,12 +74,17 @@ beforeAll(async () => {
     server = app.listen(0, "127.0.0.1", resolve);
   });
   port = (server.address() as AddressInfo).port;
-});
+}, 25_000);
 
 afterAll(async () => {
-  server?.close();
-  if (!stack.reachable) return;
-  await Promise.all(createdBingoIds.map((id) => deleteTestBingo(id).catch(() => undefined)));
+  try {
+    server?.close();
+    if (!stack.reachable) return;
+    await Promise.all(createdBingoIds.map((id) => deleteTestBingo(id).catch(() => undefined)));
+  } finally {
+    releaseBingoLock.resolve();
+    await bingoLock;
+  }
 });
 
 describe.skipIf(!suite)("GET /api/bingo/board — ended field", () => {

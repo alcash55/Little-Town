@@ -24,33 +24,28 @@ import { User } from "../types/index.js";
 
 export const AUTH_COOKIE_NAME = "authToken";
 
-/**
- * Frontend (GitHub Pages) and backend (Render) sit on different registrable
- * domains in production, which makes every authenticated request cross-site
- * for cookie purposes — SameSite=Lax/Strict cookies are never attached to a
- * cross-site fetch (Lax only rides along on a top-level GET navigation), so
- * production needs SameSite=None, which in turn requires Secure (HTTPS;
- * both Render and GitHub Pages already terminate TLS, so this holds).
- *
- * Local dev (localhost:3000 <-> localhost:8081) differs only by port, which
- * is the same registrable-domain "site" — Lax is enough there, and Secure
- * would break the cookie entirely since local dev is plain HTTP.
- *
- * NOTE (flagged for the lead, not fixed here): SameSite=None marks this as a
- * third-party cookie from the browser's point of view. Safari ITP, Firefox
- * strict tracking protection, and Chrome's own third-party-cookie
- * deprecation can all block or evict it independent of this code being
- * correct. The durable fix is putting the API under a subdomain of the
- * frontend's own registrable domain (api.<frontend-domain> instead of
- * *.onrender.com) so the cookie becomes first-party; that's an
- * infrastructure change outside this issue's scope.
- */
-function cookieOptions() {
+/** Opt in only after Render verifies the custom domain. Keep legacy cookies working. */
+export function getSameSiteAuthHost(): string | undefined {
+  const host = process.env.AUTH_SAME_SITE_HOST;
+  if (!host) return undefined;
+  if (host !== "api.littletown.gay") {
+    throw new Error("AUTH_SAME_SITE_HOST must be api.littletown.gay or unset");
+  }
+  return host;
+}
+
+function cookieOptions(req: Request) {
   const isProd = process.env.NODE_ENV === "production";
+  // Use the actual Host, not X-Forwarded-Host from a client. Neither hostname
+  // nor cookie policy grants authentication; protect still verifies the JWT.
+  const sameSiteHost = getSameSiteAuthHost();
+  const isSameSiteHost = sameSiteHost !== undefined && req.get("host")?.toLowerCase() === sameSiteHost;
+  const sameSite: "none" | "lax" = isProd && !isSameSiteHost ? "none" : "lax";
   return {
     httpOnly: true,
     secure: isProd,
-    sameSite: (isProd ? "none" : "lax") as "none" | "lax",
+    sameSite,
+    // No Domain attribute: each host keeps its own session during cutover.
     path: "/",
   };
 }
@@ -77,13 +72,13 @@ export function signSession(user: Pick<User, "id" | "username" | "role">): {
 }
 
 export function setAuthCookie(res: Response, token: string): void {
-  res.setHeader("Set-Cookie", serialize(AUTH_COOKIE_NAME, token, cookieOptions()));
+  res.setHeader("Set-Cookie", serialize(AUTH_COOKIE_NAME, token, cookieOptions(res.req)));
 }
 
 export function clearAuthCookie(res: Response): void {
   res.setHeader(
     "Set-Cookie",
-    serialize(AUTH_COOKIE_NAME, "", { ...cookieOptions(), maxAge: 0 }),
+    serialize(AUTH_COOKIE_NAME, "", { ...cookieOptions(res.req), maxAge: 0 }),
   );
 }
 

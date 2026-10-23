@@ -16,12 +16,13 @@
  *      immediate snapshot (RSN not yet ranked) or a side account added
  *      before this fix shipped.
  *
- * Only services/hiscores.ts (the real OSRS network call) is mocked, same
- * technique as tests/integration/side-account-snapshots.test.ts.
+ * OSRS hiscores and declared WOM no-rename responses are mocked.
+ * All database calls use the real local Supabase stack.
  */
 process.env.JWT_SECRET = "side-account-start-snapshot-fix-test-secret-do-not-use-elsewhere";
 
-import { afterAll, beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
+import { stubWomMisses } from "./womFetchStub.js";
 import express from "express";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
@@ -54,7 +55,7 @@ if (stack.reachable && preexistingActive) {
 const suite = stack.reachable && !preexistingActive;
 
 // -------------------------------------------------------
-// Mock services/hiscores.ts — the only network-touching dependency.
+// Mock OSRS hiscores and WOM no-rename responses. All DB calls stay real.
 // -------------------------------------------------------
 
 function fakeHiscoreData(name: string): HiscoreData {
@@ -80,9 +81,12 @@ mock.module("../../src/services/hiscores.js", () => ({ hiscores: hiscoresMock })
 // .ts) picks up the mocked hiscores() instead of the real network call.
 const { default: adminRoutes } = await import("../../src/routes/admin.js");
 
+let wom: ReturnType<typeof stubWomMisses>;
 beforeEach(() => {
   hiscoresMock.mockClear();
+  wom = stubWomMisses(stack.url);
 });
+afterEach(() => wom.restore());
 
 interface TestUser {
   id: string;
@@ -218,12 +222,14 @@ describe.skipIf(!suite)("side-account start-snapshot fix", () => {
   test("an unresolvable RSN's immediate snapshot fails but the side account is still added (not blocked)", async () => {
     const badRsn = `SideFixBad${uniqueSuffix()}`;
     unresolvableRsns.add(badRsn);
+    wom.allowedRsns.add(badRsn);
 
     const { status, body } = await post(
       `/api/admin/bingo/players/${mainRsn}/side-accounts`,
       signToken(admin),
       { rsn: badRsn },
     );
+    expect(wom.usernames).toEqual([badRsn]);
     expect(status).toBe(201); // add still succeeds
     expect(body.snapshot.ok).toBe(false);
     expect(await countSideHiscoreRows(body.data.id, "start")).toBe(0);

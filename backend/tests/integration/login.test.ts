@@ -92,6 +92,45 @@ describe.skipIf(!stack.reachable)("POST /api/auth/login", () => {
     expect(tokenValue?.split(".").length).toBe(3); // header.payload.signature
   });
 
+  for (const [host, sameSite] of [
+    ["little-town.onrender.com", "None"],
+    ["api.littletown.gay", "Lax"],
+  ]) {
+    test(`production cookie login/me/logout round trip on ${host}`, async () => {
+      const previousMode = process.env.NODE_ENV;
+      const previousHost = process.env.AUTH_SAME_SITE_HOST;
+      process.env.NODE_ENV = "production";
+      process.env.AUTH_SAME_SITE_HOST = "api.littletown.gay";
+      try {
+        const login = await jsonRequest(port, "POST", "/api/auth/login", {
+          headers: { host }, body: { username: testUsername, password: PASSWORD },
+        });
+        expect(login.status).toBe(200);
+        expect(login.body.data.token).toBeUndefined();
+        const setCookie = login.headers["set-cookie"];
+        const serialized = Array.isArray(setCookie) ? setCookie[0] : setCookie;
+        expect(serialized).toContain(`SameSite=${sameSite}`);
+        expect(serialized).toContain("Secure");
+        expect(serialized).toContain("HttpOnly");
+        expect(serialized).not.toContain("Domain=");
+        const cookie = serialized?.split(";")[0];
+        if (!cookie) throw new Error("Login did not issue a session cookie");
+        const me = await jsonRequest(port, "GET", "/api/auth/me", { headers: { host, cookie } });
+        expect(me.status).toBe(200);
+        expect(me.body.data.id).toBe(testUserId);
+        const logout = await jsonRequest(port, "POST", "/api/auth/logout", { headers: { host, cookie } });
+        expect(logout.status).toBe(200);
+        expect(String(logout.headers["set-cookie"])).toContain("Max-Age=0");
+        expect(String(logout.headers["set-cookie"])).toContain(`SameSite=${sameSite}`);
+      } finally {
+        if (previousMode === undefined) delete process.env.NODE_ENV;
+        else process.env.NODE_ENV = previousMode;
+        if (previousHost === undefined) delete process.env.AUTH_SAME_SITE_HOST;
+        else process.env.AUTH_SAME_SITE_HOST = previousHost;
+      }
+    });
+  }
+
   test("wrong password: 401, no cookie set", async () => {
     const res = await jsonRequest(port, "POST", "/api/auth/login", {
       body: { username: testUsername, password: "not the password" },
