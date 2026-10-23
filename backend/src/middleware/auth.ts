@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { z } from "zod";
 import { getJwtSecret } from "../lib/jwt.js";
 import { getRequestToken } from "../lib/session.js";
 import { AppError } from "./errorHandler.js";
@@ -52,6 +53,7 @@ declare global {
 // -------------------------------------------------------
 
 const IMPERSONATE_HEADER = "x-impersonate-user-id";
+const impersonationTargetSchema = z.guid();
 
 async function applyImpersonation(req: Request): Promise<void> {
   const realUser = req.user!;
@@ -70,7 +72,17 @@ async function applyImpersonation(req: Request): Promise<void> {
   // the admin's own id).
   if (targetId === realUser.id) return;
 
-  const target = await findUserById(targetId);
+  // Validate the untrusted header before Postgres can reject it as a UUID.
+  if (!impersonationTargetSchema.safeParse(targetId).success) {
+    throw new AppError("Impersonation target not found", 400, "IMPERSONATION_TARGET_NOT_FOUND");
+  }
+
+  let target: User | null;
+  try {
+    target = await findUserById(targetId);
+  } catch (error) {
+    throw authLookupFailure(req, error);
+  }
   if (!target) {
     throw new AppError("Impersonation target not found", 400, "IMPERSONATION_TARGET_NOT_FOUND");
   }
@@ -87,6 +99,24 @@ async function applyImpersonation(req: Request): Promise<void> {
   console.warn(
     `[impersonation] admin ${realUser.id} as ${target.id} ${req.method} ${req.originalUrl}`,
   );
+}
+
+type AuthFailureReason = "no_token" | "invalid_claims" | "token_expired" | "verify_failure" | "user_not_found" | "lookup_error";
+
+function logAuthFailure(req: Request, reason: AuthFailureReason, error?: unknown): void {
+  // Driver messages/stacks can include credentials or URLs. Only log a bounded
+  // error code, never the error object, JWT, headers, body, or request URL.
+  const code = error && typeof error === "object" && "code" in error &&
+    typeof error.code === "string" && /^[A-Z0-9_]{1,24}$/.test(error.code)
+      ? error.code : undefined;
+  console.warn("[auth]", { reason, method: req.method, code });
+}
+
+function authLookupFailure(req: Request, error: unknown): AppError {
+  logAuthFailure(req, "lookup_error", error);
+  // An outage does not invalidate the browser's session. A 503 also avoids
+  // the frontend's 401 handler clearing the user and reopening login.
+  return new AppError("Authentication service unavailable. Please try again.", 503, "AUTH_LOOKUP_FAILED");
 }
 
 export const protect = async (
@@ -110,25 +140,33 @@ export const protect = async (
       return next();
     }
 
+    logAuthFailure(req, "no_token");
+    return next(new AppError("Not authorized to access this route", 401));
+  }
+
+  let userId: string;
+  try {
+    const decoded = jwt.verify(token, getJwtSecret());
+    if (typeof decoded === "string" || typeof decoded.id !== "string") {
+      logAuthFailure(req, "invalid_claims");
+      return next(new AppError("Not authorized to access this route", 401));
+    }
+    userId = decoded.id;
+  } catch (error) {
+    const reason = error instanceof jwt.TokenExpiredError ? "token_expired" : "verify_failure";
+    logAuthFailure(req, reason);
     return next(new AppError("Not authorized to access this route", 401));
   }
 
   try {
-    // Verify token
-    const decoded = jwt.verify(
-      token,
-      getJwtSecret()
-    ) as any;
-
-    const user = await findUserById(decoded.id);
-
+    const user = await findUserById(userId);
     if (!user) {
+      logAuthFailure(req, "user_not_found");
       return next(new AppError("Not authorized to access this route", 401));
     }
-
     req.user = user;
   } catch (error) {
-    return next(new AppError("Not authorized to access this route", 401));
+    return next(authLookupFailure(req, error));
   }
 
   // Kept outside the jwt/lookup try/catch above so applyImpersonation's own

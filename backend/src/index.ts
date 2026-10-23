@@ -1,7 +1,9 @@
 import "dotenv/config";
 import { assertEnvironmentSafety } from "./config/envGuard.js";
 import { CORS_ALLOWED_HEADERS, buildDevCorsOrigins } from "./config/cors.js";
+import { getSameSiteAuthHost } from "./lib/session.js";
 assertEnvironmentSafety();
+getSameSiteAuthHost();
 import express, { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
