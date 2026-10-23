@@ -27,6 +27,7 @@ import adminRoutes from "../../src/routes/admin.js";
 import { insertPendingSubmission } from "../../src/db/bingoSubmissions.js";
 import {
   getLocalStackConfig,
+  withGetLatestBingoLock,
   insertTestBingo,
   deleteTestBingo,
   uniqueSuffix,
@@ -68,6 +69,8 @@ function signToken(user: TestUser): string {
 
 let server: http.Server;
 let port: number;
+const releaseBingoLock = Promise.withResolvers<void>();
+let bingoLock: Promise<void> | undefined;
 
 function getJson(path: string, token: string): Promise<{ status: number; body: any }> {
   return new Promise((resolve, reject) => {
@@ -83,6 +86,13 @@ function getJson(path: string, token: string): Promise<{ status: number; body: a
 
 beforeAll(async () => {
   if (!suite) return;
+  // Fixtures span multiple tests, so keep the lock until afterAll cleans up.
+  const acquired = Promise.withResolvers<void>();
+  bingoLock = withGetLatestBingoLock(async () => {
+    acquired.resolve();
+    await releaseBingoLock.promise;
+  });
+  await Promise.race([acquired.promise, bingoLock]);
   const app = express();
   app.use(express.json());
   app.use("/api/admin", adminRoutes);
@@ -91,15 +101,20 @@ beforeAll(async () => {
     server = app.listen(0, "127.0.0.1", resolve);
   });
   port = (server.address() as AddressInfo).port;
-});
+}, 25_000);
 
 afterAll(async () => {
-  server?.close();
-  if (!stack.reachable) return;
-  await Promise.all(createdBingoIds.map((id) => deleteTestBingo(id).catch(() => undefined)));
-  await Promise.all(
-    createdUserIds.map((id) => getDb().from("users").delete().eq("id", id).then(() => undefined, () => undefined)),
-  );
+  try {
+    server?.close();
+    if (!stack.reachable) return;
+    await Promise.all(createdBingoIds.map((id) => deleteTestBingo(id).catch(() => undefined)));
+    await Promise.all(
+      createdUserIds.map((id) => getDb().from("users").delete().eq("id", id).then(() => undefined, () => undefined)),
+    );
+  } finally {
+    releaseBingoLock.resolve();
+    await bingoLock;
+  }
 });
 
 describe.skipIf(!suite)("GET /api/admin/bingo/latest", () => {
