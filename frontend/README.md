@@ -23,7 +23,7 @@ local dev — see [`../backend/README.md`](../backend/README.md)).
 | `bun run dev`           | Vite dev server on `http://localhost:3000`. Mode is `development` — never touches `.env.production`. |
 | `bun run build`         | TypeScript 7 check followed by the production Vite build. Loads `.env.production`.              |
 | `bun run typecheck`     | TypeScript 7 native compiler, with no emitted files.                                             |
-| `bun run preview`       | **Safe default.** Builds and serves the build locally, forcing `VITE_BASEURL=http://localhost:8081` regardless of `.env.production`. |
+| `bun run preview`       | **Safe default.** Builds and serves the build locally, forcing `VITE_BASEURL=http://localhost:8081` in `local-preview` mode. Production auth checks stay enabled. |
 | `bun run preview:remote` | Explicit escape hatch: builds and previews using the real `.env.production` value (the deployed prod API). Only use this deliberately. |
 | `bun run test`          | Vitest.                                                                                           |
 
@@ -49,21 +49,16 @@ checks locally.
 | -------------- | --------------------------------------------------------------------------- | ---- |
 | `VITE_BASEURL` | Backend API base URL. Public (not a secret) — just the API's address.       | `.env` (local), `.env.production` (real deployed API, gitignored) |
 
-### The `.env.production` foot-gun (TEAM-BRIEF.md Sprint 16, Track A item A5)
+### Local previews
 
-`frontend/.env.production` hardcodes the real deployed backend's URL
-(`https://little-town.onrender.com`). Vite's default `--mode` for `vite build`
-is `production`, and `bun run preview` builds before serving — so a plain
-`vite build && vite preview` used to silently drive the **real production
-API** from a local preview, with no visual indication anything was different
-from local dev.
+`bun run preview` sets `VITE_BASEURL=http://localhost:8081` and builds in
+`local-preview` mode. It does not load `.env.production`. Vite still sets
+`import.meta.env.PROD=true` and `DEV=false`, so production auth checks run
+against the local backend.
 
-`bun run preview` now overrides `VITE_BASEURL` to `http://localhost:8081`
-before building (`process.env` values take priority over `.env.*` file
-values in Vite, same precedence rule dotenv uses on the backend — see
-`../backend/README.md`), so the default is safe. `bun run preview:remote` is
-the explicit, differently-named opt-in for when you actually want to preview
-a local build against the real production API.
+`bun run preview:remote` builds in production mode and uses the deployed API
+URL from `.env.production` or the command environment. Use it deliberately,
+since requests go to the real backend.
 
 ## Deployment
 
@@ -72,6 +67,20 @@ Cloudflare Pages build environment, not read from a committed file —
 `frontend/.env.production` is a local-only convenience file for developers
 building/previewing a prod-like bundle on their own machine, never committed
 (see `.gitignore`).
+
+Production-mode builds fail before bundling if `VITE_BASEURL` is missing,
+empty, invalid, or points to localhost or a loopback address. Set an absolute
+HTTP(S) backend URL in Cloudflare Pages Settings > Variables and Secrets for
+both Production and Preview. For a local production build, set it in
+`frontend/.env.production` or pass it in the command environment:
+
+```bash
+VITE_BASEURL=https://little-town.onrender.com bun run build
+```
+
+`bun run dev` still accepts a local API URL. `bun run preview:remote` uses
+production mode and validates the URL. GitHub CI supplies the public Render URL
+only for its build check. It does not deploy or verify live login.
 
 ## Analytics
 
