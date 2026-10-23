@@ -4,7 +4,7 @@
  *
  * Runs against the real bingos/bingo_players/bingo_player_hiscores/
  * rsn_change_log tables on the local Supabase stack — only
- * services/hiscores.ts (the real OSRS network call) is mocked, so this
+ * OSRS hiscores and declared WOM no-rename responses are mocked, so this
  * exercises the actual Postgres-backed draft->active transition and
  * snapshot-row idempotency the admin routes rely on, not just in-memory
  * logic.
@@ -15,7 +15,9 @@
  * blocked -> forced active -> retake) avoids fighting that constraint the
  * way two independently-activated fixture bingos would.
  */
-import { describe, test, expect, afterAll, beforeEach, mock } from "bun:test";
+import { describe, test, expect, afterAll, afterEach, beforeEach, mock } from "bun:test";
+
+import { stubWomMisses } from "./womFetchStub.js";
 
 import { getDb } from "../../src/db/client.js";
 import { registerBingoPlayer, type BingoPlayer } from "../../src/db/players.js";
@@ -47,8 +49,7 @@ if (stack.reachable && preexistingActive) {
 const suite = stack.reachable && !preexistingActive;
 
 // -------------------------------------------------------
-// Mock services/hiscores.ts — the only network-touching dependency of
-// bingoActivation.ts. Everything else in this file hits the real local DB.
+// Mock OSRS hiscores and WOM no-rename responses. All DB calls stay real.
 // -------------------------------------------------------
 
 function fakeHiscoreData(name: string): HiscoreData {
@@ -77,9 +78,12 @@ const { activateBingoWithSnapshots, snapshotStartAndCurrent } = await import(
 );
 const { getBingoPlayers } = await import("../../src/db/players.js");
 
+let wom: ReturnType<typeof stubWomMisses>;
 beforeEach(() => {
   hiscoresMock.mockClear();
+  wom = stubWomMisses(stack.url);
 });
+afterEach(() => wom.restore());
 
 const createdBingoIds: string[] = [];
 
@@ -106,7 +110,9 @@ describe.skipIf(!suite)("activateBingoWithSnapshots + snapshotStartAndCurrent (r
   });
 
   test("without force: blocked, bingo stays draft, but the good player's snapshot is still saved", async () => {
+    wom.allowedRsns.add(badRsn);
     const outcome = await activateBingoWithSnapshots(bingo.id, { source: "drafter" });
+    expect(wom.usernames).toEqual([badRsn]);
 
     expect(outcome.blocked).toBe(true);
     expect(outcome.activated).toBe(false);
