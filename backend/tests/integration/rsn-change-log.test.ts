@@ -3,11 +3,11 @@
  *
  * Exercises the real rsn_change_log table + db/rsnChangeLog.ts against the
  * local Supabase stack, and services/rsnChangeDetection.ts's checkRsnChange
- * wrapper on top of it — no network involved, since these all take a
- * pre-computed "did the hiscore lookup find the player" boolean rather than
- * calling the real OSRS API themselves.
+ * wrapper on top of it. Hiscore misses trigger WOM lookups, which return
+ * declared no-rename responses here; Supabase requests remain real.
  */
-import { describe, test, expect, afterAll } from "bun:test";
+import { describe, test, expect, afterAll, afterEach, beforeEach } from "bun:test";
+import { stubWomMisses } from "./womFetchStub.js";
 
 import {
   logRsnChange,
@@ -42,6 +42,12 @@ const hasPlayerIdColumn = stack.reachable ? await columnExists("bingo_submission
 
 const suite = stack.reachable && hasTable;
 const createdBingoIds: string[] = [];
+
+let wom: ReturnType<typeof stubWomMisses>;
+beforeEach(() => {
+  wom = stubWomMisses(stack.url);
+});
+afterEach(() => wom.restore());
 
 async function unresolvedRow(playerId: string): Promise<{ resolved_at: string | null } | null> {
   const { data, error } = await getDb()
@@ -137,13 +143,16 @@ describe.skipIf(!suite)("services/rsnChangeDetection.ts (checkRsnChange)", () =>
   });
 
   test("hiscoreFound: false logs an unresolved entry with the given source", async () => {
+    wom.allowedRsns.add(rsn);
     await checkRsnChange({ id: playerId, rsn }, false, "cron");
+    expect(wom.usernames).toEqual([rsn]);
     const row = await unresolvedRow(playerId);
     expect(row).not.toBeNull();
   });
 
   test("hiscoreFound: false again (still stale) does not create a second row", async () => {
     await checkRsnChange({ id: playerId, rsn }, false, "drafter");
+    expect(wom.usernames).toEqual([]); // The stale subject is still throttled.
     expect(await allRowsForPlayer(playerId)).toHaveLength(1);
   });
 
