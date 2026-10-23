@@ -98,9 +98,10 @@ export async function findUserById(id: string): Promise<User | null> {
     .from("users")
     .select("id, username, nickname, email, password_hash, role, created_at, updated_at")
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
-  if (error || !data) return null;
+  if (error) throw error;
+  if (!data) return null;
   return toUser(data as UserRow);
 }
 
