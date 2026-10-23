@@ -64,12 +64,16 @@ describe.skipIf(!stack.reachable)("withGetLatestBingoLock", () => {
         { cwd: BACKEND_DIR, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
       ).match(/^DB_URL="([^"]*)"/m)?.[1];
       if (!dbUrl) throw new Error("Could not resolve the local Postgres URL");
-      const sql = new SQL(dbUrl);
+      const sql = new SQL(dbUrl, { max: 1 });
       const results: Promise<{ file: string; exitCode: number; output: string }>[] = [];
-      let completed = 0;
+      const applicationNames: string[] = [];
+      const runId = crypto.randomUUID();
+      const completed: { file: string; exitCode: number; output: string }[] = [];
       try {
         await withGetLatestBingoLock(async () => {
           for (const file of ["bingo-latest", "bingo-board-ended", "review-after-complete"]) {
+            const applicationName = `${runId}:${file}`;
+            applicationNames.push(applicationName);
             const child = Bun.spawn(["bun", "test", `tests/integration/${file}.test.ts`], {
               cwd: BACKEND_DIR,
               env: {
@@ -77,6 +81,7 @@ describe.skipIf(!stack.reachable)("withGetLatestBingoLock", () => {
                 TEST_SUPABASE_URL: stack.url,
                 TEST_SUPABASE_SERVICE_ROLE_KEY: stack.serviceRoleKey,
                 TEST_SUPABASE_DB_URL: dbUrl,
+                TEST_GET_LATEST_BINGO_LOCK_APPLICATION_NAME: applicationName,
               },
               stdout: "pipe",
               stderr: "pipe",
@@ -86,21 +91,26 @@ describe.skipIf(!stack.reachable)("withGetLatestBingoLock", () => {
               new Response(child.stdout).text(),
               new Response(child.stderr).text(),
             ]).then(([exitCode, stdout, stderr]) => {
-              completed++;
-              return { file, exitCode, output: stdout + stderr };
+              const result = { file, exitCode, output: stdout + stderr };
+              completed.push(result);
+              return result;
             }));
           }
 
           // All three real suites must wait before setting up their fixtures.
           // A suite that omits the wrapper finishes while this lock is held.
+          // Other runs can wait on this key too, so match each child's unique tag.
           const deadline = Date.now() + 12_000;
           while (true) {
-            const [row] = await sql<{ count: number }[]>`
-              SELECT count(*)::int AS count FROM pg_locks
-              WHERE locktype = 'advisory' AND objid = 49102602 AND NOT granted
+            const waiters = await sql<{ application_name: string }[]>`
+              SELECT activity.application_name
+              FROM pg_locks AS locks
+              JOIN pg_stat_activity AS activity ON activity.pid = locks.pid
+              WHERE locks.locktype = 'advisory' AND locks.classid = 0
+                AND locks.objid = 49102602 AND locks.objsubid = 1 AND NOT locks.granted
             `;
-            if (row.count === 3) break;
-            expect(completed, "a route suite ran without waiting for the held lock").toBe(0);
+            if (applicationNames.every(name => waiters.some(row => row.application_name === name))) break;
+            expect(completed, "a route suite ran without waiting for the held lock").toEqual([]);
             expect(Date.now(), "all three route suites must wait for the lock").toBeLessThan(deadline);
             await Bun.sleep(25);
           }
