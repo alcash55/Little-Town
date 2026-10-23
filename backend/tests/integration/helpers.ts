@@ -290,8 +290,14 @@ export async function withGetLatestBingoLock<T>(
     );
   }
 
-  const sql = new SQL(dbUrl);
+  // Session settings, acquisition, and release must use the same connection.
+  const sql = new SQL(dbUrl, { max: 1 });
   try {
+    // Let the cross-process regression identify its own waiting connections.
+    const applicationName = process.env.TEST_GET_LATEST_BINGO_LOCK_APPLICATION_NAME;
+    if (applicationName) {
+      await sql`SELECT set_config('application_name', ${applicationName}, false)`;
+    }
     // lock_timeout can't be bound as a query parameter (Postgres doesn't
     // accept placeholders in SET); timeoutMs is internally controlled and
     // coerced to a non-negative integer above, so building the statement
@@ -329,7 +335,7 @@ export async function _acquireStuckGetLatestBingoLockForTests(): Promise<{ relea
   if (!dbUrl) {
     throw new Error("_acquireStuckGetLatestBingoLockForTests: could not resolve a raw Postgres connection string.");
   }
-  const sql = new SQL(dbUrl);
+  const sql = new SQL(dbUrl, { max: 1 });
   await sql`SELECT pg_advisory_lock(${GET_LATEST_BINGO_LOCK_KEY})`;
   return {
     release: async () => {
