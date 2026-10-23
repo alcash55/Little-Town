@@ -244,9 +244,9 @@ SUPABASE_SERVICE_ROLE_KEY=<hosted service role key>
 
 | Method | Path               | Auth     | Description                                   |
 | ------ | ------------------ | -------- | --------------------------------------------- |
-| POST   | `/api/auth/login`  | None     | Login with username + password, returns JWT   |
+| POST   | `/api/auth/login`  | None     | Login with username + password, sets httpOnly cookie   |
 | GET    | `/api/auth/me`     | Required | Returns the current authenticated user        |
-| POST   | `/api/auth/logout` | Required | Logout acknowledgement (client removes token) |
+| POST   | `/api/auth/logout` | Required | Clears the host-only httpOnly session cookie |
 
 ### Hiscores
 
@@ -481,3 +481,20 @@ Two extra guardrails beyond just setting the env vars, both landed because a
   for a real, current reason — see the workflow file's comment). This is the
   actual regression guard: it's what would have caught 287/526 skipping
   silently in the first place.
+
+## Auth API domain cutover
+
+Production can opt in to `AUTH_SAME_SITE_HOST=api.littletown.gay` after
+Render verifies that custom domain. Only requests to that Host receive
+`SameSite=Lax; Secure; HttpOnly`. The Render hostname keeps `SameSite=None`
+for existing frontend bundles and sessions. Leave the flag unset before setup.
+Invalid nonempty values fail startup.
+
+Follow [the cutover runbook](../docs/auth-api-cutover.md) for DNS, frontend
+`VITE_BASEURL`, session transition, rollback, and required device checks.
+No infrastructure changes happen automatically when this code merges.
+
+`protect` logs a bounded `[auth]` reason for missing cookies, invalid or
+expired tokens, absent users, and failed user lookups. Lookup errors return
+503 with `AUTH_LOOKUP_FAILED`, preserving the frontend's current session so
+users can retry. Logs omit tokens, credentials, raw driver errors, and URLs.

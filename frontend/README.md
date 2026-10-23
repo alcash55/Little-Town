@@ -104,3 +104,15 @@ committed in source.
 **Automatic edge injection must stay off** in the Cloudflare dashboard
 (Pages project or zone, Speed, Web Analytics). If it's ever turned back on,
 the page loads two beacons.
+
+### Same-site API migration
+
+Keep the current `VITE_BASEURL` until `api.littletown.gay` has working TLS
+and the backend cookie policy is ready. The production target after cutover
+is `VITE_BASEURL=https://api.littletown.gay`. Set it in the Cloudflare Pages
+production build environment and rebuild. A custom API hostname does not
+change the frontend origin used by backend CORS.
+
+See [the auth cutover runbook](../docs/auth-api-cutover.md). A browser cannot
+copy the Render host's httpOnly cookie to the new host, so schedule the
+frontend switch between events and allow a fresh login on the new host.
