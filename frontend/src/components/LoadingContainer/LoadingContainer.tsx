@@ -1,6 +1,7 @@
 import React, { ReactNode } from 'react';
-import { Box } from '@mui/material';
+import { Box, CircularProgress, Stack, Typography } from '@mui/material';
 import LittleTownAnimation from '../../assets/Images/LittleTownAnimation.gif';
+import { clan } from '../../config/clan';
 import { darkTheme } from '../../layout/Theme';
 
 interface Props {
@@ -15,6 +16,9 @@ export const LoadingContainer = ({ width, height, loading, children, ...rest }: 
   if (loading) {
     return (
       <Box
+        role="status"
+        aria-label={`Loading ${clan.name}`}
+        aria-busy="true"
         sx={{
           display: 'flex',
           justifyContent: 'center',
@@ -25,13 +29,20 @@ export const LoadingContainer = ({ width, height, loading, children, ...rest }: 
           bgcolor: darkTheme.palette.secondary.main,
         }}
       >
-        <img
-          src={LittleTownAnimation}
-          alt="Loading..."
-          height={320}
-          width={189}
-          style={{ borderRadius: '50%', objectFit: 'cover', width: width, height: height }}
-        />
+        {clan.loadingAnimation === 'little-town' ? (
+          <img
+            src={LittleTownAnimation}
+            alt="Little Town loading animation"
+            height={320}
+            width={189}
+            style={{ borderRadius: '50%', objectFit: 'cover', width, height }}
+          />
+        ) : (
+          <Stack spacing={2} sx={{ alignItems: 'center', maxWidth: '100%', p: 2 }}>
+            <CircularProgress aria-hidden="true" />
+            <Typography sx={{ textAlign: 'center' }}>{clan.name}</Typography>
+          </Stack>
+        )}
       </Box>
     );
   }
