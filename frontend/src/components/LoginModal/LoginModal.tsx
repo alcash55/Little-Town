@@ -159,8 +159,11 @@ const LoginModal = ({
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton
+                      type="button"
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      aria-pressed={showPassword}
                       onClick={() => setShowPassword((v) => !v)}
+                      onMouseDown={(event) => event.preventDefault()}
                       edge="end"
                       size="small"
                       sx={{ color: 'rgba(255,255,255,0.5)', '&:hover': { color: 'white' } }}
@@ -183,7 +186,20 @@ const LoginModal = ({
               },
             }}
           />
-          <Button href="/recover" onClick={onClose}>Forgot your password?</Button>
+          <Button
+            href="/recover"
+            onClick={onClose}
+            sx={{
+              alignSelf: 'flex-start',
+              color: 'rgba(255,255,255,0.9)',
+              textTransform: 'none',
+              textDecoration: 'underline',
+              '&:hover': { color: 'white', textDecoration: 'underline' },
+              '&:focus-visible': { outline: '2px solid white', outlineOffset: 2 },
+            }}
+          >
+            Forgot your password?
+          </Button>
           <FormControlLabel
             control={
               <Checkbox

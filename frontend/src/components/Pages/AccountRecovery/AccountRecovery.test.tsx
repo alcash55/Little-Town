@@ -72,6 +72,37 @@ describe('account recovery states', () => {
     expect(fetch.mock.calls[1][0]).toMatch(/\/consume$/);
     expect(screen.queryByLabelText(/^New password/)).toBeNull();
   });
+  it('reveals each password independently without submitting or changing its value', async () => {
+    window.history.replaceState(null, '', '/recover#token=fixture');
+    const fetch = vi.fn().mockResolvedValue(reply('ready'));
+    vi.stubGlobal('fetch', fetch);
+    renderPage();
+    const password = await screen.findByLabelText(/^New password/);
+    const confirmation = screen.getByLabelText(/^Confirm new password/);
+    fireEvent.change(password, { target: { value: 'visibility test value' } });
+    expect(password.getAttribute('type')).toBe('password');
+    expect(confirmation.getAttribute('type')).toBe('password');
+
+    password.focus();
+    const show = screen.getByRole('button', { name: 'Show new password' });
+    fireEvent.mouseDown(show);
+    expect(document.activeElement).toBe(password);
+    fireEvent.click(show);
+    expect(password.getAttribute('type')).toBe('text');
+    expect(confirmation.getAttribute('type')).toBe('password');
+    expect(screen.getByRole('button', { name: 'Hide new password' }).getAttribute('aria-pressed')).toBe('true');
+    expect(password.getAttribute('autoComplete')).toBe('new-password');
+    expect(screen.getByDisplayValue('visibility test value')).toBe(password);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show password confirmation' }));
+    expect(confirmation.getAttribute('type')).toBe('text');
+    fireEvent.click(screen.getByRole('button', { name: 'Hide new password' }));
+    expect(password.getAttribute('type')).toBe('password');
+    expect(confirmation.getAttribute('type')).toBe('text');
+    fireEvent.click(screen.getByRole('button', { name: 'Hide password confirmation' }));
+    expect(confirmation.getAttribute('type')).toBe('password');
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
   it('handles a link consumed by another tab while the password form is open', async () => {
     window.history.replaceState(null, '', '/recover#token=fixture');
     vi.stubGlobal(
