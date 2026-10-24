@@ -49,12 +49,15 @@ function toUser(row: UserRow): User {
  */
 function isDevAuthBypassEnabled(): boolean {
   if (process.env.NODE_ENV === "production") return false;
-  return process.env.ALLOW_DEV_AUTH === "true" && process.env.NODE_ENV === "development";
+  return (
+    process.env.ALLOW_DEV_AUTH === "true" &&
+    process.env.NODE_ENV === "development"
+  );
 }
 
 export async function verifyPassword(
   password: string,
-  passwordHash: string,
+  passwordHash: string
 ): Promise<boolean> {
   if (passwordHash.startsWith("dev:")) {
     return isDevAuthBypassEnabled() && password === passwordHash.slice(4);
@@ -68,11 +71,13 @@ export async function hashPassword(password: string): Promise<string> {
 }
 
 export async function findUserByUsername(
-  username: string,
+  username: string
 ): Promise<(User & { passwordHash: string }) | null> {
   const { data, error } = await getDb()
     .from("users")
-    .select("id, username, nickname, email, password_hash, role, created_at, updated_at")
+    .select(
+      "id, username, nickname, email, password_hash, role, created_at, updated_at"
+    )
     .eq("username", username)
     .single();
 
@@ -83,7 +88,7 @@ export async function findUserByUsername(
 
 export async function loginUser(
   username: string,
-  password: string,
+  password: string
 ): Promise<User | null> {
   const user = await findUserByUsername(username);
   if (!user || !(await verifyPassword(password, user.passwordHash)))
@@ -96,7 +101,9 @@ export async function loginUser(
 export async function findUserById(id: string): Promise<User | null> {
   const { data, error } = await getDb()
     .from("users")
-    .select("id, username, nickname, email, password_hash, role, created_at, updated_at")
+    .select(
+      "id, username, nickname, email, password_hash, role, created_at, updated_at"
+    )
     .eq("id", id)
     .maybeSingle();
 
@@ -128,7 +135,11 @@ export async function listUsers(): Promise<UserListItem[]> {
 
   if (error) throw new Error(`Failed to list users: ${error.message}`);
 
-  return ((data ?? []) as Array<Pick<UserRow, "id" | "username" | "nickname" | "role">>).map((row) => ({
+  return (
+    (data ?? []) as Array<
+      Pick<UserRow, "id" | "username" | "nickname" | "role">
+    >
+  ).map((row) => ({
     id: row.id,
     label: row.nickname?.trim() || row.username,
     role: row.role,

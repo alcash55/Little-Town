@@ -106,8 +106,7 @@ cookies blocked. Use a real admin account without recording credentials.
 For each browser record version, date, protection setting, deployment ID,
 and these outcomes:
 
-- Login succeeds, then `/api/auth/me` and `/api/admin/bingo/details` return
-  200. The expired-session modal does not reopen.
+- Login succeeds, then `/api/auth/me` and `/api/admin/bingo/details` return 200. The expired-session modal does not reopen.
 - Network shows the API requests go to `https://api.littletown.gay` with
   credentials. Storage shows host-only `authToken`, `SameSite=Lax`, `Secure`,
   `HttpOnly`, and path `/`.

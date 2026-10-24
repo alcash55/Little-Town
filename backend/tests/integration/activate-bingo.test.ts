@@ -20,11 +20,13 @@ if (!stack.reachable) {
 // bingos table (not scoped to our test rows), so if some other bingo in the
 // shared local stack is already active, these assertions would be invalid —
 // skip rather than produce a flaky/false failure.
-const preexistingActive = stack.reachable ? await hasPreexistingActiveBingo() : false;
+const preexistingActive = stack.reachable
+  ? await hasPreexistingActiveBingo()
+  : false;
 if (stack.reachable && preexistingActive) {
   console.warn(
     "[activate-bingo.test.ts] skipping: another bingo is already active in the shared local " +
-      "stack, which would make uq_bingos_one_active assertions unreliable",
+      "stack, which would make uq_bingos_one_active assertions unreliable"
   );
 }
 
@@ -70,12 +72,16 @@ describe.skipIf(!suite)("activate_bingo (draft -> active transitions)", () => {
   });
 
   test("activating a nonexistent bingo id returns false rather than throwing", async () => {
-    const activated = await activateBingo("00000000-0000-0000-0000-000000000000");
+    const activated = await activateBingo(
+      "00000000-0000-0000-0000-000000000000"
+    );
     expect(activated).toBe(false);
   });
 });
 
 afterAll(async () => {
   if (!stack.reachable) return;
-  await Promise.all(createdBingoIds.map((id) => deleteTestBingo(id).catch(() => undefined)));
+  await Promise.all(
+    createdBingoIds.map((id) => deleteTestBingo(id).catch(() => undefined))
+  );
 });

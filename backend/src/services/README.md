@@ -9,6 +9,7 @@ Business logic layer between routes and the database. Files here orchestrate mul
 below.)
 
 ### `hiscoreVocab.ts`
+
 (TEAM-BRIEF.md Sprint 16, Track B — "one vocabulary, not two".) Fetches the authoritative
 skill/activity name list straight from the real OSRS hiscores lite API (via `hiscores.ts`, probing
 a well-known always-ranked RSN) rather than scraping a wiki page. `staticDataCron.ts` uses this as
@@ -19,6 +20,7 @@ vocabulary, so a name the Board Builder offers is always a name `completionEngin
 diverged from the real hiscores names on 2 of 115 skills/activities in practice.
 
 ### `discordScreenshots.ts`
+
 Discord gateway ingest for bingo screenshot submissions. Env-optional: does nothing but log one
 warning if `DISCORD_BOT_TOKEN` / `DISCORD_SCREENSHOT_CHANNEL_ID` are unset. When configured,
 watches the channel for image attachments, uploads them to the `screenshots` storage bucket, and
@@ -27,6 +29,7 @@ inserts `bingo_submissions` rows (deduped on `discord_message_id`). `startDiscor
 `reactToSubmissionMessage` is called by `routes/admin.ts` on approve/deny (best-effort).
 
 ### `completionEngine.ts`
+
 The single tile-completion engine (TEAM-BRIEF.md Sprint 13, Track A — "one completion engine, one
 source of truth"). Kill Count/Experience tiles auto-complete for a team when the team's summed
 member deltas (main + side accounts, current − start) reach `target_value`; Drops tiles complete

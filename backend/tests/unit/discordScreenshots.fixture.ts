@@ -12,7 +12,9 @@ import type { Attachment, Message } from "discord.js";
 const submissionExistsMock = mock(async (_discordMessageId: string) => false);
 const insertPendingSubmissionMock = mock(async (_input: unknown) => {});
 
-const uploadMock = mock(async (_path: string, _body: unknown, _opts: unknown) => ({ error: null }));
+const uploadMock = mock(
+  async (_path: string, _body: unknown, _opts: unknown) => ({ error: null })
+);
 const storageFromMock = mock((_bucket: string) => ({ upload: uploadMock }));
 
 mock.module("../../src/db/client.js", () => ({
@@ -31,7 +33,10 @@ mock.module("../../src/db/bingoSubmissions.js", () => ({
   SCREENSHOTS_BUCKET: "screenshots",
 }));
 
-const getActiveBingoMock = mock(async () => ({ id: "bingo-1", status: "active" }));
+const getActiveBingoMock = mock(async () => ({
+  id: "bingo-1",
+  status: "active",
+}));
 
 // Spread the real module and override only getActiveBingo, rather than
 // registering a one-export replacement of it.
@@ -61,15 +66,19 @@ mock.module("../../src/db/bingos.js", () => ({
 // Imported dynamically *after* the mocks above are registered, so
 // discordScreenshots.js resolves the mocked db modules rather than the real
 // ones (which would throw on a missing SUPABASE_URL).
-const { ingestMessage, reactToSubmissionMessage, notifyBingoEndedWithPendingScreenshots } = await import(
-  "../../src/services/discordScreenshots.js"
-);
+const {
+  ingestMessage,
+  reactToSubmissionMessage,
+  notifyBingoEndedWithPendingScreenshots,
+} = await import("../../src/services/discordScreenshots.js");
 
 // -------------------------------------------------------
 // Fixtures
 // -------------------------------------------------------
 
-const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00]);
+const PNG_BYTES = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00,
+]);
 const originalFetch = globalThis.fetch;
 
 interface FakeAttachment {
@@ -86,13 +95,17 @@ function makeMessage(opts: {
   bot?: boolean;
 }): Message {
   const attachments = new Map(
-    (opts.attachments ?? []).map((a) => [a.id, a as unknown as Attachment]),
+    (opts.attachments ?? []).map((a) => [a.id, a as unknown as Attachment])
   );
   return {
     id: opts.id,
     content: opts.content ?? "",
     attachments,
-    author: { bot: opts.bot ?? false, tag: "Tester#0001", id: "999999999999999999" },
+    author: {
+      bot: opts.bot ?? false,
+      tag: "Tester#0001",
+      id: "999999999999999999",
+    },
   } as unknown as Message;
 }
 
@@ -103,12 +116,18 @@ function stubFetch(): void {
     // this same global fetch — route by URL.
     if (url.startsWith("https://i.imgur.com/")) {
       return Promise.resolve(
-        new Response(PNG_BYTES, { status: 200, headers: { "content-type": "image/png" } }),
+        new Response(PNG_BYTES, {
+          status: 200,
+          headers: { "content-type": "image/png" },
+        })
       );
     }
     if (url === "https://cdn.example.com/attachment.png") {
       return Promise.resolve(
-        new Response(PNG_BYTES, { status: 200, headers: { "content-type": "image/png" } }),
+        new Response(PNG_BYTES, {
+          status: 200,
+          headers: { "content-type": "image/png" },
+        })
       );
     }
     return Promise.reject(new Error(`unexpected fetch in test: ${url}`));
@@ -131,7 +150,10 @@ beforeEach(() => {
 
 describe("ingestMessage — imgur link ingestion", () => {
   test("link-only message (no attachments) creates a pending submission", async () => {
-    const message = makeMessage({ id: "msg-1", content: "found this https://imgur.com/abcde1" });
+    const message = makeMessage({
+      id: "msg-1",
+      content: "found this https://imgur.com/abcde1",
+    });
 
     await ingestMessage(message);
 
@@ -150,7 +172,11 @@ describe("ingestMessage — imgur link ingestion", () => {
 
     expect(storageFromMock).toHaveBeenCalledWith("screenshots");
     expect(uploadMock).toHaveBeenCalledTimes(1);
-    const [uploadedPath, , uploadOpts] = uploadMock.mock.calls[0] as [string, unknown, { contentType: string }];
+    const [uploadedPath, , uploadOpts] = uploadMock.mock.calls[0] as [
+      string,
+      unknown,
+      { contentType: string }
+    ];
     expect(uploadedPath).toBe("bingo-1/msg-1-imgur-abcde1.png");
     expect(uploadOpts.contentType).toBe("image/png");
   });
@@ -173,7 +199,7 @@ describe("ingestMessage — imgur link ingestion", () => {
 
     expect(insertPendingSubmissionMock).toHaveBeenCalledTimes(2);
     const calls = insertPendingSubmissionMock.mock.calls.map(
-      (c) => (c[0] as { discordMessageId: string }).discordMessageId,
+      (c) => (c[0] as { discordMessageId: string }).discordMessageId
     );
     expect(calls).toEqual(["msg-2:0", "msg-2:1"]);
 
@@ -181,12 +207,18 @@ describe("ingestMessage — imgur link ingestion", () => {
     // same treatment the attachment path already gets for its filename, now
     // applied uniformly to the discord_message_id-derived path prefix too.
     const paths = uploadMock.mock.calls.map((c) => c[0] as string);
-    expect(paths).toEqual(["bingo-1/msg-2_0-shot.png", "bingo-1/msg-2_1-imgur-xyzab2.png"]);
+    expect(paths).toEqual([
+      "bingo-1/msg-2_0-shot.png",
+      "bingo-1/msg-2_1-imgur-xyzab2.png",
+    ]);
   });
 
   test("already-ingested message (discord_message_id exists) no-ops", async () => {
     submissionExistsMock.mockImplementation(async () => true);
-    const message = makeMessage({ id: "msg-3", content: "https://imgur.com/dupe123" });
+    const message = makeMessage({
+      id: "msg-3",
+      content: "https://imgur.com/dupe123",
+    });
 
     await ingestMessage(message);
 
@@ -202,7 +234,10 @@ describe("ingestMessage — imgur link ingestion", () => {
         return Promise.resolve(new Response(null, { status: 302 }));
       }
       return Promise.resolve(
-        new Response(PNG_BYTES, { status: 200, headers: { "content-type": "image/png" } }),
+        new Response(PNG_BYTES, {
+          status: 200,
+          headers: { "content-type": "image/png" },
+        })
       );
     }) as unknown as typeof fetch;
 
@@ -223,14 +258,19 @@ describe("ingestMessage — imgur link ingestion", () => {
 
     // Attachment still ingested even though the link failed; only one row created.
     expect(insertPendingSubmissionMock).toHaveBeenCalledTimes(1);
-    const call = insertPendingSubmissionMock.mock.calls[0][0] as { discordMessageId: string };
+    const call = insertPendingSubmissionMock.mock.calls[0][0] as {
+      discordMessageId: string;
+    };
     // Still 2 total items (1 attachment + 1 candidate link, even though the
     // link ultimately fails download) so the suffix rule still applies.
     expect(call.discordMessageId).toBe("msg-4:0");
   });
 
   test("no attachments and no valid links is a no-op (does not even check for an active bingo)", async () => {
-    const message = makeMessage({ id: "msg-5", content: "no links or images here" });
+    const message = makeMessage({
+      id: "msg-5",
+      content: "no links or images here",
+    });
 
     await ingestMessage(message);
 
@@ -255,11 +295,20 @@ describe("ingestMessage — imgur link ingestion", () => {
 
 describe("ingestMessage — refuses when there is no active bingo (Sprint 15, Track A decision 3)", () => {
   test("no bingo at all (getActiveBingo resolves null) -> refuses, logs loudly, no submission created", async () => {
-    getActiveBingoMock.mockImplementationOnce(async () => null as unknown as { id: string; status: string });
+    getActiveBingoMock.mockImplementationOnce(
+      async () => null as unknown as { id: string; status: string }
+    );
     const warnSpy = spyOn(console, "warn");
     const message = makeMessage({
       id: "msg-refuse-1",
-      attachments: [{ id: "att-r1", name: "shot.png", url: "https://cdn.example.com/attachment.png", contentType: "image/png" }],
+      attachments: [
+        {
+          id: "att-r1",
+          name: "shot.png",
+          url: "https://cdn.example.com/attachment.png",
+          contentType: "image/png",
+        },
+      ],
     });
 
     await ingestMessage(message);
@@ -268,14 +317,22 @@ describe("ingestMessage — refuses when there is no active bingo (Sprint 15, Tr
     expect(uploadMock).not.toHaveBeenCalled();
     expect(warnSpy).toHaveBeenCalled();
     const loggedRefusal = warnSpy.mock.calls.some((call) =>
-      call.some((arg) => typeof arg === "string" && /refusing/i.test(arg) && /no active bingo/i.test(arg)),
+      call.some(
+        (arg) =>
+          typeof arg === "string" &&
+          /refusing/i.test(arg) &&
+          /no active bingo/i.test(arg)
+      )
     );
     expect(loggedRefusal).toBe(true);
     warnSpy.mockRestore();
   });
 
   test("bingo exists but is still a draft (not yet active) -> refuses the same way", async () => {
-    getActiveBingoMock.mockImplementationOnce(async () => ({ id: "bingo-draft", status: "draft" }));
+    getActiveBingoMock.mockImplementationOnce(async () => ({
+      id: "bingo-draft",
+      status: "draft",
+    }));
     const message = makeMessage({
       id: "msg-refuse-2",
       content: "https://imgur.com/refuse01",
@@ -287,10 +344,20 @@ describe("ingestMessage — refuses when there is no active bingo (Sprint 15, Tr
   });
 
   test("bingo exists but has already transitioned to 'complete' (post-lifecycle-flip) -> refuses", async () => {
-    getActiveBingoMock.mockImplementationOnce(async () => ({ id: "bingo-complete", status: "complete" }));
+    getActiveBingoMock.mockImplementationOnce(async () => ({
+      id: "bingo-complete",
+      status: "complete",
+    }));
     const message = makeMessage({
       id: "msg-refuse-3",
-      attachments: [{ id: "att-r3", name: "shot.png", url: "https://cdn.example.com/attachment.png", contentType: "image/png" }],
+      attachments: [
+        {
+          id: "att-r3",
+          name: "shot.png",
+          url: "https://cdn.example.com/attachment.png",
+          contentType: "image/png",
+        },
+      ],
     });
 
     await ingestMessage(message);
@@ -299,8 +366,14 @@ describe("ingestMessage — refuses when there is no active bingo (Sprint 15, Tr
   });
 
   test("regression: an active bingo still ingests normally (refusal doesn't leak into the happy path)", async () => {
-    getActiveBingoMock.mockImplementationOnce(async () => ({ id: "bingo-1", status: "active" }));
-    const message = makeMessage({ id: "msg-accept-1", content: "https://imgur.com/accept01" });
+    getActiveBingoMock.mockImplementationOnce(async () => ({
+      id: "bingo-1",
+      status: "active",
+    }));
+    const message = makeMessage({
+      id: "msg-accept-1",
+      content: "https://imgur.com/accept01",
+    });
 
     await ingestMessage(message);
 
@@ -318,12 +391,14 @@ describe("ingestMessage — refuses when there is no active bingo (Sprint 15, Tr
 
 describe("Discord notification helpers skip cleanly when the bot isn't configured", () => {
   test("reactToSubmissionMessage('❌') never throws when the bot isn't running", async () => {
-    await expect(reactToSubmissionMessage("some-message-id", "❌")).resolves.toBeUndefined();
+    await expect(
+      reactToSubmissionMessage("some-message-id", "❌")
+    ).resolves.toBeUndefined();
   });
 
   test("notifyBingoEndedWithPendingScreenshots never throws when the bot isn't running (skipped cleanly)", async () => {
     await expect(
-      notifyBingoEndedWithPendingScreenshots("Test Bingo", 3),
+      notifyBingoEndedWithPendingScreenshots("Test Bingo", 3)
     ).resolves.toBeUndefined();
   });
 });

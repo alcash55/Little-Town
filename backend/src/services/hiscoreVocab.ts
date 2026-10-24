@@ -59,7 +59,7 @@ export async function fetchHiscoreVocab(): Promise<HiscoreVocabLists> {
   const data = await hiscores(VOCAB_PROBE_RSN);
   if (!data) {
     throw new Error(
-      `Hiscore vocabulary probe RSN "${VOCAB_PROBE_RSN}" returned no data (unranked or not found) — cannot derive vocabulary`,
+      `Hiscore vocabulary probe RSN "${VOCAB_PROBE_RSN}" returned no data (unranked or not found) — cannot derive vocabulary`
     );
   }
   return {

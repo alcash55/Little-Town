@@ -14,9 +14,7 @@
             {
               "id": "tob-bad-crabs-osrs",
               "title": "Bad crabs osrs",
-              "images": [
-                "tob/bad-crabs-osrs.jpg"
-              ],
+              "images": ["tob/bad-crabs-osrs.jpg"],
               "links": [
                 {
                   "label": "YouTube",
@@ -28,9 +26,7 @@
             {
               "id": "tob-east-tick-2-boak",
               "title": "East tick 2 boak",
-              "images": [
-                "tob/east-tick-2-boak.jpg"
-              ],
+              "images": ["tob/east-tick-2-boak.jpg"],
               "links": [
                 {
                   "label": "Streamable",
@@ -42,9 +38,7 @@
             {
               "id": "tob-how-to-tank-verzik-tick-perfect-p3-above-20",
               "title": "How to Tank Verzik Tick Perfect (P3 Above 20%)",
-              "images": [
-                "tob/how-to-tank-verzik-tick-perfect-p3-above-20.jpg"
-              ],
+              "images": ["tob/how-to-tank-verzik-tick-perfect-p3-above-20.jpg"],
               "links": [
                 {
                   "label": "YouTube",
@@ -56,9 +50,7 @@
             {
               "id": "tob-new-west-crabs-p2-example",
               "title": "New west crabs p2 example",
-              "images": [
-                "tob/new-west-crabs-p2-example.jpg"
-              ],
+              "images": ["tob/new-west-crabs-p2-example.jpg"],
               "links": [
                 {
                   "label": "Streamable",
@@ -70,9 +62,7 @@
             {
               "id": "tob-p2-tiles-example-2",
               "title": "p2 tiles example (2)",
-              "images": [
-                "tob/p2-tiles-example-2.jpg"
-              ],
+              "images": ["tob/p2-tiles-example-2.jpg"],
               "links": [
                 {
                   "label": "Streamable",
@@ -84,9 +74,7 @@
             {
               "id": "tob-rare-crabs-osrs",
               "title": "Rare crabs osrs",
-              "images": [
-                "tob/rare-crabs-osrs.jpg"
-              ],
+              "images": ["tob/rare-crabs-osrs.jpg"],
               "links": [
                 {
                   "label": "YouTube",
@@ -98,9 +86,7 @@
             {
               "id": "tob-tob-boak",
               "title": "Tob BOAK",
-              "images": [
-                "tob/tob-boak.jpg"
-              ],
+              "images": ["tob/tob-boak.jpg"],
               "links": [
                 {
                   "label": "Streamable",
@@ -112,16 +98,12 @@
             {
               "id": "tob-maiden-room-layout-reference-numbered-position-markers",
               "title": "Maiden layout reference (numbered position markers)",
-              "images": [
-                "tob/maiden-room-layout-reference-numbered-position-markers.png"
-              ]
+              "images": ["tob/maiden-room-layout-reference-numbered-position-markers.png"]
             },
             {
               "id": "tob-for-tomatoes",
               "title": "For tomatoes",
-              "images": [
-                "tob/for-tomatoes.png"
-              ]
+              "images": ["tob/for-tomatoes.png"]
             }
           ]
         },
@@ -147,9 +129,7 @@
             {
               "id": "tob-heres-more-data",
               "title": "Here's more data",
-              "images": [
-                "tob/heres-more-data.png"
-              ]
+              "images": ["tob/heres-more-data.png"]
             },
             {
               "id": "tob-tob-mvp-points-vs-purple-chance-linear-relationship",
@@ -163,9 +143,7 @@
             {
               "id": "tob-verzik-p3-scythe-dawnbringer-tick-chart-5-scythe-godbooking",
               "title": "Verzik P3 scythe/dawnbringer tick chart (5-scythe godbooking)",
-              "images": [
-                "tob/verzik-p3-scythe-dawnbringer-tick-chart-5-scythe-godbooking.png"
-              ]
+              "images": ["tob/verzik-p3-scythe-dawnbringer-tick-chart-5-scythe-godbooking.png"]
             }
           ]
         },
@@ -176,23 +154,17 @@
             {
               "id": "tob-part-2",
               "title": "part 2",
-              "images": [
-                "tob/part-2.jpg"
-              ]
+              "images": ["tob/part-2.jpg"]
             },
             {
               "id": "tob-tob-maiden-freeze-accuracy",
               "title": "TOB Maiden Freeze Accuracy:",
-              "images": [
-                "tob/tob-maiden-freeze-accuracy.png"
-              ]
+              "images": ["tob/tob-maiden-freeze-accuracy.png"]
             },
             {
               "id": "tob-tob-zaryte-crossbow-tech",
               "title": "ToB Zaryte Crossbow tech",
-              "images": [
-                "tob/tob-zaryte-crossbow-tech.png"
-              ]
+              "images": ["tob/tob-zaryte-crossbow-tech.png"]
             }
           ]
         }
@@ -211,9 +183,7 @@
             {
               "id": "toa-easier-baba-quick-set-up",
               "title": "Easier Baba red X setup",
-              "images": [
-                "toa/easier-baba-quick-set-up.jpg"
-              ],
+              "images": ["toa/easier-baba-quick-set-up.jpg"],
               "links": [
                 {
                   "label": "YouTube",
@@ -225,9 +195,7 @@
             {
               "id": "toa-toa-p3-wardens-skulls-new-spam-skip-tech",
               "title": "TOA P3 Wardens skulls new \"spam skip\" tech",
-              "images": [
-                "toa/toa-p3-wardens-skulls-new-spam-skip-tech.jpg"
-              ],
+              "images": ["toa/toa-p3-wardens-skulls-new-spam-skip-tech.jpg"],
               "links": [
                 {
                   "label": "YouTube",
@@ -246,44 +214,32 @@
               "id": "toa-akkha-radius-markers-by-npc-id-per-prayer-switch-phase",
               "title": "Akkha radius markers by NPC ID (per prayer-switch phase)",
               "description": "Akkha has 4 different NPC IDs across his phases, so you can give each one a different radius-marker colour to make his prayer switches easier to notice.",
-              "images": [
-                "toa/akkha-radius-markers-by-npc-id-per-prayer-switch-phase.png"
-              ]
+              "images": ["toa/akkha-radius-markers-by-npc-id-per-prayer-switch-phase.png"]
             },
             {
               "id": "toa-reasonable-150-solo-setup",
               "title": "Reasonable 150 Solo setup",
-              "images": [
-                "toa/reasonable-150-solo-setup.png"
-              ]
+              "images": ["toa/reasonable-150-solo-setup.png"]
             },
             {
               "id": "toa-toa-baboon-npc-radius-marker-ids",
               "title": "ToA Baboon NPC radius marker IDs",
-              "images": [
-                "toa/toa-baboon-npc-radius-marker-ids.png"
-              ]
+              "images": ["toa/toa-baboon-npc-radius-marker-ids.png"]
             },
             {
               "id": "toa-toa-baboon-npc-radius-marker-ids-2",
               "title": "ToA Baboon NPC radius marker IDs",
-              "images": [
-                "toa/toa-baboon-npc-radius-marker-ids-2.png"
-              ]
+              "images": ["toa/toa-baboon-npc-radius-marker-ids-2.png"]
             },
             {
               "id": "toa-toa-baboon-shaman-radius-marker-id",
               "title": "ToA Baboon Shaman radius marker ID",
-              "images": [
-                "toa/toa-baboon-shaman-radius-marker-id.png"
-              ]
+              "images": ["toa/toa-baboon-shaman-radius-marker-id.png"]
             },
             {
               "id": "toa-toa-cursed-baboon-radius-marker-id",
               "title": "ToA Cursed Baboon radius marker ID",
-              "images": [
-                "toa/toa-cursed-baboon-radius-marker-id.png"
-              ]
+              "images": ["toa/toa-cursed-baboon-radius-marker-id.png"]
             },
             {
               "id": "toa-toa-room-tile-markers",
@@ -315,24 +271,18 @@
               "id": "toa-toa-purple-chance-is-independent-of-group-size",
               "title": "ToA purple chance is independent of group size",
               "description": "Per-player purple chance is the same solo or in a group (groups just see more purples overall since more players are rolling), so gp/h nets out the same when split. Deaths are not very punishing solo.",
-              "images": [
-                "toa/toa-purple-chance-is-independent-of-group-size.png"
-              ]
+              "images": ["toa/toa-purple-chance-is-independent-of-group-size.png"]
             },
             {
               "id": "toa-raid-level-vs-unique-drop-rate-table",
               "title": "Raid level vs unique drop rate table",
-              "images": [
-                "toa/raid-level-vs-unique-drop-rate-table.webp"
-              ]
+              "images": ["toa/raid-level-vs-unique-drop-rate-table.webp"]
             },
             {
               "id": "toa-kephri-dps-chart",
               "title": "Kephri DPS chart by HP threshold",
               "description": "DPS for Osmumten's Fang, Ghrazi Rapier, Zamorakian Hasta, Keris Partisan (regular and blue-charged), and Shadow of Tumeken against Kephri, broken down at HP thresholds from 580 down to 0 (accounting for its shrinking hitbox/defence as it takes damage).",
-              "images": [
-                "toa/kephriDpsChart.jpg"
-              ]
+              "images": ["toa/kephriDpsChart.jpg"]
             }
           ]
         },
@@ -343,9 +293,7 @@
             {
               "id": "toa-toa-custom-swap-list",
               "title": "ToA custom swap list",
-              "images": [
-                "toa/toa-custom-swap-list.png"
-              ],
+              "images": ["toa/toa-custom-swap-list.png"],
               "links": [
                 {
                   "label": "Image source",
@@ -371,9 +319,7 @@
             {
               "id": "cox-no-teleport-vasa-method-cm-quick-guide",
               "title": "NO Teleport Vasa Method: CM Quick Guide",
-              "images": [
-                "cox/no-teleport-vasa-method-cm-quick-guide.jpg"
-              ],
+              "images": ["cox/no-teleport-vasa-method-cm-quick-guide.jpg"],
               "links": [
                 {
                   "label": "YouTube",
@@ -385,9 +331,7 @@
             {
               "id": "cox-vasa-teleport-skip",
               "title": "Vasa teleport skip",
-              "images": [
-                "cox/vasa-teleport-skip.jpg"
-              ],
+              "images": ["cox/vasa-teleport-skip.jpg"],
               "links": [
                 {
                   "label": "YouTube",
@@ -413,9 +357,7 @@
             {
               "id": "yama-infinity-yama-17-0-solo-harder-version-0-tickloss",
               "title": "infinity Yama 17:0 Solo / Harder Version 0 Tickloss",
-              "images": [
-                "yama/infinity-yama-17-0-solo-harder-version-0-tickloss.jpg"
-              ],
+              "images": ["yama/infinity-yama-17-0-solo-harder-version-0-tickloss.jpg"],
               "links": [
                 {
                   "label": "YouTube",
@@ -427,9 +369,7 @@
             {
               "id": "yama-infinity-yama-17-0-solo-duo",
               "title": "Infinity Yama 17:0 Solo/Duo",
-              "images": [
-                "yama/infinity-yama-17-0-solo-duo.jpg"
-              ],
+              "images": ["yama/infinity-yama-17-0-solo-duo.jpg"],
               "links": [
                 {
                   "label": "YouTube",
@@ -484,9 +424,7 @@
             {
               "id": "colosseum-fortis-colosseum-double-south-survival-guide",
               "title": "Fortis Colosseum - Double south survival guide",
-              "images": [
-                "colosseum/fortis-colosseum-double-south-survival-guide.jpg"
-              ],
+              "images": ["colosseum/fortis-colosseum-double-south-survival-guide.jpg"],
               "links": [
                 {
                   "label": "YouTube",
@@ -512,9 +450,7 @@
             {
               "id": "colosseum-sol-heredit-corner-method-diagram",
               "title": "Sol Heredit corner method diagram",
-              "images": [
-                "colosseum/sol-heredit-corner-method-diagram.png"
-              ]
+              "images": ["colosseum/sol-heredit-corner-method-diagram.png"]
             },
             {
               "id": "colosseum-colosim",
@@ -563,9 +499,7 @@
               "id": "colosseum-wave-start-visual-metronome-6-colour-tick-reference",
               "title": "Wave-start visual metronome (6-colour tick reference)",
               "description": "Blue = move/pray on tick 3, green = tick 4, optional red = tick 2 (that fremennik dies immediately). Use it to know when it's safe to attack freely between fremennik spawns.",
-              "images": [
-                "colosseum/wave-start-visual-metronome-6-colour-tick-reference.png"
-              ]
+              "images": ["colosseum/wave-start-visual-metronome-6-colour-tick-reference.png"]
             }
           ]
         }
@@ -584,9 +518,7 @@
             {
               "id": "inferno-fight-caves-fight-caves-speedrun-ca-guide-example-run",
               "title": "Fight Caves Speedrun CA Guide + Example Run",
-              "images": [
-                "inferno-fight-caves/fight-caves-speedrun-ca-guide-example-run.jpg"
-              ],
+              "images": ["inferno-fight-caves/fight-caves-speedrun-ca-guide-example-run.jpg"],
               "links": [
                 {
                   "label": "YouTube",
@@ -598,9 +530,7 @@
             {
               "id": "inferno-fight-caves-solving-inferno-waves-for-5-hours",
               "title": "Solving Inferno Waves for 5 Hours",
-              "images": [
-                "inferno-fight-caves/solving-inferno-waves-for-5-hours.jpg"
-              ],
+              "images": ["inferno-fight-caves/solving-inferno-waves-for-5-hours.jpg"],
               "links": [
                 {
                   "label": "YouTube",
@@ -618,17 +548,13 @@
             {
               "id": "inferno-fight-caves-no-prayer-fight-caves-jad-reference",
               "title": "No-prayer Fight Caves/Jad reference",
-              "images": [
-                "inferno-fight-caves/no-prayer-fight-caves-jad-reference.png"
-              ]
+              "images": ["inferno-fight-caves/no-prayer-fight-caves-jad-reference.png"]
             },
             {
               "id": "inferno-fight-caves-jad-attack-tell-reference",
               "title": "Jad attack tell reference (Magic vs Ranged)",
               "description": "Hand-drawn mnemonic for telling Jad's two ranged-style attacks apart on sight: the Magic attack (\"whoosh\", a fireball lobbed from its head) needs Protect from Magic, the Ranged attack (\"stomp\") needs Protect from Missiles.",
-              "images": [
-                "inferno-fight-caves/jad.png"
-              ]
+              "images": ["inferno-fight-caves/jad.png"]
             },
             {
               "id": "inferno-fight-caves-inferno-trainer",
@@ -686,9 +612,7 @@
             {
               "id": "dt2-bosses-r-2007scape-whisperer-final-phase-walk-tech",
               "title": "Whisperer Final Phase walk Tech",
-              "images": [
-                "dt2-bosses/r-2007scape-whisperer-final-phase-walk-tech.png"
-              ],
+              "images": ["dt2-bosses/r-2007scape-whisperer-final-phase-walk-tech.png"],
               "links": [
                 {
                   "label": "Reddit",
@@ -700,9 +624,7 @@
             {
               "id": "dt2-bosses-vardorvis-axe-skipping-osrs-tile-plugin-descr",
               "title": "Vardorvis axe skipping osrs (tile plugin descr)",
-              "images": [
-                "dt2-bosses/vardorvis-axe-skipping-osrs-tile-plugin-descr.jpg"
-              ],
+              "images": ["dt2-bosses/vardorvis-axe-skipping-osrs-tile-plugin-descr.jpg"],
               "links": [
                 {
                   "label": "YouTube",
@@ -775,9 +697,7 @@
             {
               "id": "gauntlet-the-ultimate-corrupted-gauntlet-guide-old-school-runescape",
               "title": "The Ultimate Corrupted Gauntlet Guide Old School Runescape",
-              "images": [
-                "gauntlet/the-ultimate-corrupted-gauntlet-guide-old-school-runescape.jpg"
-              ],
+              "images": ["gauntlet/the-ultimate-corrupted-gauntlet-guide-old-school-runescape.jpg"],
               "links": [
                 {
                   "label": "YouTube",
@@ -803,9 +723,7 @@
             {
               "id": "slayer-general-pvm-bloodveld-dance",
               "title": "Bloodveld dance",
-              "images": [
-                "slayer-general-pvm/bloodveld-dance.jpg"
-              ],
+              "images": ["slayer-general-pvm/bloodveld-dance.jpg"],
               "links": [
                 {
                   "label": "YouTube",
@@ -813,7 +731,7 @@
                   "kind": "youtube"
                 }
               ]
-            }            
+            }
           ]
         },
         {
@@ -824,9 +742,7 @@
               "id": "slayer-general-pvm-alchemical-hydra-sound-effect-ids-to-mute",
               "title": "Alchemical Hydra: sound effect IDs to mute",
               "description": "Mute these sound effect IDs during Alchemical Hydra kills to cut down on audio clutter.\n\n2677,2663,2675,2670,511,5884,2266,6410,6014,6116,5949,6216,520,519,3120,518,6160,1464,521,2667,918,6412,6093,6192,6066,6112,6105,3614,6072,6159,6230,5890,5818,5885,6235,6134,6151,6235,6129,6018,5978,5962,6042,6042,6219,6124,6153,6591,1460,227,4103,4089,4078,4112,4134,4135,4128,4132,3887,4076,4087,3944,4095,4075,4118,4096,4067,4099,4133,4080,4122,4107,4094,4106,211,212,3613",
-              "images": [
-                "slayer-general-pvm/alchemical-hydra-sound-effect-ids-to-mute.png"
-              ]
+              "images": ["slayer-general-pvm/alchemical-hydra-sound-effect-ids-to-mute.png"]
             }
           ]
         }
@@ -859,16 +775,12 @@
             {
               "id": "skilling-utility-hunter-task-block-reference",
               "title": "Hunter task block reference",
-              "images": [
-                "skilling-utility/hunter-task-block-reference.png"
-              ]
+              "images": ["skilling-utility/hunter-task-block-reference.png"]
             },
             {
               "id": "skilling-utility-these-plugins-makes-zmi-afk-osrs-runecrafting-easy",
               "title": "These Plugins Makes ZMI AFK - OSRS Runecrafting EASY",
-              "images": [
-                "skilling-utility/these-plugins-makes-zmi-afk-osrs-runecrafting-easy.jpg"
-              ],
+              "images": ["skilling-utility/these-plugins-makes-zmi-afk-osrs-runecrafting-easy.jpg"],
               "links": [
                 {
                   "label": "YouTube",
@@ -913,9 +825,7 @@
             {
               "id": "skilling-utility-dps-calculator",
               "title": "DPS Calculator:",
-              "images": [
-                "skilling-utility/dps-calculator.png"
-              ],
+              "images": ["skilling-utility/dps-calculator.png"],
               "links": [
                 {
                   "label": "Google/Sheet",
@@ -940,14 +850,11 @@
                   "kind": "other"
                 }
               ]
-
             },
             {
               "id": "skilling-utility-quick-way-to-search-osrs-wiki",
               "title": "Quick way to search osrs wiki",
-              "images": [
-                "skilling-utility/quick-way-to-search-osrs-wiki.png"
-              ]
+              "images": ["skilling-utility/quick-way-to-search-osrs-wiki.png"]
             }
           ]
         }
@@ -962,17 +869,16 @@
         {
           "kind": "guides",
           "title": "Guides & videos",
-          "items": [{
-            "id": "slayer-general-pvm-easy-chaos-elemental-alt-lure-guide-2022",
-            "title": "EASY Chaos Elemental Alt Lure Guide [2022]",
-            "images": [
-              "slayer-general-pvm/easy-chaos-elemental-alt-lure-guide-2022.jpg"
-            ],
-            "links": [
+          "items": [
+            {
+              "id": "slayer-general-pvm-easy-chaos-elemental-alt-lure-guide-2022",
+              "title": "EASY Chaos Elemental Alt Lure Guide [2022]",
+              "images": ["slayer-general-pvm/easy-chaos-elemental-alt-lure-guide-2022.jpg"],
+              "links": [
                 {
-                "label": "YouTube",
-                "url": "https://www.youtube.com/watch?v=1jMKvdsfF5g",
-                "kind": "youtube"
+                  "label": "YouTube",
+                  "url": "https://www.youtube.com/watch?v=1jMKvdsfF5g",
+                  "kind": "youtube"
                 }
               ]
             }
@@ -1008,9 +914,7 @@
             {
               "id": "unsorted-gyazo",
               "title": "Gyazo",
-              "images": [
-                "unsorted/gyazo.jpg"
-              ],
+              "images": ["unsorted/gyazo.jpg"],
               "links": [
                 {
                   "label": "Image source",

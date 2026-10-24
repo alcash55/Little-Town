@@ -409,7 +409,9 @@ describe('useScreenshotSubmission — poll backoff (#45)', () => {
 
     // A change resets the interval back to the floor on the next tick.
     installRouter({
-      '/bingo/screenshots/pending': jsonResponse(200, { data: [unattributedRow('sub-new', 'team-a')] }),
+      '/bingo/screenshots/pending': jsonResponse(200, {
+        data: [unattributedRow('sub-new', 'team-a')],
+      }),
     });
 
     await act(async () => {

@@ -28,7 +28,13 @@ import { getDb } from "../../src/db/client.js";
 import { resolveMyBingoPlayer } from "../../src/db/players.js";
 import { upsertRsnClaim } from "../../src/db/rsnClaims.js";
 import { canonicalizeRsn, normalizeRsn } from "../../src/lib/rsn.js";
-import { getLocalStackConfig, insertTestBingo, deleteTestBingo, uniqueSuffix, type BingoRow } from "./helpers.js";
+import {
+  getLocalStackConfig,
+  insertTestBingo,
+  deleteTestBingo,
+  uniqueSuffix,
+  type BingoRow,
+} from "./helpers.js";
 
 const stack = await getLocalStackConfig();
 if (!stack.reachable) {
@@ -39,14 +45,19 @@ const suite = stack.reachable;
 const createdUserIds: string[] = [];
 const createdBingoIds: string[] = [];
 
-async function insertTestUser(role: "user" | "admin" = "user"): Promise<string> {
+async function insertTestUser(
+  role: "user" | "admin" = "user"
+): Promise<string> {
   const username = `ResolveMeTest${role}${uniqueSuffix()}`;
   const { data, error } = await getDb()
     .from("users")
     .insert({ username, password_hash: "x", role })
     .select("id")
     .single();
-  if (error || !data) throw new Error(`Failed to insert test user "${username}": ${error?.message}`);
+  if (error || !data)
+    throw new Error(
+      `Failed to insert test user "${username}": ${error?.message}`
+    );
   const id = (data as { id: string }).id;
   createdUserIds.push(id);
   return id;
@@ -55,22 +66,34 @@ async function insertTestUser(role: "user" | "admin" = "user"): Promise<string> 
 async function insertRawPlayer(
   bingoId: string,
   rsn: string,
-  registeredBy: string | null,
+  registeredBy: string | null
 ): Promise<{ id: string; team_id: string | null }> {
   const { data, error } = await getDb()
     .from("bingo_players")
     .insert({ bingo_id: bingoId, rsn, registered_by: registeredBy })
     .select("id, team_id")
     .single();
-  if (error || !data) throw new Error(`Failed to insert player "${rsn}": ${error?.message}`);
+  if (error || !data)
+    throw new Error(`Failed to insert player "${rsn}": ${error?.message}`);
   return data as { id: string; team_id: string | null };
 }
 
 afterAll(async () => {
   if (!stack.reachable) return;
-  await Promise.all(createdBingoIds.map((id) => deleteTestBingo(id).catch(() => undefined)));
   await Promise.all(
-    createdUserIds.map((id) => getDb().from("users").delete().eq("id", id).then(() => undefined, () => undefined)),
+    createdBingoIds.map((id) => deleteTestBingo(id).catch(() => undefined))
+  );
+  await Promise.all(
+    createdUserIds.map((id) =>
+      getDb()
+        .from("users")
+        .delete()
+        .eq("id", id)
+        .then(
+          () => undefined,
+          () => undefined
+        )
+    )
   );
 });
 

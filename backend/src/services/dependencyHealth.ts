@@ -27,7 +27,8 @@ const CHECK_TIMEOUT_MS = 5_000;
 const DEGRADED_LATENCY_MS = 1_500;
 
 const SUPABASE_STATUS_URL = "https://status.supabase.com/api/v2/status.json";
-const CLOUDFLARE_STATUS_URL = "https://www.cloudflarestatus.com/api/v2/status.json";
+const CLOUDFLARE_STATUS_URL =
+  "https://www.cloudflarestatus.com/api/v2/status.json";
 const OSRS_HISCORES_PROBE_URL =
   "https://secure.runescape.com/m=hiscore_oldschool/index_lite.json?player=Zezima";
 
@@ -36,7 +37,8 @@ interface CheckResult {
   detail?: string;
 }
 
-let cache: { data: { services: ServiceHealth[] }; expiresAt: number } | null = null;
+let cache: { data: { services: ServiceHealth[] }; expiresAt: number } | null =
+  null;
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -51,17 +53,26 @@ async function safeCheck(
   id: string,
   label: string,
   fn: () => Promise<CheckResult>,
-  opts: { degradedLatencyMs?: number } = {},
+  opts: { degradedLatencyMs?: number } = {}
 ): Promise<ServiceHealth> {
   const start = Date.now();
   try {
     const { status, detail } = await fn();
     const latencyMs = Date.now() - start;
     const finalStatus: DependencyStatus =
-      status === "up" && opts.degradedLatencyMs !== undefined && latencyMs > opts.degradedLatencyMs
+      status === "up" &&
+      opts.degradedLatencyMs !== undefined &&
+      latencyMs > opts.degradedLatencyMs
         ? "degraded"
         : status;
-    return { id, label, status: finalStatus, latencyMs, detail, checkedAt: nowIso() };
+    return {
+      id,
+      label,
+      status: finalStatus,
+      latencyMs,
+      detail,
+      checkedAt: nowIso(),
+    };
   } catch (e) {
     return {
       id,
@@ -80,11 +91,14 @@ function checkSupabaseDb(): Promise<ServiceHealth> {
     "supabase-db",
     "Supabase DB",
     async () => {
-      const { error } = await getDb().from("bingos").select("id", { count: "exact", head: true }).limit(1);
+      const { error } = await getDb()
+        .from("bingos")
+        .select("id", { count: "exact", head: true })
+        .limit(1);
       if (error) throw new Error(error.message);
       return { status: "up" };
     },
-    { degradedLatencyMs: DEGRADED_LATENCY_MS },
+    { degradedLatencyMs: DEGRADED_LATENCY_MS }
   );
 }
 
@@ -103,11 +117,19 @@ function statusFromIndicator(indicator: string | undefined): DependencyStatus {
   }
 }
 
-async function checkStatuspage(id: string, label: string, url: string): Promise<ServiceHealth> {
+async function checkStatuspage(
+  id: string,
+  label: string,
+  url: string
+): Promise<ServiceHealth> {
   return safeCheck(id, label, async () => {
-    const res = await fetch(url, { signal: AbortSignal.timeout(CHECK_TIMEOUT_MS) });
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(CHECK_TIMEOUT_MS),
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const body = (await res.json()) as { status?: { indicator?: string; description?: string } };
+    const body = (await res.json()) as {
+      status?: { indicator?: string; description?: string };
+    };
     return {
       status: statusFromIndicator(body.status?.indicator),
       detail: body.status?.description,
@@ -115,9 +137,14 @@ async function checkStatuspage(id: string, label: string, url: string): Promise<
   });
 }
 
-const checkSupabaseStatus = () => checkStatuspage("supabase-status", "Supabase Status", SUPABASE_STATUS_URL);
+const checkSupabaseStatus = () =>
+  checkStatuspage("supabase-status", "Supabase Status", SUPABASE_STATUS_URL);
 const checkCloudflareStatus = () =>
-  checkStatuspage("cloudflare-status", "Cloudflare Status", CLOUDFLARE_STATUS_URL);
+  checkStatuspage(
+    "cloudflare-status",
+    "Cloudflare Status",
+    CLOUDFLARE_STATUS_URL
+  );
 
 /**
  * Reachability probe against the OSRS hiscores API this app proxies
@@ -128,8 +155,11 @@ const checkCloudflareStatus = () =>
  */
 function checkOsrsHiscores(): Promise<ServiceHealth> {
   return safeCheck("osrs-hiscores", "OSRS Hiscores", async () => {
-    const res = await fetch(OSRS_HISCORES_PROBE_URL, { signal: AbortSignal.timeout(CHECK_TIMEOUT_MS) });
-    if (res.status >= 500) throw new Error(`OSRS hiscores returned HTTP ${res.status}`);
+    const res = await fetch(OSRS_HISCORES_PROBE_URL, {
+      signal: AbortSignal.timeout(CHECK_TIMEOUT_MS),
+    });
+    if (res.status >= 500)
+      throw new Error(`OSRS hiscores returned HTTP ${res.status}`);
     return { status: "up" };
   });
 }
@@ -151,8 +181,12 @@ function diffNames(served: string[], authoritative: string[]): string[] {
   const servedSet = new Set(served);
   const authoritativeSet = new Set(authoritative);
   return [
-    ...served.filter((n) => !authoritativeSet.has(n)).map((n) => `"${n}" served but not in hiscores`),
-    ...authoritative.filter((n) => !servedSet.has(n)).map((n) => `"${n}" in hiscores but not served`),
+    ...served
+      .filter((n) => !authoritativeSet.has(n))
+      .map((n) => `"${n}" served but not in hiscores`),
+    ...authoritative
+      .filter((n) => !servedSet.has(n))
+      .map((n) => `"${n}" in hiscores but not served`),
   ];
 }
 
@@ -206,7 +240,9 @@ function checkHiscoreVocabDrift(): Promise<ServiceHealth> {
  * server-side so the overview UI can poll freely without hammering upstream
  * status pages / the OSRS API / our own DB on every page view.
  */
-export async function getDependencyHealth(): Promise<{ services: ServiceHealth[] }> {
+export async function getDependencyHealth(): Promise<{
+  services: ServiceHealth[];
+}> {
   if (cache && cache.expiresAt > Date.now()) return cache.data;
 
   const services = await Promise.all([

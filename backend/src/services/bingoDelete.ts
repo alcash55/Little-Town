@@ -46,7 +46,7 @@ export interface BingoPurgeCounts {
  */
 export async function deleteBingoWithPurge(
   bingo: { id: string; name: string; status?: string },
-  actingAdminId: string | undefined,
+  actingAdminId: string | undefined
 ): Promise<BingoPurgeCounts> {
   const counts = await getBingoDeleteCounts(bingo.id);
 
@@ -55,7 +55,9 @@ export async function deleteBingoWithPurge(
     // The route just fetched this bingo moments ago — this should be
     // unreachable outside a pathological concurrent-delete race. Fail
     // loudly rather than report a fake success.
-    throw new Error(`Bingo ${bingo.id} ("${bingo.name}") disappeared before its delete could complete`);
+    throw new Error(
+      `Bingo ${bingo.id} ("${bingo.name}") disappeared before its delete could complete`
+    );
   }
 
   let storageObjects = 0;
@@ -65,7 +67,7 @@ export async function deleteBingoWithPurge(
     console.error(
       `[bingo-delete] Storage purge failed for deleted bingo "${bingo.name}" (${bingo.id}) — ` +
         `screenshot objects may be orphaned in the bucket:`,
-      (e as Error).message,
+      (e as Error).message
     );
   }
 
@@ -75,8 +77,10 @@ export async function deleteBingoWithPurge(
   // destructive endpoint in the codebase.
   console.warn(
     `[bingo-delete] AUDIT: bingo "${bingo.name}" (${bingo.id}, status was "${bingo.status}") deleted by admin ` +
-      `${actingAdminId ?? "unknown"}. Purged: ${purged.teams} team(s), ${purged.tiles} tile(s), ` +
-      `${purged.players} player(s), ${purged.submissions} submission(s), ${purged.storageObjects} storage object(s).`,
+      `${actingAdminId ?? "unknown"}. Purged: ${purged.teams} team(s), ${
+        purged.tiles
+      } tile(s), ` +
+      `${purged.players} player(s), ${purged.submissions} submission(s), ${purged.storageObjects} storage object(s).`
   );
 
   return purged;

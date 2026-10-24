@@ -102,7 +102,10 @@ function toGainingWindows(points: HistoryPoint[]): Interval[] {
  * (rule 3/4 above). Two-pointer sweep — O(main + side) rather than the naive
  * O(main * side) — since both inputs are already sorted by start time.
  */
-function overlappingWindows(mainWindows: Interval[], sideWindows: Interval[]): ConflictWindow[] {
+function overlappingWindows(
+  mainWindows: Interval[],
+  sideWindows: Interval[]
+): ConflictWindow[] {
   const result: ConflictWindow[] = [];
   let i = 0;
   let j = 0;
@@ -138,7 +141,9 @@ function overlappingWindows(mainWindows: Interval[], sideWindows: Interval[]): C
  * no per-player round trips — followed by an in-memory pass per rules 2-5
  * above. See the doc comment block for the detection rules themselves.
  */
-export async function getBingoConflicts(bingoId: string): Promise<PlayerConflict[]> {
+export async function getBingoConflicts(
+  bingoId: string
+): Promise<PlayerConflict[]> {
   const db = getDb();
 
   const { data: players, error: playersError } = await db
@@ -146,7 +151,8 @@ export async function getBingoConflicts(bingoId: string): Promise<PlayerConflict
     .select("id, rsn")
     .eq("bingo_id", bingoId);
 
-  if (playersError) throw new Error(`Failed to get players: ${playersError.message}`);
+  if (playersError)
+    throw new Error(`Failed to get players: ${playersError.message}`);
   const playerRows = (players ?? []) as Array<{ id: string; rsn: string }>;
   if (!playerRows.length) return [];
 
@@ -157,7 +163,8 @@ export async function getBingoConflicts(bingoId: string): Promise<PlayerConflict
     .select("id, player_id, rsn")
     .in("player_id", playerIds);
 
-  if (sideError) throw new Error(`Failed to get side accounts: ${sideError.message}`);
+  if (sideError)
+    throw new Error(`Failed to get side accounts: ${sideError.message}`);
   const sideAccountRows = (sideAccounts ?? []) as Array<{
     id: string;
     player_id: string;
@@ -182,10 +189,14 @@ export async function getBingoConflicts(bingoId: string): Promise<PlayerConflict
   ]);
 
   if (mainHistoryRes.error) {
-    throw new Error(`Failed to get main account history: ${mainHistoryRes.error.message}`);
+    throw new Error(
+      `Failed to get main account history: ${mainHistoryRes.error.message}`
+    );
   }
   if (sideHistoryRes.error) {
-    throw new Error(`Failed to get side account history: ${sideHistoryRes.error.message}`);
+    throw new Error(
+      `Failed to get side account history: ${sideHistoryRes.error.message}`
+    );
   }
 
   const mainPointsByPlayer = new Map<string, HistoryPoint[]>();
@@ -194,8 +205,11 @@ export async function getBingoConflicts(bingoId: string): Promise<PlayerConflict
     total_xp: number;
     taken_at: string;
   }>) {
-    if (!mainPointsByPlayer.has(row.player_id)) mainPointsByPlayer.set(row.player_id, []);
-    mainPointsByPlayer.get(row.player_id)!.push({ takenAt: row.taken_at, totalXp: row.total_xp });
+    if (!mainPointsByPlayer.has(row.player_id))
+      mainPointsByPlayer.set(row.player_id, []);
+    mainPointsByPlayer
+      .get(row.player_id)!
+      .push({ takenAt: row.taken_at, totalXp: row.total_xp });
   }
 
   const sidePointsByAccount = new Map<string, HistoryPoint[]>();
@@ -204,7 +218,8 @@ export async function getBingoConflicts(bingoId: string): Promise<PlayerConflict
     total_xp: number;
     taken_at: string;
   }>) {
-    if (!sidePointsByAccount.has(row.side_account_id)) sidePointsByAccount.set(row.side_account_id, []);
+    if (!sidePointsByAccount.has(row.side_account_id))
+      sidePointsByAccount.set(row.side_account_id, []);
     sidePointsByAccount
       .get(row.side_account_id)!
       .push({ takenAt: row.taken_at, totalXp: row.total_xp });
@@ -223,7 +238,9 @@ export async function getBingoConflicts(bingoId: string): Promise<PlayerConflict
     const mainWindows = mainWindowsByPlayer.get(player.id);
     if (!mainWindows?.length) continue;
 
-    const playerSideAccounts = sideAccountRows.filter((s) => s.player_id === player.id);
+    const playerSideAccounts = sideAccountRows.filter(
+      (s) => s.player_id === player.id
+    );
     for (const sideAccount of playerSideAccounts) {
       const sidePoints = sidePointsByAccount.get(sideAccount.id);
       if (!sidePoints?.length) continue;
@@ -244,7 +261,9 @@ export async function getBingoConflicts(bingoId: string): Promise<PlayerConflict
     }
   }
 
-  conflicts.sort((a, b) => a.rsn.localeCompare(b.rsn) || a.sideRsn.localeCompare(b.sideRsn));
+  conflicts.sort(
+    (a, b) => a.rsn.localeCompare(b.rsn) || a.sideRsn.localeCompare(b.sideRsn)
+  );
 
   return conflicts;
 }
