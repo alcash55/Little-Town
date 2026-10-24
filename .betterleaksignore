@@ -62,3 +62,6 @@ fa8be584f5e8575c784fc36a6336920fb21dc2f9:frontend/src/components/pages/TeamProgr
 # Issue 62: local recovery-test password and intentionally rejected credential-URL fixture.
 e38f19b8041cd948c8f889bd5ee925e8c2fe3136:backend/tests/integration/accountRecovery.test.ts:generic-password:46
 e38f19b8041cd948c8f889bd5ee925e8c2fe3136:backend/tests/unit/recoveryDelivery.test.ts:generic-credential-uri:69
+
+# Password visibility: accessible button label, not a credential.
+03965258a67c7e0b90ec2ff13488a6d1e929877e:frontend/src/components/Pages/AccountRecovery/AccountRecovery.tsx:generic-password:212

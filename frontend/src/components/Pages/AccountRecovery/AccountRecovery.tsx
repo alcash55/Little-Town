@@ -209,7 +209,9 @@ export function AccountRecovery() {
                         <InputAdornment position="end">
                           <IconButton
                             type="button"
-                            aria-label={showPassword ? 'Hide new password' : 'Show new password'}
+                            aria-label={
+                              showPassword ? 'Hide new password' : 'Show new password'
+                            }
                             aria-pressed={showPassword}
                             onClick={() => setShowPassword((visible) => !visible)}
                             onMouseDown={(event) => event.preventDefault()}
