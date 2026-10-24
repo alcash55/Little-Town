@@ -27,7 +27,7 @@ describe("bingoUpdateSchema status enum", () => {
     (status: string) => {
       const result = bingoUpdateSchema.safeParse({ status });
       expect(result.success).toBe(true);
-    },
+    }
   );
 
   test("rejects 'active' — activation must go through POST /bingo/activate", () => {
@@ -76,7 +76,9 @@ describe("duplicate team names rejected", () => {
   });
 
   test("bingoUpdateSchema accepts unique team names", () => {
-    const result = bingoUpdateSchema.safeParse({ teams: ["Alpha", "Beta", "Gamma"] });
+    const result = bingoUpdateSchema.safeParse({
+      teams: ["Alpha", "Beta", "Gamma"],
+    });
     expect(result.success).toBe(true);
   });
 
@@ -111,7 +113,11 @@ describe("boardTileSchema", () => {
   });
 
   test("rejects an empty task", () => {
-    const result = boardTileSchema.safeParse({ type: "Drops", task: "", points: 1 });
+    const result = boardTileSchema.safeParse({
+      type: "Drops",
+      task: "",
+      points: 1,
+    });
     expect(result.success).toBe(false);
   });
 
@@ -134,7 +140,9 @@ describe("boardTileSchema", () => {
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect((result.data as Record<string, unknown>).customBadge).toBe("gold-star");
+      expect((result.data as Record<string, unknown>).customBadge).toBe(
+        "gold-star"
+      );
     }
   });
 
@@ -153,7 +161,9 @@ describe("boardTileSchema", () => {
 
 describe("draftAssignmentsSchema", () => {
   test("accepts assignments with a null teamId (unassigned)", () => {
-    const result = draftAssignmentsSchema.safeParse([{ rsn: "Zezima", teamId: null }]);
+    const result = draftAssignmentsSchema.safeParse([
+      { rsn: "Zezima", teamId: null },
+    ]);
     expect(result.success).toBe(true);
   });
 
@@ -170,7 +180,9 @@ describe("draftAssignmentsSchema", () => {
   });
 
   test("rejects an empty rsn", () => {
-    const result = draftAssignmentsSchema.safeParse([{ rsn: "", teamId: null }]);
+    const result = draftAssignmentsSchema.safeParse([
+      { rsn: "", teamId: null },
+    ]);
     expect(result.success).toBe(false);
   });
 });
@@ -194,7 +206,10 @@ describe("playerRegistrationSchema", () => {
   });
 
   test("accepts rsn plus teamId", () => {
-    const result = playerRegistrationSchema.safeParse({ rsn: "Zezima", teamId: "team-1" });
+    const result = playerRegistrationSchema.safeParse({
+      rsn: "Zezima",
+      teamId: "team-1",
+    });
     expect(result.success).toBe(true);
   });
 });
@@ -213,7 +228,10 @@ describe("sideAccountSchema", () => {
 
 describe("screenshotApprovalSchema (contract 2)", () => {
   test("requires a non-empty tileId", () => {
-    const result = screenshotApprovalSchema.safeParse({ tileId: "", teamId: "team-1" });
+    const result = screenshotApprovalSchema.safeParse({
+      tileId: "",
+      teamId: "team-1",
+    });
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.issues[0]?.message).toBe("Tile ID is required");
@@ -221,7 +239,10 @@ describe("screenshotApprovalSchema (contract 2)", () => {
   });
 
   test("requires a non-empty teamId", () => {
-    const result = screenshotApprovalSchema.safeParse({ tileId: "tile-1", teamId: "" });
+    const result = screenshotApprovalSchema.safeParse({
+      tileId: "tile-1",
+      teamId: "",
+    });
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.issues[0]?.message).toBe("Team ID is required");
@@ -229,7 +250,10 @@ describe("screenshotApprovalSchema (contract 2)", () => {
   });
 
   test("playerId is optional", () => {
-    const result = screenshotApprovalSchema.safeParse({ tileId: "tile-1", teamId: "team-1" });
+    const result = screenshotApprovalSchema.safeParse({
+      tileId: "tile-1",
+      teamId: "team-1",
+    });
     expect(result.success).toBe(true);
   });
 
@@ -347,7 +371,9 @@ describe("bingoCloneSchema (POST /admin/bingo/clone)", () => {
 
 describe("rsnClaimReassignSchema (PATCH /admin/rsn-claims/:rsnNormalized)", () => {
   test("accepts a userId", () => {
-    const result = rsnClaimReassignSchema.safeParse({ userId: "11111111-1111-1111-1111-111111111111" });
+    const result = rsnClaimReassignSchema.safeParse({
+      userId: "11111111-1111-1111-1111-111111111111",
+    });
     expect(result.success).toBe(true);
   });
 

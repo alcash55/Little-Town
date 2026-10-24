@@ -8,7 +8,14 @@
  */
 process.env.JWT_SECRET = "login-test-secret-do-not-use-elsewhere";
 
-import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  test,
+} from "bun:test";
 import express from "express";
 import type http from "node:http";
 
@@ -18,7 +25,12 @@ import { loginLimiterOptions } from "../../src/middleware/loginLimiter.js";
 import authRoutes from "../../src/routes/auth.js";
 import { hashPassword } from "../../src/db/users.js";
 import { getDb } from "../../src/db/client.js";
-import { getLocalStackConfig, jsonRequest, startTestServer, uniqueSuffix } from "./helpers.js";
+import {
+  getLocalStackConfig,
+  jsonRequest,
+  startTestServer,
+  uniqueSuffix,
+} from "./helpers.js";
 
 const stack = await getLocalStackConfig();
 if (!stack.reachable) {
@@ -56,7 +68,8 @@ beforeAll(async () => {
     })
     .select("id")
     .single();
-  if (error || !data) throw new Error(`Failed to seed test user: ${error?.message}`);
+  if (error || !data)
+    throw new Error(`Failed to seed test user: ${error?.message}`);
   testUserId = data.id;
 });
 
@@ -85,7 +98,9 @@ describe.skipIf(!stack.reachable)("POST /api/auth/login", () => {
 
     const setCookie = res.headers["set-cookie"];
     expect(setCookie).toBeDefined();
-    const cookieHeader = Array.isArray(setCookie) ? setCookie.join("; ") : String(setCookie);
+    const cookieHeader = Array.isArray(setCookie)
+      ? setCookie.join("; ")
+      : String(setCookie);
     expect(cookieHeader).toContain("authToken=");
     expect(cookieHeader.toLowerCase()).toContain("httponly");
     const tokenValue = cookieHeader.match(/authToken=([^;]+)/)?.[1];
@@ -103,7 +118,8 @@ describe.skipIf(!stack.reachable)("POST /api/auth/login", () => {
       process.env.AUTH_SAME_SITE_HOST = "api.littletown.gay";
       try {
         const login = await jsonRequest(port, "POST", "/api/auth/login", {
-          headers: { host }, body: { username: testUsername, password: PASSWORD },
+          headers: { host },
+          body: { username: testUsername, password: PASSWORD },
         });
         expect(login.status).toBe(200);
         expect(login.body.data.token).toBeUndefined();
@@ -115,13 +131,19 @@ describe.skipIf(!stack.reachable)("POST /api/auth/login", () => {
         expect(serialized).not.toContain("Domain=");
         const cookie = serialized?.split(";")[0];
         if (!cookie) throw new Error("Login did not issue a session cookie");
-        const me = await jsonRequest(port, "GET", "/api/auth/me", { headers: { host, cookie } });
+        const me = await jsonRequest(port, "GET", "/api/auth/me", {
+          headers: { host, cookie },
+        });
         expect(me.status).toBe(200);
         expect(me.body.data.id).toBe(testUserId);
-        const logout = await jsonRequest(port, "POST", "/api/auth/logout", { headers: { host, cookie } });
+        const logout = await jsonRequest(port, "POST", "/api/auth/logout", {
+          headers: { host, cookie },
+        });
         expect(logout.status).toBe(200);
         expect(String(logout.headers["set-cookie"])).toContain("Max-Age=0");
-        expect(String(logout.headers["set-cookie"])).toContain(`SameSite=${sameSite}`);
+        expect(String(logout.headers["set-cookie"])).toContain(
+          `SameSite=${sameSite}`
+        );
       } finally {
         if (previousMode === undefined) delete process.env.NODE_ENV;
         else process.env.NODE_ENV = previousMode;
@@ -169,7 +191,9 @@ describe.skipIf(!stack.reachable)("POST /api/auth/login", () => {
   });
 
   test("empty body: 400", async () => {
-    const res = await jsonRequest(port, "POST", "/api/auth/login", { body: {} });
+    const res = await jsonRequest(port, "POST", "/api/auth/login", {
+      body: {},
+    });
 
     expect(res.status).toBe(400);
     expect(res.body.success).toBe(false);

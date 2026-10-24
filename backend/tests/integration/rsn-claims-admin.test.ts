@@ -71,7 +71,11 @@ afterAll(async () => {
 });
 
 async function claimExists(rsnNormalized: string): Promise<boolean> {
-  const { data } = await getDb().from("rsn_claims").select("id").eq("rsn_normalized", rsnNormalized).maybeSingle();
+  const { data } = await getDb()
+    .from("rsn_claims")
+    .select("id")
+    .eq("rsn_normalized", rsnNormalized)
+    .maybeSingle();
   return data !== null;
 }
 
@@ -83,15 +87,26 @@ describe.skipIf(!suite)("GET /api/admin/rsn-claims", () => {
     const rsnNormalized = rsn.toLowerCase();
     await upsertRsnClaim(claimant.id, rsn, rsnNormalized);
 
-    const admin200 = await jsonRequest(port, "GET", "/api/admin/rsn-claims", { token: signTestToken(admin) });
+    const admin200 = await jsonRequest(port, "GET", "/api/admin/rsn-claims", {
+      token: signTestToken(admin),
+    });
     expect(admin200.status).toBe(200);
     expect(admin200.body.success).toBe(true);
     expect(Array.isArray(admin200.body.data)).toBe(true);
-    const row = admin200.body.data.find((r: any) => r.rsnNormalized === rsnNormalized);
-    expect(row).toMatchObject({ userId: claimant.id, username: claimant.username, rsn, rsnNormalized });
+    const row = admin200.body.data.find(
+      (r: any) => r.rsnNormalized === rsnNormalized
+    );
+    expect(row).toMatchObject({
+      userId: claimant.id,
+      username: claimant.username,
+      rsn,
+      rsnNormalized,
+    });
     expect(typeof row.claimedAt).toBe("string");
 
-    const user403 = await jsonRequest(port, "GET", "/api/admin/rsn-claims", { token: signTestToken(plainUser) });
+    const user403 = await jsonRequest(port, "GET", "/api/admin/rsn-claims", {
+      token: signTestToken(plainUser),
+    });
     expect(user403.status).toBe(403);
   });
 
@@ -99,7 +114,7 @@ describe.skipIf(!suite)("GET /api/admin/rsn-claims", () => {
     // Deterministic regardless of the developer's local .env — see
     // withAllowDevAuth's doc comment (helpers.ts).
     const { status } = await withAllowDevAuth("false", () =>
-      jsonRequest(port, "GET", "/api/admin/rsn-claims", {}),
+      jsonRequest(port, "GET", "/api/admin/rsn-claims", {})
     );
     expect(status).toBe(401);
   });
@@ -114,9 +129,14 @@ describe.skipIf(!suite)("DELETE /api/admin/rsn-claims/:rsnNormalized", () => {
     await upsertRsnClaim(claimant.id, rsn, rsnNormalized);
     expect(await claimExists(rsnNormalized)).toBe(true);
 
-    const { status, body } = await jsonRequest(port, "DELETE", `/api/admin/rsn-claims/${rsnNormalized}`, {
-      token: signTestToken(admin),
-    });
+    const { status, body } = await jsonRequest(
+      port,
+      "DELETE",
+      `/api/admin/rsn-claims/${rsnNormalized}`,
+      {
+        token: signTestToken(admin),
+      }
+    );
     expect(status).toBe(200);
     expect(body).toEqual({ success: true, data: { released: true } });
     expect(await claimExists(rsnNormalized)).toBe(false);
@@ -127,7 +147,7 @@ describe.skipIf(!suite)("DELETE /api/admin/rsn-claims/:rsnNormalized", () => {
       port,
       "DELETE",
       `/api/admin/rsn-claims/no-such-claim-${uniqueSuffix()}`,
-      { token: signTestToken(admin) },
+      { token: signTestToken(admin) }
     );
     expect(status).toBe(404);
     expect(body.success).toBe(false);
@@ -135,9 +155,14 @@ describe.skipIf(!suite)("DELETE /api/admin/rsn-claims/:rsnNormalized", () => {
   });
 
   test("403 for a plain user", async () => {
-    const { status } = await jsonRequest(port, "DELETE", `/api/admin/rsn-claims/whatever-${uniqueSuffix()}`, {
-      token: signTestToken(plainUser),
-    });
+    const { status } = await jsonRequest(
+      port,
+      "DELETE",
+      `/api/admin/rsn-claims/whatever-${uniqueSuffix()}`,
+      {
+        token: signTestToken(plainUser),
+      }
+    );
     expect(status).toBe(403);
   });
 });
@@ -151,14 +176,23 @@ describe.skipIf(!suite)("PATCH /api/admin/rsn-claims/:rsnNormalized", () => {
     const rsnNormalized = rsn.toLowerCase();
     await upsertRsnClaim(originalOwner.id, rsn, rsnNormalized);
 
-    const { status, body } = await jsonRequest(port, "PATCH", `/api/admin/rsn-claims/${rsnNormalized}`, {
-      token: signTestToken(admin),
-      body: { userId: newOwner.id },
-    });
+    const { status, body } = await jsonRequest(
+      port,
+      "PATCH",
+      `/api/admin/rsn-claims/${rsnNormalized}`,
+      {
+        token: signTestToken(admin),
+        body: { userId: newOwner.id },
+      }
+    );
     expect(status).toBe(200);
     expect(body).toEqual({ success: true, data: { rsn, userId: newOwner.id } });
 
-    const { data: row } = await getDb().from("rsn_claims").select("user_id").eq("rsn_normalized", rsnNormalized).single();
+    const { data: row } = await getDb()
+      .from("rsn_claims")
+      .select("user_id")
+      .eq("rsn_normalized", rsnNormalized)
+      .single();
     expect(row.user_id).toBe(newOwner.id);
   });
 
@@ -168,7 +202,7 @@ describe.skipIf(!suite)("PATCH /api/admin/rsn-claims/:rsnNormalized", () => {
       port,
       "PATCH",
       `/api/admin/rsn-claims/no-such-claim-${uniqueSuffix()}`,
-      { token: signTestToken(admin), body: { userId: newOwner.id } },
+      { token: signTestToken(admin), body: { userId: newOwner.id } }
     );
     expect(status).toBe(404);
     expect(body.code).toBe("RSN_CLAIM_NOT_FOUND");
@@ -184,31 +218,50 @@ describe.skipIf(!suite)("PATCH /api/admin/rsn-claims/:rsnNormalized", () => {
     await upsertRsnClaim(ownerB.id, rsnB, rsnB.toLowerCase());
 
     // Try to reassign rsnA's claim to ownerB, who already holds rsnB.
-    const { status, body } = await jsonRequest(port, "PATCH", `/api/admin/rsn-claims/${rsnA.toLowerCase()}`, {
-      token: signTestToken(admin),
-      body: { userId: ownerB.id },
-    });
+    const { status, body } = await jsonRequest(
+      port,
+      "PATCH",
+      `/api/admin/rsn-claims/${rsnA.toLowerCase()}`,
+      {
+        token: signTestToken(admin),
+        body: { userId: ownerB.id },
+      }
+    );
     expect(status).toBe(409);
     expect(body.code).toBe("RSN_CLAIM_CONFLICT");
 
     // Original claim must be untouched.
-    const { data: row } = await getDb().from("rsn_claims").select("user_id").eq("rsn_normalized", rsnA.toLowerCase()).single();
+    const { data: row } = await getDb()
+      .from("rsn_claims")
+      .select("user_id")
+      .eq("rsn_normalized", rsnA.toLowerCase())
+      .single();
     expect(row.user_id).toBe(ownerA.id);
   });
 
   test("403 for a plain user", async () => {
-    const { status } = await jsonRequest(port, "PATCH", `/api/admin/rsn-claims/whatever-${uniqueSuffix()}`, {
-      token: signTestToken(plainUser),
-      body: { userId: plainUser.id },
-    });
+    const { status } = await jsonRequest(
+      port,
+      "PATCH",
+      `/api/admin/rsn-claims/whatever-${uniqueSuffix()}`,
+      {
+        token: signTestToken(plainUser),
+        body: { userId: plainUser.id },
+      }
+    );
     expect(status).toBe(403);
   });
 
   test("400 for a missing userId in the body", async () => {
-    const { status, body } = await jsonRequest(port, "PATCH", `/api/admin/rsn-claims/whatever-${uniqueSuffix()}`, {
-      token: signTestToken(admin),
-      body: {},
-    });
+    const { status, body } = await jsonRequest(
+      port,
+      "PATCH",
+      `/api/admin/rsn-claims/whatever-${uniqueSuffix()}`,
+      {
+        token: signTestToken(admin),
+        body: {},
+      }
+    );
     expect(status).toBe(400);
     expect(body.success).toBe(false);
   });

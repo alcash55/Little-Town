@@ -51,9 +51,13 @@ const stack = await getLocalStackConfig();
 if (!stack.reachable) {
   console.warn(`[my-team-data.test.ts] skipping: ${stack.reason}`);
 }
-const preexistingActive = stack.reachable ? await hasPreexistingActiveBingo() : false;
+const preexistingActive = stack.reachable
+  ? await hasPreexistingActiveBingo()
+  : false;
 if (stack.reachable && preexistingActive) {
-  console.warn("[my-team-data.test.ts] skipping: another bingo is already active in the shared local stack");
+  console.warn(
+    "[my-team-data.test.ts] skipping: another bingo is already active in the shared local stack"
+  );
 }
 const suite = stack.reachable && !preexistingActive;
 
@@ -66,54 +70,96 @@ interface TestUser {
 const createdUserIds: string[] = [];
 const createdBingoIds: string[] = [];
 
-async function insertTestUser(role: TestUser["role"] = "user"): Promise<TestUser> {
+async function insertTestUser(
+  role: TestUser["role"] = "user"
+): Promise<TestUser> {
   const username = `TeamDataTest${role}${uniqueSuffix()}`;
   const { data, error } = await getDb()
     .from("users")
     .insert({ username, password_hash: "x", role })
     .select("id, username, role")
     .single();
-  if (error || !data) throw new Error(`Failed to insert test user "${username}": ${error?.message}`);
+  if (error || !data)
+    throw new Error(
+      `Failed to insert test user "${username}": ${error?.message}`
+    );
   createdUserIds.push((data as { id: string }).id);
   return data as TestUser;
 }
 
 function signToken(user: TestUser): string {
-  return jwt.sign({ id: user.id, username: user.username, role: user.role }, getJwtSecret(), {
-    expiresIn: "1h",
-  });
+  return jwt.sign(
+    { id: user.id, username: user.username, role: user.role },
+    getJwtSecret(),
+    {
+      expiresIn: "1h",
+    }
+  );
 }
 
-async function insertTestPlayer(bingoId: string, teamId: string | null, rsn: string, registeredBy: string | null) {
+async function insertTestPlayer(
+  bingoId: string,
+  teamId: string | null,
+  rsn: string,
+  registeredBy: string | null
+) {
   const { data, error } = await getDb()
     .from("bingo_players")
-    .insert({ bingo_id: bingoId, rsn, team_id: teamId, registered_by: registeredBy })
+    .insert({
+      bingo_id: bingoId,
+      rsn,
+      team_id: teamId,
+      registered_by: registeredBy,
+    })
     .select("id")
     .single();
-  if (error || !data) throw new Error(`Failed to insert test player "${rsn}": ${error?.message}`);
+  if (error || !data)
+    throw new Error(`Failed to insert test player "${rsn}": ${error?.message}`);
   return (data as { id: string }).id;
 }
 
-async function insertApprovedSubmission(bingoId: string, tileId: string, teamId: string, playerId: string) {
+async function insertApprovedSubmission(
+  bingoId: string,
+  tileId: string,
+  teamId: string,
+  playerId: string
+) {
   const { error } = await getDb()
     .from("bingo_submissions")
-    .insert({ bingo_id: bingoId, tile_id: tileId, team_id: teamId, player_id: playerId, status: "approved" });
-  if (error) throw new Error(`Failed to insert test submission: ${error.message}`);
+    .insert({
+      bingo_id: bingoId,
+      tile_id: tileId,
+      team_id: teamId,
+      player_id: playerId,
+      status: "approved",
+    });
+  if (error)
+    throw new Error(`Failed to insert test submission: ${error.message}`);
 }
 
 let server: http.Server;
 let port: number;
 
-function get(path: string, token: string): Promise<{ status: number; body: any }> {
+function get(
+  path: string,
+  token: string
+): Promise<{ status: number; body: any }> {
   return new Promise((resolve, reject) => {
     http
       .get(
-        { host: "127.0.0.1", port, path, headers: { Authorization: `Bearer ${token}` } },
+        {
+          host: "127.0.0.1",
+          port,
+          path,
+          headers: { Authorization: `Bearer ${token}` },
+        },
         (res) => {
           let body = "";
           res.on("data", (chunk) => (body += chunk));
-          res.on("end", () => resolve({ status: res.statusCode ?? 0, body: JSON.parse(body) }));
-        },
+          res.on("end", () =>
+            resolve({ status: res.statusCode ?? 0, body: JSON.parse(body) })
+          );
+        }
       )
       .on("error", reject);
   });
@@ -133,9 +179,20 @@ beforeAll(async () => {
 afterAll(async () => {
   server?.close();
   if (!stack.reachable) return;
-  await Promise.all(createdBingoIds.map((id) => deleteTestBingo(id).catch(() => undefined)));
   await Promise.all(
-    createdUserIds.map((id) => getDb().from("users").delete().eq("id", id).then(() => undefined, () => undefined)),
+    createdBingoIds.map((id) => deleteTestBingo(id).catch(() => undefined))
+  );
+  await Promise.all(
+    createdUserIds.map((id) =>
+      getDb()
+        .from("users")
+        .delete()
+        .eq("id", id)
+        .then(
+          () => undefined,
+          () => undefined
+        )
+    )
   );
 });
 
@@ -147,7 +204,9 @@ describe.skipIf(!suite)("GET /api/bingo/my-team-data", () => {
   let teammatePlayerId: string;
 
   test("fixtures: active bingo, one team, one mixed-case Drops tile", async () => {
-    bingo = await insertTestBingo(`test-team-data-${uniqueSuffix()}`, { status: "active" });
+    bingo = await insertTestBingo(`test-team-data-${uniqueSuffix()}`, {
+      status: "active",
+    });
     createdBingoIds.push(bingo.id);
     team = await insertTestTeam(bingo.id, `Team ${uniqueSuffix()}`);
     // Deliberately mixed-case task — this is exactly what broke under the
@@ -165,9 +224,14 @@ describe.skipIf(!suite)("GET /api/bingo/my-team-data", () => {
       bingo.id,
       team.id,
       `TeammatePlayer${uniqueSuffix()}`,
-      admin.id, // admin-registered, same as the real Team Drafter flow
+      admin.id // admin-registered, same as the real Team Drafter flow
     );
-    await insertApprovedSubmission(bingo.id, dropsTile.id, team.id, teammatePlayerId);
+    await insertApprovedSubmission(
+      bingo.id,
+      dropsTile.id,
+      team.id,
+      teammatePlayerId
+    );
   });
 
   // H2: the caller themselves claims their RSN via rsn_claims (as
@@ -181,7 +245,10 @@ describe.skipIf(!suite)("GET /api/bingo/my-team-data", () => {
     const canonical = canonicalizeRsn(myRsn);
     await upsertRsnClaim(me.id, canonical, normalizeRsn(canonical));
 
-    const { status, body } = await get("/api/bingo/my-team-data", signToken(me));
+    const { status, body } = await get(
+      "/api/bingo/my-team-data",
+      signToken(me)
+    );
     expect(status).toBe(200);
     expect(body.data.teamId).toBe(team.id);
     // My teammate's progress (registered_by-based, not the caller) is
@@ -189,13 +256,18 @@ describe.skipIf(!suite)("GET /api/bingo/my-team-data", () => {
     const rsns = body.data.players.map((p: { rsn: string }) => p.rsn);
     expect(rsns).toContain(myRsn);
     expect(rsns).toContain(
-      body.data.players.find((p: { playerId: string }) => p.playerId === teammatePlayerId)?.rsn,
+      body.data.players.find(
+        (p: { playerId: string }) => p.playerId === teammatePlayerId
+      )?.rsn
     );
   });
 
   test("without a claim and without an unambiguous registered_by match, a user sees no team (not an error)", async () => {
     const stranger = await insertTestUser("user");
-    const { status, body } = await get("/api/bingo/my-team-data", signToken(stranger));
+    const { status, body } = await get(
+      "/api/bingo/my-team-data",
+      signToken(stranger)
+    );
     expect(status).toBe(200);
     expect(body.data.teamId).toBeNull();
     expect(body.data.players).toEqual([]);
@@ -210,15 +282,27 @@ describe.skipIf(!suite)("GET /api/bingo/my-team-data", () => {
   // regression coverage), and would make this test about the wrong thing.
   test("H3: dropStatus is keyed by the tile's real-cased task", async () => {
     const viewer = await insertTestUser("user");
-    await insertTestPlayer(bingo.id, team.id, `ViewerPlayer${uniqueSuffix()}`, viewer.id);
+    await insertTestPlayer(
+      bingo.id,
+      team.id,
+      `ViewerPlayer${uniqueSuffix()}`,
+      viewer.id
+    );
 
-    const { status, body } = await get("/api/bingo/my-team-data", signToken(viewer));
+    const { status, body } = await get(
+      "/api/bingo/my-team-data",
+      signToken(viewer)
+    );
     expect(status).toBe(200);
 
-    const tileEntry = body.data.tiles.find((t: { task: string }) => t.task === dropsTile.task);
+    const tileEntry = body.data.tiles.find(
+      (t: { task: string }) => t.task === dropsTile.task
+    );
     expect(tileEntry).toBeDefined();
 
-    const teammateRow = body.data.players.find((p: { playerId: string }) => p.playerId === teammatePlayerId);
+    const teammateRow = body.data.players.find(
+      (p: { playerId: string }) => p.playerId === teammatePlayerId
+    );
     expect(teammateRow).toBeDefined();
     // The exact real-cased key must be present and 'approved' — a
     // regression to the lowercase bug would put this under

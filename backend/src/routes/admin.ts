@@ -37,7 +37,10 @@ import {
   HISCORE_CONCURRENCY,
   PlayerSnapshotResult,
 } from "../services/bingoActivation.js";
-import { snapshotSideAccountTasks, type SideSnapshotResult } from "../services/sideAccountSnapshots.js";
+import {
+  snapshotSideAccountTasks,
+  type SideSnapshotResult,
+} from "../services/sideAccountSnapshots.js";
 import {
   registerBingoPlayer,
   getBingoPlayers,
@@ -69,10 +72,17 @@ import {
   getApprovedSubmissionsMissingAttribution,
   countPendingSubmissions,
 } from "../db/bingoSubmissions.js";
-import { getPlayerStats, PlayerStat, getTeamStatsWithUnresolvable } from "../db/playerStats.js";
+import {
+  getPlayerStats,
+  PlayerStat,
+  getTeamStatsWithUnresolvable,
+} from "../db/playerStats.js";
 import { reactToSubmissionMessage } from "../services/discordScreenshots.js";
 import { getDependencyHealth } from "../services/dependencyHealth.js";
-import { endBingoEarly, getHiscoreHistoryDeletionDate } from "../services/bingoLifecycle.js";
+import {
+  endBingoEarly,
+  getHiscoreHistoryDeletionDate,
+} from "../services/bingoLifecycle.js";
 import { deleteBingoWithPurge } from "../services/bingoDelete.js";
 import {
   listRsnClaims,
@@ -99,7 +109,7 @@ router.get(
       data: await listBingos(),
     };
     res.status(200).json(response);
-  }),
+  })
 );
 
 // -------------------------------------------------------
@@ -120,17 +130,26 @@ router.post(
     };
 
     if (!name) {
-      return res.status(400).json({ success: false, error: "Bingo name is required" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Bingo name is required" });
     }
 
     const response: ApiResponse<BingoConfig> = {
       success: true,
-      data: await saveBingoDetails({ name, start, end, size, teams, createdBy: getAuditUserId(req) }),
+      data: await saveBingoDetails({
+        name,
+        start,
+        end,
+        size,
+        teams,
+        createdBy: getAuditUserId(req),
+      }),
       message: "Bingo details saved successfully",
     };
 
     res.status(201).json(response);
-  }),
+  })
 );
 
 router.get(
@@ -142,7 +161,7 @@ router.get(
       data: await getActiveBingo(),
     };
     res.status(200).json(response);
-  }),
+  })
 );
 
 /**
@@ -165,13 +184,23 @@ router.get(
   "/bingo/latest",
   asyncHandler(async (req: Request, res: Response) => {
     const bingo = await getLatestBingo();
-    const pendingScreenshots = bingo?.id ? await countPendingSubmissions(bingo.id) : 0;
-    const response: ApiResponse<{ bingo: BingoConfig | null; pendingScreenshots: number; historyDeletionAt: string | null }> = {
+    const pendingScreenshots = bingo?.id
+      ? await countPendingSubmissions(bingo.id)
+      : 0;
+    const response: ApiResponse<{
+      bingo: BingoConfig | null;
+      pendingScreenshots: number;
+      historyDeletionAt: string | null;
+    }> = {
       success: true,
-      data: { bingo, pendingScreenshots, historyDeletionAt: getHiscoreHistoryDeletionDate(bingo) },
+      data: {
+        bingo,
+        pendingScreenshots,
+        historyDeletionAt: getHiscoreHistoryDeletionDate(bingo),
+      },
     };
     res.status(200).json(response);
-  }),
+  })
 );
 
 // -------------------------------------------------------
@@ -188,8 +217,13 @@ router.post(
   "/bingo/:bingoId/end",
   authorize("admin"),
   asyncHandler(async (req: Request, res: Response) => {
-    const bingoId = Array.isArray(req.params.bingoId) ? req.params.bingoId[0] : req.params.bingoId;
-    if (!bingoId) return res.status(400).json({ success: false, error: "Bingo ID is required" });
+    const bingoId = Array.isArray(req.params.bingoId)
+      ? req.params.bingoId[0]
+      : req.params.bingoId;
+    if (!bingoId)
+      return res
+        .status(400)
+        .json({ success: false, error: "Bingo ID is required" });
 
     const bingo = await getBingoById(bingoId);
     if (!bingo?.id) {
@@ -200,15 +234,27 @@ router.post(
     if (!result) {
       // Idempotent-safe per the contract: already complete/draft/archived
       // isn't a panic state, just a 409 telling the caller nothing happened.
-      return res.status(409).json({ success: false, error: "Bingo is not active" });
+      return res
+        .status(409)
+        .json({ success: false, error: "Bingo is not active" });
     }
 
-    const response: ApiResponse<{ id: string; status: "complete"; endedAt: string; pendingScreenshots: number }> = {
+    const response: ApiResponse<{
+      id: string;
+      status: "complete";
+      endedAt: string;
+      pendingScreenshots: number;
+    }> = {
       success: true,
-      data: { id: result.id, status: "complete", endedAt: result.endedAt, pendingScreenshots: result.pendingCount },
+      data: {
+        id: result.id,
+        status: "complete",
+        endedAt: result.endedAt,
+        pendingScreenshots: result.pendingCount,
+      },
     };
     res.status(200).json(response);
-  }),
+  })
 );
 
 // -------------------------------------------------------
@@ -232,8 +278,13 @@ router.delete(
   authorize("admin"),
   validateBody(bingoDeleteSchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const bingoId = Array.isArray(req.params.bingoId) ? req.params.bingoId[0] : req.params.bingoId;
-    if (!bingoId) return res.status(400).json({ success: false, error: "Bingo ID is required" });
+    const bingoId = Array.isArray(req.params.bingoId)
+      ? req.params.bingoId[0]
+      : req.params.bingoId;
+    if (!bingoId)
+      return res
+        .status(400)
+        .json({ success: false, error: "Bingo ID is required" });
 
     const bingo = await getBingoById(bingoId);
     if (!bingo?.id) {
@@ -243,13 +294,16 @@ router.delete(
     if (bingo.status === "active") {
       const { force } = req.body as { force?: boolean };
       const confirmHeaderRaw = req.headers["x-confirm-delete"];
-      const confirmHeader = Array.isArray(confirmHeaderRaw) ? confirmHeaderRaw[0] : confirmHeaderRaw;
+      const confirmHeader = Array.isArray(confirmHeaderRaw)
+        ? confirmHeaderRaw[0]
+        : confirmHeaderRaw;
 
       // Two independent halves — BOTH must hold. Neither substitutes for
       // the other: a caller with force:true but a missing/wrong header is
       // blocked exactly like a caller with the right header but no force.
       const forceOk = force === true;
-      const confirmOk = confirmHeader !== undefined && confirmHeader === bingo.name;
+      const confirmOk =
+        confirmHeader !== undefined && confirmHeader === bingo.name;
 
       if (!forceOk || !confirmOk) {
         return res.status(409).json({
@@ -264,18 +318,27 @@ router.delete(
     // from the `!bingo?.id` guard above — BingoConfig itself declares `id`
     // optional, which doesn't otherwise survive passing the whole object
     // through to a function parameter typed with a required `id`.
-    const purged = await deleteBingoWithPurge({ ...bingo, id: bingo.id }, getAuditUserId(req));
+    const purged = await deleteBingoWithPurge(
+      { ...bingo, id: bingo.id },
+      getAuditUserId(req)
+    );
 
     const response: ApiResponse<{
       deleted: true;
       id: string;
-      purged: { teams: number; tiles: number; players: number; submissions: number; storageObjects: number };
+      purged: {
+        teams: number;
+        tiles: number;
+        players: number;
+        submissions: number;
+        storageObjects: number;
+      };
     }> = {
       success: true,
       data: { deleted: true, id: bingo.id, purged },
     };
     res.status(200).json(response);
-  }),
+  })
 );
 
 // -------------------------------------------------------
@@ -309,19 +372,29 @@ router.post(
       endDate: string;
     };
 
-    const created = await cloneBingo({ sourceBingoId, name, startDate, endDate });
+    const created = await cloneBingo({
+      sourceBingoId,
+      name,
+      startDate,
+      endDate,
+    });
 
     console.log(
       `[bingo-clone] Cloned bingo ${sourceBingoId} into new draft "${created.name}" (${created.id}) by admin ` +
-        `${getAuditUserId(req) ?? "unknown"} — ${created.tilesCloned} tile(s).`,
+        `${getAuditUserId(req) ?? "unknown"} — ${created.tilesCloned} tile(s).`
     );
 
-    const response: ApiResponse<{ id: string; name: string; status: string; tilesCloned: number }> = {
+    const response: ApiResponse<{
+      id: string;
+      name: string;
+      status: string;
+      tilesCloned: number;
+    }> = {
       success: true,
       data: created,
     };
     res.status(201).json(response);
-  }),
+  })
 );
 
 // -------------------------------------------------------
@@ -340,7 +413,7 @@ router.post(
     };
 
     res.status(201).json(response);
-  }),
+  })
 );
 
 router.put(
@@ -355,7 +428,7 @@ router.put(
     };
 
     res.status(200).json(response);
-  }),
+  })
 );
 
 // GET /bingo/board resolves the LATEST bingo regardless of status
@@ -370,14 +443,15 @@ router.get(
   "/bingo/board",
   asyncHandler(async (req: Request, res: Response) => {
     const bingo = await getLatestBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No bingo found" });
+    if (!bingo?.id)
+      return res.status(404).json({ success: false, error: "No bingo found" });
 
     const response: ApiResponse = {
       success: true,
       data: await getBingoBoardById(bingo.id),
     };
     res.status(200).json(response);
-  }),
+  })
 );
 
 // -------------------------------------------------------
@@ -391,17 +465,23 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const bingo = await getActiveBingo();
     if (!bingo?.id) {
-      return res.status(404).json({ success: false, error: "No active bingo found" });
+      return res
+        .status(404)
+        .json({ success: false, error: "No active bingo found" });
     }
 
     if (bingo.status === "active") {
-      return res.status(409).json({ success: false, error: "Bingo is already active" });
+      return res
+        .status(409)
+        .json({ success: false, error: "Bingo is already active" });
     }
 
     // Fetch all registered players
     const players = await getBingoPlayers(bingo.id);
     if (!players.length) {
-      return res.status(400).json({ success: false, error: "No players registered to this bingo" });
+      return res
+        .status(400)
+        .json({ success: false, error: "No players registered to this bingo" });
     }
 
     // Activation semantics (TEAM-BRIEF.md Track A item 2): activation fails
@@ -409,30 +489,39 @@ router.post(
     // unless the request explicitly passes { force: true }.
     const { force } = req.body as { force?: unknown };
     if (force !== undefined && typeof force !== "boolean") {
-      return res.status(400).json({ success: false, error: "'force' must be a boolean" });
+      return res
+        .status(400)
+        .json({ success: false, error: "'force' must be a boolean" });
     }
 
     // Take start + current snapshots (concurrency-capped), then atomically
     // flip draft -> active via the activate_bingo RPC. `activated` is false
     // if another request won the activation race in the meantime, or if
     // activation was withheld because snapshots failed (see `blocked`).
-    const { activated, blocked, succeeded, failed } = await activateBingoWithSnapshots(bingo.id, {
-      force: force === true,
-      source: "drafter",
-    });
+    const { activated, blocked, succeeded, failed } =
+      await activateBingoWithSnapshots(bingo.id, {
+        force: force === true,
+        source: "drafter",
+      });
 
     if (blocked) {
       return res.status(422).json({
         success: false,
         error:
-          `Activation blocked: start snapshot failed for ${failed.length} player${failed.length !== 1 ? "s" : ""}: ` +
-          `${failed.join("; ")}. Fix the RSN(s) and retry, or pass { "force": true } to activate anyway.`,
+          `Activation blocked: start snapshot failed for ${
+            failed.length
+          } player${failed.length !== 1 ? "s" : ""}: ` +
+          `${failed.join(
+            "; "
+          )}. Fix the RSN(s) and retry, or pass { "force": true } to activate anyway.`,
         data: { succeeded, failed },
       });
     }
 
     if (!activated) {
-      return res.status(409).json({ success: false, error: "Bingo is already active" });
+      return res
+        .status(409)
+        .json({ success: false, error: "Bingo is already active" });
     }
 
     const updatedBingo = (await getActiveBingo()) ?? bingo;
@@ -440,13 +529,15 @@ router.post(
     const response: ApiResponse<BingoConfig> = {
       success: true,
       data: updatedBingo,
-      message: `Bingo activated. Snapshots saved for ${succeeded} player${succeeded !== 1 ? "s" : ""}${
+      message: `Bingo activated. Snapshots saved for ${succeeded} player${
+        succeeded !== 1 ? "s" : ""
+      }${
         failed.length ? `; ${failed.length} failed: ${failed.join(", ")}` : ""
       }.`,
     };
 
     res.status(200).json(response);
-  }),
+  })
 );
 
 // -------------------------------------------------------
@@ -463,11 +554,17 @@ router.post(
   "/bingo/:bingoId/retake-start-snapshots",
   authorize("admin"),
   asyncHandler(async (req: Request, res: Response) => {
-    const bingoId = Array.isArray(req.params.bingoId) ? req.params.bingoId[0] : req.params.bingoId;
-    if (!bingoId) return res.status(400).json({ success: false, error: "Bingo ID is required" });
+    const bingoId = Array.isArray(req.params.bingoId)
+      ? req.params.bingoId[0]
+      : req.params.bingoId;
+    if (!bingoId)
+      return res
+        .status(400)
+        .json({ success: false, error: "Bingo ID is required" });
 
     const bingo = await getBingoById(bingoId);
-    if (!bingo) return res.status(404).json({ success: false, error: "Bingo not found" });
+    if (!bingo)
+      return res.status(404).json({ success: false, error: "Bingo not found" });
     if (bingo.status !== "active") {
       return res.status(409).json({
         success: false,
@@ -476,7 +573,9 @@ router.post(
     }
 
     const rows = await getAllPlayerSnapshots(bingoId);
-    const missing = rows.filter((row) => row.start === null).map((row) => row.player);
+    const missing = rows
+      .filter((row) => row.start === null)
+      .map((row) => row.player);
     const missingPlayerIds = new Set(missing.map((p) => p.id));
 
     // Side accounts missing a start snapshot whose PARENT player already
@@ -486,12 +585,15 @@ router.post(
     // below already retakes ALL of that player's side accounts as part of
     // its own side-account phase — this avoids firing two OSRS lookups for
     // the same side account in one request.
-    const extraSidePairs = (await getSideAccountsMissingStartSnapshot(bingoId)).filter(
-      (p) => !missingPlayerIds.has(p.playerId),
-    );
+    const extraSidePairs = (
+      await getSideAccountsMissingStartSnapshot(bingoId)
+    ).filter((p) => !missingPlayerIds.has(p.playerId));
 
     if (!missing.length && !extraSidePairs.length) {
-      const response: ApiResponse<{ results: PlayerSnapshotResult[]; sideResults: SideSnapshotResult[] }> = {
+      const response: ApiResponse<{
+        results: PlayerSnapshotResult[];
+        sideResults: SideSnapshotResult[];
+      }> = {
         success: true,
         data: { results: [], sideResults: [] },
         message: "No players or side accounts are missing a start snapshot.",
@@ -507,32 +609,48 @@ router.post(
     // `succeeded`/`failed` below, which are main-account only).
     const { succeeded, failed, results, sideResults } = missing.length
       ? await snapshotStartAndCurrent(bingoId, missing, "drafter")
-      : { succeeded: 0, failed: [] as string[], results: [] as PlayerSnapshotResult[], sideResults: [] as SideSnapshotResult[] };
+      : {
+          succeeded: 0,
+          failed: [] as string[],
+          results: [] as PlayerSnapshotResult[],
+          sideResults: [] as SideSnapshotResult[],
+        };
 
     // Extended sweep: side accounts missing a start snapshot on players
     // whose own account was never "missing" above, so the main pass never
     // touched them.
     const extraSideResults = extraSidePairs.length
-      ? await snapshotSideAccountTasks(extraSidePairs, ["start", "current"], "drafter")
+      ? await snapshotSideAccountTasks(
+          extraSidePairs,
+          ["start", "current"],
+          "drafter"
+        )
       : [];
 
     const allSideResults = [...sideResults, ...extraSideResults];
     const sideFailed = allSideResults.filter((r) => !r.ok);
 
-    const response: ApiResponse<{ results: PlayerSnapshotResult[]; sideResults: SideSnapshotResult[] }> = {
+    const response: ApiResponse<{
+      results: PlayerSnapshotResult[];
+      sideResults: SideSnapshotResult[];
+    }> = {
       success: true,
       data: { results, sideResults: allSideResults },
-      message: `Retook start snapshots for ${succeeded} of ${missing.length} missing player${
-        missing.length !== 1 ? "s" : ""
-      }${failed.length ? `; ${failed.length} still failing` : ""}${
+      message: `Retook start snapshots for ${succeeded} of ${
+        missing.length
+      } missing player${missing.length !== 1 ? "s" : ""}${
+        failed.length ? `; ${failed.length} still failing` : ""
+      }${
         allSideResults.length
-          ? `; ${allSideResults.length - sideFailed.length}/${allSideResults.length} side account(s) succeeded`
+          ? `; ${allSideResults.length - sideFailed.length}/${
+              allSideResults.length
+            } side account(s) succeeded`
           : ""
       }.`,
     };
 
     res.status(200).json(response);
-  }),
+  })
 );
 
 // -------------------------------------------------------
@@ -547,7 +665,9 @@ router.put(
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
     if (!id) {
-      return res.status(400).json({ success: false, error: "Bingo ID is required" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Bingo ID is required" });
     }
 
     const { name, description, status, startDate, endDate, boardSize, teams } =
@@ -568,7 +688,7 @@ router.put(
     };
 
     res.status(200).json(response);
-  }),
+  })
 );
 
 // -------------------------------------------------------
@@ -583,7 +703,8 @@ router.get(
   "/bingo/players",
   asyncHandler(async (req: Request, res: Response) => {
     const bingo = await getLatestBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No bingo found" });
+    if (!bingo?.id)
+      return res.status(404).json({ success: false, error: "No bingo found" });
 
     const [rows, sideAccountsByPlayer] = await Promise.all([
       getAllPlayerSnapshots(bingo.id),
@@ -594,7 +715,7 @@ router.get(
       sideAccounts: sideAccountsByPlayer[row.player.id] ?? [],
     }));
     res.status(200).json({ success: true, data });
-  }),
+  })
 );
 
 // Register a player to the active bingo and take their start snapshot
@@ -606,16 +727,26 @@ router.post(
     const { rsn, teamId } = req.body as { rsn: string; teamId?: string };
 
     const bingo = await getActiveBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+    if (!bingo?.id)
+      return res
+        .status(404)
+        .json({ success: false, error: "No active bingo found" });
 
     // Register the player
-    const player = await registerBingoPlayer(bingo.id, rsn, teamId, getAuditUserId(req));
+    const player = await registerBingoPlayer(
+      bingo.id,
+      rsn,
+      teamId,
+      getAuditUserId(req)
+    );
 
     // Fetch hiscores and save start snapshot (ignored if already exists)
     const hiscoreData = await hiscores(rsn);
     if (!hiscoreData) {
       // Still register the player but skip the snapshot — they can be refreshed later
-      console.warn(`[admin] Player "${rsn}" not on hiscores at registration time — snapshot skipped.`);
+      console.warn(
+        `[admin] Player "${rsn}" not on hiscores at registration time — snapshot skipped.`
+      );
       return res.status(201).json({
         success: true,
         data: { player, startSnapshot: null },
@@ -626,8 +757,10 @@ router.post(
     // Also set current to match start on first registration
     await savePlayerSnapshot(player.id, "current", hiscoreData);
 
-    res.status(201).json({ success: true, data: { player, startSnapshot: snapshot } });
-  }),
+    res
+      .status(201)
+      .json({ success: true, data: { player, startSnapshot: snapshot } });
+  })
 );
 
 // Remove a player from the active bingo
@@ -635,29 +768,42 @@ router.delete(
   "/bingo/players/:rsn",
   authorize("admin"),
   asyncHandler(async (req: Request, res: Response) => {
-    const rsn = Array.isArray(req.params.rsn) ? req.params.rsn[0] : req.params.rsn;
+    const rsn = Array.isArray(req.params.rsn)
+      ? req.params.rsn[0]
+      : req.params.rsn;
     const bingo = await getActiveBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+    if (!bingo?.id)
+      return res
+        .status(404)
+        .json({ success: false, error: "No active bingo found" });
 
     await removeBingoPlayer(bingo.id, rsn);
     res.status(200).json({ success: true, message: `Player "${rsn}" removed` });
-  }),
+  })
 );
 
 // Get snapshots for a specific player
 router.get(
   "/bingo/players/:rsn",
   asyncHandler(async (req: Request, res: Response) => {
-    const rsn = Array.isArray(req.params.rsn) ? req.params.rsn[0] : req.params.rsn;
+    const rsn = Array.isArray(req.params.rsn)
+      ? req.params.rsn[0]
+      : req.params.rsn;
     const bingo = await getActiveBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+    if (!bingo?.id)
+      return res
+        .status(404)
+        .json({ success: false, error: "No active bingo found" });
 
     const player = await getBingoPlayer(bingo.id, rsn);
-    if (!player) return res.status(404).json({ success: false, error: `Player "${rsn}" not found` });
+    if (!player)
+      return res
+        .status(404)
+        .json({ success: false, error: `Player "${rsn}" not found` });
 
     const snapshots = await getPlayerSnapshots(player.id);
     res.status(200).json({ success: true, data: { player, ...snapshots } });
-  }),
+  })
 );
 
 // Refresh the current snapshot for a specific player from the OSRS API
@@ -665,12 +811,20 @@ router.put(
   "/bingo/players/:rsn/refresh",
   authorize("admin"),
   asyncHandler(async (req: Request, res: Response) => {
-    const rsn = Array.isArray(req.params.rsn) ? req.params.rsn[0] : req.params.rsn;
+    const rsn = Array.isArray(req.params.rsn)
+      ? req.params.rsn[0]
+      : req.params.rsn;
     const bingo = await getActiveBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+    if (!bingo?.id)
+      return res
+        .status(404)
+        .json({ success: false, error: "No active bingo found" });
 
     const player = await getBingoPlayer(bingo.id, rsn);
-    if (!player) return res.status(404).json({ success: false, error: `Player "${rsn}" not found` });
+    if (!player)
+      return res
+        .status(404)
+        .json({ success: false, error: `Player "${rsn}" not found` });
 
     const hiscoreData = await hiscores(rsn);
     // RSN-change detection (TEAM-BRIEF.md Track A item 1) — this player is
@@ -678,7 +832,11 @@ router.put(
     // not that it was never validated. Sprint 6: a confirmed Wise Old Man
     // rename updates bingo_players.rsn and lets this refresh succeed under
     // the new name immediately instead of returning a 404.
-    const rsnCheck = await checkRsnChange(player, Boolean(hiscoreData), "drafter");
+    const rsnCheck = await checkRsnChange(
+      player,
+      Boolean(hiscoreData),
+      "drafter"
+    );
     const effectiveData = hiscoreData ?? rsnCheck.hiscoreData ?? null;
     if (!effectiveData) {
       return res.status(404).json({
@@ -686,15 +844,21 @@ router.put(
         error: `Player "${rsn}" is not ranked on the OSRS hiscores. The RSN may be incorrect or the account may be too new/inactive to appear.`,
       });
     }
-    const snapshot = await savePlayerSnapshot(player.id, "current", effectiveData);
+    const snapshot = await savePlayerSnapshot(
+      player.id,
+      "current",
+      effectiveData
+    );
     res.status(200).json({
       success: true,
       data: snapshot,
       ...(rsnCheck.renamed
-        ? { message: `RSN auto-updated via Wise Old Man: "${rsn}" -> "${rsnCheck.newRsn}"` }
+        ? {
+            message: `RSN auto-updated via Wise Old Man: "${rsn}" -> "${rsnCheck.newRsn}"`,
+          }
         : {}),
     });
-  }),
+  })
 );
 
 // Refresh current snapshots for ALL players in the active bingo
@@ -703,32 +867,50 @@ router.put(
   authorize("admin"),
   asyncHandler(async (req: Request, res: Response) => {
     const bingo = await getActiveBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+    if (!bingo?.id)
+      return res
+        .status(404)
+        .json({ success: false, error: "No active bingo found" });
 
     const players = await getBingoPlayers(bingo.id);
-    if (!players.length) return res.status(200).json({ success: true, data: [], message: "No players to refresh" });
+    if (!players.length)
+      return res
+        .status(200)
+        .json({ success: true, data: [], message: "No players to refresh" });
 
-    const results = await mapWithConcurrency(players, HISCORE_CONCURRENCY, async (player) => {
-      const hiscoreData = await hiscores(player.rsn);
-      // RSN-change detection (TEAM-BRIEF.md Track A item 1) — same rule as
-      // the single-player refresh route above.
-      const rsnCheck = await checkRsnChange(player, Boolean(hiscoreData), "drafter");
-      const effectiveData = hiscoreData ?? rsnCheck.hiscoreData ?? null;
-      if (!effectiveData) {
-        throw new Error(`Player "${player.rsn}" is not ranked on the OSRS hiscores`);
+    const results = await mapWithConcurrency(
+      players,
+      HISCORE_CONCURRENCY,
+      async (player) => {
+        const hiscoreData = await hiscores(player.rsn);
+        // RSN-change detection (TEAM-BRIEF.md Track A item 1) — same rule as
+        // the single-player refresh route above.
+        const rsnCheck = await checkRsnChange(
+          player,
+          Boolean(hiscoreData),
+          "drafter"
+        );
+        const effectiveData = hiscoreData ?? rsnCheck.hiscoreData ?? null;
+        if (!effectiveData) {
+          throw new Error(
+            `Player "${player.rsn}" is not ranked on the OSRS hiscores`
+          );
+        }
+        return savePlayerSnapshot(player.id, "current", effectiveData);
       }
-      return savePlayerSnapshot(player.id, "current", effectiveData);
-    });
+    );
 
     const succeeded = results.filter((r) => r.status === "fulfilled").length;
     const failed = results.filter((r) => r.status === "rejected").length;
 
     res.status(200).json({
       success: true,
-      message: `Refreshed ${succeeded} players${failed ? `, ${failed} failed` : ""}.`,
+      message: `Refreshed ${succeeded} players${
+        failed ? `, ${failed} failed` : ""
+      }.`,
       data: { succeeded, failed },
     });
-  }),
+  })
 );
 
 // -------------------------------------------------------
@@ -740,15 +922,24 @@ router.patch(
   "/bingo/players/:rsn/captain",
   authorize("admin"),
   asyncHandler(async (req: Request, res: Response) => {
-    const rsn = Array.isArray(req.params.rsn) ? req.params.rsn[0] : req.params.rsn;
+    const rsn = Array.isArray(req.params.rsn)
+      ? req.params.rsn[0]
+      : req.params.rsn;
     const { captainTeamId } = req.body as { captainTeamId?: string | null };
 
     const bingo = await getActiveBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+    if (!bingo?.id)
+      return res
+        .status(404)
+        .json({ success: false, error: "No active bingo found" });
 
-    const player = await updatePlayerCaptain(bingo.id, rsn, captainTeamId ?? null);
+    const player = await updatePlayerCaptain(
+      bingo.id,
+      rsn,
+      captainTeamId ?? null
+    );
     res.status(200).json({ success: true, data: player });
-  }),
+  })
 );
 
 // Assign a player to a team (or unassign by passing teamId: null)
@@ -756,15 +947,20 @@ router.patch(
   "/bingo/players/:rsn/team",
   authorize("admin"),
   asyncHandler(async (req: Request, res: Response) => {
-    const rsn = Array.isArray(req.params.rsn) ? req.params.rsn[0] : req.params.rsn;
+    const rsn = Array.isArray(req.params.rsn)
+      ? req.params.rsn[0]
+      : req.params.rsn;
     const { teamId } = req.body as { teamId: string | null };
 
     const bingo = await getActiveBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+    if (!bingo?.id)
+      return res
+        .status(404)
+        .json({ success: false, error: "No active bingo found" });
 
     const player = await updatePlayerTeam(bingo.id, rsn, teamId ?? null);
     res.status(200).json({ success: true, data: player });
-  }),
+  })
 );
 
 // Submit the full draft: body is an array of { rsn, teamId } assignments
@@ -773,26 +969,38 @@ router.post(
   authorize("admin"),
   validateBody(draftAssignmentsSchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const assignments = req.body as Array<{ rsn: string; teamId: string | null }>;
+    const assignments = req.body as Array<{
+      rsn: string;
+      teamId: string | null;
+    }>;
 
     const bingo = await getActiveBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+    if (!bingo?.id)
+      return res
+        .status(404)
+        .json({ success: false, error: "No active bingo found" });
 
     const results = await Promise.allSettled(
-      assignments.map(({ rsn, teamId }) => updatePlayerTeam(bingo.id!, rsn, teamId ?? null)),
+      assignments.map(({ rsn, teamId }) =>
+        updatePlayerTeam(bingo.id!, rsn, teamId ?? null)
+      )
     );
 
     const succeeded = results.filter((r) => r.status === "fulfilled").length;
     const failed = results
       .filter((r) => r.status === "rejected")
-      .map((r) => (r as PromiseRejectedResult).reason?.message ?? "Unknown error");
+      .map(
+        (r) => (r as PromiseRejectedResult).reason?.message ?? "Unknown error"
+      );
 
     res.status(200).json({
       success: true,
-      message: `Assigned ${succeeded} players${failed.length ? `, ${failed.length} failed` : ""}.`,
+      message: `Assigned ${succeeded} players${
+        failed.length ? `, ${failed.length} failed` : ""
+      }.`,
       data: { succeeded, failed },
     });
-  }),
+  })
 );
 
 // Reset all team assignments for the active bingo
@@ -801,11 +1009,16 @@ router.delete(
   authorize("admin"),
   asyncHandler(async (req: Request, res: Response) => {
     const bingo = await getActiveBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+    if (!bingo?.id)
+      return res
+        .status(404)
+        .json({ success: false, error: "No active bingo found" });
 
     await resetPlayerTeams(bingo.id);
-    res.status(200).json({ success: true, message: "All team assignments have been reset" });
-  }),
+    res
+      .status(200)
+      .json({ success: true, message: "All team assignments have been reset" });
+  })
 );
 
 // -------------------------------------------------------
@@ -816,16 +1029,24 @@ router.delete(
 router.get(
   "/bingo/players/:rsn/side-accounts",
   asyncHandler(async (req: Request, res: Response) => {
-    const rsn = Array.isArray(req.params.rsn) ? req.params.rsn[0] : req.params.rsn;
+    const rsn = Array.isArray(req.params.rsn)
+      ? req.params.rsn[0]
+      : req.params.rsn;
     const bingo = await getActiveBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+    if (!bingo?.id)
+      return res
+        .status(404)
+        .json({ success: false, error: "No active bingo found" });
 
     const player = await getBingoPlayer(bingo.id, rsn);
-    if (!player) return res.status(404).json({ success: false, error: `Player "${rsn}" not found` });
+    if (!player)
+      return res
+        .status(404)
+        .json({ success: false, error: `Player "${rsn}" not found` });
 
     const sideAccounts = await getSideAccounts(player.id);
     res.status(200).json({ success: true, data: sideAccounts });
-  }),
+  })
 );
 
 // Add a side account to a player
@@ -834,16 +1055,29 @@ router.post(
   authorize("admin"),
   validateBody(sideAccountSchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const rsn = Array.isArray(req.params.rsn) ? req.params.rsn[0] : req.params.rsn;
+    const rsn = Array.isArray(req.params.rsn)
+      ? req.params.rsn[0]
+      : req.params.rsn;
     const { rsn: sideRsn, notes } = req.body as { rsn: string; notes?: string };
 
     const bingo = await getActiveBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No active bingo found" });
+    if (!bingo?.id)
+      return res
+        .status(404)
+        .json({ success: false, error: "No active bingo found" });
 
     const player = await getBingoPlayer(bingo.id, rsn);
-    if (!player) return res.status(404).json({ success: false, error: `Player "${rsn}" not found` });
+    if (!player)
+      return res
+        .status(404)
+        .json({ success: false, error: `Player "${rsn}" not found` });
 
-    const sideAccount = await addSideAccount(player.id, sideRsn, notes, getAuditUserId(req));
+    const sideAccount = await addSideAccount(
+      player.id,
+      sideRsn,
+      notes,
+      getAuditUserId(req)
+    );
 
     // A side account added while the bingo is already 'active' would
     // otherwise never get a start snapshot — every other account only ever
@@ -859,13 +1093,19 @@ router.post(
       const [result] = await snapshotSideAccountTasks(
         [{ playerId: player.id, sideAccount }],
         ["start", "current"],
-        "drafter",
+        "drafter"
       );
       snapshot = result;
     }
 
-    res.status(201).json({ success: true, data: sideAccount, ...(snapshot ? { snapshot } : {}) });
-  }),
+    res
+      .status(201)
+      .json({
+        success: true,
+        data: sideAccount,
+        ...(snapshot ? { snapshot } : {}),
+      });
+  })
 );
 
 // Remove a side account by ID
@@ -879,7 +1119,7 @@ router.delete(
 
     await removeSideAccount(sideAccountId);
     res.status(200).json({ success: true, message: "Side account removed" });
-  }),
+  })
 );
 
 // -------------------------------------------------------
@@ -896,7 +1136,8 @@ router.get(
   "/bingo/screenshots/pending",
   asyncHandler(async (req: Request, res: Response) => {
     const bingo = await getLatestBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No bingo found" });
+    if (!bingo?.id)
+      return res.status(404).json({ success: false, error: "No bingo found" });
 
     const submissions = await getPendingSubmissions(bingo.id);
     const data = await Promise.all(
@@ -905,14 +1146,17 @@ router.get(
         discordMessageId: submission.discord_message_id,
         notes: submission.notes,
         submittedBy:
-          submission.notes?.match(/Submitted via Discord by (.+?) \(/)?.[1] ?? "Discord",
+          submission.notes?.match(/Submitted via Discord by (.+?) \(/)?.[1] ??
+          "Discord",
         submittedAt: submission.created_at,
-        imageUrl: submission.image_path ? await getSignedScreenshotUrl(submission.image_path) : null,
-      })),
+        imageUrl: submission.image_path
+          ? await getSignedScreenshotUrl(submission.image_path)
+          : null,
+      }))
     );
 
     res.status(200).json({ success: true, data });
-  }),
+  })
 );
 
 /**
@@ -936,32 +1180,42 @@ router.get(
   "/bingo/screenshots/unattributed",
   asyncHandler(async (req: Request, res: Response) => {
     const bingo = await getLatestBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No bingo found" });
+    if (!bingo?.id)
+      return res.status(404).json({ success: false, error: "No bingo found" });
 
     const [submissions, tiles] = await Promise.all([
       getApprovedSubmissionsMissingAttribution(bingo.id),
       getBingoBoardById(bingo.id),
     ]);
     const tileTaskById = new Map(tiles.map((t) => [t.id, t.task]));
-    const teamNameById = new Map((bingo.teamObjects ?? []).map((t) => [t.id, t.name]));
+    const teamNameById = new Map(
+      (bingo.teamObjects ?? []).map((t) => [t.id, t.name])
+    );
 
     const data = await Promise.all(
       submissions.map(async (submission) => ({
         id: submission.id,
         tileId: submission.tile_id,
-        tileTask: submission.tile_id ? (tileTaskById.get(submission.tile_id) ?? null) : null,
+        tileTask: submission.tile_id
+          ? tileTaskById.get(submission.tile_id) ?? null
+          : null,
         teamId: submission.team_id,
-        teamName: submission.team_id ? (teamNameById.get(submission.team_id) ?? null) : null,
+        teamName: submission.team_id
+          ? teamNameById.get(submission.team_id) ?? null
+          : null,
         notes: submission.notes,
         submittedBy:
-          submission.notes?.match(/Submitted via Discord by (.+?) \(/)?.[1] ?? "Discord",
+          submission.notes?.match(/Submitted via Discord by (.+?) \(/)?.[1] ??
+          "Discord",
         approvedAt: submission.reviewed_at,
-        imageUrl: submission.image_path ? await getSignedScreenshotUrl(submission.image_path) : null,
-      })),
+        imageUrl: submission.image_path
+          ? await getSignedScreenshotUrl(submission.image_path)
+          : null,
+      }))
     );
 
     res.status(200).json({ success: true, data });
-  }),
+  })
 );
 
 // Approve a pending submission — admin assigns the tile + team it counts for.
@@ -984,7 +1238,10 @@ router.post(
   validateBody(screenshotApprovalSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    if (!id) return res.status(400).json({ success: false, error: "Submission ID is required" });
+    if (!id)
+      return res
+        .status(400)
+        .json({ success: false, error: "Submission ID is required" });
 
     const { tileId, teamId, playerId } = req.body as {
       tileId: string;
@@ -995,21 +1252,32 @@ router.post(
     if (playerId === undefined) {
       return res.status(422).json({
         success: false,
-        error: "playerId is required to approve a submission — pick the player who got the drop.",
+        error:
+          "playerId is required to approve a submission — pick the player who got the drop.",
       });
     }
 
     const submission = await getSubmissionById(id);
-    if (!submission) return res.status(404).json({ success: false, error: "Submission not found" });
+    if (!submission)
+      return res
+        .status(404)
+        .json({ success: false, error: "Submission not found" });
     if (submission.status !== "pending") {
       return res
         .status(409)
-        .json({ success: false, error: `Submission has already been ${submission.status}` });
+        .json({
+          success: false,
+          error: `Submission has already been ${submission.status}`,
+        });
     }
 
     // Must resolve to a bingo_players.id on `teamId` within the submission's bingo (contract 2).
     const rosterPlayers = await getBingoPlayers(submission.bingo_id);
-    const validationError = validateApprovalPlayerId(playerId, teamId, rosterPlayers);
+    const validationError = validateApprovalPlayerId(
+      playerId,
+      teamId,
+      rosterPlayers
+    );
     if (validationError) {
       return res.status(400).json({ success: false, error: validationError });
     }
@@ -1023,13 +1291,19 @@ router.post(
 
     if (updated.discord_message_id) {
       // Best-effort — a failed Discord reaction must not fail the review.
-      reactToSubmissionMessage(updated.discord_message_id, "\u{1F44D}").catch((e) =>
-        console.warn(`[admin] Failed to react to Discord message for submission ${id}:`, e),
+      reactToSubmissionMessage(updated.discord_message_id, "\u{1F44D}").catch(
+        (e) =>
+          console.warn(
+            `[admin] Failed to react to Discord message for submission ${id}:`,
+            e
+          )
       );
     }
 
-    res.status(200).json({ success: true, data: updated, message: "Screenshot approved" });
-  }),
+    res
+      .status(200)
+      .json({ success: true, data: updated, message: "Screenshot approved" });
+  })
 );
 
 /**
@@ -1054,21 +1328,32 @@ router.patch(
   validateBody(screenshotTagSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    if (!id) return res.status(400).json({ success: false, error: "Submission ID is required" });
+    if (!id)
+      return res
+        .status(400)
+        .json({ success: false, error: "Submission ID is required" });
 
     const { tileId, teamId } = req.body as { tileId: string; teamId: string };
 
     const submission = await getSubmissionById(id);
-    if (!submission) return res.status(404).json({ success: false, error: "Submission not found" });
+    if (!submission)
+      return res
+        .status(404)
+        .json({ success: false, error: "Submission not found" });
     if (submission.status !== "pending") {
       return res
         .status(409)
-        .json({ success: false, error: `Only pending submissions can be tagged (this one is ${submission.status})` });
+        .json({
+          success: false,
+          error: `Only pending submissions can be tagged (this one is ${submission.status})`,
+        });
     }
 
     const updated = await tagPendingSubmission(id, { tileId, teamId });
-    res.status(200).json({ success: true, data: updated, message: "Submission tagged" });
-  }),
+    res
+      .status(200)
+      .json({ success: true, data: updated, message: "Submission tagged" });
+  })
 );
 
 /**
@@ -1091,12 +1376,18 @@ router.patch(
   validateBody(screenshotAttributionSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    if (!id) return res.status(400).json({ success: false, error: "Submission ID is required" });
+    if (!id)
+      return res
+        .status(400)
+        .json({ success: false, error: "Submission ID is required" });
 
     const { playerId } = req.body as { playerId: string };
 
     const submission = await getSubmissionById(id);
-    if (!submission) return res.status(404).json({ success: false, error: "Submission not found" });
+    if (!submission)
+      return res
+        .status(404)
+        .json({ success: false, error: "Submission not found" });
     if (submission.status !== "approved") {
       return res.status(409).json({
         success: false,
@@ -1104,11 +1395,20 @@ router.patch(
       });
     }
     if (!submission.team_id) {
-      return res.status(400).json({ success: false, error: "Submission has no team to attribute a player against" });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          error: "Submission has no team to attribute a player against",
+        });
     }
 
     const rosterPlayers = await getBingoPlayers(submission.bingo_id);
-    const validationError = validateApprovalPlayerId(playerId, submission.team_id, rosterPlayers);
+    const validationError = validateApprovalPlayerId(
+      playerId,
+      submission.team_id,
+      rosterPlayers
+    );
     if (validationError) {
       return res.status(400).json({ success: false, error: validationError });
     }
@@ -1116,10 +1416,13 @@ router.patch(
     // Gap-fill only: never overwrites a real reviewer, only stamps one onto
     // rows that currently have none (see attributeApprovedSubmission's doc
     // comment — tech-lead follow-up on the reviewed_by NULL finding).
-    const auditId = submission.reviewed_by === null ? getAuditUserId(req) : undefined;
+    const auditId =
+      submission.reviewed_by === null ? getAuditUserId(req) : undefined;
     const updated = await attributeApprovedSubmission(id, playerId, auditId);
-    res.status(200).json({ success: true, data: updated, message: "Submission attributed" });
-  }),
+    res
+      .status(200)
+      .json({ success: true, data: updated, message: "Submission attributed" });
+  })
 );
 
 // Deny a pending submission.
@@ -1127,27 +1430,44 @@ router.post(
   "/bingo/screenshots/:id/deny",
   asyncHandler(async (req: Request, res: Response) => {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    if (!id) return res.status(400).json({ success: false, error: "Submission ID is required" });
+    if (!id)
+      return res
+        .status(400)
+        .json({ success: false, error: "Submission ID is required" });
 
     const submission = await getSubmissionById(id);
-    if (!submission) return res.status(404).json({ success: false, error: "Submission not found" });
+    if (!submission)
+      return res
+        .status(404)
+        .json({ success: false, error: "Submission not found" });
     if (submission.status !== "pending") {
       return res
         .status(409)
-        .json({ success: false, error: `Submission has already been ${submission.status}` });
+        .json({
+          success: false,
+          error: `Submission has already been ${submission.status}`,
+        });
     }
 
-    const updated = await denySubmission(id, { reviewedBy: getAuditUserId(req) });
+    const updated = await denySubmission(id, {
+      reviewedBy: getAuditUserId(req),
+    });
 
     if (updated.discord_message_id) {
       // Best-effort — a failed Discord reaction must not fail the review.
-      reactToSubmissionMessage(updated.discord_message_id, "\u{1F44E}").catch((e) =>
-        console.warn(`[admin] Failed to react to Discord message for submission ${id}:`, e),
+      reactToSubmissionMessage(updated.discord_message_id, "\u{1F44E}").catch(
+        (e) =>
+          console.warn(
+            `[admin] Failed to react to Discord message for submission ${id}:`,
+            e
+          )
       );
     }
 
-    res.status(200).json({ success: true, data: updated, message: "Screenshot denied" });
-  }),
+    res
+      .status(200)
+      .json({ success: true, data: updated, message: "Screenshot denied" });
+  })
 );
 
 // -------------------------------------------------------
@@ -1164,14 +1484,15 @@ router.get(
   "/bingo/player-stats",
   asyncHandler(async (req: Request, res: Response) => {
     const bingo = await getLatestBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No bingo found" });
+    if (!bingo?.id)
+      return res.status(404).json({ success: false, error: "No bingo found" });
 
     const response: ApiResponse<PlayerStat[]> = {
       success: true,
       data: await getPlayerStats(bingo.id),
     };
     res.status(200).json(response);
-  }),
+  })
 );
 
 /**
@@ -1202,11 +1523,14 @@ router.get(
   "/bingo/team-stats",
   asyncHandler(async (req: Request, res: Response) => {
     const bingo = await getLatestBingo();
-    if (!bingo?.id) return res.status(404).json({ success: false, error: "No bingo found" });
+    if (!bingo?.id)
+      return res.status(404).json({ success: false, error: "No bingo found" });
 
-    const { teams, unresolvableTiles } = await getTeamStatsWithUnresolvable(bingo.id);
+    const { teams, unresolvableTiles } = await getTeamStatsWithUnresolvable(
+      bingo.id
+    );
     res.status(200).json({ success: true, data: teams, unresolvableTiles });
-  }),
+  })
 );
 
 // -------------------------------------------------------
@@ -1221,14 +1545,16 @@ router.post(
 
     const response: ApiResponse = {
       success: true,
-      message: `Refreshed ${succeeded} player snapshot${succeeded !== 1 ? "s" : ""}${
+      message: `Refreshed ${succeeded} player snapshot${
+        succeeded !== 1 ? "s" : ""
+      }${
         failed.length ? `; ${failed.length} failed: ${failed.join(", ")}` : ""
       }.`,
       data: { succeeded, failed },
     };
 
     res.status(200).json(response);
-  }),
+  })
 );
 
 // -------------------------------------------------------
@@ -1243,9 +1569,10 @@ router.post(
     );
     res.status(202).json({
       success: true,
-      message: "Static data refresh started. Skills and activities will be updated shortly.",
+      message:
+        "Static data refresh started. Skills and activities will be updated shortly.",
     });
-  }),
+  })
 );
 
 // -------------------------------------------------------
@@ -1261,7 +1588,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const data = await getDependencyHealth();
     res.status(200).json(data);
-  }),
+  })
 );
 
 // -------------------------------------------------------
@@ -1291,28 +1618,43 @@ router.get(
       data: await listRsnClaims(),
     };
     res.status(200).json(response);
-  }),
+  })
 );
 
 router.delete(
   "/rsn-claims/:rsnNormalized",
   authorize("admin"),
   asyncHandler(async (req: Request, res: Response) => {
-    const rsnNormalized = Array.isArray(req.params.rsnNormalized) ? req.params.rsnNormalized[0] : req.params.rsnNormalized;
-    if (!rsnNormalized) return res.status(400).json({ success: false, error: "rsnNormalized is required" });
+    const rsnNormalized = Array.isArray(req.params.rsnNormalized)
+      ? req.params.rsnNormalized[0]
+      : req.params.rsnNormalized;
+    if (!rsnNormalized)
+      return res
+        .status(400)
+        .json({ success: false, error: "rsnNormalized is required" });
 
     const released = await releaseRsnClaim(rsnNormalized);
     if (!released) {
-      return res.status(404).json({ success: false, error: `No RSN claim found for "${rsnNormalized}"` });
+      return res
+        .status(404)
+        .json({
+          success: false,
+          error: `No RSN claim found for "${rsnNormalized}"`,
+        });
     }
 
     console.warn(
-      `[rsn-claims] AUDIT: claim "${rsnNormalized}" released by admin ${getAuditUserId(req) ?? "unknown"}.`,
+      `[rsn-claims] AUDIT: claim "${rsnNormalized}" released by admin ${
+        getAuditUserId(req) ?? "unknown"
+      }.`
     );
 
-    const response: ApiResponse<{ released: true }> = { success: true, data: { released: true } };
+    const response: ApiResponse<{ released: true }> = {
+      success: true,
+      data: { released: true },
+    };
     res.status(200).json(response);
-  }),
+  })
 );
 
 router.patch(
@@ -1320,8 +1662,13 @@ router.patch(
   authorize("admin"),
   validateBody(rsnClaimReassignSchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const rsnNormalized = Array.isArray(req.params.rsnNormalized) ? req.params.rsnNormalized[0] : req.params.rsnNormalized;
-    if (!rsnNormalized) return res.status(400).json({ success: false, error: "rsnNormalized is required" });
+    const rsnNormalized = Array.isArray(req.params.rsnNormalized)
+      ? req.params.rsnNormalized[0]
+      : req.params.rsnNormalized;
+    if (!rsnNormalized)
+      return res
+        .status(400)
+        .json({ success: false, error: "rsnNormalized is required" });
     const { userId } = req.body as { userId: string };
 
     // reassignRsnClaim throws AppError(404, "RSN_CLAIM_NOT_FOUND") /
@@ -1331,12 +1678,15 @@ router.patch(
 
     console.warn(
       `[rsn-claims] AUDIT: claim "${rsnNormalized}" reassigned to user ${userId} by admin ` +
-        `${getAuditUserId(req) ?? "unknown"}.`,
+        `${getAuditUserId(req) ?? "unknown"}.`
     );
 
-    const response: ApiResponse<{ rsn: string; userId: string }> = { success: true, data: result };
+    const response: ApiResponse<{ rsn: string; userId: string }> = {
+      success: true,
+      data: result,
+    };
     res.status(200).json(response);
-  }),
+  })
 );
 
 export default router;

@@ -30,7 +30,9 @@ function cacheKey(rsn: string): string {
 }
 
 /** Reads a cached hiscores() payload for `rsn`, or null if none is on file. */
-export async function getCachedHiscoreData(rsn: string): Promise<HiscoreCacheEntry | null> {
+export async function getCachedHiscoreData(
+  rsn: string
+): Promise<HiscoreCacheEntry | null> {
   const db = getDb();
   const { data, error } = await db
     .from("hiscore_cache")
@@ -38,20 +40,36 @@ export async function getCachedHiscoreData(rsn: string): Promise<HiscoreCacheEnt
     .eq("player_name", cacheKey(rsn))
     .maybeSingle();
 
-  if (error) throw new Error(`Failed to read hiscore cache for "${rsn}": ${error.message}`);
+  if (error)
+    throw new Error(
+      `Failed to read hiscore cache for "${rsn}": ${error.message}`
+    );
   if (!data) return null;
-  return { data: data.payload as HiscoreData, updatedAt: data.updated_at as string };
+  return {
+    data: data.payload as HiscoreData,
+    updatedAt: data.updated_at as string,
+  };
 }
 
 /** Writes (or replaces) the cached hiscores() payload for `rsn`. */
-export async function upsertHiscoreCache(rsn: string, payload: HiscoreData): Promise<void> {
+export async function upsertHiscoreCache(
+  rsn: string,
+  payload: HiscoreData
+): Promise<void> {
   const db = getDb();
   const { error } = await db
     .from("hiscore_cache")
     .upsert(
-      { player_name: cacheKey(rsn), payload, updated_at: new Date().toISOString() },
-      { onConflict: "player_name" },
+      {
+        player_name: cacheKey(rsn),
+        payload,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "player_name" }
     );
 
-  if (error) throw new Error(`Failed to write hiscore cache for "${rsn}": ${error.message}`);
+  if (error)
+    throw new Error(
+      `Failed to write hiscore cache for "${rsn}": ${error.message}`
+    );
 }

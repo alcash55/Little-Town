@@ -23,11 +23,14 @@ export const LOGIN_RATE_LIMIT_MAX_CEILING = 300;
  * needing to reimport this module per environment (bun caches ES modules
  * per process).
  */
-export function resolveLoginRateLimitMax(env: NodeJS.ProcessEnv = process.env): number {
+export function resolveLoginRateLimitMax(
+  env: NodeJS.ProcessEnv = process.env
+): number {
   if (env.NODE_ENV === "production") return DEFAULT_LOGIN_RATE_LIMIT_MAX;
 
   const override = Number(env.LOGIN_RATE_LIMIT_MAX_OVERRIDE);
-  if (!Number.isFinite(override) || override <= 0) return DEFAULT_LOGIN_RATE_LIMIT_MAX;
+  if (!Number.isFinite(override) || override <= 0)
+    return DEFAULT_LOGIN_RATE_LIMIT_MAX;
 
   return Math.min(override, LOGIN_RATE_LIMIT_MAX_CEILING);
 }

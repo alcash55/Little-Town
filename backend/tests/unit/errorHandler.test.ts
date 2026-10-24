@@ -24,10 +24,15 @@ function fakeResponse(): Response & { statusCode?: number; body?: unknown } {
   return res as Response & { statusCode?: number; body?: unknown };
 }
 
-const fakeRequest = { url: "/api/invites/some-token/accept", method: "POST" } as Request;
+const fakeRequest = {
+  url: "/api/invites/some-token/accept",
+  method: "POST",
+} as Request;
 
 function postgresError(code: string, detail: string): Error {
-  const err = new Error("duplicate key value violates unique constraint") as Error & {
+  const err = new Error(
+    "duplicate key value violates unique constraint"
+  ) as Error & {
     code: string;
     detail: string;
   };
@@ -45,7 +50,10 @@ describe("errorHandler — 23505 unique violation (#86)", () => {
     });
     errorHandler(err, fakeRequest, res, () => undefined);
     expect(res.statusCode).toBe(400);
-    expect(res.body).toEqual({ error: "That username is already taken.", code: "DUPLICATE_KEY" });
+    expect(res.body).toEqual({
+      error: "That username is already taken.",
+      code: "DUPLICATE_KEY",
+    });
   });
 
   test("a duplicate username reads as a sentence a person would say, not the raw column name", () => {
@@ -54,11 +62,13 @@ describe("errorHandler — 23505 unique violation (#86)", () => {
       postgresError("23505", "Key (username)=(bob) already exists."),
       fakeRequest,
       res,
-      () => undefined,
+      () => undefined
     );
 
     expect(res.statusCode).toBe(400);
-    expect((res.body as { error: string }).error).toBe("That username is already taken.");
+    expect((res.body as { error: string }).error).toBe(
+      "That username is already taken."
+    );
     expect((res.body as { code: string }).code).toBe("DUPLICATE_KEY");
   });
 
@@ -67,6 +77,8 @@ describe("errorHandler — 23505 unique violation (#86)", () => {
     errorHandler(postgresError("23505", ""), fakeRequest, res, () => undefined);
 
     expect(res.statusCode).toBe(400);
-    expect((res.body as { error: string }).error).toBe("That value is already taken.");
+    expect((res.body as { error: string }).error).toBe(
+      "That value is already taken."
+    );
   });
 });

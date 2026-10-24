@@ -36,7 +36,8 @@ async function insertTestPlayer(bingoId: string, rsn: string): Promise<string> {
     .insert({ bingo_id: bingoId, rsn })
     .select("id")
     .single();
-  if (error || !data) throw new Error(`Failed to insert test player "${rsn}": ${error?.message}`);
+  if (error || !data)
+    throw new Error(`Failed to insert test player "${rsn}": ${error?.message}`);
   return (data as { id: string }).id;
 }
 
@@ -52,7 +53,9 @@ describe.skipIf(!stack.reachable)("savePlayerSnapshot idempotency", () => {
   });
 
   test("'start' snapshot is created on first save", async () => {
-    const first = buildHiscoreData({ skills: [{ id: 0, name: "Overall", rank: 1, level: 1, xp: 0 }] });
+    const first = buildHiscoreData({
+      skills: [{ id: 0, name: "Overall", rank: 1, level: 1, xp: 0 }],
+    });
     const saved = await savePlayerSnapshot(playerId, "start", first);
 
     expect(saved.type).toBe("start");
@@ -68,10 +71,13 @@ describe.skipIf(!stack.reachable)("savePlayerSnapshot idempotency", () => {
       .eq("type", "start")
       .single();
     const originalId = (firstSnapshotRows.data as { id: string }).id;
-    const originalSkills = (firstSnapshotRows.data as { skills: unknown }).skills;
+    const originalSkills = (firstSnapshotRows.data as { skills: unknown })
+      .skills;
 
     const second = buildHiscoreData({
-      skills: [{ id: 0, name: "Overall", rank: 999, level: 99, xp: 99_999_999 }],
+      skills: [
+        { id: 0, name: "Overall", rank: 999, level: 99, xp: 99_999_999 },
+      ],
     });
     const saved = await savePlayerSnapshot(playerId, "start", second);
 
@@ -83,7 +89,9 @@ describe.skipIf(!stack.reachable)("savePlayerSnapshot idempotency", () => {
   });
 
   test("'current' snapshot is created on first save", async () => {
-    const first = buildHiscoreData({ skills: [{ id: 0, name: "Overall", rank: 1, level: 1, xp: 0 }] });
+    const first = buildHiscoreData({
+      skills: [{ id: 0, name: "Overall", rank: 1, level: 1, xp: 0 }],
+    });
     const saved = await savePlayerSnapshot(playerId, "current", first);
 
     expect(saved.type).toBe("current");
@@ -118,5 +126,7 @@ describe.skipIf(!stack.reachable)("savePlayerSnapshot idempotency", () => {
 
 afterAll(async () => {
   if (!stack.reachable) return;
-  await Promise.all(createdBingoIds.map((id) => deleteTestBingo(id).catch(() => undefined)));
+  await Promise.all(
+    createdBingoIds.map((id) => deleteTestBingo(id).catch(() => undefined))
+  );
 });

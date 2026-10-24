@@ -34,9 +34,13 @@ const stack = await getLocalStackConfig();
 if (!stack.reachable) {
   console.warn(`[bingo-board-ended.test.ts] skipping: ${stack.reason}`);
 }
-const preexistingActive = stack.reachable ? await hasPreexistingActiveBingo() : false;
+const preexistingActive = stack.reachable
+  ? await hasPreexistingActiveBingo()
+  : false;
 if (stack.reachable && preexistingActive) {
-  console.warn("[bingo-board-ended.test.ts] skipping: another bingo is already active in the shared local stack");
+  console.warn(
+    "[bingo-board-ended.test.ts] skipping: another bingo is already active in the shared local stack"
+  );
 }
 const suite = stack.reachable && !preexistingActive;
 
@@ -52,7 +56,9 @@ function request(path: string): Promise<{ status: number; body: any }> {
       .get({ host: "127.0.0.1", port, path }, (res) => {
         let body = "";
         res.on("data", (chunk) => (body += chunk));
-        res.on("end", () => resolve({ status: res.statusCode ?? 0, body: JSON.parse(body) }));
+        res.on("end", () =>
+          resolve({ status: res.statusCode ?? 0, body: JSON.parse(body) })
+        );
       })
       .on("error", reject);
   });
@@ -80,7 +86,9 @@ afterAll(async () => {
   try {
     server?.close();
     if (!stack.reachable) return;
-    await Promise.all(createdBingoIds.map((id) => deleteTestBingo(id).catch(() => undefined)));
+    await Promise.all(
+      createdBingoIds.map((id) => deleteTestBingo(id).catch(() => undefined))
+    );
   } finally {
     releaseBingoLock.resolve();
     await bingoLock;
@@ -103,7 +111,9 @@ describe.skipIf(!suite)("GET /api/bingo/board — ended field", () => {
     // Postgres round-trips the timestamp as "...+00:00" rather than "...Z" —
     // compare by instant, not exact string, same reasoning as every other
     // end_date round-trip assertion in this suite.
-    expect(new Date(body.ended.endDate).getTime()).toBe(new Date(endDate).getTime());
+    expect(new Date(body.ended.endDate).getTime()).toBe(
+      new Date(endDate).getTime()
+    );
     // Anonymous-safe by construction — no team/player data of any kind.
     expect(Object.keys(body.ended)).toEqual(["name", "endDate"]);
     expect(Object.keys(body)).toEqual(["active", "ended"]);
@@ -112,7 +122,9 @@ describe.skipIf(!suite)("GET /api/bingo/board — ended field", () => {
   });
 
   test("the most recent bingo is still 'draft' (never activated) -> ended absent", async () => {
-    const bingo = await insertTestBingo(`test-board-draft-only-${uniqueSuffix()}`);
+    const bingo = await insertTestBingo(
+      `test-board-draft-only-${uniqueSuffix()}`
+    );
     createdBingoIds.push(bingo.id);
 
     const { status, body } = await request("/api/bingo/board");
@@ -124,11 +136,16 @@ describe.skipIf(!suite)("GET /api/bingo/board — ended field", () => {
   });
 
   test("a newer draft created after a completed bingo supersedes it — ended goes back to absent", async () => {
-    const completeBingo = await insertTestBingo(`test-board-superseded-complete-${uniqueSuffix()}`, {
-      status: "complete",
-      end_date: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
-    });
-    const newerDraft = await insertTestBingo(`test-board-superseded-draft-${uniqueSuffix()}`);
+    const completeBingo = await insertTestBingo(
+      `test-board-superseded-complete-${uniqueSuffix()}`,
+      {
+        status: "complete",
+        end_date: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
+      }
+    );
+    const newerDraft = await insertTestBingo(
+      `test-board-superseded-draft-${uniqueSuffix()}`
+    );
     createdBingoIds.push(completeBingo.id, newerDraft.id);
 
     const { body } = await request("/api/bingo/board");

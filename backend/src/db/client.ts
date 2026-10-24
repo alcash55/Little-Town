@@ -9,7 +9,7 @@ export function getDb(): SupabaseClient {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceRoleKey) {
     throw new Error(
-      "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set before using the database.",
+      "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set before using the database."
     );
   }
 

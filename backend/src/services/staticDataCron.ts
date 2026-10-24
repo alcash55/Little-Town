@@ -36,7 +36,7 @@ export async function refreshStaticData(): Promise<void> {
     console.error(
       "[staticDataCron] Authoritative hiscores vocabulary probe failed — keeping previously-served " +
         "data in place rather than serving anything not sourced from the real hiscores API:",
-      e,
+      e
     );
   }
 }
@@ -53,8 +53,10 @@ async function tick(): Promise<void> {
     ]);
 
     const now = Date.now();
-    const skillsStale = !skillsTs || now - new Date(skillsTs).getTime() >= ONE_DAY_MS;
-    const activitiesStale = !activitiesTs || now - new Date(activitiesTs).getTime() >= ONE_DAY_MS;
+    const skillsStale =
+      !skillsTs || now - new Date(skillsTs).getTime() >= ONE_DAY_MS;
+    const activitiesStale =
+      !activitiesTs || now - new Date(activitiesTs).getTime() >= ONE_DAY_MS;
 
     if (skillsStale || activitiesStale) {
       await refreshStaticData();

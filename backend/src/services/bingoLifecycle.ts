@@ -61,7 +61,10 @@ interface EndedActiveBingoRow {
  * the 404-vs-409 split in POST /admin/bingo/:bingoId/end) check existence
  * themselves first.
  */
-async function transitionActiveBingoToComplete(bingoId: string, now: Date): Promise<EndedActiveBingoRow | null> {
+async function transitionActiveBingoToComplete(
+  bingoId: string,
+  now: Date
+): Promise<EndedActiveBingoRow | null> {
   const db = getDb();
   const { data: updated, error } = await db
     .from("bingos")
@@ -71,7 +74,8 @@ async function transitionActiveBingoToComplete(bingoId: string, now: Date): Prom
     .select("id, name, end_date")
     .maybeSingle();
 
-  if (error) throw new Error(`Failed to complete bingo ${bingoId}: ${error.message}`);
+  if (error)
+    throw new Error(`Failed to complete bingo ${bingoId}: ${error.message}`);
   return updated as EndedActiveBingoRow | null;
 }
 
@@ -87,7 +91,9 @@ async function transitionActiveBingoToComplete(bingoId: string, now: Date): Prom
  * it's individually race-guarded the same way endBingoEarly's manual
  * transition is.
  */
-export async function completeEndedBingos(now: Date = new Date()): Promise<CompletedBingoResult[]> {
+export async function completeEndedBingos(
+  now: Date = new Date()
+): Promise<CompletedBingoResult[]> {
   const db = getDb();
   const nowIso = now.toISOString();
 
@@ -98,7 +104,10 @@ export async function completeEndedBingos(now: Date = new Date()): Promise<Compl
     .not("end_date", "is", null)
     .lt("end_date", nowIso);
 
-  if (error) throw new Error(`Failed to query ended-but-still-active bingos: ${error.message}`);
+  if (error)
+    throw new Error(
+      `Failed to query ended-but-still-active bingos: ${error.message}`
+    );
 
   const results: CompletedBingoResult[] = [];
 
@@ -107,7 +116,10 @@ export async function completeEndedBingos(now: Date = new Date()): Promise<Compl
     try {
       updated = await transitionActiveBingoToComplete(row.id, now);
     } catch (e) {
-      console.error(`[bingoLifecycle] Failed to complete bingo "${row.name}" (${row.id}):`, (e as Error).message);
+      console.error(
+        `[bingoLifecycle] Failed to complete bingo "${row.name}" (${row.id}):`,
+        (e as Error).message
+      );
       continue;
     }
     if (!updated) {
@@ -121,7 +133,7 @@ export async function completeEndedBingos(now: Date = new Date()): Promise<Compl
       `[bingoLifecycle] Bingo "${row.name}" (${row.id}) auto-completed — end_date ${row.end_date} has passed.` +
         (pendingCount > 0
           ? ` ${pendingCount} screenshot submission(s) still pending review.`
-          : " No pending screenshot submissions."),
+          : " No pending screenshot submissions.")
     );
 
     results.push({ id: row.id, name: row.name, pendingCount });
@@ -132,8 +144,14 @@ export async function completeEndedBingos(now: Date = new Date()): Promise<Compl
       // guard here too since this loop must keep processing other bingos
       // (and must never let a Discord failure look like the transition
       // itself failed).
-      await notifyBingoEndedWithPendingScreenshots(row.name, pendingCount).catch((e) =>
-        console.warn(`[bingoLifecycle] Discord end-of-bingo notification failed for "${row.name}":`, e),
+      await notifyBingoEndedWithPendingScreenshots(
+        row.name,
+        pendingCount
+      ).catch((e) =>
+        console.warn(
+          `[bingoLifecycle] Discord end-of-bingo notification failed for "${row.name}":`,
+          e
+        )
       );
     }
   }
@@ -158,7 +176,7 @@ export async function completeEndedBingos(now: Date = new Date()): Promise<Compl
 export async function endBingoEarly(
   bingoId: string,
   actingAdminId?: string,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): Promise<(CompletedBingoResult & { endedAt: string }) | null> {
   const updated = await transitionActiveBingoToComplete(bingoId, now);
   if (!updated) return null;
@@ -167,17 +185,25 @@ export async function endBingoEarly(
   const endedAt = now.toISOString();
 
   console.log(
-    `[bingoLifecycle] Bingo "${updated.name}" (${bingoId}) ended early by admin ${actingAdminId ?? "unknown"}.` +
+    `[bingoLifecycle] Bingo "${
+      updated.name
+    }" (${bingoId}) ended early by admin ${actingAdminId ?? "unknown"}.` +
       (pendingCount > 0
         ? ` ${pendingCount} screenshot submission(s) still pending review.`
-        : " No pending screenshot submissions."),
+        : " No pending screenshot submissions.")
   );
 
   if (pendingCount > 0) {
     // Same product decision as completeEndedBingos: best-effort, one-time,
     // never lets a Discord failure look like the transition itself failed.
-    await notifyBingoEndedWithPendingScreenshots(updated.name, pendingCount).catch((e) =>
-      console.warn(`[bingoLifecycle] Discord end-of-bingo notification failed for "${updated.name}":`, e),
+    await notifyBingoEndedWithPendingScreenshots(
+      updated.name,
+      pendingCount
+    ).catch((e) =>
+      console.warn(
+        `[bingoLifecycle] Discord end-of-bingo notification failed for "${updated.name}":`,
+        e
+      )
     );
   }
 
@@ -185,18 +211,27 @@ export async function endBingoEarly(
 }
 
 /** Delete expired main/side-account history atomically against live bingo dates. */
-export async function deleteExpiredHiscoreHistory(now: Date = new Date()): Promise<number> {
+export async function deleteExpiredHiscoreHistory(
+  now: Date = new Date()
+): Promise<number> {
   const { data, error } = await getDb().rpc("delete_expired_hiscore_history", {
     p_now: now.toISOString(),
   });
-  if (error) throw new Error(`Failed to delete expired hiscore history: ${error.message}`);
+  if (error)
+    throw new Error(
+      `Failed to delete expired hiscore history: ${error.message}`
+    );
   return data ?? 0;
 }
 
 /** The dashboard uses the same five-day cutoff as the retention RPC. */
 export function getHiscoreHistoryDeletionDate(
-  bingo: { status?: string; endDate?: string | null; updatedAt?: string } | null,
-  now: Date = new Date(),
+  bingo: {
+    status?: string;
+    endDate?: string | null;
+    updatedAt?: string;
+  } | null,
+  now: Date = new Date()
 ): string | null {
   if (bingo?.status !== "complete") return null;
   // A manually completed bingo with no end_date uses updated_at from the

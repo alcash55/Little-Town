@@ -21,7 +21,13 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 function rawHiscoreResponse(skills: string[], activities: string[]) {
   return {
     name: "Zezima",
-    skills: skills.map((name, i) => ({ id: i, name, rank: 1, level: 1, xp: 0 })),
+    skills: skills.map((name, i) => ({
+      id: i,
+      name,
+      rank: 1,
+      level: 1,
+      xp: 0,
+    })),
     activities: activities.map((name, i) => ({ id: i, name, rank: 1, kc: 0 })),
     updatedAt: new Date(),
   };
@@ -30,8 +36,12 @@ function rawHiscoreResponse(skills: string[], activities: string[]) {
 const DEFAULT_SKILLS = ["Overall", "Runecraft"];
 const DEFAULT_ACTIVITIES = ["Bounty Hunter", "Calvar'ion"];
 
-const hiscoresMock = mock(async (_rsn: string) => rawHiscoreResponse(DEFAULT_SKILLS, DEFAULT_ACTIVITIES));
-mock.module("../../src/services/hiscores.js", () => ({ hiscores: hiscoresMock }));
+const hiscoresMock = mock(async (_rsn: string) =>
+  rawHiscoreResponse(DEFAULT_SKILLS, DEFAULT_ACTIVITIES)
+);
+mock.module("../../src/services/hiscores.js", () => ({
+  hiscores: hiscoresMock,
+}));
 
 const upsertStaticDataMock = mock(async (_key: string, _data: string[]) => {});
 // Also stubs getStaticData, unused by this file's code under test, purely
@@ -44,19 +54,29 @@ mock.module("../../src/db/staticData.js", () => ({
   getStaticData: mock(async () => []),
 }));
 
-const { refreshStaticData } = await import("../../src/services/staticDataCron.js");
+const { refreshStaticData } = await import(
+  "../../src/services/staticDataCron.js"
+);
 
 beforeEach(() => {
   hiscoresMock.mockClear();
-  hiscoresMock.mockImplementation(async () => rawHiscoreResponse(DEFAULT_SKILLS, DEFAULT_ACTIVITIES));
+  hiscoresMock.mockImplementation(async () =>
+    rawHiscoreResponse(DEFAULT_SKILLS, DEFAULT_ACTIVITIES)
+  );
   upsertStaticDataMock.mockClear();
 });
 
 describe("refreshStaticData", () => {
   test("persists both lists straight from the single hiscores probe — no separate wiki source", async () => {
     await refreshStaticData();
-    expect(upsertStaticDataMock).toHaveBeenCalledWith("skills", ["Overall", "Runecraft"]);
-    expect(upsertStaticDataMock).toHaveBeenCalledWith("activities", ["Bounty Hunter", "Calvar'ion"]);
+    expect(upsertStaticDataMock).toHaveBeenCalledWith("skills", [
+      "Overall",
+      "Runecraft",
+    ]);
+    expect(upsertStaticDataMock).toHaveBeenCalledWith("activities", [
+      "Bounty Hunter",
+      "Calvar'ion",
+    ]);
     expect(upsertStaticDataMock).toHaveBeenCalledTimes(2);
   });
 
