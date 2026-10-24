@@ -21,7 +21,12 @@ import express from "express";
 import cors from "cors";
 import http from "node:http";
 
-import { CORS_ALLOWED_HEADERS, REQUIRED_CUSTOM_HEADERS, buildDevCorsOrigins, DEV_CORS_PORT_RANGE } from "../../src/config/cors.js";
+import {
+  CORS_ALLOWED_HEADERS,
+  REQUIRED_CUSTOM_HEADERS,
+  buildDevCorsOrigins,
+  DEV_CORS_PORT_RANGE,
+} from "../../src/config/cors.js";
 import { startTestServer } from "../integration/helpers.js";
 
 const ORIGIN = "http://localhost:3000";
@@ -38,9 +43,11 @@ function buildCorsApp() {
       credentials: true,
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       allowedHeaders: [...CORS_ALLOWED_HEADERS],
-    }),
+    })
   );
-  app.delete("/api/admin/bingo/:id", (_req, res) => res.json({ success: true }));
+  app.delete("/api/admin/bingo/:id", (_req, res) =>
+    res.json({ success: true })
+  );
   return app;
 }
 
@@ -48,7 +55,7 @@ function buildCorsApp() {
 function preflight(
   port: number,
   requestHeaders: string,
-  method = "DELETE",
+  method = "DELETE"
 ): Promise<{ status: number; headers: http.IncomingHttpHeaders }> {
   return new Promise((resolve, reject) => {
     const req = http.request(
@@ -65,8 +72,10 @@ function preflight(
       },
       (res) => {
         res.resume();
-        res.on("end", () => resolve({ status: res.statusCode ?? 0, headers: res.headers }));
-      },
+        res.on("end", () =>
+          resolve({ status: res.statusCode ?? 0, headers: res.headers })
+        );
+      }
     );
     req.on("error", reject);
     req.end();
@@ -90,16 +99,20 @@ describe("CORS preflight — custom request headers", () => {
   test.each(REQUIRED_CUSTOM_HEADERS.map((h) => [h.header, h.usedBy] as const))(
     "%s is allowlisted (required by: %s)",
     async (header) => {
-      const allowed = await allowedByPreflight(`${header},Authorization,Content-Type`);
+      const allowed = await allowedByPreflight(
+        `${header},Authorization,Content-Type`
+      );
       expect(allowed).toContain(header.toLowerCase());
-    },
+    }
   );
 
   test("the delete confirmation gate's header survives a real preflight", async () => {
     // The exact regression: a browser asks whether it may send X-Confirm-Delete
     // on a cross-origin DELETE. If the answer omits it, the header is dropped
     // and the route's force+header gate can never be satisfied from a browser.
-    const allowed = await allowedByPreflight("X-Confirm-Delete,Authorization,Content-Type");
+    const allowed = await allowedByPreflight(
+      "X-Confirm-Delete,Authorization,Content-Type"
+    );
     expect(allowed).toContain("x-confirm-delete");
   });
 
@@ -135,51 +148,71 @@ function buildRangeApp(origins: string[]) {
         callback(new Error(`CORS origin not allowed: ${origin}`));
       },
       credentials: true,
-    }),
+    })
   );
-  app.get('/ping', (_req, res) => res.json({ ok: true }));
+  app.get("/ping", (_req, res) => res.json({ ok: true }));
   return app;
 }
 
-function originHeader(port: number, origin: string): Promise<{ status: number; allowOrigin?: string }> {
+function originHeader(
+  port: number,
+  origin: string
+): Promise<{ status: number; allowOrigin?: string }> {
   return new Promise((resolve, reject) => {
     const req = http.request(
-      { host: '127.0.0.1', port, path: '/ping', method: 'GET', headers: { Origin: origin } },
+      {
+        host: "127.0.0.1",
+        port,
+        path: "/ping",
+        method: "GET",
+        headers: { Origin: origin },
+      },
       (res) => {
         res.resume();
-        res.on('end', () =>
+        res.on("end", () =>
           resolve({
             status: res.statusCode ?? 0,
-            allowOrigin: res.headers['access-control-allow-origin'] as string | undefined,
-          }),
+            allowOrigin: res.headers["access-control-allow-origin"] as
+              | string
+              | undefined,
+          })
         );
-      },
+      }
     );
-    req.on('error', reject);
+    req.on("error", reject);
     req.end();
   });
 }
 
-describe('buildDevCorsOrigins (issue #49)', () => {
-  test('covers every port in the bounded range on both localhost and 127.0.0.1', () => {
+describe("buildDevCorsOrigins (issue #49)", () => {
+  test("covers every port in the bounded range on both localhost and 127.0.0.1", () => {
     const origins = buildDevCorsOrigins();
-    for (let port = DEV_CORS_PORT_RANGE.start; port <= DEV_CORS_PORT_RANGE.end; port++) {
+    for (
+      let port = DEV_CORS_PORT_RANGE.start;
+      port <= DEV_CORS_PORT_RANGE.end;
+      port++
+    ) {
       expect(origins).toContain(`http://localhost:${port}`);
       expect(origins).toContain(`http://127.0.0.1:${port}`);
     }
   });
 
-  test('does not include a port outside the declared range', () => {
+  test("does not include a port outside the declared range", () => {
     const origins = buildDevCorsOrigins();
-    expect(origins).not.toContain(`http://localhost:${DEV_CORS_PORT_RANGE.end + 1}`);
-    expect(origins).not.toContain('http://localhost:4000');
+    expect(origins).not.toContain(
+      `http://localhost:${DEV_CORS_PORT_RANGE.end + 1}`
+    );
+    expect(origins).not.toContain("http://localhost:4000");
   });
 
-  test('an origin within the range is allowed by a real cross-origin request', async () => {
+  test("an origin within the range is allowed by a real cross-origin request", async () => {
     const started = await startTestServer(buildRangeApp(buildDevCorsOrigins()));
     try {
       const inRangePort = DEV_CORS_PORT_RANGE.start + 1;
-      const res = await originHeader(started.port, `http://localhost:${inRangePort}`);
+      const res = await originHeader(
+        started.port,
+        `http://localhost:${inRangePort}`
+      );
       expect(res.status).toBe(200);
       expect(res.allowOrigin).toBe(`http://localhost:${inRangePort}`);
     } finally {
@@ -187,10 +220,10 @@ describe('buildDevCorsOrigins (issue #49)', () => {
     }
   });
 
-  test('an origin outside the range is still rejected, not blanket-allowed', async () => {
+  test("an origin outside the range is still rejected, not blanket-allowed", async () => {
     const started = await startTestServer(buildRangeApp(buildDevCorsOrigins()));
     try {
-      const res = await originHeader(started.port, 'http://localhost:4000');
+      const res = await originHeader(started.port, "http://localhost:4000");
       expect(res.allowOrigin).toBeUndefined();
     } finally {
       started.server.close();

@@ -39,7 +39,9 @@ function cookieOptions(req: Request) {
   // Use the actual Host, not X-Forwarded-Host from a client. Neither hostname
   // nor cookie policy grants authentication; protect still verifies the JWT.
   const sameSiteHost = getSameSiteAuthHost();
-  const isSameSiteHost = sameSiteHost !== undefined && req.get("host")?.toLowerCase() === sameSiteHost;
+  const isSameSiteHost =
+    sameSiteHost !== undefined &&
+    req.get("host")?.toLowerCase() === sameSiteHost;
   const sameSite: "none" | "lax" = isProd && !isSameSiteHost ? "none" : "lax";
   return {
     httpOnly: true,
@@ -50,15 +52,16 @@ function cookieOptions(req: Request) {
   };
 }
 
-export function signSession(user: Pick<User, "id" | "username" | "role">): {
+export function signSession(user: Pick<User, "id" | "username" | "role" | "sessionVersion">): {
   token: string;
   expiresAt: string;
 } {
-  const expiresIn = (process.env.JWT_EXPIRES_IN || "24h") as SignOptions["expiresIn"];
+  const expiresIn = (process.env.JWT_EXPIRES_IN ||
+    "24h") as SignOptions["expiresIn"];
   const token = jwt.sign(
-    { id: user.id, username: user.username, role: user.role },
+    { id: user.id, username: user.username, role: user.role, sessionVersion: user.sessionVersion ?? 0 },
     getJwtSecret(),
-    { expiresIn },
+    { expiresIn }
   );
 
   // Read the actual `exp` claim back off the token so expiresAt always
@@ -72,13 +75,16 @@ export function signSession(user: Pick<User, "id" | "username" | "role">): {
 }
 
 export function setAuthCookie(res: Response, token: string): void {
-  res.setHeader("Set-Cookie", serialize(AUTH_COOKIE_NAME, token, cookieOptions(res.req)));
+  res.setHeader(
+    "Set-Cookie",
+    serialize(AUTH_COOKIE_NAME, token, cookieOptions(res.req))
+  );
 }
 
 export function clearAuthCookie(res: Response): void {
   res.setHeader(
     "Set-Cookie",
-    serialize(AUTH_COOKIE_NAME, "", { ...cookieOptions(res.req), maxAge: 0 }),
+    serialize(AUTH_COOKIE_NAME, "", { ...cookieOptions(res.req), maxAge: 0 })
   );
 }
 

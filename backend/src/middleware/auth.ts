@@ -74,7 +74,11 @@ async function applyImpersonation(req: Request): Promise<void> {
 
   // Validate the untrusted header before Postgres can reject it as a UUID.
   if (!impersonationTargetSchema.safeParse(targetId).success) {
-    throw new AppError("Impersonation target not found", 400, "IMPERSONATION_TARGET_NOT_FOUND");
+    throw new AppError(
+      "Impersonation target not found",
+      400,
+      "IMPERSONATION_TARGET_NOT_FOUND"
+    );
   }
 
   let target: User | null;
@@ -84,31 +88,55 @@ async function applyImpersonation(req: Request): Promise<void> {
     throw authLookupFailure(req, error);
   }
   if (!target) {
-    throw new AppError("Impersonation target not found", 400, "IMPERSONATION_TARGET_NOT_FOUND");
+    throw new AppError(
+      "Impersonation target not found",
+      400,
+      "IMPERSONATION_TARGET_NOT_FOUND"
+    );
   }
 
   // Never allow impersonating another admin unless the caller IS that admin
   // (already handled above via the self-impersonation early return).
   if (target.role === "admin") {
-    throw new AppError("Cannot impersonate another admin", 403, "IMPERSONATION_ADMIN_BLOCKED");
+    throw new AppError(
+      "Cannot impersonate another admin",
+      403,
+      "IMPERSONATION_ADMIN_BLOCKED"
+    );
   }
 
   req.user = target;
   // Loud, structured, and on every impersonated request per the brief —
   // deliberately console.warn (not .log) so it's easy to grep/alert on.
   console.warn(
-    `[impersonation] admin ${realUser.id} as ${target.id} ${req.method} ${req.originalUrl}`,
+    `[impersonation] admin ${realUser.id} as ${target.id} ${req.method} ${req.originalUrl}`
   );
 }
 
-type AuthFailureReason = "no_token" | "invalid_claims" | "token_expired" | "verify_failure" | "user_not_found" | "lookup_error";
+type AuthFailureReason =
+  | "no_token"
+  | "invalid_claims"
+  | "token_expired"
+  | "verify_failure"
+  | "user_not_found"
+  | "session_revoked"
+  | "lookup_error";
 
-function logAuthFailure(req: Request, reason: AuthFailureReason, error?: unknown): void {
+function logAuthFailure(
+  req: Request,
+  reason: AuthFailureReason,
+  error?: unknown
+): void {
   // Driver messages/stacks can include credentials or URLs. Only log a bounded
   // error code, never the error object, JWT, headers, body, or request URL.
-  const code = error && typeof error === "object" && "code" in error &&
-    typeof error.code === "string" && /^[A-Z0-9_]{1,24}$/.test(error.code)
-      ? error.code : undefined;
+  const code =
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    typeof error.code === "string" &&
+    /^[A-Z0-9_]{1,24}$/.test(error.code)
+      ? error.code
+      : undefined;
   console.warn("[auth]", { reason, method: req.method, code });
 }
 
@@ -116,7 +144,11 @@ function authLookupFailure(req: Request, error: unknown): AppError {
   logAuthFailure(req, "lookup_error", error);
   // An outage does not invalidate the browser's session. A 503 also avoids
   // the frontend's 401 handler clearing the user and reopening login.
-  return new AppError("Authentication service unavailable. Please try again.", 503, "AUTH_LOOKUP_FAILED");
+  return new AppError(
+    "Authentication service unavailable. Please try again.",
+    503,
+    "AUTH_LOOKUP_FAILED"
+  );
 }
 
 export const protect = async (
@@ -145,6 +177,7 @@ export const protect = async (
   }
 
   let userId: string;
+  let sessionVersion: unknown;
   try {
     const decoded = jwt.verify(token, getJwtSecret());
     if (typeof decoded === "string" || typeof decoded.id !== "string") {
@@ -152,16 +185,20 @@ export const protect = async (
       return next(new AppError("Not authorized to access this route", 401));
     }
     userId = decoded.id;
+    sessionVersion = decoded.sessionVersion ?? 0;
   } catch (error) {
-    const reason = error instanceof jwt.TokenExpiredError ? "token_expired" : "verify_failure";
+    const reason =
+      error instanceof jwt.TokenExpiredError
+        ? "token_expired"
+        : "verify_failure";
     logAuthFailure(req, reason);
     return next(new AppError("Not authorized to access this route", 401));
   }
 
   try {
     const user = await findUserById(userId);
-    if (!user) {
-      logAuthFailure(req, "user_not_found");
+    if (!user || (user.sessionVersion ?? 0) !== sessionVersion) {
+      logAuthFailure(req, user ? "session_revoked" : "user_not_found");
       return next(new AppError("Not authorized to access this route", 401));
     }
     req.user = user;
@@ -214,9 +251,11 @@ export const optionalAuth = async (
   }
 
   try {
-    const decoded = jwt.verify(token, getJwtSecret()) as any;
+    const decoded = jwt.verify(token, getJwtSecret());
+    if (typeof decoded === "string" || typeof decoded.id !== "string")
+      return next();
     const user = await findUserById(decoded.id);
-    if (!user) {
+    if (!user || (user.sessionVersion ?? 0) !== (decoded.sessionVersion ?? 0)) {
       // Token is well-formed but no longer resolves to a real user
       // (deleted account, etc.) — degrade to anonymous rather than 401.
       return next();

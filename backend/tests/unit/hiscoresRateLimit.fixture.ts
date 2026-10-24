@@ -28,12 +28,16 @@ const hiscoresMock = mock(async (rsn: string) => ({
   updatedAt: new Date(),
 }));
 
-mock.module("../../src/services/hiscores.js", () => ({ hiscores: hiscoresMock }));
+mock.module("../../src/services/hiscores.js", () => ({
+  hiscores: hiscoresMock,
+}));
 
 // Imported dynamically *after* both the env var and the hiscores mock above
 // are in place — the limiter reads HISCORES_RATE_LIMIT_MAX once at module
 // load time.
-const { default: hiscoresRouter } = await import("../../src/routes/hiscores.js");
+const { default: hiscoresRouter } = await import(
+  "../../src/routes/hiscores.js"
+);
 
 let server: http.Server;
 let port: number;

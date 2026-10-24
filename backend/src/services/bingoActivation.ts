@@ -1,9 +1,17 @@
 import { activateBingo } from "../db/bingos.js";
-import { getBingoPlayers, savePlayerSnapshot, clearStartSnapshot, BingoPlayer } from "../db/players.js";
+import {
+  getBingoPlayers,
+  savePlayerSnapshot,
+  clearStartSnapshot,
+  BingoPlayer,
+} from "../db/players.js";
 import { mapWithConcurrency, HISCORE_CONCURRENCY } from "../lib/concurrency.js";
 import { hiscores } from "./hiscores.js";
 import { checkRsnChange, RsnChangeSource } from "./rsnChangeDetection.js";
-import { snapshotAllSideAccounts, SideSnapshotResult } from "./sideAccountSnapshots.js";
+import {
+  snapshotAllSideAccounts,
+  SideSnapshotResult,
+} from "./sideAccountSnapshots.js";
 
 // Re-exported for existing call sites (routes/admin.ts, playerSnapshotCron.ts)
 // that import HISCORE_CONCURRENCY from here — the value itself now lives in
@@ -54,35 +62,40 @@ export async function snapshotStartAndCurrent(
   bingoId: string,
   players: BingoPlayer[],
   source: RsnChangeSource,
-  retakeExisting = false,
+  retakeExisting = false
 ): Promise<{
   succeeded: number;
   failed: string[];
   results: PlayerSnapshotResult[];
   sideResults: SideSnapshotResult[];
 }> {
-  if (!players.length) return { succeeded: 0, failed: [], results: [], sideResults: [] };
+  if (!players.length)
+    return { succeeded: 0, failed: [], results: [], sideResults: [] };
 
-  const settled = await mapWithConcurrency(players, HISCORE_CONCURRENCY, async (player) => {
-    const data = await hiscores(player.rsn);
-    // RSN-change detection + Sprint 6's WOM auto-rename (see
-    // services/rsnChangeDetection.ts) — a confirmed rename updates
-    // bingo_players.rsn and hands back hiscore data for the new name so
-    // this activation/retake attempt can proceed under it immediately.
-    const rsnCheck = await checkRsnChange(player, Boolean(data), source);
-    const effectiveData = data ?? rsnCheck.hiscoreData ?? null;
-    if (!effectiveData) {
-      throw new Error(
-        `Player "${player.rsn}" is not ranked on the OSRS hiscores — ensure the RSN is correct and the account has played enough to appear on the hiscores`,
-      );
+  const settled = await mapWithConcurrency(
+    players,
+    HISCORE_CONCURRENCY,
+    async (player) => {
+      const data = await hiscores(player.rsn);
+      // RSN-change detection + Sprint 6's WOM auto-rename (see
+      // services/rsnChangeDetection.ts) — a confirmed rename updates
+      // bingo_players.rsn and hands back hiscore data for the new name so
+      // this activation/retake attempt can proceed under it immediately.
+      const rsnCheck = await checkRsnChange(player, Boolean(data), source);
+      const effectiveData = data ?? rsnCheck.hiscoreData ?? null;
+      if (!effectiveData) {
+        throw new Error(
+          `Player "${player.rsn}" is not ranked on the OSRS hiscores — ensure the RSN is correct and the account has played enough to appear on the hiscores`
+        );
+      }
+      // start is insert-if-absent by default; retakeExisting (activation
+      // only) clears any pre-existing start row first so it's replaced.
+      if (retakeExisting) await clearStartSnapshot(player.id);
+      await savePlayerSnapshot(player.id, "start", effectiveData);
+      await savePlayerSnapshot(player.id, "current", effectiveData);
+      return rsnCheck.renamed ? rsnCheck.newRsn! : player.rsn;
     }
-    // start is insert-if-absent by default; retakeExisting (activation
-    // only) clears any pre-existing start row first so it's replaced.
-    if (retakeExisting) await clearStartSnapshot(player.id);
-    await savePlayerSnapshot(player.id, "start", effectiveData);
-    await savePlayerSnapshot(player.id, "current", effectiveData);
-    return rsnCheck.renamed ? rsnCheck.newRsn! : player.rsn;
-  });
+  );
 
   const results = toPlayerSnapshotResults(players, settled);
   const failed = results.filter((r) => !r.ok).map((r) => r.error!);
@@ -94,7 +107,13 @@ export async function snapshotStartAndCurrent(
   // the same retakeExisting treatment as their parent — they feed the same
   // team-total math (services/completionEngine.ts), so an activation must
   // rebaseline them too, not just the primary account.
-  const sideResults = await snapshotAllSideAccounts(bingoId, players, ["start", "current"], source, retakeExisting);
+  const sideResults = await snapshotAllSideAccounts(
+    bingoId,
+    players,
+    ["start", "current"],
+    source,
+    retakeExisting
+  );
 
   return { succeeded, failed, results, sideResults };
 }
@@ -102,7 +121,7 @@ export async function snapshotStartAndCurrent(
 /** Takes start + current snapshots for every player currently in a bingo (and their side accounts). */
 export async function takeActivationSnapshots(
   bingoId: string,
-  source: RsnChangeSource = "drafter",
+  source: RsnChangeSource = "drafter"
 ): Promise<{
   succeeded: number;
   failed: string[];
@@ -118,14 +137,15 @@ export async function takeActivationSnapshots(
 
 function toPlayerSnapshotResults(
   players: BingoPlayer[],
-  settled: PromiseSettledResult<string>[],
+  settled: PromiseSettledResult<string>[]
 ): PlayerSnapshotResult[] {
   return players.map((player, i) => {
     const r = settled[i];
     // r.value is the (possibly WOM-auto-renamed) rsn the snapshot actually
     // succeeded under — prefer it over the stale players[] entry so callers
     // reporting results see the current name, not the one that just 404'd.
-    if (r.status === "fulfilled") return { rsn: r.value, playerId: player.id, ok: true };
+    if (r.status === "fulfilled")
+      return { rsn: r.value, playerId: player.id, ok: true };
     return {
       rsn: player.rsn,
       playerId: player.id,
@@ -171,13 +191,21 @@ export interface ActivationOutcome {
  */
 export async function activateBingoWithSnapshots(
   bingoId: string,
-  options: { force?: boolean; source?: RsnChangeSource } = {},
+  options: { force?: boolean; source?: RsnChangeSource } = {}
 ): Promise<ActivationOutcome> {
   const { force = false, source = "drafter" } = options;
-  const { succeeded, failed, results, sideResults } = await takeActivationSnapshots(bingoId, source);
+  const { succeeded, failed, results, sideResults } =
+    await takeActivationSnapshots(bingoId, source);
 
   if (failed.length > 0 && !force) {
-    return { activated: false, blocked: true, succeeded, failed, results, sideResults };
+    return {
+      activated: false,
+      blocked: true,
+      succeeded,
+      failed,
+      results,
+      sideResults,
+    };
   }
 
   const activated = await activateBingo(bingoId);

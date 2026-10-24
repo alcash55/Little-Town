@@ -19,9 +19,19 @@
  * OSRS hiscores and declared WOM no-rename responses are mocked.
  * All database calls use the real local Supabase stack.
  */
-process.env.JWT_SECRET = "side-account-start-snapshot-fix-test-secret-do-not-use-elsewhere";
+process.env.JWT_SECRET =
+  "side-account-start-snapshot-fix-test-secret-do-not-use-elsewhere";
 
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  mock,
+  test,
+} from "bun:test";
 import { stubWomMisses } from "./womFetchStub.js";
 import express from "express";
 import http from "node:http";
@@ -31,7 +41,10 @@ import jwt from "jsonwebtoken";
 import { getDb } from "../../src/db/client.js";
 import { getJwtSecret } from "../../src/lib/jwt.js";
 import { errorHandler } from "../../src/middleware/errorHandler.js";
-import { registerBingoPlayer, getSideAccountsMissingStartSnapshot } from "../../src/db/players.js";
+import {
+  registerBingoPlayer,
+  getSideAccountsMissingStartSnapshot,
+} from "../../src/db/players.js";
 import type { HiscoreData } from "../../src/types/index.js";
 import {
   getLocalStackConfig,
@@ -44,12 +57,16 @@ import {
 
 const stack = await getLocalStackConfig();
 if (!stack.reachable) {
-  console.warn(`[side-account-start-snapshot-fix.test.ts] skipping: ${stack.reason}`);
+  console.warn(
+    `[side-account-start-snapshot-fix.test.ts] skipping: ${stack.reason}`
+  );
 }
-const preexistingActive = stack.reachable ? await hasPreexistingActiveBingo() : false;
+const preexistingActive = stack.reachable
+  ? await hasPreexistingActiveBingo()
+  : false;
 if (stack.reachable && preexistingActive) {
   console.warn(
-    "[side-account-start-snapshot-fix.test.ts] skipping: another bingo is already active in the shared local stack",
+    "[side-account-start-snapshot-fix.test.ts] skipping: another bingo is already active in the shared local stack"
   );
 }
 const suite = stack.reachable && !preexistingActive;
@@ -74,7 +91,9 @@ const hiscoresMock = mock(async (rsn: string): Promise<HiscoreData | null> => {
   return fakeHiscoreData(rsn);
 });
 
-mock.module("../../src/services/hiscores.js", () => ({ hiscores: hiscoresMock }));
+mock.module("../../src/services/hiscores.js", () => ({
+  hiscores: hiscoresMock,
+}));
 
 // Imported dynamically *after* the mock above is registered, so every
 // module in its dependency chain (bingoActivation.ts, sideAccountSnapshots
@@ -104,18 +123,28 @@ async function insertTestUser(role: TestUser["role"]): Promise<TestUser> {
     .insert({ username, password_hash: "x", role })
     .select("id, username, role")
     .single();
-  if (error || !data) throw new Error(`Failed to insert test user "${username}": ${error?.message}`);
+  if (error || !data)
+    throw new Error(
+      `Failed to insert test user "${username}": ${error?.message}`
+    );
   createdUserIds.push((data as { id: string }).id);
   return data as TestUser;
 }
 
 function signToken(user: TestUser): string {
-  return jwt.sign({ id: user.id, username: user.username, role: user.role }, getJwtSecret(), {
-    expiresIn: "1h",
-  });
+  return jwt.sign(
+    { id: user.id, username: user.username, role: user.role },
+    getJwtSecret(),
+    {
+      expiresIn: "1h",
+    }
+  );
 }
 
-async function countSideHiscoreRows(sideAccountId: string, type: "start" | "current"): Promise<number> {
+async function countSideHiscoreRows(
+  sideAccountId: string,
+  type: "start" | "current"
+): Promise<number> {
   const { count, error } = await getDb()
     .from("bingo_player_hiscores")
     .select("id", { count: "exact", head: true })
@@ -128,7 +157,11 @@ async function countSideHiscoreRows(sideAccountId: string, type: "start" | "curr
 let server: http.Server;
 let port: number;
 
-function post(path: string, token: string, body?: unknown): Promise<{ status: number; body: any }> {
+function post(
+  path: string,
+  token: string,
+  body?: unknown
+): Promise<{ status: number; body: any }> {
   return new Promise((resolve, reject) => {
     const payload = body ? JSON.stringify(body) : undefined;
     const req = http.request(
@@ -146,8 +179,10 @@ function post(path: string, token: string, body?: unknown): Promise<{ status: nu
       (res) => {
         let resBody = "";
         res.on("data", (chunk) => (resBody += chunk));
-        res.on("end", () => resolve({ status: res.statusCode ?? 0, body: JSON.parse(resBody) }));
-      },
+        res.on("end", () =>
+          resolve({ status: res.statusCode ?? 0, body: JSON.parse(resBody) })
+        );
+      }
     );
     req.on("error", reject);
     if (payload) req.write(payload);
@@ -170,9 +205,20 @@ beforeAll(async () => {
 afterAll(async () => {
   server?.close();
   if (!stack.reachable) return;
-  await Promise.all(createdBingoIds.map((id) => deleteTestBingo(id).catch(() => undefined)));
   await Promise.all(
-    createdUserIds.map((id) => getDb().from("users").delete().eq("id", id).then(() => undefined, () => undefined)),
+    createdBingoIds.map((id) => deleteTestBingo(id).catch(() => undefined))
+  );
+  await Promise.all(
+    createdUserIds.map((id) =>
+      getDb()
+        .from("users")
+        .delete()
+        .eq("id", id)
+        .then(
+          () => undefined,
+          () => undefined
+        )
+    )
   );
 });
 
@@ -183,7 +229,9 @@ describe.skipIf(!suite)("side-account start-snapshot fix", () => {
 
   test("fixtures: admin user + an ACTIVE bingo with one registered, already-snapshotted main player", async () => {
     admin = await insertTestUser("admin");
-    bingo = await insertTestBingo(`test-side-fix-${uniqueSuffix()}`, { status: "active" });
+    bingo = await insertTestBingo(`test-side-fix-${uniqueSuffix()}`, {
+      status: "active",
+    });
     createdBingoIds.push(bingo.id);
     await registerBingoPlayer(bingo.id, mainRsn);
 
@@ -193,7 +241,10 @@ describe.skipIf(!suite)("side-account start-snapshot fix", () => {
     // account phase would otherwise cover every side account too via its
     // own (unrelated) side-account phase, masking the extended sweep this
     // fix actually adds.
-    const seed = await post(`/api/admin/bingo/${bingo.id}/retake-start-snapshots`, signToken(admin));
+    const seed = await post(
+      `/api/admin/bingo/${bingo.id}/retake-start-snapshots`,
+      signToken(admin)
+    );
     expect(seed.status).toBe(200);
     expect(seed.body.message).toMatch(/retook start snapshots for 1 of 1/i);
   });
@@ -203,7 +254,7 @@ describe.skipIf(!suite)("side-account start-snapshot fix", () => {
     const { status, body } = await post(
       `/api/admin/bingo/players/${mainRsn}/side-accounts`,
       signToken(admin),
-      { rsn: sideRsn },
+      { rsn: sideRsn }
     );
     expect(status).toBe(201);
     expect(body.data.rsn).toBe(sideRsn);
@@ -216,7 +267,9 @@ describe.skipIf(!suite)("side-account start-snapshot fix", () => {
 
     // Also gone from the "missing" sweep now that it has a start row.
     const stillMissing = await getSideAccountsMissingStartSnapshot(bingo.id);
-    expect(stillMissing.find((p) => p.sideAccount.id === body.data.id)).toBeUndefined();
+    expect(
+      stillMissing.find((p) => p.sideAccount.id === body.data.id)
+    ).toBeUndefined();
   });
 
   test("an unresolvable RSN's immediate snapshot fails but the side account is still added (not blocked)", async () => {
@@ -227,7 +280,7 @@ describe.skipIf(!suite)("side-account start-snapshot fix", () => {
     const { status, body } = await post(
       `/api/admin/bingo/players/${mainRsn}/side-accounts`,
       signToken(admin),
-      { rsn: badRsn },
+      { rsn: badRsn }
     );
     expect(wom.usernames).toEqual([badRsn]);
     expect(status).toBe(201); // add still succeeds
@@ -240,15 +293,22 @@ describe.skipIf(!suite)("side-account start-snapshot fix", () => {
 
     // fixing the RSN + running the extended retake-start-snapshots sweep resolves it.
     unresolvableRsns.delete(badRsn);
-    const retake = await post(`/api/admin/bingo/${bingo.id}/retake-start-snapshots`, signToken(admin));
-    expect(retake.status).toBe(200);
-    expect(retake.body.data.sideResults.some((r: any) => r.sideAccountId === body.data.id && r.ok)).toBe(
-      true,
+    const retake = await post(
+      `/api/admin/bingo/${bingo.id}/retake-start-snapshots`,
+      signToken(admin)
     );
+    expect(retake.status).toBe(200);
+    expect(
+      retake.body.data.sideResults.some(
+        (r: any) => r.sideAccountId === body.data.id && r.ok
+      )
+    ).toBe(true);
     expect(await countSideHiscoreRows(body.data.id, "start")).toBe(1);
 
     const missingAfter = await getSideAccountsMissingStartSnapshot(bingo.id);
-    expect(missingAfter.some((p) => p.sideAccount.id === body.data.id)).toBe(false);
+    expect(missingAfter.some((p) => p.sideAccount.id === body.data.id)).toBe(
+      false
+    );
   });
 
   test("once everything has a start snapshot, retake-start-snapshots is a clean no-op", async () => {
@@ -256,9 +316,14 @@ describe.skipIf(!suite)("side-account start-snapshot fix", () => {
     // the first test, bad-then-fixed one from the second) all have start
     // rows by now -> nothing left for either phase to touch.
     hiscoresMock.mockClear();
-    const retake = await post(`/api/admin/bingo/${bingo.id}/retake-start-snapshots`, signToken(admin));
+    const retake = await post(
+      `/api/admin/bingo/${bingo.id}/retake-start-snapshots`,
+      signToken(admin)
+    );
     expect(retake.status).toBe(200);
-    expect(retake.body.message).toMatch(/no players or side accounts are missing/i);
+    expect(retake.body.message).toMatch(
+      /no players or side accounts are missing/i
+    );
     expect(hiscoresMock).not.toHaveBeenCalled();
   });
 });

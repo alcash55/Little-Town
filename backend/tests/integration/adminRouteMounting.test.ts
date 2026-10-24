@@ -16,7 +16,8 @@
  * reason — this test builds the same three routers in the same order and
  * proves the impersonating-admin case actually reaches authorizeReal.
  */
-process.env.JWT_SECRET = "admin-route-mounting-test-secret-do-not-use-elsewhere";
+process.env.JWT_SECRET =
+  "admin-route-mounting-test-secret-do-not-use-elsewhere";
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import express from "express";
@@ -27,7 +28,10 @@ import jwt from "jsonwebtoken";
 import { getDb } from "../../src/db/client.js";
 import { getJwtSecret } from "../../src/lib/jwt.js";
 import { errorHandler } from "../../src/middleware/errorHandler.js";
-import { adminInviteRoutes, publicInviteRoutes } from "../../src/routes/invites.js";
+import {
+  adminInviteRoutes,
+  publicInviteRoutes,
+} from "../../src/routes/invites.js";
 import { adminUsersRoutes } from "../../src/routes/adminUsers.js";
 import adminRoutes from "../../src/routes/admin.js";
 import { getLocalStackConfig, uniqueSuffix } from "./helpers.js";
@@ -52,29 +56,45 @@ async function insertTestUser(role: TestUser["role"]): Promise<TestUser> {
     .insert({ username, password_hash: "x", role })
     .select("id, username, role")
     .single();
-  if (error || !data) throw new Error(`Failed to insert test user "${username}": ${error?.message}`);
+  if (error || !data)
+    throw new Error(
+      `Failed to insert test user "${username}": ${error?.message}`
+    );
   createdUserIds.push((data as { id: string }).id);
   return data as TestUser;
 }
 
 function signToken(user: TestUser): string {
-  return jwt.sign({ id: user.id, username: user.username, role: user.role }, getJwtSecret(), {
-    expiresIn: "1h",
-  });
+  return jwt.sign(
+    { id: user.id, username: user.username, role: user.role },
+    getJwtSecret(),
+    {
+      expiresIn: "1h",
+    }
+  );
 }
 
 let server: http.Server;
 let port: number;
 
-function request(path: string, token: string, impersonateId?: string): Promise<{ status: number; body: any }> {
+function request(
+  path: string,
+  token: string,
+  impersonateId?: string
+): Promise<{ status: number; body: any }> {
   return new Promise((resolve, reject) => {
-    const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
-    if (impersonateId !== undefined) headers["X-Impersonate-User-Id"] = impersonateId;
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${token}`,
+    };
+    if (impersonateId !== undefined)
+      headers["X-Impersonate-User-Id"] = impersonateId;
     http
       .get({ host: "127.0.0.1", port, path, headers }, (res) => {
         let body = "";
         res.on("data", (chunk) => (body += chunk));
-        res.on("end", () => resolve({ status: res.statusCode ?? 0, body: JSON.parse(body) }));
+        res.on("end", () =>
+          resolve({ status: res.statusCode ?? 0, body: JSON.parse(body) })
+        );
       })
       .on("error", reject);
   });
@@ -101,7 +121,16 @@ afterAll(async () => {
   server?.close();
   if (!stack.reachable) return;
   await Promise.all(
-    createdUserIds.map((id) => getDb().from("users").delete().eq("id", id).then(() => undefined, () => undefined)),
+    createdUserIds.map((id) =>
+      getDb()
+        .from("users")
+        .delete()
+        .eq("id", id)
+        .then(
+          () => undefined,
+          () => undefined
+        )
+    )
   );
 });
 
@@ -115,25 +144,39 @@ describe.skipIf(!stack.reachable)("/api/admin/* mount order", () => {
   });
 
   test("GET /api/admin/users works normally for an admin (not shadowed by adminRoutes)", async () => {
-    const { status, body } = await request("/api/admin/users", signToken(admin));
+    const { status, body } = await request(
+      "/api/admin/users",
+      signToken(admin)
+    );
     expect(status).toBe(200);
     expect(Array.isArray(body.users)).toBe(true);
   });
 
   test("GET /api/admin/invites works normally for an admin (not shadowed by adminRoutes)", async () => {
-    const { status, body } = await request("/api/admin/invites", signToken(admin));
+    const { status, body } = await request(
+      "/api/admin/invites",
+      signToken(admin)
+    );
     expect(status).toBe(200);
     expect(Array.isArray(body.invites)).toBe(true);
   });
 
   test("an admin impersonating a plain user can STILL list users (authorizeReal reaches the real gate)", async () => {
-    const { status, body } = await request("/api/admin/users", signToken(admin), plainUser.id);
+    const { status, body } = await request(
+      "/api/admin/users",
+      signToken(admin),
+      plainUser.id
+    );
     expect(status).toBe(200);
     expect(Array.isArray(body.users)).toBe(true);
   });
 
   test("an admin impersonating a plain user is locked out of ordinary admin.ts routes", async () => {
-    const { status } = await request("/api/admin/bingo", signToken(admin), plainUser.id);
+    const { status } = await request(
+      "/api/admin/bingo",
+      signToken(admin),
+      plainUser.id
+    );
     expect(status).toBe(403);
   });
 
@@ -141,7 +184,10 @@ describe.skipIf(!stack.reachable)("/api/admin/* mount order", () => {
     const usersResult = await request("/api/admin/users", signToken(plainUser));
     expect(usersResult.status).toBe(403);
 
-    const invitesResult = await request("/api/admin/invites", signToken(plainUser));
+    const invitesResult = await request(
+      "/api/admin/invites",
+      signToken(plainUser)
+    );
     expect(invitesResult.status).toBe(403);
   });
 });

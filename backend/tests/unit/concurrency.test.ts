@@ -23,13 +23,9 @@ describe("mapWithConcurrency — order", () => {
       return item.value;
     });
 
-    expect(results.map((r) => (r.status === "fulfilled" ? r.value : null))).toEqual([
-      "a",
-      "b",
-      "c",
-      "d",
-      "e",
-    ]);
+    expect(
+      results.map((r) => (r.status === "fulfilled" ? r.value : null))
+    ).toEqual(["a", "b", "c", "d", "e"]);
   });
 
   test("passes each item's index to fn", async () => {
@@ -74,7 +70,9 @@ describe("mapWithConcurrency — concurrency cap", () => {
     const items = [1, 2, 3];
     const results = await mapWithConcurrency(items, 0, async (n) => n * 2);
 
-    expect(results.map((r) => (r.status === "fulfilled" ? r.value : null))).toEqual([2, 4, 6]);
+    expect(
+      results.map((r) => (r.status === "fulfilled" ? r.value : null))
+    ).toEqual([2, 4, 6]);
   });
 
   test("limit larger than items.length caps the worker count at items.length", async () => {
@@ -123,6 +121,12 @@ describe("mapWithConcurrency — isolation", () => {
     });
 
     const statuses = results.map((r) => r.status);
-    expect(statuses).toEqual(["fulfilled", "rejected", "fulfilled", "rejected", "fulfilled"]);
+    expect(statuses).toEqual([
+      "fulfilled",
+      "rejected",
+      "fulfilled",
+      "rejected",
+      "fulfilled",
+    ]);
   });
 });

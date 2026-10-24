@@ -38,7 +38,7 @@ export async function registerBingoPlayer(
   bingoId: string,
   rsn: string,
   teamId?: string,
-  registeredBy?: string,
+  registeredBy?: string
 ): Promise<BingoPlayer> {
   const db = getDb();
 
@@ -46,12 +46,22 @@ export async function registerBingoPlayer(
   // exists. Re-registering an already-registered RSN must be a race-free
   // no-op — a merge-duplicates upsert would null out an existing team_id/
   // registered_by on every re-add (e.g. re-importing the same CSV).
-  const { error: insertError } = await db.from("bingo_players").upsert(
-    { bingo_id: bingoId, rsn, team_id: teamId ?? null, registered_by: registeredBy ?? null },
-    { onConflict: "bingo_id,rsn", ignoreDuplicates: true },
-  );
+  const { error: insertError } = await db
+    .from("bingo_players")
+    .upsert(
+      {
+        bingo_id: bingoId,
+        rsn,
+        team_id: teamId ?? null,
+        registered_by: registeredBy ?? null,
+      },
+      { onConflict: "bingo_id,rsn", ignoreDuplicates: true }
+    );
 
-  if (insertError) throw new Error(`Failed to register player "${rsn}": ${insertError.message}`);
+  if (insertError)
+    throw new Error(
+      `Failed to register player "${rsn}": ${insertError.message}`
+    );
 
   const { data, error } = await db
     .from("bingo_players")
@@ -60,7 +70,8 @@ export async function registerBingoPlayer(
     .eq("rsn", rsn)
     .single();
 
-  if (error || !data) throw new Error(`Failed to register player "${rsn}": ${error?.message}`);
+  if (error || !data)
+    throw new Error(`Failed to register player "${rsn}": ${error?.message}`);
   return data as BingoPlayer;
 }
 
@@ -82,7 +93,10 @@ export async function getBingoPlayers(bingoId: string): Promise<BingoPlayer[]> {
 /**
  * Get a single player by RSN within a bingo.
  */
-export async function getBingoPlayer(bingoId: string, rsn: string): Promise<BingoPlayer | null> {
+export async function getBingoPlayer(
+  bingoId: string,
+  rsn: string
+): Promise<BingoPlayer | null> {
   const db = getDb();
   const { data, error } = await db
     .from("bingo_players")
@@ -125,7 +139,7 @@ export async function getBingoPlayer(bingoId: string, rsn: string): Promise<Bing
  */
 export async function resolveMyBingoPlayer(
   bingoId: string,
-  userId: string,
+  userId: string
 ): Promise<BingoPlayer | null> {
   const claim = await findRsnClaimByUser(userId);
   if (claim) {
@@ -145,7 +159,10 @@ export async function resolveMyBingoPlayer(
     .eq("bingo_id", bingoId)
     .eq("registered_by", userId);
 
-  if (error) throw new Error(`Failed to resolve player for user ${userId}: ${error.message}`);
+  if (error)
+    throw new Error(
+      `Failed to resolve player for user ${userId}: ${error.message}`
+    );
 
   const rows = (data ?? []) as BingoPlayer[];
   if (rows.length === 1) return rows[0];
@@ -153,7 +170,7 @@ export async function resolveMyBingoPlayer(
     console.warn(
       `[players] registered_by=${userId} matches ${rows.length} players in bingo ${bingoId} — ` +
         "ambiguous (likely an admin who registered multiple players via the Team Drafter), " +
-        "treating as no self-registration rather than guessing which row is \"me\".",
+        'treating as no self-registration rather than guessing which row is "me".'
     );
   }
   return null;
@@ -162,7 +179,10 @@ export async function resolveMyBingoPlayer(
 /**
  * Remove a player from a bingo (cascades snapshots and side accounts).
  */
-export async function removeBingoPlayer(bingoId: string, rsn: string): Promise<void> {
+export async function removeBingoPlayer(
+  bingoId: string,
+  rsn: string
+): Promise<void> {
   const db = getDb();
   const { error } = await db
     .from("bingo_players")
@@ -170,7 +190,8 @@ export async function removeBingoPlayer(bingoId: string, rsn: string): Promise<v
     .eq("bingo_id", bingoId)
     .eq("rsn", rsn);
 
-  if (error) throw new Error(`Failed to remove player "${rsn}": ${error.message}`);
+  if (error)
+    throw new Error(`Failed to remove player "${rsn}": ${error.message}`);
 }
 
 /**
@@ -179,7 +200,7 @@ export async function removeBingoPlayer(bingoId: string, rsn: string): Promise<v
 export async function updatePlayerTeam(
   bingoId: string,
   rsn: string,
-  teamId: string | null,
+  teamId: string | null
 ): Promise<BingoPlayer> {
   const db = getDb();
   const { data, error } = await db
@@ -190,7 +211,8 @@ export async function updatePlayerTeam(
     .select()
     .single();
 
-  if (error || !data) throw new Error(`Failed to update team for "${rsn}": ${error?.message}`);
+  if (error || !data)
+    throw new Error(`Failed to update team for "${rsn}": ${error?.message}`);
   return data as BingoPlayer;
 }
 
@@ -202,7 +224,7 @@ export async function updatePlayerTeam(
 export async function updatePlayerCaptain(
   bingoId: string,
   rsn: string,
-  captainTeamId: string | null,
+  captainTeamId: string | null
 ): Promise<BingoPlayer> {
   const db = getDb();
 
@@ -243,7 +265,11 @@ export async function updatePlayerCaptain(
  * than letting it bubble up as an unrelated 500 (see checkRsnChange, which
  * catches this and falls back to the unresolved-log path).
  */
-export async function updatePlayerRsn(playerId: string, oldRsn: string, newRsn: string): Promise<BingoPlayer> {
+export async function updatePlayerRsn(
+  playerId: string,
+  oldRsn: string,
+  newRsn: string
+): Promise<BingoPlayer> {
   const db = getDb();
   const { data, error } = await db
     .rpc("rename_confirmed_player_rsn", {
@@ -253,7 +279,10 @@ export async function updatePlayerRsn(playerId: string, oldRsn: string, newRsn: 
     })
     .single();
 
-  if (error || !data) throw new Error(`Failed to update RSN for player ${playerId}: ${error?.message}`);
+  if (error || !data)
+    throw new Error(
+      `Failed to update RSN for player ${playerId}: ${error?.message}`
+    );
   return data as BingoPlayer;
 }
 
@@ -296,11 +325,14 @@ export async function savePlayerSnapshot(
   playerId: string,
   type: "start" | "current",
   data: HiscoreData,
-  sideAccountId?: string,
+  sideAccountId?: string
 ): Promise<PlayerSnapshot> {
   const db = getDb();
 
-  const rpcName = type === "start" ? "upsert_player_hiscore_start" : "upsert_player_hiscore_current";
+  const rpcName =
+    type === "start"
+      ? "upsert_player_hiscore_start"
+      : "upsert_player_hiscore_current";
 
   const { data: saved, error } = await db.rpc(rpcName, {
     p_player_id: playerId,
@@ -310,7 +342,8 @@ export async function savePlayerSnapshot(
     p_taken_at: new Date().toISOString(),
   });
 
-  if (error || !saved) throw new Error(`Failed to save ${type} snapshot: ${error?.message}`);
+  if (error || !saved)
+    throw new Error(`Failed to save ${type} snapshot: ${error?.message}`);
   return saved as PlayerSnapshot;
 }
 
@@ -334,12 +367,22 @@ export async function savePlayerSnapshot(
  * effectively-single-writer operation (one admin action or one cron tick,
  * guarded by uq_bingos_one_active), not a hot concurrent path.
  */
-export async function clearStartSnapshot(playerId: string, sideAccountId?: string): Promise<void> {
+export async function clearStartSnapshot(
+  playerId: string,
+  sideAccountId?: string
+): Promise<void> {
   const db = getDb();
-  let query = db.from("bingo_player_hiscores").delete().eq("player_id", playerId).eq("type", "start");
-  query = sideAccountId ? query.eq("side_account_id", sideAccountId) : query.is("side_account_id", null);
+  let query = db
+    .from("bingo_player_hiscores")
+    .delete()
+    .eq("player_id", playerId)
+    .eq("type", "start");
+  query = sideAccountId
+    ? query.eq("side_account_id", sideAccountId)
+    : query.is("side_account_id", null);
   const { error } = await query;
-  if (error) throw new Error(`Failed to clear start snapshot: ${error.message}`);
+  if (error)
+    throw new Error(`Failed to clear start snapshot: ${error.message}`);
 }
 
 /**
@@ -399,8 +442,14 @@ export async function getAllPlayerSnapshots(bingoId: string): Promise<
 
   return players.map((player: BingoPlayer) => ({
     player,
-    start: snapshotRows.find((s) => s.player_id === player.id && s.type === "start") ?? null,
-    current: snapshotRows.find((s) => s.player_id === player.id && s.type === "current") ?? null,
+    start:
+      snapshotRows.find(
+        (s) => s.player_id === player.id && s.type === "start"
+      ) ?? null,
+    current:
+      snapshotRows.find(
+        (s) => s.player_id === player.id && s.type === "current"
+      ) ?? null,
   }));
 }
 
@@ -411,7 +460,9 @@ export async function getAllPlayerSnapshots(bingoId: string): Promise<
 /**
  * Get all side accounts for a player.
  */
-export async function getSideAccounts(playerId: string): Promise<SideAccount[]> {
+export async function getSideAccounts(
+  playerId: string
+): Promise<SideAccount[]> {
   const db = getDb();
   const { data, error } = await db
     .from("bingo_player_side_accounts")
@@ -430,7 +481,7 @@ export async function addSideAccount(
   playerId: string,
   rsn: string,
   notes?: string,
-  addedBy?: string,
+  addedBy?: string
 ): Promise<SideAccount> {
   const db = getDb();
 
@@ -438,12 +489,22 @@ export async function addSideAccount(
   // exists. Re-adding an already-tracked RSN must be a race-free no-op — a
   // merge-duplicates upsert would wipe existing notes/added_by on every
   // re-add.
-  const { error: insertError } = await db.from("bingo_player_side_accounts").upsert(
-    { player_id: playerId, rsn, notes: notes ?? null, added_by: addedBy ?? null },
-    { onConflict: "player_id,rsn", ignoreDuplicates: true },
-  );
+  const { error: insertError } = await db
+    .from("bingo_player_side_accounts")
+    .upsert(
+      {
+        player_id: playerId,
+        rsn,
+        notes: notes ?? null,
+        added_by: addedBy ?? null,
+      },
+      { onConflict: "player_id,rsn", ignoreDuplicates: true }
+    );
 
-  if (insertError) throw new Error(`Failed to add side account "${rsn}": ${insertError.message}`);
+  if (insertError)
+    throw new Error(
+      `Failed to add side account "${rsn}": ${insertError.message}`
+    );
 
   const { data, error } = await db
     .from("bingo_player_side_accounts")
@@ -452,7 +513,8 @@ export async function addSideAccount(
     .eq("rsn", rsn)
     .single();
 
-  if (error || !data) throw new Error(`Failed to add side account "${rsn}": ${error?.message}`);
+  if (error || !data)
+    throw new Error(`Failed to add side account "${rsn}": ${error?.message}`);
   return data as SideAccount;
 }
 
@@ -462,7 +524,10 @@ export async function addSideAccount(
  * "confirmed-by-hiscores WOM rename only" contract, same collision handling
  * (bingo_player_side_accounts' UNIQUE (player_id, rsn)).
  */
-export async function updateSideAccountRsn(sideAccountId: string, newRsn: string): Promise<SideAccount> {
+export async function updateSideAccountRsn(
+  sideAccountId: string,
+  newRsn: string
+): Promise<SideAccount> {
   const db = getDb();
   const { data, error } = await db
     .from("bingo_player_side_accounts")
@@ -472,7 +537,9 @@ export async function updateSideAccountRsn(sideAccountId: string, newRsn: string
     .single();
 
   if (error || !data) {
-    throw new Error(`Failed to update RSN for side account ${sideAccountId}: ${error?.message}`);
+    throw new Error(
+      `Failed to update RSN for side account ${sideAccountId}: ${error?.message}`
+    );
   }
   return data as SideAccount;
 }
@@ -494,7 +561,7 @@ export async function removeSideAccount(sideAccountId: string): Promise<void> {
  * Get all side accounts for every player in a bingo, keyed by player_id.
  */
 export async function getAllSideAccounts(
-  bingoId: string,
+  bingoId: string
 ): Promise<Record<string, SideAccount[]>> {
   const db = getDb();
 
@@ -539,11 +606,11 @@ export async function getAllSideAccounts(
  * above — rather than a per-side-account round trip.
  */
 export async function getSideAccountsMissingStartSnapshot(
-  bingoId: string,
+  bingoId: string
 ): Promise<Array<{ playerId: string; sideAccount: SideAccount }>> {
   const byPlayer = await getAllSideAccounts(bingoId);
   const allPairs = Object.entries(byPlayer).flatMap(([playerId, accounts]) =>
-    accounts.map((sideAccount) => ({ playerId, sideAccount })),
+    accounts.map((sideAccount) => ({ playerId, sideAccount }))
   );
   if (!allPairs.length) return [];
 
@@ -553,14 +620,17 @@ export async function getSideAccountsMissingStartSnapshot(
     .select("side_account_id")
     .in(
       "side_account_id",
-      allPairs.map((p) => p.sideAccount.id),
+      allPairs.map((p) => p.sideAccount.id)
     )
     .eq("type", "start");
 
-  if (error) throw new Error(`Failed to check side account snapshots: ${error.message}`);
+  if (error)
+    throw new Error(`Failed to check side account snapshots: ${error.message}`);
 
   const haveStart = new Set(
-    ((data ?? []) as Array<{ side_account_id: string }>).map((r) => r.side_account_id),
+    ((data ?? []) as Array<{ side_account_id: string }>).map(
+      (r) => r.side_account_id
+    )
   );
   return allPairs.filter((p) => !haveStart.has(p.sideAccount.id));
 }
@@ -578,10 +648,16 @@ export async function getSideAccountsMissingStartSnapshot(
  * `.get(id)!` without an extra existence check.
  */
 export async function getSideAccountSnapshotsBulk(
-  sideAccountIds: string[],
-): Promise<Map<string, { start: PlayerSnapshot | null; current: PlayerSnapshot | null }>> {
-  const result = new Map<string, { start: PlayerSnapshot | null; current: PlayerSnapshot | null }>();
-  for (const id of sideAccountIds) result.set(id, { start: null, current: null });
+  sideAccountIds: string[]
+): Promise<
+  Map<string, { start: PlayerSnapshot | null; current: PlayerSnapshot | null }>
+> {
+  const result = new Map<
+    string,
+    { start: PlayerSnapshot | null; current: PlayerSnapshot | null }
+  >();
+  for (const id of sideAccountIds)
+    result.set(id, { start: null, current: null });
   if (!sideAccountIds.length) return result;
 
   const db = getDb();
@@ -590,7 +666,8 @@ export async function getSideAccountSnapshotsBulk(
     .select("*")
     .in("side_account_id", sideAccountIds);
 
-  if (error) throw new Error(`Failed to get side account snapshots: ${error.message}`);
+  if (error)
+    throw new Error(`Failed to get side account snapshots: ${error.message}`);
 
   for (const row of (data ?? []) as PlayerSnapshot[]) {
     if (!row.side_account_id) continue;

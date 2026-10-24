@@ -18,7 +18,7 @@ export const HISCORE_CONCURRENCY = 5;
 export async function mapWithConcurrency<T, R>(
   items: T[],
   limit: number,
-  fn: (item: T, index: number) => Promise<R>,
+  fn: (item: T, index: number) => Promise<R>
 ): Promise<PromiseSettledResult<R>[]> {
   const results: PromiseSettledResult<R>[] = new Array(items.length);
   let cursor = 0;

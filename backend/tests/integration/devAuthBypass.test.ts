@@ -67,35 +67,46 @@ afterAll(async () => {
   await Promise.all(createdUserIds.map((id) => deleteTestUser(id)));
 });
 
-describe.skipIf(!stack.reachable)("protect's ALLOW_DEV_AUTH no-token bypass", () => {
-  test("ALLOW_DEV_AUTH=true: a no-token request is accepted and treated as the local-dev admin user", async () => {
-    const { status, body } = await withAllowDevAuth("true", () => jsonRequest(port, "GET", "/api/admin/bingo", {}));
+describe.skipIf(!stack.reachable)(
+  "protect's ALLOW_DEV_AUTH no-token bypass",
+  () => {
+    test("ALLOW_DEV_AUTH=true: a no-token request is accepted and treated as the local-dev admin user", async () => {
+      const { status, body } = await withAllowDevAuth("true", () =>
+        jsonRequest(port, "GET", "/api/admin/bingo", {})
+      );
 
-    // GET /api/admin/bingo is authorize("admin")-gated — a 200 here proves
-    // the injected user actually carries role "admin", not just "some user".
-    expect(status).toBe(200);
-    expect(body.success).toBe(true);
-    expect(Array.isArray(body.data)).toBe(true);
-  });
+      // GET /api/admin/bingo is authorize("admin")-gated — a 200 here proves
+      // the injected user actually carries role "admin", not just "some user".
+      expect(status).toBe(200);
+      expect(body.success).toBe(true);
+      expect(Array.isArray(body.data)).toBe(true);
+    });
 
-  test("ALLOW_DEV_AUTH unset: the SAME no-token request is rejected (bypass is opt-in, not a default)", async () => {
-    const { status } = await withAllowDevAuth(undefined, () => jsonRequest(port, "GET", "/api/admin/bingo", {}));
-    expect(status).toBe(401);
-  });
+    test("ALLOW_DEV_AUTH unset: the SAME no-token request is rejected (bypass is opt-in, not a default)", async () => {
+      const { status } = await withAllowDevAuth(undefined, () =>
+        jsonRequest(port, "GET", "/api/admin/bingo", {})
+      );
+      expect(status).toBe(401);
+    });
 
-  test("ALLOW_DEV_AUTH=false: the SAME no-token request is rejected (explicit false isn't loosely truthy)", async () => {
-    const { status } = await withAllowDevAuth("false", () => jsonRequest(port, "GET", "/api/admin/bingo", {}));
-    expect(status).toBe(401);
-  });
+    test("ALLOW_DEV_AUTH=false: the SAME no-token request is rejected (explicit false isn't loosely truthy)", async () => {
+      const { status } = await withAllowDevAuth("false", () =>
+        jsonRequest(port, "GET", "/api/admin/bingo", {})
+      );
+      expect(status).toBe(401);
+    });
 
-  test("a real token still wins over the bypass — a non-admin caller is NOT silently promoted to the dev admin", async () => {
-    // Even with the bypass enabled, a request that DOES carry a token must
-    // be evaluated as that token's real user, not upgraded to the dev
-    // admin — the bypass only ever fires for a MISSING token, never as a
-    // way to escalate a real caller's role.
-    const { status } = await withAllowDevAuth("true", () =>
-      jsonRequest(port, "GET", "/api/admin/bingo", { token: signTestToken(plainUser) }),
-    );
-    expect(status).toBe(403);
-  });
-});
+    test("a real token still wins over the bypass — a non-admin caller is NOT silently promoted to the dev admin", async () => {
+      // Even with the bypass enabled, a request that DOES carry a token must
+      // be evaluated as that token's real user, not upgraded to the dev
+      // admin — the bypass only ever fires for a MISSING token, never as a
+      // way to escalate a real caller's role.
+      const { status } = await withAllowDevAuth("true", () =>
+        jsonRequest(port, "GET", "/api/admin/bingo", {
+          token: signTestToken(plainUser),
+        })
+      );
+      expect(status).toBe(403);
+    });
+  }
+);

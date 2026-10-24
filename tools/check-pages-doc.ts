@@ -43,9 +43,11 @@ if (missing.length > 0) {
   console.error(
     `README.md's Pages table is missing ${missing.length} route(s) that exist in Routes.tsx:\n` +
       missing.map((route) => `  - ${route}`).join("\n") +
-      `\n\nAdd each to the Pages table in README.md (see CLAUDE.md's pointer to it).`,
+      `\n\nAdd each to the Pages table in README.md (see CLAUDE.md's pointer to it).`
   );
   process.exit(1);
 }
 
-console.log(`OK: all ${routes.size} routes in Routes.tsx are documented in README.md's Pages table.`);
+console.log(
+  `OK: all ${routes.size} routes in Routes.tsx are documented in README.md's Pages table.`
+);

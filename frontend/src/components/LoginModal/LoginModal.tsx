@@ -183,6 +183,7 @@ const LoginModal = ({
               },
             }}
           />
+          <Button href="/recover" onClick={onClose}>Forgot your password?</Button>
           <FormControlLabel
             control={
               <Checkbox

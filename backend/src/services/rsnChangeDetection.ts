@@ -90,7 +90,9 @@ async function fetchWomNameChanges(username: string): Promise<WomNameChange[]> {
 
   if (response.status === 404) return [];
   if (!response.ok) {
-    throw new Error(`WOM /names lookup for "${username}" failed: HTTP ${response.status}`);
+    throw new Error(
+      `WOM /names lookup for "${username}" failed: HTTP ${response.status}`
+    );
   }
 
   const body: unknown = await response.json();
@@ -121,7 +123,9 @@ async function fetchWomNameChanges(username: string): Promise<WomNameChange[]> {
  * timestamp requirement does, and also caps the walk without relying purely
  * on MAX_RENAME_HOPS.
  */
-async function resolveWomChainedRename(startRsn: string): Promise<string | null> {
+async function resolveWomChainedRename(
+  startRsn: string
+): Promise<string | null> {
   let current = startRsn;
   const seen = new Set([current.toLowerCase()]);
   let after = -Infinity;
@@ -135,9 +139,12 @@ async function resolveWomChainedRename(startRsn: string): Promise<string | null>
           typeof c.status === "string" &&
           c.status.toLowerCase() === "approved" &&
           typeof c.oldName === "string" &&
-          c.oldName.toLowerCase() === current.toLowerCase(),
+          c.oldName.toLowerCase() === current.toLowerCase()
       )
-      .map((c) => ({ change: c, at: new Date(c.resolvedAt ?? c.createdAt).getTime() }))
+      .map((c) => ({
+        change: c,
+        at: new Date(c.resolvedAt ?? c.createdAt).getTime(),
+      }))
       .filter((c) => Number.isFinite(c.at) && c.at > after)
       .sort((a, b) => b.at - a.at); // most recent (but still > `after`) first
 
@@ -169,7 +176,9 @@ interface ResolvedRename {
  * accounts per the design doc. Returns null on any of: no WOM data, no
  * approved change, or the candidate name not resolving.
  */
-async function tryResolveRenameViaWom(oldRsn: string): Promise<ResolvedRename | null> {
+async function tryResolveRenameViaWom(
+  oldRsn: string
+): Promise<ResolvedRename | null> {
   const finalName = await resolveWomChainedRename(oldRsn);
   if (!finalName) return null;
 
@@ -202,7 +211,7 @@ interface RsnChangeSubject {
 async function checkRsnChangeForSubject(
   subject: RsnChangeSubject,
   hiscoreFound: boolean,
-  source: RsnChangeSource,
+  source: RsnChangeSource
 ): Promise<CheckRsnChangeResult> {
   const label = subject.kind === "player" ? "player" : "side account";
 
@@ -231,13 +240,17 @@ async function checkRsnChangeForSubject(
       try {
         renameResult = await tryResolveRenameViaWom(subject.rsn);
       } catch (e) {
-        console.error(`[rsnChangeDetection] Wise Old Man lookup failed for "${subject.rsn}":`, e);
+        console.error(
+          `[rsnChangeDetection] Wise Old Man lookup failed for "${subject.rsn}":`,
+          e
+        );
       }
     }
 
     if (renameResult) {
       try {
-        if (subject.kind === "player") await updatePlayerRsn(subject.id, subject.rsn, renameResult.newRsn);
+        if (subject.kind === "player")
+          await updatePlayerRsn(subject.id, subject.rsn, renameResult.newRsn);
         else await updateSideAccountRsn(subject.id, renameResult.newRsn);
         await resolveRsnChangeAutoRename(row.id, renameResult.newRsn);
 
@@ -246,10 +259,14 @@ async function checkRsnChangeForSubject(
         // output without having to go dig through rsn_change_log.
         console.warn(
           `[rsnChangeDetection] Auto-resolved RSN rename: "${subject.rsn}" -> "${renameResult.newRsn}" ` +
-            `(${label} ${subject.id}, source: ${source}, via Wise Old Man).`,
+            `(${label} ${subject.id}, source: ${source}, via Wise Old Man).`
         );
 
-        return { renamed: true, newRsn: renameResult.newRsn, hiscoreData: renameResult.hiscoreData };
+        return {
+          renamed: true,
+          newRsn: renameResult.newRsn,
+          hiscoreData: renameResult.hiscoreData,
+        };
       } catch (e) {
         // e.g. the new name collides with another already-registered
         // player/side account (23505) — fall through to the unresolved
@@ -257,7 +274,7 @@ async function checkRsnChangeForSubject(
         console.error(
           `[rsnChangeDetection] Found a Wise Old Man rename for "${subject.rsn}" -> "${renameResult.newRsn}" ` +
             `but failed to apply it:`,
-          e,
+          e
         );
       }
     }
@@ -268,11 +285,14 @@ async function checkRsnChangeForSubject(
     console.warn(
       `[rsnChangeDetection] "${subject.rsn}" (${label} ${subject.id}) is no longer resolving on the OSRS ` +
         `hiscores and no confirmed Wise Old Man rename was found — logged as a possible RSN change ` +
-        `(source: ${source}).`,
+        `(source: ${source}).`
     );
     return { renamed: false };
   } catch (e) {
-    console.error(`[rsnChangeDetection] Failed to record RSN status for "${subject.rsn}":`, e);
+    console.error(
+      `[rsnChangeDetection] Failed to record RSN status for "${subject.rsn}":`,
+      e
+    );
     return { renamed: false };
   }
 }
@@ -297,21 +317,25 @@ async function checkRsnChangeForSubject(
 export async function checkRsnChange(
   player: { id: string; rsn: string },
   hiscoreFound: boolean,
-  source: RsnChangeSource,
+  source: RsnChangeSource
 ): Promise<CheckRsnChangeResult> {
-  return checkRsnChangeForSubject({ kind: "player", id: player.id, rsn: player.rsn }, hiscoreFound, source);
+  return checkRsnChangeForSubject(
+    { kind: "player", id: player.id, rsn: player.rsn },
+    hiscoreFound,
+    source
+  );
 }
 
 /** Side-account counterpart of checkRsnChange — see services/sideAccountSnapshots.ts. */
 export async function checkSideAccountRsnChange(
   sideAccount: { id: string; rsn: string },
   hiscoreFound: boolean,
-  source: RsnChangeSource,
+  source: RsnChangeSource
 ): Promise<CheckRsnChangeResult> {
   return checkRsnChangeForSubject(
     { kind: "side_account", id: sideAccount.id, rsn: sideAccount.rsn },
     hiscoreFound,
-    source,
+    source
   );
 }
 
