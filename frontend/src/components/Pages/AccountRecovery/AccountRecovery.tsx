@@ -1,5 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Alert, Button, CircularProgress, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Button, CircularProgress, IconButton, InputAdornment, Stack, TextField, Typography } from '@mui/material';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { Link } from 'react-router-dom';
 import PageLayout from '../../../layout/PageLayout/PageLayout';
 import { clearSessionMarker } from '../../../utils/authSession';
@@ -59,6 +61,8 @@ export function AccountRecovery() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -71,6 +75,8 @@ export function AccountRecovery() {
       setError('');
       setPassword('');
       setConfirmation('');
+      setShowPassword(false);
+      setShowConfirmation(false);
     };
     window.addEventListener('hashchange', openLink);
     return () => window.removeEventListener('hashchange', openLink);
@@ -114,6 +120,8 @@ export function AccountRecovery() {
         clearSessionMarker();
         setPassword('');
         setConfirmation('');
+        setShowPassword(false);
+        setShowConfirmation(false);
         // Let the existing auth provider drop any cached user without opening a login modal.
         window.dispatchEvent(new CustomEvent('auth:role-stale'));
       }
@@ -189,21 +197,59 @@ export function AccountRecovery() {
                 </Typography>
                 <TextField
                   label="New password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
                   required
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   disabled={busy}
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            type="button"
+                            aria-label={showPassword ? 'Hide new password' : 'Show new password'}
+                            aria-pressed={showPassword}
+                            onClick={() => setShowPassword((visible) => !visible)}
+                            onMouseDown={(event) => event.preventDefault()}
+                            disabled={busy}
+                            edge="end"
+                          >
+                            {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
                 />
                 <TextField
                   label="Confirm new password"
-                  type="password"
+                  type={showConfirmation ? 'text' : 'password'}
                   autoComplete="new-password"
                   required
                   value={confirmation}
                   onChange={(event) => setConfirmation(event.target.value)}
                   disabled={busy}
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            type="button"
+                            aria-label={showConfirmation ? 'Hide password confirmation' : 'Show password confirmation'}
+                            aria-pressed={showConfirmation}
+                            onClick={() => setShowConfirmation((visible) => !visible)}
+                            onMouseDown={(event) => event.preventDefault()}
+                            disabled={busy}
+                            edge="end"
+                          >
+                            {showConfirmation ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
                 />
               </>
             )}

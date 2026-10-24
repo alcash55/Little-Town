@@ -159,8 +159,11 @@ const LoginModal = ({
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton
+                      type="button"
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      aria-pressed={showPassword}
                       onClick={() => setShowPassword((v) => !v)}
+                      onMouseDown={(event) => event.preventDefault()}
                       edge="end"
                       size="small"
                       sx={{ color: 'rgba(255,255,255,0.5)', '&:hover': { color: 'white' } }}
