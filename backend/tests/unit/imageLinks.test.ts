@@ -11,7 +11,9 @@ import {
 // deliberately wrong one for the magic-byte mismatch test.
 // -------------------------------------------------------
 
-const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00]);
+const PNG_BYTES = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00,
+]);
 const JPEG_BYTES = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
 const GIF_BYTES = Buffer.from("GIF89a" + "\0".repeat(10));
 const WEBP_BYTES = Buffer.concat([
@@ -28,7 +30,9 @@ afterEach(() => {
   globalThis.fetch = originalFetch;
 });
 
-function stubFetch(impl: (url: string, init?: RequestInit) => Promise<Response> | Response): void {
+function stubFetch(
+  impl: (url: string, init?: RequestInit) => Promise<Response> | Response
+): void {
   globalThis.fetch = mock((input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input.toString();
     return impl(url, init);
@@ -41,7 +45,9 @@ function stubFetch(impl: (url: string, init?: RequestInit) => Promise<Response> 
 
 describe("extractImgurCandidates — happy paths", () => {
   test("i.imgur.com direct link with png extension", () => {
-    const result = extractImgurCandidates("look at this https://i.imgur.com/7PiSDtp.png cool right");
+    const result = extractImgurCandidates(
+      "look at this https://i.imgur.com/7PiSDtp.png cool right"
+    );
     expect(result).toEqual([{ id: "7PiSDtp", ext: "png" }]);
   });
 
@@ -51,7 +57,9 @@ describe("extractImgurCandidates — happy paths", () => {
     ["gif", "gif"],
     ["webp", "webp"],
   ])("i.imgur.com direct link with %s extension", (ext) => {
-    const result = extractImgurCandidates(`https://i.imgur.com/abcDE123.${ext}`);
+    const result = extractImgurCandidates(
+      `https://i.imgur.com/abcDE123.${ext}`
+    );
     expect(result).toEqual([{ id: "abcDE123", ext }]);
   });
 
@@ -67,7 +75,7 @@ describe("extractImgurCandidates — happy paths", () => {
 
   test("multiple valid links in one message, in order", () => {
     const result = extractImgurCandidates(
-      "first https://imgur.com/aaaaa1 then https://i.imgur.com/bbbbb2.jpg",
+      "first https://imgur.com/aaaaa1 then https://i.imgur.com/bbbbb2.jpg"
     );
     expect(result).toEqual([
       { id: "aaaaa1", ext: "png" },
@@ -89,13 +97,18 @@ describe("extractImgurCandidates — happy paths", () => {
   });
 
   test("no links in message returns empty array", () => {
-    expect(extractImgurCandidates("just some regular chat, no links here")).toEqual([]);
+    expect(
+      extractImgurCandidates("just some regular chat, no links here")
+    ).toEqual([]);
   });
 });
 
 describe("extractImgurCandidates — hostile / malformed URLs are rejected", () => {
   const hostileCases: [string, string][] = [
-    ["plain http:// scheme is rejected (not https)", "http://i.imgur.com/7PiSDtp.png"],
+    [
+      "plain http:// scheme is rejected (not https)",
+      "http://i.imgur.com/7PiSDtp.png",
+    ],
     [
       "userinfo trick: hostname is actually evil.com",
       "https://i.imgur.com@evil.com/x.png",
@@ -109,7 +122,10 @@ describe("extractImgurCandidates — hostile / malformed URLs are rejected", () 
       "https://i.imgur.com.evil.com/x.png",
     ],
     ["explicit port is rejected", "https://i.imgur.com:8443/7PiSDtp.png"],
-    ["userinfo without an @ trick host still rejected", "https://user:pass@i.imgur.com/7PiSDtp.png"],
+    [
+      "userinfo without an @ trick host still rejected",
+      "https://user:pass@i.imgur.com/7PiSDtp.png",
+    ],
     ["album path (a/) is out of scope", "https://imgur.com/a/abc1234"],
     ["gallery path is out of scope", "https://imgur.com/gallery/abc1234"],
     ["upload path is reserved", "https://imgur.com/upload"],
@@ -118,7 +134,10 @@ describe("extractImgurCandidates — hostile / malformed URLs are rejected", () 
     ["id too long (11 chars)", "https://imgur.com/abcdefghijk"],
     ["id with path traversal", "https://imgur.com/../etc/passwd"],
     ["id with non-alphanumeric characters", "https://imgur.com/abc-123"],
-    ["i.imgur.com with unsupported extension", "https://i.imgur.com/7PiSDtp.svg"],
+    [
+      "i.imgur.com with unsupported extension",
+      "https://i.imgur.com/7PiSDtp.svg",
+    ],
     ["i.imgur.com with no extension at all", "https://i.imgur.com/7PiSDtp"],
     ["completely unrelated domain", "https://example.com/7PiSDtp.png"],
   ];
@@ -140,7 +159,10 @@ describe("downloadImgurImage", () => {
       expect(url).toBe("https://i.imgur.com/7PiSDtp.png");
       return new Response(PNG_BYTES, {
         status: 200,
-        headers: { "content-type": "image/png", "content-length": String(PNG_BYTES.length) },
+        headers: {
+          "content-type": "image/png",
+          "content-length": String(PNG_BYTES.length),
+        },
       });
     });
 
@@ -158,7 +180,10 @@ describe("downloadImgurImage", () => {
     let requestedUrl = "";
     stubFetch((url) => {
       requestedUrl = url;
-      return new Response(PNG_BYTES, { status: 200, headers: { "content-type": "image/png" } });
+      return new Response(PNG_BYTES, {
+        status: 200,
+        headers: { "content-type": "image/png" },
+      });
     });
 
     await downloadImgurImage({ id: "abcDE123", ext: "jpg" });
@@ -170,7 +195,10 @@ describe("downloadImgurImage", () => {
     globalThis.fetch = mock((_input: RequestInfo | URL, init?: RequestInit) => {
       seenInit = init;
       return Promise.resolve(
-        new Response(PNG_BYTES, { status: 200, headers: { "content-type": "image/png" } }),
+        new Response(PNG_BYTES, {
+          status: 200,
+          headers: { "content-type": "image/png" },
+        })
       );
     }) as unknown as typeof fetch;
 
@@ -180,7 +208,13 @@ describe("downloadImgurImage", () => {
   });
 
   test("302 (deleted/unavailable image) is skipped, not followed", async () => {
-    stubFetch(() => new Response(null, { status: 302, headers: { location: "/removed.png" } }));
+    stubFetch(
+      () =>
+        new Response(null, {
+          status: 302,
+          headers: { location: "/removed.png" },
+        })
+    );
 
     const result = await downloadImgurImage(candidate);
     expect(result).toEqual({ ok: false, reason: "redirected" });
@@ -199,7 +233,13 @@ describe("downloadImgurImage", () => {
   });
 
   test("wrong Content-Type is skipped", async () => {
-    stubFetch(() => new Response(PNG_BYTES, { status: 200, headers: { "content-type": "text/html" } }));
+    stubFetch(
+      () =>
+        new Response(PNG_BYTES, {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        })
+    );
     const result = await downloadImgurImage(candidate);
     expect(result).toEqual({ ok: false, reason: "content_type_mismatch" });
   });
@@ -212,7 +252,11 @@ describe("downloadImgurImage", () => {
 
   test("magic-byte mismatch (Content-Type image/png, body not actually PNG) is skipped", async () => {
     stubFetch(
-      () => new Response(NOT_AN_IMAGE_BYTES, { status: 200, headers: { "content-type": "image/png" } }),
+      () =>
+        new Response(NOT_AN_IMAGE_BYTES, {
+          status: 200,
+          headers: { "content-type": "image/png" },
+        })
     );
     const result = await downloadImgurImage(candidate);
     expect(result).toEqual({ ok: false, reason: "magic_byte_mismatch" });
@@ -222,12 +266,21 @@ describe("downloadImgurImage", () => {
     ["jpeg", JPEG_BYTES, "image/jpeg", "jpg"],
     ["gif", GIF_BYTES, "image/gif", "gif"],
     ["webp", WEBP_BYTES, "image/webp", "webp"],
-  ])("magic bytes for %s are recognized as valid", async (_label, bytes, contentType, expectedExt) => {
-    stubFetch(() => new Response(bytes, { status: 200, headers: { "content-type": contentType } }));
-    const result = await downloadImgurImage(candidate);
-    expect(result.ok).toBe(true);
-    if (result.ok) expect(result.ext).toBe(expectedExt);
-  });
+  ])(
+    "magic bytes for %s are recognized as valid",
+    async (_label, bytes, contentType, expectedExt) => {
+      stubFetch(
+        () =>
+          new Response(bytes, {
+            status: 200,
+            headers: { "content-type": contentType },
+          })
+      );
+      const result = await downloadImgurImage(candidate);
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.ext).toBe(expectedExt);
+    }
+  );
 
   test("body larger than the 20 MiB cap per Content-Length header is rejected without downloading", async () => {
     const oversizedLength = 20 * 1024 * 1024 + 1;
@@ -235,8 +288,11 @@ describe("downloadImgurImage", () => {
       () =>
         new Response(PNG_BYTES, {
           status: 200,
-          headers: { "content-type": "image/png", "content-length": String(oversizedLength) },
-        }),
+          headers: {
+            "content-type": "image/png",
+            "content-length": String(oversizedLength),
+          },
+        })
     );
     const result = await downloadImgurImage(candidate);
     expect(result).toEqual({ ok: false, reason: "too_large" });
@@ -257,7 +313,7 @@ describe("downloadImgurImage", () => {
         new Response(stream, {
           status: 200,
           headers: { "content-type": "image/png" },
-        }),
+        })
     ) as unknown as typeof fetch;
 
     const result = await downloadImgurImage(candidate);
@@ -265,13 +321,17 @@ describe("downloadImgurImage", () => {
   });
 
   test("network error (fetch throws) is treated as a skip, not an unhandled rejection", async () => {
-    globalThis.fetch = mock(() => Promise.reject(new Error("ECONNRESET"))) as unknown as typeof fetch;
+    globalThis.fetch = mock(() =>
+      Promise.reject(new Error("ECONNRESET"))
+    ) as unknown as typeof fetch;
     const result = await downloadImgurImage(candidate);
     expect(result).toEqual({ ok: false, reason: "network_error" });
   });
 
   test("network error is logged by message only, not the Error object's stack (#86)", async () => {
-    globalThis.fetch = mock(() => Promise.reject(new Error("ECONNRESET"))) as unknown as typeof fetch;
+    globalThis.fetch = mock(() =>
+      Promise.reject(new Error("ECONNRESET"))
+    ) as unknown as typeof fetch;
     const errorSpy = mock(() => undefined);
     const originalConsoleError = console.error;
     console.error = errorSpy as unknown as typeof console.error;

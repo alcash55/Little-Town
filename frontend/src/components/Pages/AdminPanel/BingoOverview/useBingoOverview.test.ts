@@ -440,24 +440,44 @@ describe('useBingoOverview — /bingo/latest fallback and ended-banner logic (TE
   });
 });
 
-
 describe('hiscore history retention metadata', () => {
   it('refreshes the deletion date after extension and clears it for a new bingo', async () => {
-    const completed = { id: 'bingo-1', name: 'Completed bingo', status: 'complete', teamObjects: [] };
+    const completed = {
+      id: 'bingo-1',
+      name: 'Completed bingo',
+      status: 'complete',
+      teamObjects: [],
+    };
     installRouter({
       '/bingo/details': { data: null },
-      '/bingo/latest': { data: { bingo: completed, pendingScreenshots: 0, historyDeletionAt: '2026-10-22T12:00:00Z' } },
+      '/bingo/latest': {
+        data: {
+          bingo: completed,
+          pendingScreenshots: 0,
+          historyDeletionAt: '2026-10-22T12:00:00Z',
+        },
+      },
     });
     const { result, unmount } = renderHook(() => useBingoOverview());
     await vi.waitFor(() => expect(result.current.historyDeletionAt).toBe('2026-10-22T12:00:00Z'));
     installRouter({
       '/bingo/details': { data: null },
-      '/bingo/latest': { data: { bingo: completed, pendingScreenshots: 0, historyDeletionAt: '2026-10-25T12:00:00Z' } },
+      '/bingo/latest': {
+        data: {
+          bingo: completed,
+          pendingScreenshots: 0,
+          historyDeletionAt: '2026-10-25T12:00:00Z',
+        },
+      },
     });
-    await act(async () => { await vi.advanceTimersByTimeAsync(45_000); });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(45_000);
+    });
     expect(result.current.historyDeletionAt).toBe('2026-10-25T12:00:00Z');
     installRouter();
-    await act(async () => { await vi.advanceTimersByTimeAsync(45_000); });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(45_000);
+    });
     expect(result.current.historyDeletionAt).toBeNull();
     expect(result.current.bingo?.status).toBe('active');
     unmount();
@@ -465,11 +485,19 @@ describe('hiscore history retention metadata', () => {
 
   it('removes an expired notice on the next metadata poll', async () => {
     const bingo = { id: 'bingo-1', name: 'Completed bingo', status: 'complete' };
-    installRouter({ '/bingo/details': { data: null }, '/bingo/latest': { data: { bingo, historyDeletionAt: '2026-10-22T12:00:00Z' } } });
+    installRouter({
+      '/bingo/details': { data: null },
+      '/bingo/latest': { data: { bingo, historyDeletionAt: '2026-10-22T12:00:00Z' } },
+    });
     const { result, unmount } = renderHook(() => useBingoOverview());
     await vi.waitFor(() => expect(result.current.historyDeletionAt).not.toBeNull());
-    installRouter({ '/bingo/details': { data: null }, '/bingo/latest': { data: { bingo, historyDeletionAt: null } } });
-    await act(async () => { await vi.advanceTimersByTimeAsync(45_000); });
+    installRouter({
+      '/bingo/details': { data: null },
+      '/bingo/latest': { data: { bingo, historyDeletionAt: null } },
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(45_000);
+    });
     expect(result.current.historyDeletionAt).toBeNull();
     unmount();
   });

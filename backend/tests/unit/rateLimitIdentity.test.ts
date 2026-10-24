@@ -46,29 +46,42 @@ function get(path: string, token?: string): Promise<{ status: number }> {
         (res) => {
           res.resume();
           res.on("end", () => resolve({ status: res.statusCode ?? 0 }));
-        },
+        }
       )
       .on("error", reject);
   });
 }
 
 /** Same as get(), but carries the token as a cookie (the browser/frontend path — issue #53) instead of a header. */
-function getWithCookie(path: string, token: string): Promise<{ status: number }> {
+function getWithCookie(
+  path: string,
+  token: string
+): Promise<{ status: number }> {
   return new Promise((resolve, reject) => {
     http
       .get(
-        { host: "127.0.0.1", port, path, headers: { cookie: `authToken=${token}` } },
+        {
+          host: "127.0.0.1",
+          port,
+          path,
+          headers: { cookie: `authToken=${token}` },
+        },
         (res) => {
           res.resume();
           res.on("end", () => resolve({ status: res.statusCode ?? 0 }));
-        },
+        }
       )
       .on("error", reject);
   });
 }
 
-function signToken(id: string, secret: string = process.env.JWT_SECRET!): string {
-  return jwt.sign({ id, username: id, role: "member" }, secret, { expiresIn: "1h" });
+function signToken(
+  id: string,
+  secret: string = process.env.JWT_SECRET!
+): string {
+  return jwt.sign({ id, username: id, role: "member" }, secret, {
+    expiresIn: "1h",
+  });
 }
 
 beforeEach(async () => {

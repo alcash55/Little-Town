@@ -18,14 +18,14 @@ local dev — see [`../backend/README.md`](../backend/README.md)).
 
 ## Scripts
 
-| Script                 | Description                                                                                     |
-| ----------------------- | ------------------------------------------------------------------------------------------------ |
-| `bun run dev`           | Vite dev server on `http://localhost:3000`. Mode is `development` — never touches `.env.production`. |
-| `bun run build`         | TypeScript 7 check followed by the production Vite build. Loads `.env.production`.              |
-| `bun run typecheck`     | TypeScript 7 native compiler, with no emitted files.                                             |
-| `bun run preview`       | **Safe default.** Builds and serves the build locally, forcing `VITE_BASEURL=http://localhost:8081` in `local-preview` mode. Production auth checks stay enabled. |
-| `bun run preview:remote` | Explicit escape hatch: builds and previews using the real `.env.production` value (the deployed prod API). Only use this deliberately. |
-| `bun run test`          | Vitest.                                                                                           |
+| Script                   | Description                                                                                                                                                       |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bun run dev`            | Vite dev server on `http://localhost:3000`. Mode is `development` — never touches `.env.production`.                                                              |
+| `bun run build`          | TypeScript 7 check followed by the production Vite build. Loads `.env.production`.                                                                                |
+| `bun run typecheck`      | TypeScript 7 native compiler, with no emitted files.                                                                                                              |
+| `bun run preview`        | **Safe default.** Builds and serves the build locally, forcing `VITE_BASEURL=http://localhost:8081` in `local-preview` mode. Production auth checks stay enabled. |
+| `bun run preview:remote` | Explicit escape hatch: builds and previews using the real `.env.production` value (the deployed prod API). Only use this deliberately.                            |
+| `bun run test`           | Vitest.                                                                                                                                                           |
 
 The native TypeScript 7 compiler is installed as `typescript-native` and
 called explicitly by `typecheck`. ESLint uses the `typescript` package at
@@ -45,9 +45,9 @@ checks locally.
 
 ## Environment variables
 
-| Variable       | Description                                                                | File |
-| -------------- | --------------------------------------------------------------------------- | ---- |
-| `VITE_BASEURL` | Backend API base URL. Public (not a secret) — just the API's address.       | `.env` (local), `.env.production` (real deployed API, gitignored) |
+| Variable       | Description                                                           | File                                                              |
+| -------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `VITE_BASEURL` | Backend API base URL. Public (not a secret) — just the API's address. | `.env` (local), `.env.production` (real deployed API, gitignored) |
 
 ### Local previews
 

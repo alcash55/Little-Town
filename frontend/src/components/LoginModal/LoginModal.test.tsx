@@ -16,8 +16,6 @@ describe('LoginModal — input purpose (#81)', () => {
 
   it('declares autoComplete="current-password" on the password field, not new-password', () => {
     render(<LoginModal open onClose={() => {}} />);
-    expect(screen.getByLabelText('Password').getAttribute('autoComplete')).toBe(
-      'current-password',
-    );
+    expect(screen.getByLabelText('Password').getAttribute('autoComplete')).toBe('current-password');
   });
 });

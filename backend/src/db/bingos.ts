@@ -43,7 +43,8 @@ function mapBingo(row: Record<string, any>): BingoConfig {
       name: team.name,
       sortOrder: index,
     })),
-    tasks: row.bingo_board_tiles?.map((tile: { task: string }) => tile.task) ?? [],
+    tasks:
+      row.bingo_board_tiles?.map((tile: { task: string }) => tile.task) ?? [],
     createdBy: row.created_by ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -79,7 +80,9 @@ export async function getActiveBingo(): Promise<BingoConfig | null> {
 
 /** Look up a bingo by its explicit id, regardless of status. */
 export async function getBingoById(id: string): Promise<BingoConfig | null> {
-  const { data, error } = await bingoWithTeamsQuery().eq("id", id).maybeSingle();
+  const { data, error } = await bingoWithTeamsQuery()
+    .eq("id", id)
+    .maybeSingle();
 
   if (error) throw new Error(error.message);
   return data ? mapBingo(data) : null;
@@ -132,12 +135,14 @@ export async function saveBingoDetails(input: {
 
   const teams = input.teams ?? [];
   if (teams.length > 0) {
-    const { error: teamError } = await getDb().from("bingo_teams").insert(
-      teams.map((name) => ({
-        bingo_id: data.id,
-        name,
-      }))
-    );
+    const { error: teamError } = await getDb()
+      .from("bingo_teams")
+      .insert(
+        teams.map((name) => ({
+          bingo_id: data.id,
+          name,
+        }))
+      );
     if (teamError) throw new Error(teamError.message);
   }
 
@@ -193,7 +198,8 @@ export async function updateBingo(
 
 export async function saveActiveBingoBoard(tiles: Tile[]): Promise<Tile[]> {
   const bingo = await getActiveBingo();
-  if (!bingo?.id) throw new Error("Create bingo details before creating a board.");
+  if (!bingo?.id)
+    throw new Error("Create bingo details before creating a board.");
 
   const rows = tiles.map((tileWithId, index) => {
     // Strip the row id a previously-fetched board may carry — metadata stores
@@ -317,7 +323,9 @@ export interface BingoDeleteCounts {
  * tiles/submissions) — four indexed `count(*)` reads on an admin-only,
  * one-shot delete path, not a hot loop.
  */
-export async function getBingoDeleteCounts(bingoId: string): Promise<BingoDeleteCounts> {
+export async function getBingoDeleteCounts(
+  bingoId: string
+): Promise<BingoDeleteCounts> {
   const db = getDb();
 
   const countRows = async (table: string): Promise<number> => {
@@ -325,7 +333,10 @@ export async function getBingoDeleteCounts(bingoId: string): Promise<BingoDelete
       .from(table)
       .select("id", { count: "exact", head: true })
       .eq("bingo_id", bingoId);
-    if (error) throw new Error(`Failed to count ${table} for bingo ${bingoId}: ${error.message}`);
+    if (error)
+      throw new Error(
+        `Failed to count ${table} for bingo ${bingoId}: ${error.message}`
+      );
     return count ?? 0;
   };
 
@@ -364,7 +375,8 @@ export async function deleteBingoRow(bingoId: string): Promise<boolean> {
     .select("id")
     .maybeSingle();
 
-  if (error) throw new Error(`Failed to delete bingo ${bingoId}: ${error.message}`);
+  if (error)
+    throw new Error(`Failed to delete bingo ${bingoId}: ${error.message}`);
   return data !== null;
 }
 

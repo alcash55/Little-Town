@@ -419,9 +419,7 @@ const BoardBuilder = () => {
                   type="number"
                   fullWidth
                   value={editingTile.tile.dropsAmount}
-                  onChange={(e) =>
-                    updateEditingTile({ dropsAmount: Number(e.target.value) })
-                  }
+                  onChange={(e) => updateEditingTile({ dropsAmount: Number(e.target.value) })}
                 />
               )}
             </Stack>

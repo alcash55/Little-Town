@@ -15,29 +15,31 @@ what Alex should keep editing.
 
 ```jsonc
 {
-  "generatedAt": "ISO-8601",           // informational only, not read by the frontend
+  "generatedAt": "ISO-8601", // informational only, not read by the frontend
   "categories": [
     {
-      "id": "tob",                     // kebab-case, STABLE — used in image paths and the URL hash, don't rename casually
-      "name": "Theatre of Blood",      // display name
-      "group": "Raids",                // coarse grouping shown in category navigation (Raids, Bosses, PvM & Slayer, Skilling, Other)
-      "order": 1,                      // display order within its group / overall list
+      "id": "tob", // kebab-case, STABLE — used in image paths and the URL hash, don't rename casually
+      "name": "Theatre of Blood", // display name
+      "group": "Raids", // coarse grouping shown in category navigation (Raids, Bosses, PvM & Slayer, Skilling, Other)
+      "order": 1, // display order within its group / overall list
       "sections": [
         {
-          "kind": "guides",            // one of: guides | tileMarkers | dataSheets | media | tools | text
-          "title": "Guides & videos",  // section heading shown in the UI
+          "kind": "guides", // one of: guides | tileMarkers | dataSheets | media | tools | text
+          "title": "Guides & videos", // section heading shown in the UI
           "items": [
             {
-              "id": "tob-bad-crabs",           // unique ACROSS THE WHOLE FILE, kebab-case
+              "id": "tob-bad-crabs", // unique ACROSS THE WHOLE FILE, kebab-case
               "title": "Bad crabs (P2 crab pattern)",
               "description": "optional short blurb, keep it tight",
               "images": ["tob/bad-crabs.jpg"], // 0+ paths, RELATIVE to assets/Images/resources/ — omit the key entirely if there are none
-              "links": [                        // 0+ external links — omit the key if there are none
+              "links": [
+                // 0+ external links — omit the key if there are none
                 { "label": "YouTube", "url": "https://…", "kind": "youtube" }
               ],
-              "runelite": {                      // omit entirely unless this item has a copy-paste RuneLite config
+              "runelite": {
+                // omit entirely unless this item has a copy-paste RuneLite config
                 "label": "HM Big Split — radius markers",
-                "kind": "npcMarkers",             // npcMarkers | tileMarkers | other
+                "kind": "npcMarkers", // npcMarkers | tileMarkers | other
                 "json": "<the full raw payload, verbatim, as one string>"
               }
             }
@@ -50,7 +52,7 @@ what Alex should keep editing.
 ```
 
 - `link.kind` drives which icon the frontend shows: `youtube | streamable |
-  imgur | sheet | wiki | other`.
+imgur | sheet | wiki | other`.
 - `runelite.json` is a **string**, not a nested JSON object — it's the exact
   text a user pastes into RuneLite (or another plugin's config box), so keep
   it verbatim even if it isn't "pretty" JSON (e.g. some Object Indicators

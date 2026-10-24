@@ -22,5 +22,5 @@ adminUsersRoutes.get(
   asyncHandler(async (_req: Request, res: Response) => {
     const users = await listUsers();
     res.status(200).json({ users });
-  }),
+  })
 );

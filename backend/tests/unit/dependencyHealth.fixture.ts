@@ -18,7 +18,9 @@
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-const selectMock = mock(async () => ({ error: null as { message: string } | null }));
+const selectMock = mock(async () => ({
+  error: null as { message: string } | null,
+}));
 const fromMock = mock((_table: string) => ({
   select: (_cols: string, _opts: unknown) => ({
     limit: (_n: number) => selectMock(),
@@ -33,7 +35,7 @@ const DEFAULT_SKILLS = ["Overall", "Attack", "Runecraft"];
 const DEFAULT_ACTIVITIES = ["Bounty Hunter", "Calvar'ion"];
 
 const getStaticDataMock = mock(async (key: string) =>
-  key === "skills" ? [...DEFAULT_SKILLS] : [...DEFAULT_ACTIVITIES],
+  key === "skills" ? [...DEFAULT_SKILLS] : [...DEFAULT_ACTIVITIES]
 );
 // Also stubs upsertStaticData/getStaticDataUpdatedAt, unused by this file's
 // code under test, purely so this mock.module registration's export shape
@@ -50,27 +52,38 @@ mock.module("../../src/db/staticData.js", () => ({
 function rawHiscoreResponse(skills: string[], activities: string[]) {
   return {
     name: "Zezima",
-    skills: skills.map((name, i) => ({ id: i, name, rank: 1, level: 1, xp: 0 })),
+    skills: skills.map((name, i) => ({
+      id: i,
+      name,
+      rank: 1,
+      level: 1,
+      xp: 0,
+    })),
     activities: activities.map((name, i) => ({ id: i, name, rank: 1, kc: 0 })),
     updatedAt: new Date(),
   };
 }
 
-const hiscoresMock = mock(async (_rsn: string) => rawHiscoreResponse(DEFAULT_SKILLS, DEFAULT_ACTIVITIES));
-mock.module("../../src/services/hiscores.js", () => ({ hiscores: hiscoresMock }));
+const hiscoresMock = mock(async (_rsn: string) =>
+  rawHiscoreResponse(DEFAULT_SKILLS, DEFAULT_ACTIVITIES)
+);
+mock.module("../../src/services/hiscores.js", () => ({
+  hiscores: hiscoresMock,
+}));
 
-const {
-  getDependencyHealth,
-  _resetDependencyHealthCacheForTests,
-} = await import("../../src/services/dependencyHealth.js");
+const { getDependencyHealth, _resetDependencyHealthCacheForTests } =
+  await import("../../src/services/dependencyHealth.js");
 
 const originalFetch = globalThis.fetch;
 
 function statuspageResponse(indicator: string): Response {
-  return new Response(JSON.stringify({ status: { indicator, description: indicator } }), {
-    status: 200,
-    headers: { "content-type": "application/json" },
-  });
+  return new Response(
+    JSON.stringify({ status: { indicator, description: indicator } }),
+    {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    }
+  );
 }
 
 /** Routes fetch by URL — every external check in dependencyHealth.ts goes through this. */
@@ -82,14 +95,21 @@ function stubFetch(opts: {
   globalThis.fetch = mock((input: RequestInfo | URL) => {
     const url = typeof input === "string" ? input : input.toString();
     if (url.includes("status.supabase.com")) {
-      return Promise.resolve(statuspageResponse(opts.supabaseIndicator ?? "none"));
+      return Promise.resolve(
+        statuspageResponse(opts.supabaseIndicator ?? "none")
+      );
     }
     if (url.includes("cloudflarestatus.com")) {
-      return Promise.resolve(statuspageResponse(opts.cloudflareIndicator ?? "none"));
+      return Promise.resolve(
+        statuspageResponse(opts.cloudflareIndicator ?? "none")
+      );
     }
     if (url.includes("runescape.com")) {
-      if (opts.osrsStatus === "network-error") return Promise.reject(new Error("ECONNRESET"));
-      return Promise.resolve(new Response("{}", { status: opts.osrsStatus ?? 200 }));
+      if (opts.osrsStatus === "network-error")
+        return Promise.reject(new Error("ECONNRESET"));
+      return Promise.resolve(
+        new Response("{}", { status: opts.osrsStatus ?? 200 })
+      );
     }
     return Promise.reject(new Error(`unexpected fetch in test: ${url}`));
   }) as unknown as typeof fetch;
@@ -102,10 +122,12 @@ beforeEach(() => {
   fromMock.mockClear();
   getStaticDataMock.mockClear();
   getStaticDataMock.mockImplementation(async (key: string) =>
-    key === "skills" ? [...DEFAULT_SKILLS] : [...DEFAULT_ACTIVITIES],
+    key === "skills" ? [...DEFAULT_SKILLS] : [...DEFAULT_ACTIVITIES]
   );
   hiscoresMock.mockClear();
-  hiscoresMock.mockImplementation(async () => rawHiscoreResponse(DEFAULT_SKILLS, DEFAULT_ACTIVITIES));
+  hiscoresMock.mockImplementation(async () =>
+    rawHiscoreResponse(DEFAULT_SKILLS, DEFAULT_ACTIVITIES)
+  );
   stubFetch({});
 });
 
@@ -119,7 +141,14 @@ describe("getDependencyHealth", () => {
     expect(services).toHaveLength(6);
     const ids = services.map((s) => s.id).sort();
     expect(ids).toEqual(
-      ["cloudflare-status", "osrs-hiscores", "osrs-vocab-drift", "self", "supabase-db", "supabase-status"].sort(),
+      [
+        "cloudflare-status",
+        "osrs-hiscores",
+        "osrs-vocab-drift",
+        "self",
+        "supabase-db",
+        "supabase-status",
+      ].sort()
     );
 
     for (const service of services) {
@@ -139,7 +168,9 @@ describe("getDependencyHealth", () => {
   });
 
   test("Supabase DB query error maps to down with the error message as detail", async () => {
-    selectMock.mockImplementation(async () => ({ error: { message: "connection refused" } }));
+    selectMock.mockImplementation(async () => ({
+      error: { message: "connection refused" },
+    }));
     const { services } = await getDependencyHealth();
     const db = services.find((s) => s.id === "supabase-db")!;
     expect(db.status).toBe("down");
@@ -149,8 +180,12 @@ describe("getDependencyHealth", () => {
   test("statuspage indicator 'minor' maps to degraded, 'major' maps to down", async () => {
     stubFetch({ supabaseIndicator: "minor", cloudflareIndicator: "major" });
     const { services } = await getDependencyHealth();
-    expect(services.find((s) => s.id === "supabase-status")!.status).toBe("degraded");
-    expect(services.find((s) => s.id === "cloudflare-status")!.status).toBe("down");
+    expect(services.find((s) => s.id === "supabase-status")!.status).toBe(
+      "degraded"
+    );
+    expect(services.find((s) => s.id === "cloudflare-status")!.status).toBe(
+      "down"
+    );
   });
 
   test("OSRS hiscores 404 still counts as up (reachability probe, not player validity)", async () => {
@@ -183,7 +218,9 @@ describe("getDependencyHealth", () => {
     // Served vocabulary still has the legacy wiki-scraped "Runecrafting"
     // spelling; a fresh hiscores probe now returns the real "Runecraft".
     getStaticDataMock.mockImplementation(async (key: string) =>
-      key === "skills" ? ["Overall", "Attack", "Runecrafting"] : [...DEFAULT_ACTIVITIES],
+      key === "skills"
+        ? ["Overall", "Attack", "Runecrafting"]
+        : [...DEFAULT_ACTIVITIES]
     );
     const { services } = await getDependencyHealth();
     const drift = services.find((s) => s.id === "osrs-vocab-drift")!;
@@ -214,7 +251,9 @@ describe("getDependencyHealth", () => {
     fromMock.mockClear();
     getStaticDataMock.mockClear();
     hiscoresMock.mockClear();
-    globalThis.fetch = mock(() => Promise.reject(new Error("must not be called — should be cached"))) as unknown as typeof fetch;
+    globalThis.fetch = mock(() =>
+      Promise.reject(new Error("must not be called — should be cached"))
+    ) as unknown as typeof fetch;
 
     const { services } = await getDependencyHealth();
     expect(services).toHaveLength(6);
