@@ -1,4 +1,7 @@
 # Exact Betterleaks fingerprints for verified test, documentation, and public beacon false positives.
+# Login-budget fixture values in #159 are synthetic passwords used only against local test users.
+8e010acdce0580a92af02da29d0488be1689e0c4:backend/tests/integration/loginAccountLimit.test.ts:generic-password:23
+8e010acdce0580a92af02da29d0488be1689e0c4:backend/tests/integration/loginAccountLimit.test.ts:generic-password:94
 # Historic 2023 service-account key is rejected by Google OAuth (invalid_grant); account is absent in Cloud IAM.
 094226b5d2151dba75fc7a3ab0834e3e9c8327a7:backend/tests/integration/invites.test.ts:generic-password:142
 094226b5d2151dba75fc7a3ab0834e3e9c8327a7:backend/tests/integration/invites.test.ts:generic-password:154

@@ -94,9 +94,8 @@ automatic delivery retry or durable outbox is included. A newly issued link
 invalidates the previous link even if delivery fails. Monitor the bounded
 `[recovery] request_failed` diagnostic and relay delivery metrics.
 
-Login retains its existing IP limit. Per-account login throttling is still
-separate follow-up work from issue #62's rate-limit discussion; this PR does
-not alter the login contract or impose an email migration.
+Login retains its existing IP limit and adds a shared account budget.
+See [login throttling](login-throttling.md) for policy and migration rollout.
 
 ## Manual acceptance before marking issue #62 done
 
