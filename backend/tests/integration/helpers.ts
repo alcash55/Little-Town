@@ -247,7 +247,7 @@ let cachedDbUrl: Promise<string | null> | null = null;
  *      resolves both from the same locally-started stack), so this still
  *      finds the right database there without a third CI env var.
  */
-async function resolveDbUrl(): Promise<string | null> {
+export async function resolveDbUrl(): Promise<string | null> {
   if (!cachedDbUrl) {
     cachedDbUrl = (async (): Promise<string | null> => {
       if (process.env.TEST_SUPABASE_DB_URL)

@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 const SALT_ROUNDS = 12;
 import { getDb } from "./client.js";
 import { User } from "../types/index.js";
+import { resolveLoginRateLimitMax } from "../middleware/loginLimiter.js";
 
 interface UserRow {
   id: string;
@@ -81,9 +82,11 @@ export async function findUserByUsername(
       "id, username, nickname, email, password_hash, session_version, role, created_at, updated_at"
     )
     .eq("username", username)
-    .single();
+    .abortSignal(AbortSignal.timeout(5_000))
+    .maybeSingle();
 
-  if (error || !data) return null;
+  if (error) throw new Error("Account lookup unavailable");
+  if (!data) return null;
   const row = data as UserRow;
   return { ...toUser(row), passwordHash: row.password_hash };
 }
@@ -93,7 +96,20 @@ export async function loginUser(
   password: string
 ): Promise<User | null> {
   const user = await findUserByUsername(username);
-  if (!user || !(await verifyPassword(password, user.passwordHash)))
+
+  // Consume before bcrypt so concurrent attempts across instances share a cap.
+  // Unknown identifiers never allocate state. Success cannot clear the budget.
+  // Check storage for unknown users too, so outages do not reveal existence.
+  const { data: allowed, error } = await getDb()
+    .rpc("take_login_account_limit", {
+      p_user_id: user?.id ?? null,
+      p_max: resolveLoginRateLimitMax(),
+    })
+    .abortSignal(AbortSignal.timeout(5_000));
+  if (error || typeof allowed !== "boolean") {
+    throw new Error("Login limit storage unavailable");
+  }
+  if (!allowed || !user || !(await verifyPassword(password, user.passwordHash)))
     return null;
 
   const { passwordHash: _passwordHash, ...safeUser } = user;
