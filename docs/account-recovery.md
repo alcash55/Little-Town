@@ -9,9 +9,14 @@ Development auth bypasses cannot issue these links.
 ## Configuration and rollout
 
 1. Apply `backend/supabase/migrations/20261023000000_account_recovery.sql`
-   before deploying the backend. It adds tables, functions, a password-change
+   and `backend/supabase/migrations/20261024000000_account_recovery_readiness.sql`
+   before deploying the backend. The migrations add tables, functions, a password-change
    trigger, and `users.session_version`. Existing sessions remain valid until
-   that user's password changes. Do not run a blind production `db push`:
+   that user's password changes. Startup calls a read-only Supabase readiness
+   RPC with a five-second timeout before opening the HTTP listener or starting
+   background jobs. Missing schema objects, unavailable Supabase, or denied
+   access stop startup with a fixed diagnostic and exit code 1.
+   Do not run a blind production `db push`:
    local and remote migration versions need reconciliation as documented in
    the project notes. This PR only tests the migration locally.
 2. Set `FRONTEND_URL` to the single trusted frontend origin. Production

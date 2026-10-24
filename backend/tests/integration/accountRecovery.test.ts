@@ -1,5 +1,8 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import express from "express";
+import jwt from "jsonwebtoken";
+import { getJwtSecret } from "../../src/lib/jwt.js";
+import { assertAccountRecoverySchemaReady } from "../../src/db/schemaReadiness.js";
 import { SQL } from "bun";
 import { execFileSync } from "node:child_process";
 import type http from "node:http";
@@ -84,6 +87,26 @@ afterAll(async () => {
 
 // All token and password assertions use real transactions and bcrypt.
 describe("account recovery", () => {
+  test("migrated local Supabase passes the read-only startup probe", async () => {
+    await expect(assertAccountRecoverySchemaReady()).resolves.toBeUndefined();
+  });
+  test("legacy JWT works before reset and is revoked after reset", async () => {
+    const user = await insertTestUser("user", "LegacyRecovery");
+    users.push(user);
+    const token = jwt.sign({ id: user.id, role: user.role }, getJwtSecret());
+    expect((await jsonRequest(port, "GET", "/private", { token })).status).toBe(200);
+    expect((await jsonRequest(port, "GET", "/optional", { token })).body.id).toBe(user.id);
+    await consumeRecovery(rawToken(await issueRecovery(user.id)), password);
+    expect((await jsonRequest(port, "GET", "/private", { token })).status).toBe(401);
+    expect((await jsonRequest(port, "GET", "/optional", { token })).body.id).toBeNull();
+  });
+  test("string and object session versions cannot authenticate", async () => {
+    for (const sessionVersion of ["0", { value: 0 }]) {
+      const token = jwt.sign({ id: account.id, sessionVersion }, getJwtSecret());
+      expect((await jsonRequest(port, "GET", "/private", { token })).status).toBe(401);
+      expect((await jsonRequest(port, "GET", "/optional", { token })).body.id).toBeNull();
+    }
+  });
   test("hashed at rest; new links invalidate old links; malformed and unknown tokens fail", async () => {
     const first = rawToken(await issueRecovery(account.id));
     const second = rawToken(await issueRecovery(account.id));
@@ -314,6 +337,23 @@ describe("account recovery", () => {
       .from("recovery_limits")
       .delete()
       .eq("key_hash", digest(email));
+  });
+  test("failed relay delivery replaces old links and a manual retry replaces the failed link", async () => {
+    const original = rawToken(await issueRecovery(account.id));
+    let failedToken = "";
+    let retryToken = "";
+    await expect(requestRecovery(email, async (message) => {
+      failedToken = rawToken(message.url);
+      throw new Error("Local relay failure");
+    })).rejects.toThrow("Local relay failure");
+    expect(failedToken).not.toBe("");
+    expect(await recoveryStatus(original)).toBe("invalid");
+    expect(await recoveryStatus(failedToken)).toBe("ready");
+    await requestRecovery(email, async (message) => { retryToken = rawToken(message.url); });
+    expect(retryToken).not.toBe("");
+    expect(await recoveryStatus(failedToken)).toBe("invalid");
+    expect(await recoveryStatus(retryToken)).toBe("ready");
+    await getDb().from("recovery_limits").delete().eq("key_hash", digest(email));
   });
   test("identical request responses for existing, missing and email-less accounts; IP cap triggers", async () => {
     for (const value of [
