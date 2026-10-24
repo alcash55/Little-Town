@@ -17,6 +17,7 @@ export const Routes = createBrowserRouter(
       <Route index element={<Pages.Home />} />
       <Route path="unauthorized" element={<Pages.Unauthorized />} />
       <Route path="Resources" element={<Pages.Resources />} />
+      <Route path="recover" element={<Pages.AccountRecovery />} />
       <Route path="invite/:token" element={<Pages.InviteAccept />} />
       {/*
         Public since Sprint 9, Track B item 3 (TEAM-BRIEF.md): un-authed

@@ -53,6 +53,7 @@ export interface SideAccount {
 }
 
 export interface User {
+  sessionVersion?: number;
   id: string;
   username: string;
   nickname?: string | null;

@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 
 export const Pages = {
+  AccountRecovery: lazy(() => import('./AccountRecovery/AccountRecovery')),
   TeamData: lazy(() => import('./TeamData/TeamData')),
   Home: lazy(() => import('./Home/Home')),
   Error: lazy(() => import('./Error/Error')),
