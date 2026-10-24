@@ -3,6 +3,7 @@ import PageLayout from '../../../../layout/PageLayout/PageLayout';
 import { appColors } from '../../../../layout/Theme';
 import { useUserInvite } from './useUserInvite';
 import InviteGenerator from './InviteGenerator';
+import { AccountRecoveryAdmin } from './AccountRecoveryAdmin';
 import InviteList from './InviteList';
 
 /**
@@ -24,6 +25,7 @@ const UserInvite = () => {
       </Typography>
 
       <Stack spacing={4} sx={{ width: '100%', maxWidth: 760, alignItems: 'stretch' }}>
+        <AccountRecoveryAdmin />
         <InviteGenerator
           generating={invite.generating}
           generateError={invite.generateError}

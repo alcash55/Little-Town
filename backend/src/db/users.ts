@@ -10,6 +10,7 @@ interface UserRow {
   nickname: string | null;
   email: string | null;
   password_hash: string;
+  session_version: number;
   role: "user" | "admin" | "moderator";
   created_at: string;
   updated_at: string;
@@ -18,6 +19,7 @@ interface UserRow {
 function toUser(row: UserRow): User {
   return {
     id: row.id,
+    sessionVersion: row.session_version,
     username: row.username,
     nickname: row.nickname ?? null,
     email: row.email ?? undefined,
@@ -76,7 +78,7 @@ export async function findUserByUsername(
   const { data, error } = await getDb()
     .from("users")
     .select(
-      "id, username, nickname, email, password_hash, role, created_at, updated_at"
+      "id, username, nickname, email, password_hash, session_version, role, created_at, updated_at"
     )
     .eq("username", username)
     .single();
@@ -102,7 +104,7 @@ export async function findUserById(id: string): Promise<User | null> {
   const { data, error } = await getDb()
     .from("users")
     .select(
-      "id, username, nickname, email, password_hash, role, created_at, updated_at"
+      "id, username, nickname, email, password_hash, session_version, role, created_at, updated_at"
     )
     .eq("id", id)
     .maybeSingle();
