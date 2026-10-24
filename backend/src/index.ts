@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { assertAccountRecoverySchemaReady } from "./db/schemaReadiness.js";
 import { assertEnvironmentSafety } from "./config/envGuard.js";
 import { CORS_ALLOWED_HEADERS, buildDevCorsOrigins } from "./config/cors.js";
 import { getSameSiteAuthHost } from "./lib/session.js";
@@ -170,7 +171,9 @@ app.use(errorHandler);
 
 // Start server
 const PORT = process.env.PORT || 8081;
-app.listen(PORT, () => {
+async function startServer(): Promise<void> {
+  await assertAccountRecoverySchemaReady();
+  app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/api/health`);
   startStaticDataCron();
@@ -194,6 +197,12 @@ app.listen(PORT, () => {
       console.error("[bingoLifecycle] Boot-time lifecycle check failed:", e)
     );
   startPlayerSnapshotCron();
+  });
+}
+
+startServer().catch(() => {
+  console.error("[startup] Account recovery schema unavailable. Apply pending database migrations and verify Supabase access.");
+  process.exit(1);
 });
 
 // Graceful shutdown
