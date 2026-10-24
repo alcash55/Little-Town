@@ -4,29 +4,45 @@ import { protect } from "../middleware/auth.js";
 import { signSession, setAuthCookie, clearAuthCookie } from "../lib/session.js";
 import {
   ApiResponse,
-  LoginRequest,
   LoginResponse,
   User,
 } from "../types/index.js";
 import { loginUser } from "../db/users.js";
+import { z } from "zod";
 
 const router = Router();
+const loginInput = z.object({
+  username: z.string().trim().min(1).max(100),
+  password: z.string().min(1),
+});
 
 // Login route
 router.post(
   "/login",
   asyncHandler(async (req: Request, res: Response) => {
-    const { username, password }: LoginRequest = req.body;
-
-    // Basic validation
-    if (!username || !password) {
+    const input = loginInput.safeParse(req.body);
+    if (!input.success) {
       return res.status(400).json({
         success: false,
         error: "Username and password are required",
       });
     }
 
-    const user = await loginUser(username, password);
+    let user: User | null;
+    try {
+      user = await loginUser(input.data.username, input.data.password);
+    } catch {
+      // Never send raw driver errors or request data to the global logger.
+      console.warn("[auth]", {
+        reason: "login_storage_unavailable",
+        method: "POST",
+      });
+      return res.status(503).json({
+        success: false,
+        error: "Authentication service unavailable. Please try again.",
+        code: "AUTH_LOGIN_UNAVAILABLE",
+      });
+    }
 
     if (!user) {
       return res.status(401).json({

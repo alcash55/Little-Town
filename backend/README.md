@@ -242,6 +242,11 @@ SUPABASE_SERVICE_ROLE_KEY=<hosted service role key>
 
 ### Authentication
 
+Login allows 10 attempts per IP and per account per 15 minutes. Account
+budgets are shared across backend instances and keep the generic invalid
+credentials response. Apply the login-limit migration before backend rollout.
+See [login throttling](../docs/login-throttling.md) for policy and acceptance.
+
 | Method | Path               | Auth     | Description                                          |
 | ------ | ------------------ | -------- | ---------------------------------------------------- |
 | POST   | `/api/auth/login`  | None     | Login with username + password, sets httpOnly cookie |
@@ -381,7 +386,7 @@ Local dev seed users (created by `db:reset`):
 | `DISCORD_ENABLED`               | Set to `true` (or run with `NODE_ENV=production`) to allow the Discord screenshot bot to log in at all. Positive opt-in, checked before token/channel presence — required since Sprint 9 caused duplicate real-bot logins on every local start otherwise.                                 | No                     |
 | `DISCORD_BOT_TOKEN`             | Discord bot token for the screenshot ingest service. Optional — if unset (along with `DISCORD_SCREENSHOT_CHANNEL_ID`), or if `DISCORD_ENABLED` isn't `true`, the service logs one warning on startup and does not run; the admin screenshot review API still works. Never log this value. | No                     |
 | `DISCORD_SCREENSHOT_CHANNEL_ID` | Discord channel ID the bot watches for screenshot attachments                                                                                                                                                                                                                             | No                     |
-| `LOGIN_RATE_LIMIT_MAX_OVERRIDE` | Raises the login attempt ceiling (default 10 per 15 min per IP) for a scripted end-to-end suite. Ignored in production; clamped at 300 outside it. See `middleware/loginLimiter.ts`.                                                                                                      | No                     |
+| `LOGIN_RATE_LIMIT_MAX_OVERRIDE` | Raises the login attempt ceiling (default 10 per 15 min per IP and account) for a scripted end-to-end suite. Positive whole numbers only. Ignored in production; clamped at 300 outside it. See `middleware/loginLimiter.ts`.                                                                                                      | No                     |
 
 ## Scripts
 
