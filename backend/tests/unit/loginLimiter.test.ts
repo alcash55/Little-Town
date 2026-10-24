@@ -47,7 +47,7 @@ describe("resolveLoginRateLimitMax (#86)", () => {
     ).toBe(DEFAULT_LOGIN_RATE_LIMIT_MAX);
   });
 
-  test.each(["0", "-5", "not-a-number", ""])(
+  test.each(["0", "-5", "not-a-number", "", "0.5", "10.5"])(
     "invalid override %j: falls back to the default rather than throwing",
     (value) => {
       expect(
