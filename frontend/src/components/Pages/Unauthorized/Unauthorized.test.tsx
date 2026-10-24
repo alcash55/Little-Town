@@ -46,7 +46,7 @@ describe('Unauthorized session transitions', () => {
     render(deniedPage('forbidden'));
     expect(screen.queryByText('Access Denied')).toBeNull();
     expect(screen.queryByText('Login Required')).toBeNull();
-    expect(screen.getByAltText('Loading...')).toBeDefined();
+    expect(screen.getByRole('status', { name: 'Loading Little Town' })).toBeDefined();
   });
 
   it('uses the current session for cross-tab denial copy, even without a return path', () => {

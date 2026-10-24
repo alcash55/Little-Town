@@ -136,8 +136,11 @@ const InviteAccept = () => {
               endAdornment: (
                 <InputAdornment position="end">
                   <IconButton
+                    type="button"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showPassword}
                     onClick={() => setShowPassword((v) => !v)}
+                    onMouseDown={(event) => event.preventDefault()}
                     edge="end"
                     size="small"
                   >
