@@ -7,6 +7,8 @@ export async function assertAccountRecoverySchemaReady(): Promise<void> {
     .abortSignal(AbortSignal.timeout(5_000));
   if (error || data !== true) {
     // Never include driver messages, URLs, or credentials in startup output.
-    throw new Error("Account recovery schema unavailable. Apply pending database migrations and verify Supabase access.");
+    throw new Error(
+      "Account recovery schema unavailable. Apply pending database migrations and verify Supabase access."
+    );
   }
 }
