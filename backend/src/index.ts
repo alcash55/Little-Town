@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { mountFrontend } from "./config/frontend.js";
 import { assertAccountRecoverySchemaReady } from "./db/schemaReadiness.js";
 import { assertEnvironmentSafety } from "./config/envGuard.js";
 import { CORS_ALLOWED_HEADERS, buildDevCorsOrigins } from "./config/cors.js";
@@ -157,6 +158,8 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/bingo", bingoRoutes);
 app.use("/api/invites", publicInviteRoutes);
 app.use("/api/onboarding", onboardingRoutes);
+
+mountFrontend(app, process.env.FRONTEND_DIST_DIR);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

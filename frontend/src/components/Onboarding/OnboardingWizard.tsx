@@ -1,3 +1,4 @@
+import { clan } from '../../config/clan';
 import { useState } from 'react';
 import {
   Box,
@@ -112,7 +113,7 @@ const OnboardingWizard = ({ open, dismissable, onFinish }: Props) => {
             h6 look (font size/weight/color from the variant's styles)
             without emitting a second heading element. */}
         <Typography variant="h6" component="span" sx={{ color: appColors.textPrimary }}>
-          Welcome to Little Town Bingo
+          Welcome to {clan.name} Bingo
         </Typography>
       </DialogTitle>
 
