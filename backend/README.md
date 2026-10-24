@@ -388,6 +388,19 @@ Local dev seed users (created by `db:reset`):
 | `DISCORD_SCREENSHOT_CHANNEL_ID` | Discord channel ID the bot watches for screenshot attachments                                                                                                                                                                                                                             | No                     |
 | `LOGIN_RATE_LIMIT_MAX_OVERRIDE` | Raises the login attempt ceiling (default 10 per 15 min per IP and account) for a scripted end-to-end suite. Positive whole numbers only. Ignored in production; clamped at 300 outside it. See `middleware/loginLimiter.ts`.                                                                                                      | No                     |
 
+## Optional single-origin clan instances
+
+Set `FRONTEND_DIST_DIR` to a built frontend directory to serve the SPA from
+this API process. Leave it unset for the existing API-only deployment.
+`FRONTEND_URL` must then be one HTTPS origin. That exact Host receives a
+host-only `SameSite=Lax; Secure; HttpOnly` session cookie. API misses remain
+JSON 404s; client routes serve the frontend, and missing assets stay 404s.
+
+The separate Diamond Dogs deployment is defined in
+[`deploy/diamond-dogs`](../deploy/diamond-dogs/README.md). Each deployment
+requires a different Supabase project and JWT secret. This is instance-level
+isolation, not tenant support inside a shared database.
+
 ## Scripts
 
 | Script               | Description                                                                                               |

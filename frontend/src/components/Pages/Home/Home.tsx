@@ -1,3 +1,4 @@
+import { clan } from '../../../config/clan';
 import {
   Box,
   Typography,
@@ -71,7 +72,7 @@ const Home = () => {
         }}
       >
         {gangIcons.map(({ name, src, label }) => (
-          <img alt={`Little Town ${label} logo`} key={name} width="25" height="auto" src={src} />
+          <img alt={`${clan.name} ${label} logo`} key={name} width="25" height="auto" src={src} />
         ))}
       </Box>
     </Slide>
@@ -126,10 +127,10 @@ const Home = () => {
             fontSize: 48,
           }}
         >
-          Welcome to Little Town!
+          Welcome to {clan.name}!
         </Typography>
 
-        {Gangs}
+        {clan.showGangIcons && Gangs}
 
         <Stack
           direction={'row'}
