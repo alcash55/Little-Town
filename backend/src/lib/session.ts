@@ -27,7 +27,25 @@ export const AUTH_COOKIE_NAME = "authToken";
 /** Opt in only after Render verifies the custom domain. Keep legacy cookies working. */
 export function getSameSiteAuthHost(): string | undefined {
   const host = process.env.AUTH_SAME_SITE_HOST;
-  if (!host) return undefined;
+  if (!host) {
+    if (!process.env.FRONTEND_DIST_DIR) return undefined;
+    // A bundled frontend uses this same host for API calls. Never trust a
+    // forwarded host or derive cookie policy from a client-supplied value.
+    const origin = new URL(process.env.FRONTEND_URL ?? "");
+    if (
+      origin.protocol !== "https:" ||
+      origin.username ||
+      origin.password ||
+      origin.pathname !== "/" ||
+      origin.search ||
+      origin.hash
+    ) {
+      throw new Error(
+        "Bundled frontend requires one HTTPS FRONTEND_URL origin"
+      );
+    }
+    return origin.host.toLowerCase();
+  }
   if (host !== "api.littletown.gay") {
     throw new Error("AUTH_SAME_SITE_HOST must be api.littletown.gay or unset");
   }
@@ -52,14 +70,21 @@ function cookieOptions(req: Request) {
   };
 }
 
-export function signSession(user: Pick<User, "id" | "username" | "role" | "sessionVersion">): {
+export function signSession(
+  user: Pick<User, "id" | "username" | "role" | "sessionVersion">
+): {
   token: string;
   expiresAt: string;
 } {
   const expiresIn = (process.env.JWT_EXPIRES_IN ||
     "24h") as SignOptions["expiresIn"];
   const token = jwt.sign(
-    { id: user.id, username: user.username, role: user.role, sessionVersion: user.sessionVersion ?? 0 },
+    {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      sessionVersion: user.sessionVersion ?? 0,
+    },
     getJwtSecret(),
     { expiresIn }
   );

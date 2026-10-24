@@ -1,3 +1,4 @@
+import { clan } from '../../../../config/clan';
 import {
   AppBar,
   Avatar,
@@ -107,14 +108,14 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
                   animationName: 'hover',
                 },
 
-                width: '100px',
+                minWidth: '100px',
                 height: '44px',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
               }}
             >
-              Little Town
+              {clan.name}
             </Typography>
           </Box>
 

@@ -1,3 +1,4 @@
+import { clan } from '../../../../config/clan';
 import React, { useEffect, useState } from 'react';
 import Close from '@mui/icons-material/Close';
 import ExpandLess from '@mui/icons-material/ExpandLess';
@@ -75,7 +76,7 @@ const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: 
               color: 'white',
             }}
           >
-            Little Town
+            {clan.name}
           </Typography>
           <IconButton
             aria-label="Close menu"
