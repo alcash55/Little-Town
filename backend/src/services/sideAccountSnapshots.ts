@@ -1,7 +1,15 @@
-import { getAllSideAccounts, savePlayerSnapshot, clearStartSnapshot, type BingoPlayer } from "../db/players.js";
+import {
+  getAllSideAccounts,
+  savePlayerSnapshot,
+  clearStartSnapshot,
+  type BingoPlayer,
+} from "../db/players.js";
 import { mapWithConcurrency, HISCORE_CONCURRENCY } from "../lib/concurrency.js";
 import { hiscores } from "./hiscores.js";
-import { checkSideAccountRsnChange, RsnChangeSource } from "./rsnChangeDetection.js";
+import {
+  checkSideAccountRsnChange,
+  RsnChangeSource,
+} from "./rsnChangeDetection.js";
 import type { SideAccount } from "../types/index.js";
 
 // -------------------------------------------------------
@@ -51,17 +59,25 @@ async function snapshotOneSideAccount(
   sideAccount: SideAccount,
   types: Array<"start" | "current">,
   source: RsnChangeSource,
-  retakeExisting = false,
+  retakeExisting = false
 ): Promise<SideSnapshotResult> {
-  const base = { playerId, sideAccountId: sideAccount.id, rsn: sideAccount.rsn };
+  const base = {
+    playerId,
+    sideAccountId: sideAccount.id,
+    rsn: sideAccount.rsn,
+  };
   try {
     const data = await hiscores(sideAccount.rsn);
-    const rsnCheck = await checkSideAccountRsnChange(sideAccount, Boolean(data), source);
+    const rsnCheck = await checkSideAccountRsnChange(
+      sideAccount,
+      Boolean(data),
+      source
+    );
     const effectiveData = data ?? rsnCheck.hiscoreData ?? null;
     if (!effectiveData) {
       console.warn(
         `[sideAccountSnapshots] Side account "${sideAccount.rsn}" (of player ${playerId}) is not ranked ` +
-          "on the OSRS hiscores and no confirmed Wise Old Man rename resolved it — skipping its snapshot.",
+          "on the OSRS hiscores and no confirmed Wise Old Man rename resolved it — skipping its snapshot."
       );
       return {
         ...base,
@@ -82,8 +98,15 @@ async function snapshotOneSideAccount(
     const effectiveRsn = rsnCheck.renamed ? rsnCheck.newRsn! : sideAccount.rsn;
     return { ...base, rsn: effectiveRsn, ok: true };
   } catch (e) {
-    console.error(`[sideAccountSnapshots] Failed to snapshot side account "${sideAccount.rsn}":`, e);
-    return { ...base, ok: false, error: e instanceof Error ? e.message : String(e) };
+    console.error(
+      `[sideAccountSnapshots] Failed to snapshot side account "${sideAccount.rsn}":`,
+      e
+    );
+    return {
+      ...base,
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+    };
   }
 }
 
@@ -113,12 +136,21 @@ export async function snapshotSideAccountTasks(
   tasks: SideAccountSnapshotTask[],
   types: Array<"start" | "current">,
   source: RsnChangeSource,
-  retakeExisting = false,
+  retakeExisting = false
 ): Promise<SideSnapshotResult[]> {
   if (!tasks.length) return [];
 
-  const settled = await mapWithConcurrency(tasks, HISCORE_CONCURRENCY, ({ playerId, sideAccount }) =>
-    snapshotOneSideAccount(playerId, sideAccount, types, source, retakeExisting),
+  const settled = await mapWithConcurrency(
+    tasks,
+    HISCORE_CONCURRENCY,
+    ({ playerId, sideAccount }) =>
+      snapshotOneSideAccount(
+        playerId,
+        sideAccount,
+        types,
+        source,
+        retakeExisting
+      )
   );
 
   // snapshotOneSideAccount never throws, so every entry is fulfilled — this
@@ -126,7 +158,13 @@ export async function snapshotSideAccountTasks(
   return settled.map((r) =>
     r.status === "fulfilled"
       ? r.value
-      : { playerId: "", sideAccountId: "", rsn: "", ok: false, error: "Unexpected rejection" },
+      : {
+          playerId: "",
+          sideAccountId: "",
+          rsn: "",
+          ok: false,
+          error: "Unexpected rejection",
+        }
   );
 }
 
@@ -158,15 +196,18 @@ export async function snapshotAllSideAccounts(
   players: Pick<BingoPlayer, "id">[],
   types: Array<"start" | "current">,
   source: RsnChangeSource,
-  retakeExisting = false,
+  retakeExisting = false
 ): Promise<SideSnapshotResult[]> {
   if (!players.length) return [];
 
   const sideAccountsByPlayer = await getAllSideAccounts(bingoId);
   const playerIds = new Set(players.map((p) => p.id));
 
-  const tasks = Object.entries(sideAccountsByPlayer).flatMap(([playerId, sideAccounts]) =>
-    playerIds.has(playerId) ? sideAccounts.map((sideAccount) => ({ playerId, sideAccount })) : [],
+  const tasks = Object.entries(sideAccountsByPlayer).flatMap(
+    ([playerId, sideAccounts]) =>
+      playerIds.has(playerId)
+        ? sideAccounts.map((sideAccount) => ({ playerId, sideAccount }))
+        : []
   );
 
   return snapshotSideAccountTasks(tasks, types, source, retakeExisting);

@@ -36,7 +36,7 @@ async function logRsnChangeInternal(
   column: RsnChangeTargetColumn,
   id: string,
   oldRsn: string,
-  source: RsnChangeSource,
+  source: RsnChangeSource
 ): Promise<RsnChangeLogRow> {
   const db = getDb();
 
@@ -47,7 +47,8 @@ async function logRsnChangeInternal(
     .is("resolved_at", null)
     .maybeSingle();
 
-  if (selectError) throw new Error(`Failed to check rsn_change_log: ${selectError.message}`);
+  if (selectError)
+    throw new Error(`Failed to check rsn_change_log: ${selectError.message}`);
   if (existing) return existing as RsnChangeLogRow;
 
   const { data: inserted, error: insertError } = await db
@@ -57,7 +58,9 @@ async function logRsnChangeInternal(
     .single();
 
   if (insertError && insertError.code !== "23505") {
-    throw new Error(`Failed to log RSN change for "${oldRsn}": ${insertError.message}`);
+    throw new Error(
+      `Failed to log RSN change for "${oldRsn}": ${insertError.message}`
+    );
   }
   if (inserted) return inserted as RsnChangeLogRow;
 
@@ -72,7 +75,7 @@ async function logRsnChangeInternal(
   if (reselectError || !winner) {
     throw new Error(
       `Failed to log RSN change for "${oldRsn}": lost the insert race and re-select failed ` +
-        `(${reselectError?.message ?? "no unresolved row found"})`,
+        `(${reselectError?.message ?? "no unresolved row found"})`
     );
   }
   return winner as RsnChangeLogRow;
@@ -81,7 +84,7 @@ async function logRsnChangeInternal(
 export function logRsnChange(
   playerId: string,
   oldRsn: string,
-  source: RsnChangeSource,
+  source: RsnChangeSource
 ): Promise<RsnChangeLogRow> {
   return logRsnChangeInternal("player_id", playerId, oldRsn, source);
 }
@@ -89,12 +92,15 @@ export function logRsnChange(
 export function logSideAccountRsnChange(
   sideAccountId: string,
   oldRsn: string,
-  source: RsnChangeSource,
+  source: RsnChangeSource
 ): Promise<RsnChangeLogRow> {
   return logRsnChangeInternal("side_account_id", sideAccountId, oldRsn, source);
 }
 
-async function resolveRsnChangeInternal(column: RsnChangeTargetColumn, id: string): Promise<void> {
+async function resolveRsnChangeInternal(
+  column: RsnChangeTargetColumn,
+  id: string
+): Promise<void> {
   const db = getDb();
   const { error } = await db
     .from("rsn_change_log")
@@ -103,7 +109,9 @@ async function resolveRsnChangeInternal(column: RsnChangeTargetColumn, id: strin
     .is("resolved_at", null);
 
   if (error) {
-    throw new Error(`Failed to resolve rsn_change_log for ${column} ${id}: ${error.message}`);
+    throw new Error(
+      `Failed to resolve rsn_change_log for ${column} ${id}: ${error.message}`
+    );
   }
 }
 
@@ -119,7 +127,9 @@ export function resolveRsnChange(playerId: string): Promise<void> {
 }
 
 /** Side-account counterpart of resolveRsnChange. */
-export function resolveSideAccountRsnChange(sideAccountId: string): Promise<void> {
+export function resolveSideAccountRsnChange(
+  sideAccountId: string
+): Promise<void> {
   return resolveRsnChangeInternal("side_account_id", sideAccountId);
 }
 
@@ -132,16 +142,25 @@ export function resolveSideAccountRsnChange(sideAccountId: string): Promise<void
  * makes a concurrent double-resolve a harmless no-op rather than clobbering
  * a resolution written by a racing call.
  */
-export async function resolveRsnChangeAutoRename(rowId: string, newRsn: string): Promise<void> {
+export async function resolveRsnChangeAutoRename(
+  rowId: string,
+  newRsn: string
+): Promise<void> {
   const db = getDb();
   const { error } = await db
     .from("rsn_change_log")
-    .update({ resolved_at: new Date().toISOString(), new_rsn: newRsn, resolution: "auto_wom" })
+    .update({
+      resolved_at: new Date().toISOString(),
+      new_rsn: newRsn,
+      resolution: "auto_wom",
+    })
     .eq("id", rowId)
     .is("resolved_at", null);
 
   if (error) {
-    throw new Error(`Failed to auto-resolve rsn_change_log row ${rowId}: ${error.message}`);
+    throw new Error(
+      `Failed to auto-resolve rsn_change_log row ${rowId}: ${error.message}`
+    );
   }
 }
 
@@ -154,7 +173,7 @@ export async function resolveRsnChangeAutoRename(rowId: string, newRsn: string):
  * .in("player_id", ...) filter, so they can't leak into a player's flag.
  */
 export async function getUnresolvedRsnChangesByPlayer(
-  playerIds: string[],
+  playerIds: string[]
 ): Promise<Map<string, string>> {
   const result = new Map<string, string>();
   if (!playerIds.length) return result;
@@ -166,9 +185,13 @@ export async function getUnresolvedRsnChangesByPlayer(
     .in("player_id", playerIds)
     .is("resolved_at", null);
 
-  if (error) throw new Error(`Failed to get unresolved RSN changes: ${error.message}`);
+  if (error)
+    throw new Error(`Failed to get unresolved RSN changes: ${error.message}`);
 
-  for (const row of (data ?? []) as Array<{ player_id: string; detected_at: string }>) {
+  for (const row of (data ?? []) as Array<{
+    player_id: string;
+    detected_at: string;
+  }>) {
     result.set(row.player_id, row.detected_at);
   }
   return result;

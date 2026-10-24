@@ -35,10 +35,15 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const skills = await getStaticData("skills");
     if (!skills.length) {
-      return res.status(503).json({ success: false, error: "Skills data not yet available, try again shortly" });
+      return res
+        .status(503)
+        .json({
+          success: false,
+          error: "Skills data not yet available, try again shortly",
+        });
     }
     res.status(200).json(skills);
-  }),
+  })
 );
 
 // Get available activities — must be before /:player to avoid wildcard match
@@ -47,10 +52,15 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const activities = await getStaticData("activities");
     if (!activities.length) {
-      return res.status(503).json({ success: false, error: "Activities data not yet available, try again shortly" });
+      return res
+        .status(503)
+        .json({
+          success: false,
+          error: "Activities data not yet available, try again shortly",
+        });
     }
     res.status(200).json(activities);
-  }),
+  })
 );
 
 // Get hiscores for a specific player
@@ -83,7 +93,7 @@ router.get(
         error: "Failed to fetch hiscores",
       });
     }
-  }),
+  })
 );
 
 // Update hiscores (PUT method for historical reasons)
@@ -124,7 +134,7 @@ router.put(
         error: "Failed to update hiscores",
       });
     }
-  }),
+  })
 );
 
 export default router;

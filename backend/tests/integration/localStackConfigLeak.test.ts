@@ -19,7 +19,11 @@
  */
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { _resetLocalStackConfigForTests, getLocalStackConfig, probeStackReachableNow } from "./helpers.js";
+import {
+  _resetLocalStackConfigForTests,
+  getLocalStackConfig,
+  probeStackReachableNow,
+} from "./helpers.js";
 
 const realStack = await getLocalStackConfig();
 
@@ -34,35 +38,38 @@ test("guard: the shared cached reachability verdict holds under a fresh, indepen
   expect(liveReachable).toBe(false);
 });
 
-describe.skipIf(!realStack.reachable)("getLocalStackConfig vs. a leaked fetch mock", () => {
-  const originalFetch = globalThis.fetch;
+describe.skipIf(!realStack.reachable)(
+  "getLocalStackConfig vs. a leaked fetch mock",
+  () => {
+    const originalFetch = globalThis.fetch;
 
-  afterEach(() => {
-    globalThis.fetch = originalFetch;
-    _resetLocalStackConfigForTests();
-  });
+    afterEach(() => {
+      globalThis.fetch = originalFetch;
+      _resetLocalStackConfigForTests();
+    });
 
-  /** Same shape as dependencyHealth.test.ts's stubFetch({}). */
-  function installLeakedFetchMock(): void {
-    globalThis.fetch = (async (input: RequestInfo | URL) => {
-      const url = typeof input === "string" ? input : input.toString();
-      if (
-        url.includes("status.supabase.com") ||
-        url.includes("cloudflarestatus.com") ||
-        url.includes("runescape.com")
-      ) {
-        return new Response("{}", { status: 200 });
-      }
-      throw new Error(`unexpected fetch in test: ${url}`);
-    }) as typeof fetch;
+    /** Same shape as dependencyHealth.test.ts's stubFetch({}). */
+    function installLeakedFetchMock(): void {
+      globalThis.fetch = (async (input: RequestInfo | URL) => {
+        const url = typeof input === "string" ? input : input.toString();
+        if (
+          url.includes("status.supabase.com") ||
+          url.includes("cloudflarestatus.com") ||
+          url.includes("runescape.com")
+        ) {
+          return new Response("{}", { status: 200 });
+        }
+        throw new Error(`unexpected fetch in test: ${url}`);
+      }) as typeof fetch;
+    }
+
+    test("still resolves reachable:true against the real stack even while globalThis.fetch is stubbed to an unrelated mock", async () => {
+      _resetLocalStackConfigForTests();
+      installLeakedFetchMock();
+
+      const config = await getLocalStackConfig();
+
+      expect(config.reachable).toBe(true);
+    });
   }
-
-  test("still resolves reachable:true against the real stack even while globalThis.fetch is stubbed to an unrelated mock", async () => {
-    _resetLocalStackConfigForTests();
-    installLeakedFetchMock();
-
-    const config = await getLocalStackConfig();
-
-    expect(config.reachable).toBe(true);
-  });
-});
+);

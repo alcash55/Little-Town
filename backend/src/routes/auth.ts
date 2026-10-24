@@ -51,7 +51,7 @@ router.post(
     };
 
     res.status(200).json(response);
-  }),
+  })
 );
 
 // Get current user
@@ -65,7 +65,7 @@ router.get(
     };
 
     res.status(200).json(response);
-  }),
+  })
 );
 
 // Logout route — clears the httpOnly auth cookie server-side. Required now
@@ -83,7 +83,7 @@ router.post(
     };
 
     res.status(200).json(response);
-  }),
+  })
 );
 
 export default router;

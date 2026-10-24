@@ -33,9 +33,18 @@ export const CORS_ALLOWED_HEADERS = [
  * above so a test can state *why* each one must be present, rather than just
  * pinning the array's current contents.
  */
-export const REQUIRED_CUSTOM_HEADERS: ReadonlyArray<{ header: string; usedBy: string }> = [
-  { header: "X-Impersonate-User-Id", usedBy: "admin impersonation ('view as user')" },
-  { header: "X-Confirm-Delete", usedBy: "DELETE /api/admin/bingo/:bingoId confirmation gate" },
+export const REQUIRED_CUSTOM_HEADERS: ReadonlyArray<{
+  header: string;
+  usedBy: string;
+}> = [
+  {
+    header: "X-Impersonate-User-Id",
+    usedBy: "admin impersonation ('view as user')",
+  },
+  {
+    header: "X-Confirm-Delete",
+    usedBy: "DELETE /api/admin/bingo/:bingoId confirmation gate",
+  },
 ];
 
 /**
@@ -54,7 +63,11 @@ export const DEV_CORS_PORT_RANGE = { start: 3000, end: 3009 } as const;
 
 export function buildDevCorsOrigins(): string[] {
   const origins: string[] = [];
-  for (let port = DEV_CORS_PORT_RANGE.start; port <= DEV_CORS_PORT_RANGE.end; port++) {
+  for (
+    let port = DEV_CORS_PORT_RANGE.start;
+    port <= DEV_CORS_PORT_RANGE.end;
+    port++
+  ) {
     origins.push(`http://localhost:${port}`, `http://127.0.0.1:${port}`);
   }
   return origins;

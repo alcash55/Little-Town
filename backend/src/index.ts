@@ -18,10 +18,23 @@ import bingoRoutes from "./routes/bingo.js";
 import { adminInviteRoutes, publicInviteRoutes } from "./routes/invites.js";
 import { adminUsersRoutes } from "./routes/adminUsers.js";
 import onboardingRoutes from "./routes/onboarding.js";
-import { startStaticDataCron, stopStaticDataCron, refreshStaticData } from "./services/staticDataCron.js";
-import { startPlayerSnapshotCron, stopPlayerSnapshotCron } from "./services/playerSnapshotCron.js";
-import { startDiscordScreenshotService, stopDiscordScreenshotService } from "./services/discordScreenshots.js";
-import { completeEndedBingos, deleteExpiredHiscoreHistory } from "./services/bingoLifecycle.js";
+import {
+  startStaticDataCron,
+  stopStaticDataCron,
+  refreshStaticData,
+} from "./services/staticDataCron.js";
+import {
+  startPlayerSnapshotCron,
+  stopPlayerSnapshotCron,
+} from "./services/playerSnapshotCron.js";
+import {
+  startDiscordScreenshotService,
+  stopDiscordScreenshotService,
+} from "./services/discordScreenshots.js";
+import {
+  completeEndedBingos,
+  deleteExpiredHiscoreHistory,
+} from "./services/bingoLifecycle.js";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -62,7 +75,7 @@ app.use(
     // See src/config/cors.ts — every custom request header the frontend sends
     // must be allowlisted or the browser's preflight strips it.
     allowedHeaders: [...CORS_ALLOWED_HEADERS],
-  }),
+  })
 );
 
 // Rate limiting
@@ -171,12 +184,24 @@ app.listen(PORT, () => {
   // sleeping instance is closed out the moment this instance wakes, not
   // "eventually, whenever the cron machinery gets to it." Idempotent —
   // running again moments later via the cron's first tick is a no-op.
-  completeEndedBingos().then(() => deleteExpiredHiscoreHistory()).catch((e) =>
-    console.error("[bingoLifecycle] Boot-time lifecycle check failed:", e),
-  );
+  completeEndedBingos()
+    .then(() => deleteExpiredHiscoreHistory())
+    .catch((e) =>
+      console.error("[bingoLifecycle] Boot-time lifecycle check failed:", e)
+    );
   startPlayerSnapshotCron();
 });
 
 // Graceful shutdown
-process.on('SIGTERM', () => { stopStaticDataCron(); stopPlayerSnapshotCron(); stopDiscordScreenshotService(); process.exit(0); });
-process.on('SIGINT', () => { stopStaticDataCron(); stopPlayerSnapshotCron(); stopDiscordScreenshotService(); process.exit(0); });
+process.on("SIGTERM", () => {
+  stopStaticDataCron();
+  stopPlayerSnapshotCron();
+  stopDiscordScreenshotService();
+  process.exit(0);
+});
+process.on("SIGINT", () => {
+  stopStaticDataCron();
+  stopPlayerSnapshotCron();
+  stopDiscordScreenshotService();
+  process.exit(0);
+});

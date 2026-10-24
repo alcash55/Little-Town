@@ -31,7 +31,9 @@ function fakeHiscoreData(rsn: string, xp = 100): HiscoreData {
   };
 }
 
-let getCached: ReturnType<typeof mock<() => Promise<{ data: HiscoreData; updatedAt: string } | null>>>;
+let getCached: ReturnType<
+  typeof mock<() => Promise<{ data: HiscoreData; updatedAt: string } | null>>
+>;
 let fetchLive: ReturnType<typeof mock<() => Promise<HiscoreData | null>>>;
 let upsertCache: ReturnType<typeof mock<(data: HiscoreData) => Promise<void>>>;
 
@@ -48,9 +50,14 @@ function deps() {
 describe("resolveHiscoreWithCache()", () => {
   test("a fresh cache entry short-circuits the live call entirely", async () => {
     const cached = fakeHiscoreData("Zezima", 500);
-    getCached.mockImplementation(async () => ({ data: cached, updatedAt: new Date().toISOString() }));
+    getCached.mockImplementation(async () => ({
+      data: cached,
+      updatedAt: new Date().toISOString(),
+    }));
     fetchLive.mockImplementation(async () => {
-      throw new Error("must not be called — a fresh cache hit should have short-circuited this");
+      throw new Error(
+        "must not be called — a fresh cache hit should have short-circuited this"
+      );
     });
 
     const result = await resolveHiscoreWithCache("Zezima", TTL_MS, deps());
@@ -60,7 +67,10 @@ describe("resolveHiscoreWithCache()", () => {
   test("a stale (past-TTL) cache entry is ignored in favor of a live call, and the fresh result is written through", async () => {
     const stale = fakeHiscoreData("Zezima", 100);
     const staleTimestamp = new Date(Date.now() - 10 * 60 * 1000).toISOString(); // 10 min old, TTL is 5
-    getCached.mockImplementation(async () => ({ data: stale, updatedAt: staleTimestamp }));
+    getCached.mockImplementation(async () => ({
+      data: stale,
+      updatedAt: staleTimestamp,
+    }));
     fetchLive.mockImplementation(async () => fakeHiscoreData("Zezima", 999));
 
     const result = await resolveHiscoreWithCache("Zezima", TTL_MS, deps());
@@ -72,7 +82,11 @@ describe("resolveHiscoreWithCache()", () => {
   test("an unranked (null) result is returned as null and is never written to the cache", async () => {
     fetchLive.mockImplementation(async () => null);
 
-    const result = await resolveHiscoreWithCache("NobodyOnHiscores", TTL_MS, deps());
+    const result = await resolveHiscoreWithCache(
+      "NobodyOnHiscores",
+      TTL_MS,
+      deps()
+    );
     expect(result).toBeNull();
     expect(upsertCache).not.toHaveBeenCalled();
   });
@@ -80,7 +94,10 @@ describe("resolveHiscoreWithCache()", () => {
   test("a live failure after retries falls back to a stale cached entry instead of throwing", async () => {
     const stale = fakeHiscoreData("Zezima", 42);
     const staleTimestamp = new Date(Date.now() - 60 * 60 * 1000).toISOString(); // 1 hour old
-    getCached.mockImplementation(async () => ({ data: stale, updatedAt: staleTimestamp }));
+    getCached.mockImplementation(async () => ({
+      data: stale,
+      updatedAt: staleTimestamp,
+    }));
     fetchLive.mockImplementation(async () => {
       throw new Error("OSRS hiscores server error: 503");
     });
@@ -92,12 +109,14 @@ describe("resolveHiscoreWithCache()", () => {
   test("a live failure after retries with no cached entry still throws (unchanged pre-#56 behavior)", async () => {
     getCached.mockImplementation(async () => null);
     fetchLive.mockImplementation(async () => {
-      throw new Error("Failed to fetch hiscore data for \"NeverCached\" after 3 attempts");
+      throw new Error(
+        'Failed to fetch hiscore data for "NeverCached" after 3 attempts'
+      );
     });
 
-    await expect(resolveHiscoreWithCache("NeverCached", TTL_MS, deps())).rejects.toThrow(
-      /Failed to fetch hiscore data/,
-    );
+    await expect(
+      resolveHiscoreWithCache("NeverCached", TTL_MS, deps())
+    ).rejects.toThrow(/Failed to fetch hiscore data/);
   });
 
   test("a cache-read failure is non-fatal — falls through to a live call instead of rejecting", async () => {

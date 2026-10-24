@@ -22,7 +22,11 @@ let nextResult: { data: unknown; error: null } = { data: null, error: null };
 const orderMock = mock((_col: string, _opts: { ascending: boolean }) => query);
 const limitMock = mock((_n: number) => query);
 const maybeSingleMock = mock(async () => nextResult);
-const query: FakeQuery = { order: orderMock, limit: limitMock, maybeSingle: maybeSingleMock };
+const query: FakeQuery = {
+  order: orderMock,
+  limit: limitMock,
+  maybeSingle: maybeSingleMock,
+};
 
 const selectMock = mock((_cols: string) => query);
 const fromMock = mock((_table: string) => ({ select: selectMock }));

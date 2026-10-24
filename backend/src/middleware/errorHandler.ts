@@ -18,7 +18,7 @@ export const errorHandler = (
   err: Error | AppError,
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   let error = { ...err };
   error.message = err.message;
@@ -43,10 +43,14 @@ export const errorHandler = (
       "details" in err && typeof err.details === "string"
         ? err.details
         : "detail" in err && typeof err.detail === "string"
-          ? err.detail
-          : "";
+        ? err.detail
+        : "";
     const field = detail.match(/\(([^)]+)\)/)?.[1] ?? "value";
-    error = new AppError(`That ${field} is already taken.`, 400, "DUPLICATE_KEY");
+    error = new AppError(
+      `That ${field} is already taken.`,
+      400,
+      "DUPLICATE_KEY"
+    );
   }
 
   // Supabase/Postgres foreign key violation (e.g. referencing a non-existent bingo/user)
@@ -54,7 +58,7 @@ export const errorHandler = (
     error = new AppError(
       "Referenced resource not found",
       400,
-      "FOREIGN_KEY_VIOLATION",
+      "FOREIGN_KEY_VIOLATION"
     );
   }
 
@@ -108,7 +112,7 @@ export const errorHandler = (
 };
 
 export const asyncHandler = (
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<any>,
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<any>
 ): RequestHandler => {
   return (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next);

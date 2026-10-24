@@ -25,10 +25,14 @@ afterEach(() => {
 
 function deniedPage(reason: string, withReturnPath = true) {
   return (
-    <MemoryRouter initialEntries={[{
-      pathname: '/unauthorized',
-      state: { reason, ...(withReturnPath ? { from: { pathname: '/admin' } } : {}) },
-    }]}>
+    <MemoryRouter
+      initialEntries={[
+        {
+          pathname: '/unauthorized',
+          state: { reason, ...(withReturnPath ? { from: { pathname: '/admin' } } : {}) },
+        },
+      ]}
+    >
       <Routes>
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="/admin" element={<div>Rechecked destination</div>} />

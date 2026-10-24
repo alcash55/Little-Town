@@ -33,10 +33,7 @@
 const RSN_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9 -]{0,38}[A-Za-z0-9])?$/;
 
 export function canonicalizeRsn(raw: string): string {
-  return raw
-    .replace(/_/g, " ")
-    .trim()
-    .replace(/\s+/g, " ");
+  return raw.replace(/_/g, " ").trim().replace(/\s+/g, " ");
 }
 
 export function normalizeRsn(canonical: string): string {

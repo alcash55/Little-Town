@@ -31,8 +31,9 @@ export const bingoDetailsSchema = z.object({
   teams: z
     .array(z.string().min(1))
     .refine(
-      (names) => new Set(names.map((n) => n.trim().toLowerCase())).size === names.length,
-      { message: "Team names must be unique" },
+      (names) =>
+        new Set(names.map((n) => n.trim().toLowerCase())).size === names.length,
+      { message: "Team names must be unique" }
     )
     .optional(),
 });
@@ -54,8 +55,9 @@ export const bingoUpdateSchema = z.object({
   teams: z
     .array(z.string().min(1))
     .refine(
-      (names) => new Set(names.map((n) => n.trim().toLowerCase())).size === names.length,
-      { message: "Team names must be unique" },
+      (names) =>
+        new Set(names.map((n) => n.trim().toLowerCase())).size === names.length,
+      { message: "Team names must be unique" }
     )
     .optional(),
 });
@@ -69,7 +71,10 @@ const boardTileTypes = ["Kill Count", "Experience", "Drops"] as const;
 export const boardTileSchema = z
   .object({
     type: z.enum(boardTileTypes),
-    task: z.string().min(1, "Tile task is required").max(100, "Tile task must be 100 characters or fewer"),
+    task: z
+      .string()
+      .min(1, "Tile task is required")
+      .max(100, "Tile task must be 100 characters or fewer"),
     points: z.number(),
     killCount: z.number().optional(),
     experience: z.number().optional(),
@@ -87,7 +92,7 @@ export const draftAssignmentsSchema = z.array(
   z.object({
     rsn: z.string().min(1, "RSN is required"),
     teamId: z.string().nullable(),
-  }),
+  })
 );
 
 // -------------------------------------------------------
@@ -171,7 +176,7 @@ export const inviteAcceptSchema = z.object({
     .max(32, "Username must be 32 characters or fewer")
     .regex(
       /^[a-zA-Z0-9_.-]+$/,
-      "Username may only contain letters, numbers, underscores, periods, and hyphens",
+      "Username may only contain letters, numbers, underscores, periods, and hyphens"
     ),
   password: z.string().min(8, "Password must be at least 8 characters"),
   nickname: z.string().min(1).max(50).optional(),
