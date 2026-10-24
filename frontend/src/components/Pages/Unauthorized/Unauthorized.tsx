@@ -6,36 +6,32 @@ import { darkTheme } from '../../../layout/Theme';
 import { useLoginModal } from '../../LoginModal/useLoginModal';
 import { useEffectiveRole } from '../../../utils/useEffectiveRole';
 import PageLayout from '../../../layout/PageLayout/PageLayout';
+import { LoadingContainer } from '../../LoadingContainer/LoadingContainer';
 
 const Unauthorized = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { openLogin, user } = useLoginModal();
+  const { openLogin, user, authReady } = useLoginModal();
   const { role: effectiveRole } = useEffectiveRole();
-  const reason = (location.state as { reason?: string })?.reason;
   const from = (location.state as { from?: { pathname?: string } })?.from;
-  const isForbidden = reason === 'forbidden';
+  const isForbidden = Boolean(user);
 
-  // `reason` is a snapshot of `location.state` taken at the redirect that
-  // landed here, and it never re-evaluates on its own. That goes stale two
-  // ways:
-  // - clearing an impersonation override while parked here leaves "Access
-  //   Denied" on screen after the admin's real role has already come back;
-  // - a cross-tab logout-then-login-as-another-account redirects here as
-  //   "Login Required" (user briefly null), then the second tab's new
-  //   session rehydrates to a real but still-insufficient role, and the copy
-  //   never updates to "Access Denied".
-  // Re-sending the visitor through the route they were denied lets
-  // ProtectedRoute redo the check against the current effective role on any
-  // change, so this page can't outlive the auth state it was rendered for.
+  // Recheck the denied route after a role change, including clearing an
+  // impersonation override. The copy above follows the current session,
+  // since the redirect's reason can outlive a cross-tab account switch.
   const previousRoleRef = useRef(effectiveRole);
   useEffect(() => {
+    if (!authReady) return;
     const roleChanged = previousRoleRef.current !== effectiveRole;
     previousRoleRef.current = effectiveRole;
     if (roleChanged && from?.pathname) {
       navigate(from.pathname, { replace: true });
     }
-  }, [effectiveRole, from, navigate]);
+  }, [authReady, effectiveRole, from, navigate]);
+
+  // Clearing impersonation reloads this page. Hide the old denial until
+  // /me settles and the route can be checked against the restored role.
+  if (!authReady) return <LoadingContainer loading width={250} height={250} />;
 
   return (
     <PageLayout

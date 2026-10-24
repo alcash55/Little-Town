@@ -37,6 +37,17 @@ function postgresError(code: string, detail: string): Error {
 }
 
 describe("errorHandler — 23505 unique violation (#86)", () => {
+  test("reads PostgREST details without echoing the duplicate value", () => {
+    const res = fakeResponse();
+    const err = Object.assign(new Error("duplicate key"), {
+      code: "23505",
+      details: "Key (username)=(private-fixture-name) already exists.",
+    });
+    errorHandler(err, fakeRequest, res, () => undefined);
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toEqual({ error: "That username is already taken.", code: "DUPLICATE_KEY" });
+  });
+
   test("a duplicate username reads as a sentence a person would say, not the raw column name", () => {
     const res = fakeResponse();
     errorHandler(

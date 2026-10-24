@@ -3,7 +3,11 @@
  * against the real local Supabase stack (invites table + accept_invite RPC,
  * 20260713000000_invites.sql).
  */
-import { describe, test, expect, afterAll } from "bun:test";
+import { describe, test, expect, beforeAll, afterAll } from "bun:test";
+import express from "express";
+import type http from "node:http";
+import { publicInviteRoutes } from "../../src/routes/invites.js";
+import { errorHandler } from "../../src/middleware/errorHandler.js";
 
 import { getDb } from "../../src/db/client.js";
 import {
@@ -13,7 +17,7 @@ import {
   validateInviteToken,
   acceptInvite,
 } from "../../src/db/invites.js";
-import { getLocalStackConfig, uniqueSuffix } from "./helpers.js";
+import { getLocalStackConfig, uniqueSuffix, jsonRequest, startTestServer } from "./helpers.js";
 
 const stack = await getLocalStackConfig();
 if (!stack.reachable) {
@@ -43,6 +47,17 @@ function tokenFromUrl(url: string): string {
 
 const createdInviteIds: string[] = [];
 const createdUserIds: string[] = [];
+let server: http.Server;
+let port: number;
+
+beforeAll(async () => {
+  if (!suite) return;
+  const app = express();
+  app.use(express.json());
+  app.use("/api/invites", publicInviteRoutes);
+  app.use(errorHandler);
+  ({ server, port } = await startTestServer(app));
+});
 
 describe.skipIf(!suite)("invites (create / validate / expire / revoke / single-use)", () => {
   test("createInvite returns a usable url with the raw token embedded, hashes it at rest", async () => {
@@ -180,18 +195,20 @@ describe.skipIf(!suite)("invites (create / validate / expire / revoke / single-u
     if (error || !existing) throw new Error(`Fixture setup failed: ${error?.message}`);
     createdUserIds.push((existing as { id: string }).id);
 
-    let caught: unknown;
-    try {
-      await acceptInvite(token, { username: existingUsername, password: "password123" });
-    } catch (err) {
-      caught = err;
-    }
-    expect(caught).toBeDefined();
-    expect((caught as { code?: string }).code).toBe("23505");
+    const response = await jsonRequest(port, "POST", `/api/invites/${token}/accept`, {
+      body: { username: existingUsername, password: "password123" },
+    });
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: "That username is already taken.",
+      code: "DUPLICATE_KEY",
+    });
+    expect(await validateInviteToken(token)).toEqual({ valid: true, role: "user" });
   });
 });
 
 afterAll(async () => {
+  server?.close();
   if (!stack.reachable) return;
   await Promise.all([
     ...createdInviteIds.map((id) => getDb().from("invites").delete().eq("id", id).then(() => undefined, () => undefined)),

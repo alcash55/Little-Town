@@ -38,7 +38,13 @@ export const errorHandler = (
   // person hitting it, so this now reads as a sentence someone would
   // actually say (#86).
   if ((err as any).code === "23505") {
-    const detail = (err as any).detail || "";
+    // Supabase/PostgREST uses `details`; native Postgres errors use `detail`.
+    const detail =
+      "details" in err && typeof err.details === "string"
+        ? err.details
+        : "detail" in err && typeof err.detail === "string"
+          ? err.detail
+          : "";
     const field = detail.match(/\(([^)]+)\)/)?.[1] ?? "value";
     error = new AppError(`That ${field} is already taken.`, 400, "DUPLICATE_KEY");
   }
