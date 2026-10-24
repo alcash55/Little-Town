@@ -25,7 +25,7 @@ function account(
   startXp: number | null,
   currentXp: number | null,
   skillName = "Zulrah",
-  kind: "skill" | "activity" = "activity",
+  kind: "skill" | "activity" = "activity"
 ): AccountSnapshots {
   const build = (val: number | null) => {
     if (val === null) return null;
@@ -36,7 +36,11 @@ function account(
   return { start: build(startXp), current: build(currentXp) };
 }
 
-function player(playerId: string, teamId: string | null, accounts: AccountSnapshots[]): EnginePlayer {
+function player(
+  playerId: string,
+  teamId: string | null,
+  accounts: AccountSnapshots[]
+): EnginePlayer {
   return { playerId, teamId, accounts };
 }
 
@@ -70,7 +74,9 @@ const dropsTile: EngineTile = {
 
 describe("normalizeTaskText", () => {
   test("trims, lowercases, and collapses internal whitespace", () => {
-    expect(normalizeTaskText("  General   Graardor  ")).toBe("general graardor");
+    expect(normalizeTaskText("  General   Graardor  ")).toBe(
+      "general graardor"
+    );
   });
 
   test("is idempotent", () => {
@@ -90,32 +96,45 @@ describe("resolveTileMetric", () => {
   ]);
 
   test("Kill Count tile resolves to an activity metric when the (normalized) name is in vocab", () => {
-    const resolved = resolveTileMetric({ task: "  zulrah  ", type: "Kill Count" }, vocab);
+    const resolved = resolveTileMetric(
+      { task: "  zulrah  ", type: "Kill Count" },
+      vocab
+    );
     expect(resolved).toEqual({ kind: "activity", normalizedName: "zulrah" });
   });
 
   test("Experience tile resolves to a skill metric when the (normalized) name is in vocab", () => {
-    const resolved = resolveTileMetric({ task: "ATTACK", type: "Experience" }, vocab);
+    const resolved = resolveTileMetric(
+      { task: "ATTACK", type: "Experience" },
+      vocab
+    );
     expect(resolved).toEqual({ kind: "skill", normalizedName: "attack" });
   });
 
   test("Kill Count tile with a task not in the activity vocab is unresolvable (null)", () => {
-    expect(resolveTileMetric({ task: "Not A Real Boss", type: "Kill Count" }, vocab)).toBeNull();
+    expect(
+      resolveTileMetric({ task: "Not A Real Boss", type: "Kill Count" }, vocab)
+    ).toBeNull();
   });
 
   test("Experience tile with a task not in the skill vocab is unresolvable (null)", () => {
-    expect(resolveTileMetric({ task: "Not A Real Skill", type: "Experience" }, vocab)).toBeNull();
+    expect(
+      resolveTileMetric({ task: "Not A Real Skill", type: "Experience" }, vocab)
+    ).toBeNull();
   });
 
   test("a Kill Count task that only matches a SKILL name (wrong bucket) is unresolvable", () => {
     // "Attack" is a skill, not an activity — Kill Count tiles must only match activities.
-    expect(resolveTileMetric({ task: "Attack", type: "Kill Count" }, vocab)).toBeNull();
+    expect(
+      resolveTileMetric({ task: "Attack", type: "Kill Count" }, vocab)
+    ).toBeNull();
   });
 
   test("Drops tiles never resolve, regardless of vocab", () => {
-    expect(resolveTileMetric({ task: "Zulrah", type: "Drops" }, vocab)).toBeNull();
+    expect(
+      resolveTileMetric({ task: "Zulrah", type: "Drops" }, vocab)
+    ).toBeNull();
   });
-
 });
 
 // -------------------------------------------------------
@@ -138,34 +157,57 @@ describe("HISCORE_NAME_ALIASES (legacy vocabulary fallback)", () => {
   ]);
 
   test("a legacy 'runecrafting' Experience tile resolves via the alias to the real 'runecraft' skill", () => {
-    const resolved = resolveTileMetric({ task: "runecrafting", type: "Experience" }, vocab);
+    const resolved = resolveTileMetric(
+      { task: "runecrafting", type: "Experience" },
+      vocab
+    );
     expect(resolved).toEqual({ kind: "skill", normalizedName: "runecraft" });
   });
 
-  test("a legacy \"cal'varion\" Kill Count tile resolves via the alias to the real \"calvar'ion\" activity", () => {
-    const resolved = resolveTileMetric({ task: "Cal'Varion", type: "Kill Count" }, vocab);
-    expect(resolved).toEqual({ kind: "activity", normalizedName: "calvar'ion" });
+  test('a legacy "cal\'varion" Kill Count tile resolves via the alias to the real "calvar\'ion" activity', () => {
+    const resolved = resolveTileMetric(
+      { task: "Cal'Varion", type: "Kill Count" },
+      vocab
+    );
+    expect(resolved).toEqual({
+      kind: "activity",
+      normalizedName: "calvar'ion",
+    });
   });
 
   test("the alias resolution flows through to real delta math against snapshot data keyed by the real name", () => {
-    const metric = resolveTileMetric({ task: "runecrafting", type: "Experience" }, vocab)!;
-    const p = player("p1", "team-a", [account(1000, 5000, "Runecraft", "skill")]);
+    const metric = resolveTileMetric(
+      { task: "runecrafting", type: "Experience" },
+      vocab
+    )!;
+    const p = player("p1", "team-a", [
+      account(1000, 5000, "Runecraft", "skill"),
+    ]);
     expect(playerMetricDelta(p, metric)).toBe(4000);
   });
 
   test("an unaliased, genuinely-unknown task still returns null (the alias table is not a fuzzy matcher)", () => {
-    expect(resolveTileMetric({ task: "not a real skill at all", type: "Experience" }, vocab)).toBeNull();
+    expect(
+      resolveTileMetric(
+        { task: "not a real skill at all", type: "Experience" },
+        vocab
+      )
+    ).toBeNull();
   });
 
   test("a legacy name is not offered in the WRONG bucket via the alias (Kill Count vs Experience)", () => {
     // "runecrafting" aliases to the skill "runecraft" — must not resolve as an activity.
-    expect(resolveTileMetric({ task: "runecrafting", type: "Kill Count" }, vocab)).toBeNull();
+    expect(
+      resolveTileMetric({ task: "runecrafting", type: "Kill Count" }, vocab)
+    ).toBeNull();
   });
 
   test("the hiscores' own spelling 'Runecraft' resolves directly, without consulting the alias table", () => {
     // Exact match must win before the fallback is ever reached — the alias
     // table is a legacy translation layer, not part of normal resolution.
-    expect(resolveTileMetric({ task: "Runecraft", type: "Experience" }, vocab)).toEqual({
+    expect(
+      resolveTileMetric({ task: "Runecraft", type: "Experience" }, vocab)
+    ).toEqual({
       kind: "skill",
       normalizedName: "runecraft",
     });
@@ -173,8 +215,12 @@ describe("HISCORE_NAME_ALIASES (legacy vocabulary fallback)", () => {
 
   test("near-miss spellings that were never actually offered stay unresolvable", () => {
     // Guards the explicit-synonym-table design: no fuzzy fallback crept in.
-    expect(resolveTileMetric({ task: "rune crafting", type: "Experience" }, vocab)).toBeNull();
-    expect(resolveTileMetric({ task: "runecraftin", type: "Experience" }, vocab)).toBeNull();
+    expect(
+      resolveTileMetric({ task: "rune crafting", type: "Experience" }, vocab)
+    ).toBeNull();
+    expect(
+      resolveTileMetric({ task: "runecraftin", type: "Experience" }, vocab)
+    ).toBeNull();
   });
 });
 
@@ -248,23 +294,48 @@ describe("computeCompletion", () => {
       player("p1", "team-a", [account(0, 10, "Zulrah")]),
       player("p2", "team-a", [account(0, 10, "Zulrah")]),
     ];
-    const result = computeCompletion([zulrahKcTile], players, ["team-a"], new Map());
-    expect(result.completedTileIdsByTeam.get("team-a")!.has("tile-zulrah")).toBe(true);
-    expect(result.progressByTeamAndTile.get("team-a")!.get("tile-zulrah")).toBe(20);
+    const result = computeCompletion(
+      [zulrahKcTile],
+      players,
+      ["team-a"],
+      new Map()
+    );
+    expect(
+      result.completedTileIdsByTeam.get("team-a")!.has("tile-zulrah")
+    ).toBe(true);
+    expect(result.progressByTeamAndTile.get("team-a")!.get("tile-zulrah")).toBe(
+      20
+    );
     expect(result.totalPointsByTeam.get("team-a")).toBe(20);
   });
 
   test("target boundary: one short of target_value does not complete", () => {
     const players = [player("p1", "team-a", [account(0, 19, "Zulrah")])];
-    const result = computeCompletion([zulrahKcTile], players, ["team-a"], new Map());
-    expect(result.completedTileIdsByTeam.get("team-a")!.has("tile-zulrah")).toBe(false);
+    const result = computeCompletion(
+      [zulrahKcTile],
+      players,
+      ["team-a"],
+      new Map()
+    );
+    expect(
+      result.completedTileIdsByTeam.get("team-a")!.has("tile-zulrah")
+    ).toBe(false);
     expect(result.totalPointsByTeam.get("team-a")).toBe(0);
   });
 
   test("Experience tile completion works the same way over skill XP", () => {
-    const players = [player("p1", "team-a", [account(0, 1_000_000, "Attack", "skill")])];
-    const result = computeCompletion([attackXpTile], players, ["team-a"], new Map());
-    expect(result.completedTileIdsByTeam.get("team-a")!.has("tile-attack")).toBe(true);
+    const players = [
+      player("p1", "team-a", [account(0, 1_000_000, "Attack", "skill")]),
+    ];
+    const result = computeCompletion(
+      [attackXpTile],
+      players,
+      ["team-a"],
+      new Map()
+    );
+    expect(
+      result.completedTileIdsByTeam.get("team-a")!.has("tile-attack")
+    ).toBe(true);
   });
 
   test("an unmatched trackable tile lands in unresolvableTiles and never completes for any team", () => {
@@ -276,32 +347,54 @@ describe("computeCompletion", () => {
       targetValue: 1,
     };
     const players = [player("p1", "team-a", [account(0, 999, "Zulrah")])];
-    const result = computeCompletion([unmatched], players, ["team-a"], new Map());
+    const result = computeCompletion(
+      [unmatched],
+      players,
+      ["team-a"],
+      new Map()
+    );
     expect(result.unresolvableTiles).toEqual([
-      { id: "tile-unknown", task: "Definitely Not A Real Boss", type: "Kill Count" },
+      {
+        id: "tile-unknown",
+        task: "Definitely Not A Real Boss",
+        type: "Kill Count",
+      },
     ]);
-    expect(result.completedTileIdsByTeam.get("team-a")!.has("tile-unknown")).toBe(false);
+    expect(
+      result.completedTileIdsByTeam.get("team-a")!.has("tile-unknown")
+    ).toBe(false);
   });
 
   test("a trackable tile with no target_value never completes but is NOT reported unresolvable (matching succeeded)", () => {
     const noTarget: EngineTile = { ...zulrahKcTile, targetValue: null };
     const players = [player("p1", "team-a", [account(0, 999, "Zulrah")])];
-    const result = computeCompletion([noTarget], players, ["team-a"], new Map());
+    const result = computeCompletion(
+      [noTarget],
+      players,
+      ["team-a"],
+      new Map()
+    );
     expect(result.unresolvableTiles).toEqual([]);
-    expect(result.completedTileIdsByTeam.get("team-a")!.has("tile-zulrah")).toBe(false);
+    expect(
+      result.completedTileIdsByTeam.get("team-a")!.has("tile-zulrah")
+    ).toBe(false);
   });
 
   test("Drops tile completes from the approved-submissions map, independent of any hiscore data", () => {
     const approved = new Map([["team-a", new Set(["tile-drop"])]]);
     const result = computeCompletion([dropsTile], [], ["team-a"], approved);
-    expect(result.completedTileIdsByTeam.get("team-a")!.has("tile-drop")).toBe(true);
+    expect(result.completedTileIdsByTeam.get("team-a")!.has("tile-drop")).toBe(
+      true
+    );
     expect(result.totalPointsByTeam.get("team-a")).toBe(30);
   });
 
   test("Drops tile without an approved submission for this team never completes", () => {
     const approved = new Map([["team-b", new Set(["tile-drop"])]]);
     const result = computeCompletion([dropsTile], [], ["team-a"], approved);
-    expect(result.completedTileIdsByTeam.get("team-a")!.has("tile-drop")).toBe(false);
+    expect(result.completedTileIdsByTeam.get("team-a")!.has("tile-drop")).toBe(
+      false
+    );
   });
 
   // -----------------------------------------------------
@@ -316,10 +409,17 @@ describe("computeCompletion", () => {
     // approvedDropsTileIdsByTeam map is keyed by the SAME tile id, even
     // though the tile is Kill Count, not Drops.
     const legacyApproved = new Map([["team-a", new Set(["tile-zulrah"])]]);
-    const result = computeCompletion([zulrahKcTile], players, ["team-a"], legacyApproved);
+    const result = computeCompletion(
+      [zulrahKcTile],
+      players,
+      ["team-a"],
+      legacyApproved
+    );
 
     expect(result.completedTileIdsByTeam.get("team-a")!.size).toBe(1);
-    expect(result.completedTileIdsByTeam.get("team-a")!.has("tile-zulrah")).toBe(true);
+    expect(
+      result.completedTileIdsByTeam.get("team-a")!.has("tile-zulrah")
+    ).toBe(true);
     // Points counted once, not doubled (20 points, not 40).
     expect(result.totalPointsByTeam.get("team-a")).toBe(20);
   });
@@ -327,8 +427,15 @@ describe("computeCompletion", () => {
   test("dedupe: a legacy approved submission on a trackable tile that ISN'T auto-verified yet still doesn't complete it (submissions are never read for KC/XP tiles)", () => {
     const players = [player("p1", "team-a", [account(0, 5, "Zulrah")])]; // short of target_value=20
     const legacyApproved = new Map([["team-a", new Set(["tile-zulrah"])]]);
-    const result = computeCompletion([zulrahKcTile], players, ["team-a"], legacyApproved);
-    expect(result.completedTileIdsByTeam.get("team-a")!.has("tile-zulrah")).toBe(false);
+    const result = computeCompletion(
+      [zulrahKcTile],
+      players,
+      ["team-a"],
+      legacyApproved
+    );
+    expect(
+      result.completedTileIdsByTeam.get("team-a")!.has("tile-zulrah")
+    ).toBe(false);
     expect(result.totalPointsByTeam.get("team-a")).toBe(0);
   });
 
@@ -342,13 +449,15 @@ describe("computeCompletion", () => {
       [zulrahKcTile, attackXpTile, dropsTile],
       players,
       ["team-a"],
-      approved,
+      approved
     );
     const completed = result.completedTileIdsByTeam.get("team-a")!;
     expect(completed.has("tile-zulrah")).toBe(true); // 20 >= 20
     expect(completed.has("tile-attack")).toBe(false); // 500k < 1M
     expect(completed.has("tile-drop")).toBe(true); // approved
-    expect(result.totalPointsByTeam.get("team-a")).toBe(zulrahKcTile.points + dropsTile.points);
+    expect(result.totalPointsByTeam.get("team-a")).toBe(
+      zulrahKcTile.points + dropsTile.points
+    );
   });
 
   test("multiple teams are computed independently in one pass", () => {
@@ -356,13 +465,27 @@ describe("computeCompletion", () => {
       player("p1", "team-a", [account(0, 20, "Zulrah")]),
       player("p2", "team-b", [account(0, 5, "Zulrah")]),
     ];
-    const result = computeCompletion([zulrahKcTile], players, ["team-a", "team-b"], new Map());
-    expect(result.completedTileIdsByTeam.get("team-a")!.has("tile-zulrah")).toBe(true);
-    expect(result.completedTileIdsByTeam.get("team-b")!.has("tile-zulrah")).toBe(false);
+    const result = computeCompletion(
+      [zulrahKcTile],
+      players,
+      ["team-a", "team-b"],
+      new Map()
+    );
+    expect(
+      result.completedTileIdsByTeam.get("team-a")!.has("tile-zulrah")
+    ).toBe(true);
+    expect(
+      result.completedTileIdsByTeam.get("team-b")!.has("tile-zulrah")
+    ).toBe(false);
   });
 
   test("empty teamIds returns empty maps without throwing", () => {
-    const result = computeCompletion([zulrahKcTile, dropsTile], [], [], new Map());
+    const result = computeCompletion(
+      [zulrahKcTile, dropsTile],
+      [],
+      [],
+      new Map()
+    );
     expect(result.completedTileIdsByTeam.size).toBe(0);
     expect(result.totalPointsByTeam.size).toBe(0);
   });

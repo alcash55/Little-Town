@@ -10,7 +10,9 @@ const ENV_KEYS = ["NODE_ENV", "SUPABASE_URL", "ALLOW_REMOTE_DB"] as const;
 let saved: Record<(typeof ENV_KEYS)[number], string | undefined>;
 
 beforeEach(() => {
-  saved = Object.fromEntries(ENV_KEYS.map((k) => [k, process.env[k]])) as typeof saved;
+  saved = Object.fromEntries(
+    ENV_KEYS.map((k) => [k, process.env[k]])
+  ) as typeof saved;
 });
 
 afterEach(() => {

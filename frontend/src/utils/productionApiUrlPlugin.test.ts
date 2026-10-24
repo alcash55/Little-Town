@@ -57,7 +57,10 @@ describe('production API build validation', () => {
   });
 
   it('accepts the API URL from .env.production', async () => {
-    await writeFile(join(root, '.env.production'), 'VITE_BASEURL=https://little-town.onrender.com\n');
+    await writeFile(
+      join(root, '.env.production'),
+      'VITE_BASEURL=https://little-town.onrender.com\n',
+    );
     await expect(buildFixture()).resolves.toBeDefined();
   });
 

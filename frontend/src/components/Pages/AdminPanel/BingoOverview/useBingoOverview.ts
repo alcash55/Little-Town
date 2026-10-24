@@ -460,7 +460,8 @@ export const useBingoOverview = () => {
       ]);
 
       const fingerprint = JSON.stringify(fingerprintPartsRef.current);
-      const unchanged = lastFingerprintRef.current !== null && fingerprint === lastFingerprintRef.current;
+      const unchanged =
+        lastFingerprintRef.current !== null && fingerprint === lastFingerprintRef.current;
       lastFingerprintRef.current = fingerprint;
 
       nextDelayRef.current = unchanged
@@ -469,7 +470,14 @@ export const useBingoOverview = () => {
     } finally {
       pollingRef.current = false;
     }
-  }, [fetchBingo, fetchPendingScreenshots, fetchHealth, fetchConflicts, fetchTeamStats, fetchPlayerStats]);
+  }, [
+    fetchBingo,
+    fetchPendingScreenshots,
+    fetchHealth,
+    fetchConflicts,
+    fetchTeamStats,
+    fetchPlayerStats,
+  ]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;

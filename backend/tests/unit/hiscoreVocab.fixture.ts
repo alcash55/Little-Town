@@ -22,9 +22,13 @@ const hiscoresMock = mock(async (_rsn: string) => ({
   updatedAt: new Date(),
 }));
 
-mock.module("../../src/services/hiscores.js", () => ({ hiscores: hiscoresMock }));
+mock.module("../../src/services/hiscores.js", () => ({
+  hiscores: hiscoresMock,
+}));
 
-const { fetchHiscoreVocab, VOCAB_PROBE_RSN } = await import("../../src/services/hiscoreVocab.js");
+const { fetchHiscoreVocab, VOCAB_PROBE_RSN } = await import(
+  "../../src/services/hiscoreVocab.js"
+);
 
 describe("fetchHiscoreVocab", () => {
   test("extracts skill and activity names, in API order, from a real hiscores lookup", async () => {
@@ -39,7 +43,9 @@ describe("fetchHiscoreVocab", () => {
   });
 
   test("throws (does not silently return an empty vocabulary) when the probe is unranked/not found", async () => {
-    hiscoresMock.mockImplementationOnce(async () => null as unknown as Awaited<ReturnType<typeof hiscoresMock>>);
+    hiscoresMock.mockImplementationOnce(
+      async () => null as unknown as Awaited<ReturnType<typeof hiscoresMock>>
+    );
     await expect(fetchHiscoreVocab()).rejects.toThrow(/no data/i);
   });
 

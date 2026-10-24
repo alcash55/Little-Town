@@ -109,12 +109,14 @@ export function extractImgurCandidates(content: string): ImgurCandidate[] {
   for (const raw of matches) {
     const candidate = parseImgurUrl(raw);
     if (!candidate) {
-      console.debug(`[discordScreenshots] Ignoring non-imgur or invalid link: ${raw}`);
+      console.debug(
+        `[discordScreenshots] Ignoring non-imgur or invalid link: ${raw}`
+      );
       continue;
     }
     if (candidates.length >= MAX_LINKS_PER_MESSAGE) {
       console.log(
-        `[discordScreenshots] Ignoring imgur link beyond the ${MAX_LINKS_PER_MESSAGE}-per-message cap: ${raw}`,
+        `[discordScreenshots] Ignoring imgur link beyond the ${MAX_LINKS_PER_MESSAGE}-per-message cap: ${raw}`
       );
       continue;
     }
@@ -141,7 +143,13 @@ export type ImgurDownloadSkipReason =
   | "network_error";
 
 export type ImgurDownloadResult =
-  | { ok: true; buffer: Buffer; contentType: string; ext: DetectedExt; id: string }
+  | {
+      ok: true;
+      buffer: Buffer;
+      contentType: string;
+      ext: DetectedExt;
+      id: string;
+    }
   | { ok: false; reason: ImgurDownloadSkipReason };
 
 const FETCH_TIMEOUT_MS = 10_000;
@@ -165,7 +173,12 @@ function hasMagicBytes(buffer: Buffer, ext: DetectedExt): boolean {
         buffer[3] === 0x47
       );
     case "jpg":
-      return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+      return (
+        buffer.length >= 3 &&
+        buffer[0] === 0xff &&
+        buffer[1] === 0xd8 &&
+        buffer[2] === 0xff
+      );
     case "gif":
       return buffer.length >= 4 && buffer.toString("ascii", 0, 4) === "GIF8";
     case "webp":
@@ -186,7 +199,9 @@ function hasMagicBytes(buffer: Buffer, ext: DetectedExt): boolean {
  * buffered unbounded), and the declared Content-Type must match the actual
  * magic bytes before the buffer is trusted.
  */
-export async function downloadImgurImage(candidate: ImgurCandidate): Promise<ImgurDownloadResult> {
+export async function downloadImgurImage(
+  candidate: ImgurCandidate
+): Promise<ImgurDownloadResult> {
   const url = `https://i.imgur.com/${candidate.id}.${candidate.ext}`;
 
   let response: Response;
@@ -202,7 +217,9 @@ export async function downloadImgurImage(candidate: ImgurCandidate): Promise<Img
     // routine (#86; imageLinks.test.ts's ECONNRESET case was the visible
     // symptom). The message is enough to tell one failure mode from another.
     const message = e instanceof Error ? e.message : String(e);
-    console.error(`[discordScreenshots] Imgur fetch failed for id ${candidate.id}: ${message}`);
+    console.error(
+      `[discordScreenshots] Imgur fetch failed for id ${candidate.id}: ${message}`
+    );
     return { ok: false, reason: "network_error" };
   }
 
@@ -210,23 +227,26 @@ export async function downloadImgurImage(candidate: ImgurCandidate): Promise<Img
   // redirect as "unavailable", never follow it.
   if (response.status >= 300 && response.status < 400) {
     console.log(
-      `[discordScreenshots] Imgur link ${candidate.id} redirected (removed/unavailable) — skipping.`,
+      `[discordScreenshots] Imgur link ${candidate.id} redirected (removed/unavailable) — skipping.`
     );
     return { ok: false, reason: "redirected" };
   }
 
   if (!response.ok) {
     console.warn(
-      `[discordScreenshots] Imgur fetch for ${candidate.id} returned ${response.status} — skipping.`,
+      `[discordScreenshots] Imgur fetch for ${candidate.id} returned ${response.status} — skipping.`
     );
     return { ok: false, reason: "http_error" };
   }
 
-  const contentType = (response.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+  const contentType = (response.headers.get("content-type") ?? "")
+    .split(";")[0]
+    .trim()
+    .toLowerCase();
   const ext = CONTENT_TYPE_TO_EXT[contentType];
   if (!ext) {
     console.warn(
-      `[discordScreenshots] Imgur ${candidate.id} had unexpected content-type "${contentType}" — skipping.`,
+      `[discordScreenshots] Imgur ${candidate.id} had unexpected content-type "${contentType}" — skipping.`
     );
     return { ok: false, reason: "content_type_mismatch" };
   }
@@ -234,13 +254,15 @@ export async function downloadImgurImage(candidate: ImgurCandidate): Promise<Img
   const contentLengthHeader = response.headers.get("content-length");
   if (contentLengthHeader !== null && Number(contentLengthHeader) > MAX_BYTES) {
     console.warn(
-      `[discordScreenshots] Imgur ${candidate.id} exceeds the ${MAX_BYTES}-byte cap per Content-Length — skipping.`,
+      `[discordScreenshots] Imgur ${candidate.id} exceeds the ${MAX_BYTES}-byte cap per Content-Length — skipping.`
     );
     return { ok: false, reason: "too_large" };
   }
 
   if (!response.body) {
-    console.warn(`[discordScreenshots] Imgur ${candidate.id} had no response body — skipping.`);
+    console.warn(
+      `[discordScreenshots] Imgur ${candidate.id} had no response body — skipping.`
+    );
     return { ok: false, reason: "network_error" };
   }
 
@@ -259,7 +281,7 @@ export async function downloadImgurImage(candidate: ImgurCandidate): Promise<Img
       if (total > MAX_BYTES) {
         await reader.cancel().catch(() => undefined);
         console.warn(
-          `[discordScreenshots] Imgur ${candidate.id} exceeded the ${MAX_BYTES}-byte cap while streaming — aborting.`,
+          `[discordScreenshots] Imgur ${candidate.id} exceeded the ${MAX_BYTES}-byte cap while streaming — aborting.`
         );
         return { ok: false, reason: "too_large" };
       }
@@ -268,14 +290,16 @@ export async function downloadImgurImage(candidate: ImgurCandidate): Promise<Img
   } catch (e) {
     // Same reasoning as the fetch-failure catch above — message only, no stack.
     const message = e instanceof Error ? e.message : String(e);
-    console.error(`[discordScreenshots] Imgur ${candidate.id} stream read failed: ${message}`);
+    console.error(
+      `[discordScreenshots] Imgur ${candidate.id} stream read failed: ${message}`
+    );
     return { ok: false, reason: "network_error" };
   }
 
   const buffer = Buffer.concat(chunks);
   if (!hasMagicBytes(buffer, ext)) {
     console.warn(
-      `[discordScreenshots] Imgur ${candidate.id} content-type "${contentType}" didn't match its magic bytes — skipping.`,
+      `[discordScreenshots] Imgur ${candidate.id} content-type "${contentType}" didn't match its magic bytes — skipping.`
     );
     return { ok: false, reason: "magic_byte_mismatch" };
   }

@@ -1,6 +1,10 @@
 import { describe, test, expect } from "bun:test";
 
-import { canonicalizeRsn, normalizeRsn, isPlausibleRsn } from "../../src/lib/rsn.js";
+import {
+  canonicalizeRsn,
+  normalizeRsn,
+  isPlausibleRsn,
+} from "../../src/lib/rsn.js";
 
 describe("canonicalizeRsn", () => {
   test("trims leading/trailing whitespace", () => {
@@ -30,7 +34,9 @@ describe("normalizeRsn", () => {
   });
 
   test("two different capitalizations normalize to the same identity key", () => {
-    expect(normalizeRsn(canonicalizeRsn("ZEZIMA"))).toBe(normalizeRsn(canonicalizeRsn("zezima")));
+    expect(normalizeRsn(canonicalizeRsn("ZEZIMA"))).toBe(
+      normalizeRsn(canonicalizeRsn("zezima"))
+    );
   });
 });
 
@@ -39,19 +45,22 @@ describe("isPlausibleRsn", () => {
     "accepts %s",
     (rsn: string) => {
       expect(isPlausibleRsn(rsn)).toBe(true);
-    },
+    }
   );
 
   test("rejects the empty string", () => {
     expect(isPlausibleRsn("")).toBe(false);
   });
 
-  test.each([["Not@Valid"], ["Has#Hash"], ["Bang!"], ["Quote'd"], ["Percent%Sign"]])(
-    "rejects %s (disallowed character)",
-    (rsn: string) => {
-      expect(isPlausibleRsn(rsn)).toBe(false);
-    },
-  );
+  test.each([
+    ["Not@Valid"],
+    ["Has#Hash"],
+    ["Bang!"],
+    ["Quote'd"],
+    ["Percent%Sign"],
+  ])("rejects %s (disallowed character)", (rsn: string) => {
+    expect(isPlausibleRsn(rsn)).toBe(false);
+  });
 
   test("rejects a name starting or ending with a space (canonicalizeRsn should have trimmed it first)", () => {
     expect(isPlausibleRsn(" Zezima")).toBe(false);

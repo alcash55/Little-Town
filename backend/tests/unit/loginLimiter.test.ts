@@ -22,19 +22,28 @@ describe("resolveLoginRateLimitMax (#86)", () => {
 
   test("override set outside production: applies the override", () => {
     expect(
-      resolveLoginRateLimitMax({ NODE_ENV: "development", LOGIN_RATE_LIMIT_MAX_OVERRIDE: "50" }),
+      resolveLoginRateLimitMax({
+        NODE_ENV: "development",
+        LOGIN_RATE_LIMIT_MAX_OVERRIDE: "50",
+      })
     ).toBe(50);
   });
 
   test("override above the ceiling: clamped, not honored outright", () => {
     expect(
-      resolveLoginRateLimitMax({ NODE_ENV: "development", LOGIN_RATE_LIMIT_MAX_OVERRIDE: "999999" }),
+      resolveLoginRateLimitMax({
+        NODE_ENV: "development",
+        LOGIN_RATE_LIMIT_MAX_OVERRIDE: "999999",
+      })
     ).toBe(LOGIN_RATE_LIMIT_MAX_CEILING);
   });
 
   test("override set in production: ignored, production always gets the default", () => {
     expect(
-      resolveLoginRateLimitMax({ NODE_ENV: "production", LOGIN_RATE_LIMIT_MAX_OVERRIDE: "500" }),
+      resolveLoginRateLimitMax({
+        NODE_ENV: "production",
+        LOGIN_RATE_LIMIT_MAX_OVERRIDE: "500",
+      })
     ).toBe(DEFAULT_LOGIN_RATE_LIMIT_MAX);
   });
 
@@ -42,8 +51,11 @@ describe("resolveLoginRateLimitMax (#86)", () => {
     "invalid override %j: falls back to the default rather than throwing",
     (value) => {
       expect(
-        resolveLoginRateLimitMax({ NODE_ENV: "development", LOGIN_RATE_LIMIT_MAX_OVERRIDE: value }),
+        resolveLoginRateLimitMax({
+          NODE_ENV: "development",
+          LOGIN_RATE_LIMIT_MAX_OVERRIDE: value,
+        })
       ).toBe(DEFAULT_LOGIN_RATE_LIMIT_MAX);
-    },
+    }
   );
 });

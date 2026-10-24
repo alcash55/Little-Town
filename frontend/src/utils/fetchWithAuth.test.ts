@@ -19,7 +19,10 @@ afterEach(() => {
 describe('fetchWithAuth — 403 stale-role guard (#45)', () => {
   it('dispatches auth:role-stale on a 403 when a session marker is present', async () => {
     markSessionActive();
-    vi.stubGlobal('fetch', vi.fn(() => mockResponse(403)));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => mockResponse(403)),
+    );
     const listener = vi.fn();
     window.addEventListener('auth:role-stale', listener);
 
@@ -31,7 +34,10 @@ describe('fetchWithAuth — 403 stale-role guard (#45)', () => {
 
   it('does not dispatch on a 403 with no session marker (never claimed a role to begin with)', async () => {
     clearSessionMarker();
-    vi.stubGlobal('fetch', vi.fn(() => mockResponse(403)));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => mockResponse(403)),
+    );
     const listener = vi.fn();
     window.addEventListener('auth:role-stale', listener);
 
@@ -44,7 +50,10 @@ describe('fetchWithAuth — 403 stale-role guard (#45)', () => {
   it('does not dispatch while impersonating (a 403 there is the intended outcome, not staleness)', async () => {
     markSessionActive();
     setImpersonationTarget({ id: 'target-1', label: 'Someone', role: 'user' });
-    vi.stubGlobal('fetch', vi.fn(() => mockResponse(403)));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => mockResponse(403)),
+    );
     const listener = vi.fn();
     window.addEventListener('auth:role-stale', listener);
 
@@ -56,7 +65,10 @@ describe('fetchWithAuth — 403 stale-role guard (#45)', () => {
 
   it('does not dispatch on a 200', async () => {
     markSessionActive();
-    vi.stubGlobal('fetch', vi.fn(() => mockResponse(200)));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => mockResponse(200)),
+    );
     const listener = vi.fn();
     window.addEventListener('auth:role-stale', listener);
 

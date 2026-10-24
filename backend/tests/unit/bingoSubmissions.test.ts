@@ -32,12 +32,16 @@ describe("validateApprovalPlayerId (contract 2)", () => {
 
   test("playerId on a different team is rejected", () => {
     const error = validateApprovalPlayerId("player-b", "team-1", roster);
-    expect(error).toBe("playerId must be a registered player on the given team");
+    expect(error).toBe(
+      "playerId must be a registered player on the given team"
+    );
   });
 
   test("unknown playerId is rejected", () => {
     const error = validateApprovalPlayerId("does-not-exist", "team-1", roster);
-    expect(error).toBe("playerId must be a registered player on the given team");
+    expect(error).toBe(
+      "playerId must be a registered player on the given team"
+    );
   });
 
   test("unassigned player (team_id null) is rejected for any teamId", () => {
@@ -144,15 +148,34 @@ describe("buildBoardTileCompletion (GET /api/bingo/board tile completion)", () =
     const approved = new Set(["tile-2"]);
     const result = buildBoardTileCompletion(tiles, approved);
     expect(result).toEqual([
-      { id: "tile-1", task: "Vorkath", completedByMyTeam: false, pendingByMyTeam: false },
-      { id: "tile-2", task: "Zulrah", completedByMyTeam: true, pendingByMyTeam: false },
-      { id: "tile-3", task: "Cerberus", completedByMyTeam: false, pendingByMyTeam: false },
+      {
+        id: "tile-1",
+        task: "Vorkath",
+        completedByMyTeam: false,
+        pendingByMyTeam: false,
+      },
+      {
+        id: "tile-2",
+        task: "Zulrah",
+        completedByMyTeam: true,
+        pendingByMyTeam: false,
+      },
+      {
+        id: "tile-3",
+        task: "Cerberus",
+        completedByMyTeam: false,
+        pendingByMyTeam: false,
+      },
     ]);
   });
 
   test("null (no team) yields completedByMyTeam/pendingByMyTeam: false for every tile", () => {
     const result = buildBoardTileCompletion(tiles, null);
-    expect(result.every((t) => t.completedByMyTeam === false && t.pendingByMyTeam === false)).toBe(true);
+    expect(
+      result.every(
+        (t) => t.completedByMyTeam === false && t.pendingByMyTeam === false
+      )
+    ).toBe(true);
     expect(result).toHaveLength(3);
   });
 
@@ -191,8 +214,20 @@ describe("buildBoardTileCompletion (GET /api/bingo/board tile completion)", () =
   // pendingByMyTeam}.
   test("passes through extra fields (type/points/targetValue) untouched, alongside completedByMyTeam", () => {
     const extendedTiles = [
-      { id: "tile-1", task: "Vorkath", type: "Kill Count", points: 25, targetValue: 50 },
-      { id: "tile-2", task: "Zulrah", type: "Kill Count", points: 15, targetValue: null },
+      {
+        id: "tile-1",
+        task: "Vorkath",
+        type: "Kill Count",
+        points: 25,
+        targetValue: 50,
+      },
+      {
+        id: "tile-2",
+        task: "Zulrah",
+        type: "Kill Count",
+        points: 15,
+        targetValue: null,
+      },
     ];
     const result = buildBoardTileCompletion(extendedTiles, new Set(["tile-1"]));
     expect(result).toEqual([
@@ -222,20 +257,52 @@ describe("buildBoardTileCompletion (GET /api/bingo/board tile completion)", () =
   // -------------------------------------------------------
 
   test("pendingByMyTeam: marks only tiles present in the pending set", () => {
-    const result = buildBoardTileCompletion(tiles, new Set(), new Set(["tile-3"]));
+    const result = buildBoardTileCompletion(
+      tiles,
+      new Set(),
+      new Set(["tile-3"])
+    );
     expect(result).toEqual([
-      { id: "tile-1", task: "Vorkath", completedByMyTeam: false, pendingByMyTeam: false },
-      { id: "tile-2", task: "Zulrah", completedByMyTeam: false, pendingByMyTeam: false },
-      { id: "tile-3", task: "Cerberus", completedByMyTeam: false, pendingByMyTeam: true },
+      {
+        id: "tile-1",
+        task: "Vorkath",
+        completedByMyTeam: false,
+        pendingByMyTeam: false,
+      },
+      {
+        id: "tile-2",
+        task: "Zulrah",
+        completedByMyTeam: false,
+        pendingByMyTeam: false,
+      },
+      {
+        id: "tile-3",
+        task: "Cerberus",
+        completedByMyTeam: false,
+        pendingByMyTeam: true,
+      },
     ]);
   });
 
   test("pendingByMyTeam and completedByMyTeam are independent — a tile can be pending without being completed and vice versa", () => {
-    const result = buildBoardTileCompletion(tiles, new Set(["tile-1"]), new Set(["tile-2"]));
+    const result = buildBoardTileCompletion(
+      tiles,
+      new Set(["tile-1"]),
+      new Set(["tile-2"])
+    );
     const byId = Object.fromEntries(result.map((t) => [t.id, t]));
-    expect(byId["tile-1"]).toMatchObject({ completedByMyTeam: true, pendingByMyTeam: false });
-    expect(byId["tile-2"]).toMatchObject({ completedByMyTeam: false, pendingByMyTeam: true });
-    expect(byId["tile-3"]).toMatchObject({ completedByMyTeam: false, pendingByMyTeam: false });
+    expect(byId["tile-1"]).toMatchObject({
+      completedByMyTeam: true,
+      pendingByMyTeam: false,
+    });
+    expect(byId["tile-2"]).toMatchObject({
+      completedByMyTeam: false,
+      pendingByMyTeam: true,
+    });
+    expect(byId["tile-3"]).toMatchObject({
+      completedByMyTeam: false,
+      pendingByMyTeam: false,
+    });
   });
 
   test("omitting the pending set entirely defaults to pendingByMyTeam: false for every tile (back-compat with 2-arg callers)", () => {

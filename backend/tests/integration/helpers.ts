@@ -60,18 +60,30 @@ export interface LocalStackConfig {
   serviceRoleKey: string;
 }
 
-const BACKEND_DIR = path.resolve(fileURLToPath(import.meta.url), "..", "..", "..");
+const BACKEND_DIR = path.resolve(
+  fileURLToPath(import.meta.url),
+  "..",
+  "..",
+  ".."
+);
 
 const NO_TARGET_MESSAGE =
   "could not resolve Supabase test credentials — set TEST_SUPABASE_URL/TEST_SUPABASE_SERVICE_ROLE_KEY, " +
   "or start the local stack via `bun run db:start` (`bun x supabase status` failed)";
 
-async function resolveCredentialsFromCli(): Promise<{ url: string; key: string } | null> {
+async function resolveCredentialsFromCli(): Promise<{
+  url: string;
+  key: string;
+} | null> {
   try {
-    const { stdout } = await execFileAsync("bun", ["x", "supabase", "status", "-o", "env"], {
-      cwd: BACKEND_DIR,
-      timeout: 15_000,
-    });
+    const { stdout } = await execFileAsync(
+      "bun",
+      ["x", "supabase", "status", "-o", "env"],
+      {
+        cwd: BACKEND_DIR,
+        timeout: 15_000,
+      }
+    );
     const url = stdout.match(/^API_URL="([^"]*)"/m)?.[1];
     const key = stdout.match(/^SERVICE_ROLE_KEY="([^"]*)"/m)?.[1];
     if (!url || !key) return null;
@@ -111,7 +123,7 @@ function assertNotAccidentalProd(url: string, explicitOverride: boolean): void {
       `Refusing to run integration tests against "${url}": it looks like a hosted Supabase ` +
         "project (*.supabase.co) but TEST_SUPABASE_URL was not explicitly set. This guards " +
         "against integration tests silently hitting production. If this is intentional, set " +
-        "TEST_SUPABASE_URL/TEST_SUPABASE_SERVICE_ROLE_KEY explicitly.",
+        "TEST_SUPABASE_URL/TEST_SUPABASE_SERVICE_ROLE_KEY explicitly."
     );
   }
 }
@@ -182,7 +194,9 @@ export function getLocalStackConfig(): Promise<LocalStackConfig> {
  * process (see #101) and the run should fail loudly instead of silently
  * skipping every integration test.
  */
-export async function probeStackReachableNow(config: LocalStackConfig): Promise<boolean> {
+export async function probeStackReachableNow(
+  config: LocalStackConfig
+): Promise<boolean> {
   if (!config.serviceRoleKey) return false;
   try {
     const res = await nativeFetch(`${config.url}/rest/v1/`, {
@@ -236,12 +250,17 @@ let cachedDbUrl: Promise<string | null> | null = null;
 async function resolveDbUrl(): Promise<string | null> {
   if (!cachedDbUrl) {
     cachedDbUrl = (async (): Promise<string | null> => {
-      if (process.env.TEST_SUPABASE_DB_URL) return process.env.TEST_SUPABASE_DB_URL;
+      if (process.env.TEST_SUPABASE_DB_URL)
+        return process.env.TEST_SUPABASE_DB_URL;
       try {
-        const { stdout } = await execFileAsync("bun", ["x", "supabase", "status", "-o", "env"], {
-          cwd: BACKEND_DIR,
-          timeout: 15_000,
-        });
+        const { stdout } = await execFileAsync(
+          "bun",
+          ["x", "supabase", "status", "-o", "env"],
+          {
+            cwd: BACKEND_DIR,
+            timeout: 15_000,
+          }
+        );
         return stdout.match(/^DB_URL="([^"]*)"/m)?.[1] ?? null;
       } catch {
         return null;
@@ -278,15 +297,18 @@ const DEFAULT_LOCK_TIMEOUT_MS = 20_000;
  */
 export async function withGetLatestBingoLock<T>(
   fn: () => Promise<T>,
-  options: { timeoutMs?: number } = {},
+  options: { timeoutMs?: number } = {}
 ): Promise<T> {
-  const timeoutMs = Math.max(0, Math.trunc(options.timeoutMs ?? DEFAULT_LOCK_TIMEOUT_MS));
+  const timeoutMs = Math.max(
+    0,
+    Math.trunc(options.timeoutMs ?? DEFAULT_LOCK_TIMEOUT_MS)
+  );
   const dbUrl = await resolveDbUrl();
   if (!dbUrl) {
     throw new Error(
       "withGetLatestBingoLock: could not resolve a raw Postgres connection string — set " +
         "TEST_SUPABASE_DB_URL, or start the local stack via `bun run db:start` " +
-        "(`bun x supabase status` failed).",
+        "(`bun x supabase status` failed)."
     );
   }
 
@@ -294,7 +316,8 @@ export async function withGetLatestBingoLock<T>(
   const sql = new SQL(dbUrl, { max: 1 });
   try {
     // Let the cross-process regression identify its own waiting connections.
-    const applicationName = process.env.TEST_GET_LATEST_BINGO_LOCK_APPLICATION_NAME;
+    const applicationName =
+      process.env.TEST_GET_LATEST_BINGO_LOCK_APPLICATION_NAME;
     if (applicationName) {
       await sql`SELECT set_config('application_name', ${applicationName}, false)`;
     }
@@ -308,7 +331,9 @@ export async function withGetLatestBingoLock<T>(
     } catch (err) {
       throw new Error(
         `withGetLatestBingoLock: failed to acquire the getLatestBingo() isolation lock within ` +
-          `${timeoutMs}ms — a stuck or crashed holder likely never released it: ${String(err)}`,
+          `${timeoutMs}ms — a stuck or crashed holder likely never released it: ${String(
+            err
+          )}`
       );
     }
     try {
@@ -330,10 +355,14 @@ export async function withGetLatestBingoLock<T>(
  * for real, on the shared stack, blocking every other track's
  * getLatestBingo()-dependent test too.
  */
-export async function _acquireStuckGetLatestBingoLockForTests(): Promise<{ release: () => Promise<void> }> {
+export async function _acquireStuckGetLatestBingoLockForTests(): Promise<{
+  release: () => Promise<void>;
+}> {
   const dbUrl = await resolveDbUrl();
   if (!dbUrl) {
-    throw new Error("_acquireStuckGetLatestBingoLockForTests: could not resolve a raw Postgres connection string.");
+    throw new Error(
+      "_acquireStuckGetLatestBingoLockForTests: could not resolve a raw Postgres connection string."
+    );
   }
   const sql = new SQL(dbUrl, { max: 1 });
   await sql`SELECT pg_advisory_lock(${GET_LATEST_BINGO_LOCK_KEY})`;
@@ -347,8 +376,13 @@ export async function _acquireStuckGetLatestBingoLockForTests(): Promise<{ relea
 
 /** True when a bingo somewhere in the shared local stack already has status='active'. */
 export async function hasPreexistingActiveBingo(): Promise<boolean> {
-  const { data, error } = await getDb().from("bingos").select("id").eq("status", "active").limit(1);
-  if (error) throw new Error(`Failed to check for an active bingo: ${error.message}`);
+  const { data, error } = await getDb()
+    .from("bingos")
+    .select("id")
+    .eq("status", "active")
+    .limit(1);
+  if (error)
+    throw new Error(`Failed to check for an active bingo: ${error.message}`);
   return (data?.length ?? 0) > 0;
 }
 
@@ -362,12 +396,17 @@ export function uniqueSuffix(): string {
  * backing column) that may not have landed yet — see the NOTE at the top of
  * TEAM-BRIEF.md.
  */
-export async function columnExists(table: string, column: string): Promise<boolean> {
+export async function columnExists(
+  table: string,
+  column: string
+): Promise<boolean> {
   const { error } = await getDb().from(table).select(column).limit(0);
   if (!error) return true;
   // PostgREST reports "column does not exist" as Postgres code 42703.
   if ((error as { code?: string }).code === "42703") return false;
-  throw new Error(`Failed to check for column "${table}.${column}": ${error.message}`);
+  throw new Error(
+    `Failed to check for column "${table}.${column}": ${error.message}`
+  );
 }
 
 // -------------------------------------------------------
@@ -391,7 +430,7 @@ export async function insertTestBingo(
     board_size: number;
     start_date: string | null;
     end_date: string | null;
-  }> = {},
+  }> = {}
 ): Promise<BingoRow> {
   const { data, error } = await getDb()
     .from("bingos")
@@ -399,25 +438,36 @@ export async function insertTestBingo(
       name,
       status: overrides.status ?? "draft",
       board_size: overrides.board_size ?? 16,
-      ...(overrides.start_date !== undefined ? { start_date: overrides.start_date } : {}),
-      ...(overrides.end_date !== undefined ? { end_date: overrides.end_date } : {}),
+      ...(overrides.start_date !== undefined
+        ? { start_date: overrides.start_date }
+        : {}),
+      ...(overrides.end_date !== undefined
+        ? { end_date: overrides.end_date }
+        : {}),
     })
     .select("*")
     .single();
 
-  if (error || !data) throw new Error(`Failed to insert test bingo "${name}": ${error?.message}`);
+  if (error || !data)
+    throw new Error(`Failed to insert test bingo "${name}": ${error?.message}`);
   return data as BingoRow;
 }
 
 /** Deletes a test bingo; cascades teams/players/tiles/snapshots via FK ON DELETE CASCADE. */
 export async function deleteTestBingo(id: string): Promise<void> {
   const { error } = await getDb().from("bingos").delete().eq("id", id);
-  if (error) throw new Error(`Failed to clean up test bingo ${id}: ${error.message}`);
+  if (error)
+    throw new Error(`Failed to clean up test bingo ${id}: ${error.message}`);
 }
 
 export async function getBingoRow(id: string): Promise<BingoRow> {
-  const { data, error } = await getDb().from("bingos").select("*").eq("id", id).single();
-  if (error || !data) throw new Error(`Failed to fetch bingo ${id}: ${error?.message}`);
+  const { data, error } = await getDb()
+    .from("bingos")
+    .select("*")
+    .eq("id", id)
+    .single();
+  if (error || !data)
+    throw new Error(`Failed to fetch bingo ${id}: ${error?.message}`);
   return data as BingoRow;
 }
 
@@ -428,20 +478,30 @@ export interface BingoTeamRow {
   sort_order: number;
 }
 
-export async function insertTestTeam(bingoId: string, name: string): Promise<BingoTeamRow> {
+export async function insertTestTeam(
+  bingoId: string,
+  name: string
+): Promise<BingoTeamRow> {
   const { data, error } = await getDb()
     .from("bingo_teams")
     .insert({ bingo_id: bingoId, name })
     .select("*")
     .single();
 
-  if (error || !data) throw new Error(`Failed to insert test team "${name}": ${error?.message}`);
+  if (error || !data)
+    throw new Error(`Failed to insert test team "${name}": ${error?.message}`);
   return data as BingoTeamRow;
 }
 
 export async function getTeamRows(bingoId: string): Promise<BingoTeamRow[]> {
-  const { data, error } = await getDb().from("bingo_teams").select("*").eq("bingo_id", bingoId);
-  if (error) throw new Error(`Failed to fetch teams for bingo ${bingoId}: ${error.message}`);
+  const { data, error } = await getDb()
+    .from("bingo_teams")
+    .select("*")
+    .eq("bingo_id", bingoId);
+  if (error)
+    throw new Error(
+      `Failed to fetch teams for bingo ${bingoId}: ${error.message}`
+    );
   return (data ?? []) as BingoTeamRow[];
 }
 
@@ -471,7 +531,7 @@ export async function insertTestTile(
     task: string;
     points: number;
     targetValue: number;
-  }> = {},
+  }> = {}
 ): Promise<BingoBoardTileRow> {
   const { data, error } = await getDb()
     .from("bingo_board_tiles")
@@ -486,11 +546,15 @@ export async function insertTestTile(
     .select("id, bingo_id, position, type, task, points, target_value")
     .single();
 
-  if (error || !data) throw new Error(`Failed to insert test tile: ${error?.message}`);
+  if (error || !data)
+    throw new Error(`Failed to insert test tile: ${error?.message}`);
   return data as BingoBoardTileRow;
 }
 
-export async function countHiscoreRows(playerId: string, type: "start" | "current"): Promise<number> {
+export async function countHiscoreRows(
+  playerId: string,
+  type: "start" | "current"
+): Promise<number> {
   const { count, error } = await getDb()
     .from("bingo_player_hiscores")
     .select("id", { count: "exact", head: true })
@@ -498,18 +562,27 @@ export async function countHiscoreRows(playerId: string, type: "start" | "curren
     .eq("type", type)
     .is("side_account_id", null);
 
-  if (error) throw new Error(`Failed to count ${type} snapshots for ${playerId}: ${error.message}`);
+  if (error)
+    throw new Error(
+      `Failed to count ${type} snapshots for ${playerId}: ${error.message}`
+    );
   return count ?? 0;
 }
 
-export async function countBingoPlayerRows(bingoId: string, rsn: string): Promise<number> {
+export async function countBingoPlayerRows(
+  bingoId: string,
+  rsn: string
+): Promise<number> {
   const { count, error } = await getDb()
     .from("bingo_players")
     .select("id", { count: "exact", head: true })
     .eq("bingo_id", bingoId)
     .eq("rsn", rsn);
 
-  if (error) throw new Error(`Failed to count player rows for "${rsn}": ${error.message}`);
+  if (error)
+    throw new Error(
+      `Failed to count player rows for "${rsn}": ${error.message}`
+    );
   return count ?? 0;
 }
 
@@ -523,7 +596,7 @@ export async function countBingoPlayerRows(bingoId: string, rsn: string): Promis
  */
 export async function getBingoPlayerRsnSpellings(
   bingoId: string,
-  rsn: string,
+  rsn: string
 ): Promise<string[]> {
   const { data, error } = await getDb()
     .from("bingo_players")
@@ -531,7 +604,10 @@ export async function getBingoPlayerRsnSpellings(
     .eq("bingo_id", bingoId)
     .eq("rsn", rsn);
 
-  if (error) throw new Error(`Failed to read player rows for "${rsn}": ${error.message}`);
+  if (error)
+    throw new Error(
+      `Failed to read player rows for "${rsn}": ${error.message}`
+    );
   return (data ?? []).map((row) => row.rsn as string);
 }
 
@@ -551,14 +627,20 @@ export interface TestUser {
 }
 
 /** Inserts a throwaway user row directly (bypasses db/users.ts — no real password needed for these tests). */
-export async function insertTestUser(role: TestUser["role"], labelPrefix = "Test"): Promise<TestUser> {
+export async function insertTestUser(
+  role: TestUser["role"],
+  labelPrefix = "Test"
+): Promise<TestUser> {
   const username = `${labelPrefix}${role}${uniqueSuffix()}`;
   const { data, error } = await getDb()
     .from("users")
     .insert({ username, password_hash: "x", role })
     .select("id, username, role")
     .single();
-  if (error || !data) throw new Error(`Failed to insert test user "${username}": ${error?.message}`);
+  if (error || !data)
+    throw new Error(
+      `Failed to insert test user "${username}": ${error?.message}`
+    );
   return data as TestUser;
 }
 
@@ -567,11 +649,18 @@ export async function deleteTestUser(id: string): Promise<void> {
     .from("users")
     .delete()
     .eq("id", id)
-    .then(() => undefined, () => undefined);
+    .then(
+      () => undefined,
+      () => undefined
+    );
 }
 
 export function signTestToken(user: TestUser): string {
-  return jwt.sign({ id: user.id, username: user.username, role: user.role }, getJwtSecret(), { expiresIn: "1h" });
+  return jwt.sign(
+    { id: user.id, username: user.username, role: user.role },
+    getJwtSecret(),
+    { expiresIn: "1h" }
+  );
 }
 
 export interface TestHttpResponse {
@@ -592,10 +681,11 @@ export function jsonRequest(
   port: number,
   method: string,
   path: string,
-  options: JsonRequestOptions = {},
+  options: JsonRequestOptions = {}
 ): Promise<TestHttpResponse> {
   return new Promise((resolve, reject) => {
-    const payload = options.body !== undefined ? JSON.stringify(options.body) : undefined;
+    const payload =
+      options.body !== undefined ? JSON.stringify(options.body) : undefined;
     const headers: Record<string, string> = { ...options.headers };
     if (options.token) headers.Authorization = `Bearer ${options.token}`;
     if (payload !== undefined) {
@@ -603,17 +693,24 @@ export function jsonRequest(
       headers["Content-Length"] = Buffer.byteLength(payload).toString();
     }
 
-    const req = http.request({ host: "127.0.0.1", port, path, method, headers }, (res) => {
-      let raw = "";
-      res.on("data", (chunk) => (raw += chunk));
-      res.on("end", () => {
-        try {
-          resolve({ status: res.statusCode ?? 0, body: raw ? JSON.parse(raw) : undefined, headers: res.headers });
-        } catch (e) {
-          reject(e);
-        }
-      });
-    });
+    const req = http.request(
+      { host: "127.0.0.1", port, path, method, headers },
+      (res) => {
+        let raw = "";
+        res.on("data", (chunk) => (raw += chunk));
+        res.on("end", () => {
+          try {
+            resolve({
+              status: res.statusCode ?? 0,
+              body: raw ? JSON.parse(raw) : undefined,
+              headers: res.headers,
+            });
+          } catch (e) {
+            reject(e);
+          }
+        });
+      }
+    );
     req.on("error", reject);
     if (payload !== undefined) req.write(payload);
     req.end();
@@ -621,7 +718,9 @@ export function jsonRequest(
 }
 
 /** Starts `app` listening on an ephemeral local port; caller is responsible for `.close()`ing it. */
-export function startTestServer(app: import("express").Express): Promise<{ server: http.Server; port: number }> {
+export function startTestServer(
+  app: import("express").Express
+): Promise<{ server: http.Server; port: number }> {
   return new Promise((resolve) => {
     const server = app.listen(0, "127.0.0.1", () => {
       const port = (server.address() as { port: number }).port;
@@ -646,7 +745,10 @@ export function startTestServer(app: import("express").Express): Promise<{ serve
  * of what's in `.env`. Use `withAllowDevAuth("true", async () => { ... })`
  * to instead pin the bypass's own accept-as-dev-user behavior.
  */
-export async function withAllowDevAuth<T>(value: string | undefined, fn: () => Promise<T>): Promise<T> {
+export async function withAllowDevAuth<T>(
+  value: string | undefined,
+  fn: () => Promise<T>
+): Promise<T> {
   const previous = process.env.ALLOW_DEV_AUTH;
   if (value === undefined) delete process.env.ALLOW_DEV_AUTH;
   else process.env.ALLOW_DEV_AUTH = value;

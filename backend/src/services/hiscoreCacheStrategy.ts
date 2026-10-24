@@ -26,10 +26,13 @@ export interface HiscoreCacheStrategyDeps {
 export async function resolveHiscoreWithCache(
   rsn: string,
   ttlMs: number,
-  deps: HiscoreCacheStrategyDeps,
+  deps: HiscoreCacheStrategyDeps
 ): Promise<HiscoreData | null> {
   const cached = await deps.getCached().catch((e) => {
-    console.error(`[hiscores] Failed to read hiscore_cache for "${rsn}" — falling through to a live call:`, e);
+    console.error(
+      `[hiscores] Failed to read hiscore_cache for "${rsn}" — falling through to a live call:`,
+      e
+    );
     return null;
   });
 
@@ -44,7 +47,7 @@ export async function resolveHiscoreWithCache(
     if (cached) {
       console.warn(
         `[hiscores] Live lookup for "${rsn}" failed after retries — serving the cached snapshot from ` +
-          `${cached.updatedAt} instead of failing outright.`,
+          `${cached.updatedAt} instead of failing outright.`
       );
       return { ...cached.data, updatedAt: new Date(cached.data.updatedAt) };
     }
@@ -56,7 +59,10 @@ export async function resolveHiscoreWithCache(
   await deps.upsertCache(live).catch((e) => {
     // Cache-write failure must never fail the lookup itself — the caller
     // already has real, live data at this point.
-    console.error(`[hiscores] Failed to write hiscore_cache for "${rsn}" (non-fatal):`, e);
+    console.error(
+      `[hiscores] Failed to write hiscore_cache for "${rsn}" (non-fatal):`,
+      e
+    );
   });
 
   return live;

@@ -12,7 +12,8 @@ vi.mock('../../../utils/fetchWithAuth', () => ({
 import { fetchWithAuth } from '../../../utils/fetchWithAuth';
 
 const mockedFetchWithAuth = vi.mocked(fetchWithAuth);
-const jsonResponse = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
+const jsonResponse = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status });
 
 beforeEach(() => {
   mockedFetchWithAuth.mockReset();

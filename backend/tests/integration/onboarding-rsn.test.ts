@@ -37,7 +37,15 @@ process.env.JWT_SECRET = "onboarding-rsn-test-secret-do-not-use-elsewhere";
 // wiring, just a different route/threshold.
 process.env.ONBOARDING_RSN_RATE_LIMIT_MAX = "1000";
 
-import { afterAll, beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  mock,
+  test,
+} from "bun:test";
 import express from "express";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
@@ -87,11 +95,15 @@ const hiscoresMock = mock(async (rsn: string): Promise<HiscoreData | null> => {
   return fakeHiscoreData(rsn);
 });
 
-mock.module("../../src/services/hiscores.js", () => ({ hiscores: hiscoresMock }));
+mock.module("../../src/services/hiscores.js", () => ({
+  hiscores: hiscoresMock,
+}));
 
 // Imported dynamically *after* the mock above is registered so
 // onboarding.js resolves the mocked hiscores module.
-const { default: onboardingRoutes } = await import("../../src/routes/onboarding.js");
+const { default: onboardingRoutes } = await import(
+  "../../src/routes/onboarding.js"
+);
 
 beforeEach(() => {
   hiscoresMock.mockClear();
@@ -106,28 +118,49 @@ interface TestUser {
 const createdUserIds: string[] = [];
 const createdBingoIds: string[] = [];
 
-async function insertTestUser(role: TestUser["role"] = "user"): Promise<TestUser> {
+async function insertTestUser(
+  role: TestUser["role"] = "user"
+): Promise<TestUser> {
   const username = `OnboardRsnTest${role}${uniqueSuffix()}`;
   const { data, error } = await getDb()
     .from("users")
     .insert({ username, password_hash: "x", role })
     .select("id, username, role")
     .single();
-  if (error || !data) throw new Error(`Failed to insert test user "${username}": ${error?.message}`);
+  if (error || !data)
+    throw new Error(
+      `Failed to insert test user "${username}": ${error?.message}`
+    );
   createdUserIds.push((data as { id: string }).id);
   return data as TestUser;
 }
 
 function signToken(user: TestUser): string {
-  return jwt.sign({ id: user.id, username: user.username, role: user.role }, getJwtSecret(), {
-    expiresIn: "1h",
-  });
+  return jwt.sign(
+    { id: user.id, username: user.username, role: user.role },
+    getJwtSecret(),
+    {
+      expiresIn: "1h",
+    }
+  );
 }
 
 async function getRsnClaimByUser(userId: string) {
-  const { data, error } = await getDb().from("rsn_claims").select("*").eq("user_id", userId).maybeSingle();
-  if (error) throw new Error(`Failed to fetch rsn_claims for ${userId}: ${error.message}`);
-  return data as { id: string; user_id: string; rsn: string; rsn_normalized: string } | null;
+  const { data, error } = await getDb()
+    .from("rsn_claims")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error)
+    throw new Error(
+      `Failed to fetch rsn_claims for ${userId}: ${error.message}`
+    );
+  return data as {
+    id: string;
+    user_id: string;
+    rsn: string;
+    rsn_normalized: string;
+  } | null;
 }
 
 async function insertRawBingoPlayer(bingoId: string, rsn: string) {
@@ -136,14 +169,21 @@ async function insertRawBingoPlayer(bingoId: string, rsn: string) {
     .insert({ bingo_id: bingoId, rsn })
     .select("id, team_id")
     .single();
-  if (error || !data) throw new Error(`Failed to insert raw bingo_players row "${rsn}": ${error?.message}`);
+  if (error || !data)
+    throw new Error(
+      `Failed to insert raw bingo_players row "${rsn}": ${error?.message}`
+    );
   return data as { id: string; team_id: string | null };
 }
 
 let server: http.Server;
 let port: number;
 
-function post(path: string, token: string, body: unknown): Promise<{ status: number; body: any }> {
+function post(
+  path: string,
+  token: string,
+  body: unknown
+): Promise<{ status: number; body: any }> {
   return new Promise((resolve, reject) => {
     const payload = JSON.stringify(body);
     const req = http.request(
@@ -161,8 +201,10 @@ function post(path: string, token: string, body: unknown): Promise<{ status: num
       (res) => {
         let data = "";
         res.on("data", (chunk) => (data += chunk));
-        res.on("end", () => resolve({ status: res.statusCode ?? 0, body: JSON.parse(data) }));
-      },
+        res.on("end", () =>
+          resolve({ status: res.statusCode ?? 0, body: JSON.parse(data) })
+        );
+      }
     );
     req.on("error", reject);
     req.write(payload);
@@ -189,9 +231,20 @@ afterAll(async () => {
   // ON DELETE action (default NO ACTION), so a registering user can't be
   // deleted while a bingo_players row it registered still exists. Deleting
   // the bingo first cascades away the bingo_players row.
-  await Promise.all(createdBingoIds.map((id) => deleteTestBingo(id).catch(() => undefined)));
   await Promise.all(
-    createdUserIds.map((id) => getDb().from("users").delete().eq("id", id).then(() => undefined, () => undefined)),
+    createdBingoIds.map((id) => deleteTestBingo(id).catch(() => undefined))
+  );
+  await Promise.all(
+    createdUserIds.map((id) =>
+      getDb()
+        .from("users")
+        .delete()
+        .eq("id", id)
+        .then(
+          () => undefined,
+          () => undefined
+        )
+    )
   );
 });
 
@@ -209,7 +262,11 @@ describe.skipIf(!stack.reachable)("POST /api/onboarding/rsn", () => {
 
   test("happy path: valid RSN -> 200, tracked, not already tracked, claim + pool row created", async () => {
     const rsn = `OnboardHappy${uniqueSuffix()}`;
-    const { status, body } = await post("/api/onboarding/rsn", signToken(userA), { rsn });
+    const { status, body } = await post(
+      "/api/onboarding/rsn",
+      signToken(userA),
+      { rsn }
+    );
 
     expect(status).toBe(200);
     expect(body).toEqual({ rsn, tracked: true, alreadyTracked: false });
@@ -225,11 +282,17 @@ describe.skipIf(!stack.reachable)("POST /api/onboarding/rsn", () => {
     const suffix = uniqueSuffix();
     const rsn = `_Spacey_${suffix}_RSN_`; // canonical: "Spacey <suffix> RSN"
     const user = await insertTestUser("user");
-    const { status, body } = await post("/api/onboarding/rsn", signToken(user), { rsn });
+    const { status, body } = await post(
+      "/api/onboarding/rsn",
+      signToken(user),
+      { rsn }
+    );
 
     expect(status).toBe(200);
     expect(body.rsn).toBe(`Spacey ${suffix} RSN`);
-    expect(await countBingoPlayerRows(bingo.id, `Spacey ${suffix} RSN`)).toBe(1);
+    expect(await countBingoPlayerRows(bingo.id, `Spacey ${suffix} RSN`)).toBe(
+      1
+    );
   });
 
   test("RSN not found on hiscores -> 422 RSN_NOT_FOUND, nothing persisted", async () => {
@@ -237,7 +300,11 @@ describe.skipIf(!stack.reachable)("POST /api/onboarding/rsn", () => {
     unresolvableRsns.add(rsn);
     const user = await insertTestUser("user");
 
-    const { status, body } = await post("/api/onboarding/rsn", signToken(user), { rsn });
+    const { status, body } = await post(
+      "/api/onboarding/rsn",
+      signToken(user),
+      { rsn }
+    );
 
     expect(status).toBe(422);
     expect(body.code).toBe("RSN_NOT_FOUND");
@@ -250,7 +317,11 @@ describe.skipIf(!stack.reachable)("POST /api/onboarding/rsn", () => {
     downRsns.add(rsn);
     const user = await insertTestUser("user");
 
-    const { status, body } = await post("/api/onboarding/rsn", signToken(user), { rsn });
+    const { status, body } = await post(
+      "/api/onboarding/rsn",
+      signToken(user),
+      { rsn }
+    );
 
     expect(status).toBe(503);
     expect(body.code).toBe("HISCORES_SERVICE_UNAVAILABLE");
@@ -259,9 +330,13 @@ describe.skipIf(!stack.reachable)("POST /api/onboarding/rsn", () => {
 
   test("implausible RSN shape (disallowed characters) -> 422 RSN_NOT_FOUND without calling the hiscores service", async () => {
     const user = await insertTestUser("user");
-    const { status, body } = await post("/api/onboarding/rsn", signToken(user), {
-      rsn: "Not@AValid#RSN!",
-    });
+    const { status, body } = await post(
+      "/api/onboarding/rsn",
+      signToken(user),
+      {
+        rsn: "Not@AValid#RSN!",
+      }
+    );
 
     expect(status).toBe(422);
     expect(body.code).toBe("RSN_NOT_FOUND");
@@ -308,7 +383,9 @@ describe.skipIf(!stack.reachable)("POST /api/onboarding/rsn", () => {
 
     // Conflict is case-insensitive too (same identity, different casing).
     const thirdUser = await insertTestUser("user");
-    const third = await post("/api/onboarding/rsn", signToken(thirdUser), { rsn: rsn.toUpperCase() });
+    const third = await post("/api/onboarding/rsn", signToken(thirdUser), {
+      rsn: rsn.toUpperCase(),
+    });
     expect(third.status).toBe(409);
     expect(third.body.code).toBe("RSN_TAKEN");
   });
@@ -318,10 +395,14 @@ describe.skipIf(!stack.reachable)("POST /api/onboarding/rsn", () => {
     const rsnOne = `OnboardChangeA${uniqueSuffix()}`;
     const rsnTwo = `OnboardChangeB${uniqueSuffix()}`;
 
-    const first = await post("/api/onboarding/rsn", signToken(user), { rsn: rsnOne });
+    const first = await post("/api/onboarding/rsn", signToken(user), {
+      rsn: rsnOne,
+    });
     expect(first.status).toBe(200);
 
-    const second = await post("/api/onboarding/rsn", signToken(user), { rsn: rsnTwo });
+    const second = await post("/api/onboarding/rsn", signToken(user), {
+      rsn: rsnTwo,
+    });
     expect(second.status).toBe(200);
 
     const claim = await getRsnClaimByUser(user.id);
@@ -329,19 +410,27 @@ describe.skipIf(!stack.reachable)("POST /api/onboarding/rsn", () => {
 
     // rsnOne is free again for someone else to claim.
     const otherUser = await insertTestUser("user");
-    const reclaim = await post("/api/onboarding/rsn", signToken(otherUser), { rsn: rsnOne });
+    const reclaim = await post("/api/onboarding/rsn", signToken(otherUser), {
+      rsn: rsnOne,
+    });
     expect(reclaim.status).toBe(200);
   });
 
   test("already-tracked player (admin-registered, different case) gets linked, not duplicated", async () => {
     const preRegistered = `OnboardPreReg${uniqueSuffix()}`;
     await insertRawBingoPlayer(bingo.id, preRegistered.toLowerCase());
-    expect(await countBingoPlayerRows(bingo.id, preRegistered.toLowerCase())).toBe(1);
+    expect(
+      await countBingoPlayerRows(bingo.id, preRegistered.toLowerCase())
+    ).toBe(1);
 
     const user = await insertTestUser("user");
-    const { status, body } = await post("/api/onboarding/rsn", signToken(user), {
-      rsn: preRegistered, // different capitalization than the pre-registered row
-    });
+    const { status, body } = await post(
+      "/api/onboarding/rsn",
+      signToken(user),
+      {
+        rsn: preRegistered, // different capitalization than the pre-registered row
+      }
+    );
 
     expect(status).toBe(200);
     expect(body.alreadyTracked).toBe(true);
@@ -354,7 +443,9 @@ describe.skipIf(!stack.reachable)("POST /api/onboarding/rsn", () => {
     // `bingo_players.rsn` became `citext` in 20260910000000, so `.eq()`
     // matches every casing and that count is now 1 by design. Asserting the
     // stored spelling is what still distinguishes "reused" from "replaced".
-    expect(await countBingoPlayerRows(bingo.id, preRegistered.toLowerCase())).toBe(1);
+    expect(
+      await countBingoPlayerRows(bingo.id, preRegistered.toLowerCase())
+    ).toBe(1);
     expect(await getBingoPlayerRsnSpellings(bingo.id, preRegistered)).toEqual([
       preRegistered.toLowerCase(),
     ]);
@@ -364,7 +455,9 @@ describe.skipIf(!stack.reachable)("POST /api/onboarding/rsn", () => {
     const rsn = `OnboardPoolCheck${uniqueSuffix()}`;
     const user = await insertTestUser("user");
 
-    const { status } = await post("/api/onboarding/rsn", signToken(user), { rsn });
+    const { status } = await post("/api/onboarding/rsn", signToken(user), {
+      rsn,
+    });
     expect(status).toBe(200);
 
     const { data, error } = await getDb()

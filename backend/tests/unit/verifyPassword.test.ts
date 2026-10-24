@@ -25,7 +25,9 @@ const ENV_KEYS = ["NODE_ENV", "ALLOW_DEV_AUTH"] as const;
 let saved: Record<(typeof ENV_KEYS)[number], string | undefined>;
 
 beforeEach(() => {
-  saved = Object.fromEntries(ENV_KEYS.map((k) => [k, process.env[k]])) as typeof saved;
+  saved = Object.fromEntries(
+    ENV_KEYS.map((k) => [k, process.env[k]])
+  ) as typeof saved;
 });
 
 afterEach(() => {
@@ -38,7 +40,9 @@ afterEach(() => {
 describe("verifyPassword — real users (bcrypt branch)", () => {
   test("correct password against its own bcrypt hash succeeds", async () => {
     const hash = await bcrypt.hash("correct horse battery staple", 12);
-    expect(await verifyPassword("correct horse battery staple", hash)).toBe(true);
+    expect(await verifyPassword("correct horse battery staple", hash)).toBe(
+      true
+    );
   });
 
   test("wrong password against a real bcrypt hash fails", async () => {
@@ -62,7 +66,9 @@ describe("verifyPassword — dev:-prefixed fixture branch, all four gate states"
   test("ALLOW_DEV_AUTH=true, NODE_ENV=development, wrong password -> false", async () => {
     process.env.ALLOW_DEV_AUTH = "true";
     process.env.NODE_ENV = "development";
-    expect(await verifyPassword("not-the-password", "dev:password")).toBe(false);
+    expect(await verifyPassword("not-the-password", "dev:password")).toBe(
+      false
+    );
   });
 
   test("ALLOW_DEV_AUTH=false, NODE_ENV=development -> false regardless of password match", async () => {

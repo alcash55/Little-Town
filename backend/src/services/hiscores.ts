@@ -1,8 +1,12 @@
 import { HiscoreData } from "../types/index.js";
-import { getCachedHiscoreData, upsertHiscoreCache } from "../db/hiscoreCache.js";
+import {
+  getCachedHiscoreData,
+  upsertHiscoreCache,
+} from "../db/hiscoreCache.js";
 import { resolveHiscoreWithCache } from "./hiscoreCacheStrategy.js";
 
-const HISCORES_URL = "https://secure.runescape.com/m=hiscore_oldschool/index_lite.json";
+const HISCORES_URL =
+  "https://secure.runescape.com/m=hiscore_oldschool/index_lite.json";
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1500;
 
@@ -29,7 +33,13 @@ function sleep(ms: number): Promise<void> {
  */
 async function getHiscoreData(rsn: string): Promise<{
   name: string;
-  skills: Array<{ id: number; name: string; rank: number; level: number; xp: number }>;
+  skills: Array<{
+    id: number;
+    name: string;
+    rank: number;
+    level: number;
+    xp: number;
+  }>;
   activities: Array<{ id: number; name: string; rank: number; score: number }>;
 } | null> {
   let lastError: unknown;
@@ -42,7 +52,7 @@ async function getHiscoreData(rsn: string): Promise<{
           method: "GET",
           headers: { "Content-Type": "application/json" },
           signal: AbortSignal.timeout(10_000), // 10 s timeout per request
-        },
+        }
       );
 
       // 404 = player not on hiscores (unranked or RSN doesn't exist)
@@ -60,18 +70,27 @@ async function getHiscoreData(rsn: string): Promise<{
         throw new Error(`Unexpected HTTP status: ${response.status}`);
       }
 
-      return await response.json() as Awaited<ReturnType<typeof getHiscoreData>>;
+      return (await response.json()) as Awaited<
+        ReturnType<typeof getHiscoreData>
+      >;
     } catch (e) {
       lastError = e;
       if (attempt < MAX_RETRIES) {
-        console.warn(`[hiscores] Attempt ${attempt}/${MAX_RETRIES} failed for "${rsn}", retrying in ${RETRY_DELAY_MS}ms...`);
+        console.warn(
+          `[hiscores] Attempt ${attempt}/${MAX_RETRIES} failed for "${rsn}", retrying in ${RETRY_DELAY_MS}ms...`
+        );
         await sleep(RETRY_DELAY_MS * attempt); // linear back-off
       }
     }
   }
 
-  console.error(`[hiscores] All ${MAX_RETRIES} attempts failed for "${rsn}":`, lastError);
-  throw new Error(`Failed to fetch hiscore data for "${rsn}" after ${MAX_RETRIES} attempts`);
+  console.error(
+    `[hiscores] All ${MAX_RETRIES} attempts failed for "${rsn}":`,
+    lastError
+  );
+  throw new Error(
+    `Failed to fetch hiscore data for "${rsn}" after ${MAX_RETRIES} attempts`
+  );
 }
 
 /**
@@ -109,12 +128,14 @@ async function fetchAndFormatLive(rsn: string): Promise<HiscoreData | null> {
   const raw = await getHiscoreData(rsn);
   if (!raw) return null; // unranked player — never cached, see doc comment above
 
-  const formattedActivities = raw.activities.map(({ id, name, rank, score }) => ({
-    id,
-    name,
-    rank,
-    kc: score,
-  }));
+  const formattedActivities = raw.activities.map(
+    ({ id, name, rank, score }) => ({
+      id,
+      name,
+      rank,
+      kc: score,
+    })
+  );
 
   return {
     name: raw.name,

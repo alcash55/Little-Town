@@ -19,13 +19,21 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Client, GatewayIntentBits, type Message, type TextBasedChannel } from "discord.js";
+import {
+  Client,
+  GatewayIntentBits,
+  type Message,
+  type TextBasedChannel,
+} from "discord.js";
 
 const FETCH_PAGE_SIZE = 100;
 // backend/scripts/out/ — resolved from this file's own location rather than
 // process.cwd() so the default output lands in the same place regardless of
 // where `bun run dump-resources` is invoked from.
-const DEFAULT_OUT_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "out");
+const DEFAULT_OUT_DIR = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "out"
+);
 
 interface CliArgs {
   channel: string;
@@ -56,7 +64,10 @@ function parseArgs(argv: string[]): CliArgs {
     }
   }
 
-  if (!channel) throw new Error("--channel <id> is required. Usage: bun run dump-resources -- --channel <id> [--out <path>]");
+  if (!channel)
+    throw new Error(
+      "--channel <id> is required. Usage: bun run dump-resources -- --channel <id> [--out <path>]"
+    );
   return { channel, out };
 }
 
@@ -80,7 +91,10 @@ async function fetchFullHistory(channel: TextBasedChannel): Promise<Message[]> {
   let before: string | undefined;
 
   for (;;) {
-    const batch = await channel.messages.fetch({ limit: FETCH_PAGE_SIZE, before });
+    const batch = await channel.messages.fetch({
+      limit: FETCH_PAGE_SIZE,
+      before,
+    });
     if (batch.size === 0) break;
 
     const batchArray = [...batch.values()]; // newest -> oldest within this page
@@ -95,7 +109,12 @@ async function fetchFullHistory(channel: TextBasedChannel): Promise<Message[]> {
 
 /** True for system messages (pins, joins, etc.) with no user content. */
 function isEmptySystemMessage(message: Message): boolean {
-  return message.system && !message.content && message.attachments.size === 0 && message.embeds.length === 0;
+  return (
+    message.system &&
+    !message.content &&
+    message.attachments.size === 0 &&
+    message.embeds.length === 0
+  );
 }
 
 function embedUrl(embed: Message["embeds"][number]): string | undefined {
@@ -109,8 +128,14 @@ function renderMarkdown(channelName: string, messages: Message[]): string {
   for (const message of messages) {
     if (isEmptySystemMessage(message)) continue;
 
-    lines.push(`## ${message.author.tag} — ${message.createdAt.toISOString()}`, "");
-    lines.push(message.content.length > 0 ? message.content : "*(no text content)*", "");
+    lines.push(
+      `## ${message.author.tag} — ${message.createdAt.toISOString()}`,
+      ""
+    );
+    lines.push(
+      message.content.length > 0 ? message.content : "*(no text content)*",
+      ""
+    );
 
     const links: string[] = [];
     for (const attachment of message.attachments.values()) {
@@ -139,7 +164,11 @@ async function main(): Promise<void> {
   }
 
   const client = new Client({
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
+    intents: [
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.GuildMessages,
+      GatewayIntentBits.MessageContent,
+    ],
   });
 
   try {
@@ -147,22 +176,32 @@ async function main(): Promise<void> {
 
     const channel = await client.channels.fetch(args.channel);
     if (!channel || !channel.isTextBased() || channel.isDMBased()) {
-      throw new Error(`Channel ${args.channel} is not a readable guild text channel`);
+      throw new Error(
+        `Channel ${args.channel} is not a readable guild text channel`
+      );
     }
 
     const channelName = channel.name ?? args.channel;
-    console.log(`[dumpChannelToMarkdown] Fetching full history of #${channelName} (${args.channel})...`);
+    console.log(
+      `[dumpChannelToMarkdown] Fetching full history of #${channelName} (${args.channel})...`
+    );
 
     const messages = await fetchFullHistory(channel);
     const markdown = renderMarkdown(channelName, messages);
 
     const outPath =
-      args.out ?? path.join(DEFAULT_OUT_DIR, `${sanitizeForFileName(channelName)}-${isoDate(new Date())}.md`);
+      args.out ??
+      path.join(
+        DEFAULT_OUT_DIR,
+        `${sanitizeForFileName(channelName)}-${isoDate(new Date())}.md`
+      );
 
     await mkdir(path.dirname(outPath), { recursive: true });
     await writeFile(outPath, markdown, "utf-8");
 
-    console.log(`[dumpChannelToMarkdown] Wrote ${messages.length} messages to ${outPath}`);
+    console.log(
+      `[dumpChannelToMarkdown] Wrote ${messages.length} messages to ${outPath}`
+    );
   } finally {
     client.destroy();
   }
@@ -171,6 +210,9 @@ async function main(): Promise<void> {
 main()
   .then(() => process.exit(0))
   .catch((e) => {
-    console.error("[dumpChannelToMarkdown] Failed:", e instanceof Error ? e.message : e);
+    console.error(
+      "[dumpChannelToMarkdown] Failed:",
+      e instanceof Error ? e.message : e
+    );
     process.exit(1);
   });

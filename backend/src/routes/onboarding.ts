@@ -6,7 +6,11 @@ import { validateBody, rsnClaimSchema } from "../lib/validation.js";
 import { canonicalizeRsn, normalizeRsn, isPlausibleRsn } from "../lib/rsn.js";
 import { hiscores } from "../services/hiscores.js";
 import { getActiveBingo } from "../db/bingos.js";
-import { registerBingoPlayer, getBingoPlayer, savePlayerSnapshot } from "../db/players.js";
+import {
+  registerBingoPlayer,
+  getBingoPlayer,
+  savePlayerSnapshot,
+} from "../db/players.js";
 import { findRsnClaim, upsertRsnClaim } from "../db/rsnClaims.js";
 
 const router = Router();
@@ -25,7 +29,10 @@ const rsnClaimLimiter = rateLimit({
   max: Number(process.env.ONBOARDING_RSN_RATE_LIMIT_MAX) || 10,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: "Too many RSN claim attempts, please try again shortly.", code: "RATE_LIMITED" },
+  message: {
+    error: "Too many RSN claim attempts, please try again shortly.",
+    code: "RATE_LIMITED",
+  },
 });
 
 // -------------------------------------------------------
@@ -74,7 +81,7 @@ router.post(
       throw new AppError(
         "RSN claims require a real signed-in account (the local-dev bypass user cannot claim)",
         403,
-        "DEV_USER_CANNOT_CLAIM",
+        "DEV_USER_CANNOT_CLAIM"
       );
     }
 
@@ -84,7 +91,11 @@ router.post(
       // disallowed characters) — it cannot possibly resolve on the
       // hiscores, so skip the network round trip and fail the same way a
       // real 404 would.
-      throw new AppError(`"${rsn}" is not a valid RuneScape name`, 422, "RSN_NOT_FOUND");
+      throw new AppError(
+        `"${rsn}" is not a valid RuneScape name`,
+        422,
+        "RSN_NOT_FOUND"
+      );
     }
 
     let hiscoreData;
@@ -94,29 +105,46 @@ router.post(
       throw new AppError(
         "The OSRS hiscores service is currently unavailable — try again shortly",
         503,
-        "HISCORES_SERVICE_UNAVAILABLE",
+        "HISCORES_SERVICE_UNAVAILABLE"
       );
     }
     if (!hiscoreData) {
-      throw new AppError(`"${canonical}" was not found on the OSRS hiscores`, 422, "RSN_NOT_FOUND");
+      throw new AppError(
+        `"${canonical}" was not found on the OSRS hiscores`,
+        422,
+        "RSN_NOT_FOUND"
+      );
     }
 
     const bingo = await getActiveBingo();
     if (!bingo?.id) {
-      throw new AppError("No active bingo to register players to", 404, "NO_ACTIVE_BINGO");
+      throw new AppError(
+        "No active bingo to register players to",
+        404,
+        "NO_ACTIVE_BINGO"
+      );
     }
 
     const rsnNormalized = normalizeRsn(canonical);
     const existingClaim = await findRsnClaim(rsnNormalized);
     if (existingClaim && existingClaim.user_id !== userId) {
-      throw new AppError(`RSN "${canonical}" is already claimed by another account`, 409, "RSN_TAKEN");
+      throw new AppError(
+        `RSN "${canonical}" is already claimed by another account`,
+        409,
+        "RSN_TAKEN"
+      );
     }
 
     await upsertRsnClaim(userId, canonical, rsnNormalized);
 
     const existingPoolEntry = await getBingoPlayer(bingo.id, canonical);
     const rsnForPool = existingPoolEntry?.rsn ?? canonical;
-    const player = await registerBingoPlayer(bingo.id, rsnForPool, undefined, userId);
+    const player = await registerBingoPlayer(
+      bingo.id,
+      rsnForPool,
+      undefined,
+      userId
+    );
 
     // A player claiming into a bingo that's already 'active' would otherwise
     // never get a start snapshot — every other main account only gets one at
@@ -135,7 +163,10 @@ router.post(
         await savePlayerSnapshot(player.id, "start", hiscoreData);
         await savePlayerSnapshot(player.id, "current", hiscoreData);
       } catch (e) {
-        console.warn(`[onboarding] Failed to save start snapshot for "${rsnForPool}":`, e);
+        console.warn(
+          `[onboarding] Failed to save start snapshot for "${rsnForPool}":`,
+          e
+        );
       }
     }
 
@@ -144,7 +175,7 @@ router.post(
       tracked: true,
       alreadyTracked: existingPoolEntry !== null,
     });
-  }),
+  })
 );
 
 export default router;

@@ -5,13 +5,17 @@ Express route handlers. Each file maps to a top-level API path and is responsibl
 ## Files
 
 ### `auth.ts`
+
 Handles user authentication at `/api/auth`:
+
 - `POST /login` — validates credentials via `loginUser`, signs a 24h JWT, returns the token and user object
 - `GET /me` — returns the currently authenticated user (requires `protect`)
 - `POST /logout` — client-side logout acknowledgement (token removal is handled by the frontend)
 
 ### `admin.ts`
+
 Admin-only routes at `/api/admin`. All routes require `protect` + `authorize("admin", "moderator")`. Handles the full bingo lifecycle:
+
 - `POST /bingo` — create a bingo via the full `BingoConfig` shape
 - `GET /bingo` — list all bingos
 - `PUT /bingo/:id` — update a bingo by ID
@@ -32,7 +36,9 @@ Admin-only routes at `/api/admin`. All routes require `protect` + `authorize("ad
 accounts, snapshot refresh — that aren't listed above either.)
 
 ### `hiscores.ts`
+
 OSRS hiscores routes at `/api/hiscores`:
+
 - `GET /:player` — fetch live hiscore data for a player from the OSRS API
 - `GET /skills/list` — the current list of skills (bare JSON array; 503 until populated)
 - `GET /activities/list` — the current list of activities (same shape)
@@ -43,11 +49,14 @@ OSRS hiscores routes at `/api/hiscores`:
   name the Board Builder can offer is always a name that can resolve. This previously
   came from a RuneScape wiki scrape, which diverged from the hiscores in two names and
   produced tiles that could never auto-complete.
+
 - `PUT /:player` — refresh hiscore data for a player (requires `protect`)
 
 ### `invites.ts`
+
 Admin invite links (Sprint 6, Track A item 1). Exports two routers, both mounted in `index.ts`
 **before** `adminRoutes` — see the mount-order comment there:
+
 - `adminInviteRoutes` at `/api/admin/invites` (`protect` + `authorize("admin")`): `POST /`, `GET /`,
   `DELETE /:id`
 - `publicInviteRoutes` at `/api/invites` (no auth — this IS the pre-auth flow, rate-limited in
@@ -55,12 +64,14 @@ Admin invite links (Sprint 6, Track A item 1). Exports two routers, both mounted
   log the new user in)
 
 ### `adminUsers.ts`
+
 `GET /api/admin/users` — the impersonation-target picker (Sprint 6, Track A item 2). A separate
 router (not folded into `admin.ts`) so it can use `authorizeReal("admin")` instead of `authorize`,
 staying reachable by an admin who is currently impersonating someone else. Mounted before
 `adminRoutes` for the same reason as `invites.ts`.
 
 ### `onboarding.ts`
+
 `POST /api/onboarding/rsn` — the onboarding wizard's RSN claim (Sprint 11, Track A frozen
 contract). `protect`-gated (effective-user aware — impersonation applies) plus a per-IP rate
 limit (same posture as `hiscores.ts`'s public proxy limiter, since this route also drives a
