@@ -47,7 +47,10 @@ import {
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const REPO_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  ".."
+);
 const MD_PATH = path.join(REPO_ROOT, "resources.md");
 const MEDIA_DIR = path.join(REPO_ROOT, "resourcesMedia");
 const OUT_JSON = path.join(REPO_ROOT, "frontend/src/data/resources.json");
@@ -67,25 +70,81 @@ interface CategoryMeta {
 }
 
 const CATEGORY_META: Record<string, CategoryMeta> = {
-  "Raids - Theatre of Blood (ToB)": { id: "tob", name: "Theatre of Blood", group: "Raids", order: 1 },
-  "Raids - Tombs of Amascut (ToA)": { id: "toa", name: "Tombs of Amascut", group: "Raids", order: 2 },
-  "Raids - Chambers of Xeric (CoX)": { id: "cox", name: "Chambers of Xeric", group: "Raids", order: 3 },
+  "Raids - Theatre of Blood (ToB)": {
+    id: "tob",
+    name: "Theatre of Blood",
+    group: "Raids",
+    order: 1,
+  },
+  "Raids - Tombs of Amascut (ToA)": {
+    id: "toa",
+    name: "Tombs of Amascut",
+    group: "Raids",
+    order: 2,
+  },
+  "Raids - Chambers of Xeric (CoX)": {
+    id: "cox",
+    name: "Chambers of Xeric",
+    group: "Raids",
+    order: 3,
+  },
   Yama: { id: "yama", name: "Yama", group: "Bosses", order: 4 },
-  "The Colosseum": { id: "colosseum", name: "Fortis Colosseum", group: "Bosses", order: 5 },
-  "Inferno and Fight Caves": { id: "inferno-fight-caves", name: "Inferno & Fight Caves", group: "Bosses", order: 6 },
-  "Desert Treasure II Bosses": { id: "dt2-bosses", name: "Desert Treasure II Bosses", group: "Bosses", order: 7 },
+  "The Colosseum": {
+    id: "colosseum",
+    name: "Fortis Colosseum",
+    group: "Bosses",
+    order: 5,
+  },
+  "Inferno and Fight Caves": {
+    id: "inferno-fight-caves",
+    name: "Inferno & Fight Caves",
+    group: "Bosses",
+    order: 6,
+  },
+  "Desert Treasure II Bosses": {
+    id: "dt2-bosses",
+    name: "Desert Treasure II Bosses",
+    group: "Bosses",
+    order: 7,
+  },
   Nex: { id: "nex", name: "Nex", group: "Bosses", order: 8 },
   Gauntlet: { id: "gauntlet", name: "Gauntlet", group: "Bosses", order: 9 },
-  "Nightmare Zone": { id: "nmz", name: "Nightmare Zone", group: "PvM & Slayer", order: 10 },
-  "Slayer and General PvM": { id: "slayer-general-pvm", name: "Slayer & General PvM", group: "PvM & Slayer", order: 11 },
-  "Skilling and Utility": { id: "skilling-utility", name: "Skilling & Utility", group: "Skilling", order: 12 },
-  "Unsorted OSRS Resources": { id: "unsorted", name: "Unsorted", group: "Other", order: 13 },
+  "Nightmare Zone": {
+    id: "nmz",
+    name: "Nightmare Zone",
+    group: "PvM & Slayer",
+    order: 10,
+  },
+  "Slayer and General PvM": {
+    id: "slayer-general-pvm",
+    name: "Slayer & General PvM",
+    group: "PvM & Slayer",
+    order: 11,
+  },
+  "Skilling and Utility": {
+    id: "skilling-utility",
+    name: "Skilling & Utility",
+    group: "Skilling",
+    order: 12,
+  },
+  "Unsorted OSRS Resources": {
+    id: "unsorted",
+    name: "Unsorted",
+    group: "Other",
+    order: 13,
+  },
 };
 
 const SECTION_META: Record<string, { kind: string; title: string }> = {
   "Guides and videos": { kind: "guides", title: "Guides & videos" },
-  "Tile markers and setups": { kind: "tileMarkers", title: "Tile markers & setups" },
-  "Data sheets and theory": { kind: "dataSheets", title: "Data sheets & theory" },
+  "Tile markers and setups": {
+    kind: "tileMarkers",
+    title: "Tile markers & setups",
+  },
+  "Data sheets and theory": {
+    kind: "dataSheets",
+    title: "Data sheets & theory",
+  },
   "Media files": { kind: "media", title: "Media" },
   "Tools and plugins": { kind: "tools", title: "Tools & plugins" },
   "Text/config files": { kind: "text", title: "Text & config files" },
@@ -121,7 +180,10 @@ const CUT_MESSAGE_IDS = new Set<string>([
 ]);
 
 /** Clearly mis-filed under "Unsorted" in the source dump; move to their real category. */
-const RECATEGORIZE: Record<string, { categoryId: string; sectionKind: string; title?: string }> = {
+const RECATEGORIZE: Record<
+  string,
+  { categoryId: string; sectionKind: string; title?: string }
+> = {
   "1097072796045152296": {
     categoryId: "tob",
     sectionKind: "dataSheets",
@@ -145,7 +207,10 @@ const RECATEGORIZE: Record<string, { categoryId: string; sectionKind: string; ti
 };
 
 /** Long sentence-as-title source messages: shorten the title, keep the full text as description. */
-const RETITLE_BY_RAW_TITLE: Record<string, { title: string; description: string }> = {
+const RETITLE_BY_RAW_TITLE: Record<
+  string,
+  { title: string; description: string }
+> = {
   "Was curious and threw the tob mvp pts vs rate on a graph and was surprised it was a linear relationship. In 3's every mvp point is a +0.16% chance and 4's +0.13%. This means that 3s gives +2.24% extra chance and 4s +1.82% with all mvp pts. This is all assuming 0 deaths. Deaths are extremely bad every death is -0.65% in 3s and -0.51 in 4s, which is kinda fair ig.":
     {
       title: "ToB MVP points vs purple chance (linear relationship)",
@@ -172,7 +237,8 @@ const RETITLE_BY_RAW_TITLE: Record<string, { title: string; description: string 
     },
   "heres all the sounds u gotta remove from hydra + extra": {
     title: "Alchemical Hydra: sound effect IDs to mute",
-    description: "Mute these sound effect IDs during Alchemical Hydra kills to cut down on audio clutter.",
+    description:
+      "Mute these sound effect IDs during Alchemical Hydra kills to cut down on audio clutter.",
   },
 };
 
@@ -271,25 +337,45 @@ function parseMarkdown(md: string): RawCategory[] {
       continue;
     }
     // indented (sub-line) image
-    if (((m = line.match(IMAGE_ANGLE_RE)) || (m = line.match(IMAGE_PLAIN_RE))) && m[1].length > 0) {
+    if (
+      ((m = line.match(IMAGE_ANGLE_RE)) || (m = line.match(IMAGE_PLAIN_RE))) &&
+      m[1].length > 0
+    ) {
       if (curItem) curItem.images.push({ alt: m[2], target: m[3] });
       continue;
     }
     // indented (sub-line) link
-    if (((m = line.match(LINK_ANGLE_RE)) || (m = line.match(LINK_PLAIN_RE))) && m[1].length > 0) {
+    if (
+      ((m = line.match(LINK_ANGLE_RE)) || (m = line.match(LINK_PLAIN_RE))) &&
+      m[1].length > 0
+    ) {
       if (curItem) curItem.links.push({ label: m[2], target: m[3] });
       continue;
     }
     // top-level bare-image item title
-    if (((m = line.match(IMAGE_ANGLE_RE)) || (m = line.match(IMAGE_PLAIN_RE))) && m[1].length === 0) {
+    if (
+      ((m = line.match(IMAGE_ANGLE_RE)) || (m = line.match(IMAGE_PLAIN_RE))) &&
+      m[1].length === 0
+    ) {
       flushItem();
-      curItem = { rawTitle: m[2], images: [{ alt: m[2], target: m[3] }], links: [] };
+      curItem = {
+        rawTitle: m[2],
+        images: [{ alt: m[2], target: m[3] }],
+        links: [],
+      };
       continue;
     }
     // top-level bare-link item title (Open video/file/resource)
-    if (((m = line.match(LINK_ANGLE_RE)) || (m = line.match(LINK_PLAIN_RE))) && m[1].length === 0) {
+    if (
+      ((m = line.match(LINK_ANGLE_RE)) || (m = line.match(LINK_PLAIN_RE))) &&
+      m[1].length === 0
+    ) {
       flushItem();
-      curItem = { rawTitle: m[2], images: [], links: [{ label: m[2], target: m[3] }] };
+      curItem = {
+        rawTitle: m[2],
+        images: [],
+        links: [{ label: m[2], target: m[3] }],
+      };
       continue;
     }
     // top-level bold title
@@ -320,7 +406,9 @@ function mergeKnownDuplicates(categories: RawCategory[]): void {
     for (const section of cat.sections) {
       for (let i = 0; i < section.items.length - 1; i++) {
         const next = section.items[i + 1];
-        if (next.images.some((img) => img.target.includes(DUP_IMAGE_MESSAGE_ID))) {
+        if (
+          next.images.some((img) => img.target.includes(DUP_IMAGE_MESSAGE_ID))
+        ) {
           section.items[i].images.push(...next.images);
           section.items.splice(i + 1, 1);
         }
@@ -353,16 +441,33 @@ function resolveMediaPath(target: string): ResolvedMedia | null {
   if (!m) return null;
   const messageId = m[1];
   const fileName = m[2];
-  return { messageId, fileName, absPath: path.join(MEDIA_DIR, messageId, fileName) };
+  return {
+    messageId,
+    fileName,
+    absPath: path.join(MEDIA_DIR, messageId, fileName),
+  };
 }
 
 function detectImageExt(absPath: string): string | null {
   if (!existsSync(absPath)) return null;
   const fd = readFileSync(absPath);
-  if (fd.length >= 4 && fd[0] === 0x89 && fd[1] === 0x50 && fd[2] === 0x4e && fd[3] === 0x47) return "png";
-  if (fd.length >= 3 && fd[0] === 0xff && fd[1] === 0xd8 && fd[2] === 0xff) return "jpg";
-  if (fd.length >= 6 && fd.slice(0, 4).toString("ascii") === "GIF8") return "gif";
-  if (fd.length >= 12 && fd.slice(0, 4).toString("ascii") === "RIFF" && fd.slice(8, 12).toString("ascii") === "WEBP")
+  if (
+    fd.length >= 4 &&
+    fd[0] === 0x89 &&
+    fd[1] === 0x50 &&
+    fd[2] === 0x4e &&
+    fd[3] === 0x47
+  )
+    return "png";
+  if (fd.length >= 3 && fd[0] === 0xff && fd[1] === 0xd8 && fd[2] === 0xff)
+    return "jpg";
+  if (fd.length >= 6 && fd.slice(0, 4).toString("ascii") === "GIF8")
+    return "gif";
+  if (
+    fd.length >= 12 &&
+    fd.slice(0, 4).toString("ascii") === "RIFF" &&
+    fd.slice(8, 12).toString("ascii") === "WEBP"
+  )
     return "webp";
   return null;
 }
@@ -469,10 +574,19 @@ function build(onlyCategoryIds: Set<string> | null) {
 
   for (const rawCat of rawCategories) {
     const meta = CATEGORY_META[rawCat.heading];
-    if (!meta) throw new Error(`Unknown category heading: "${rawCat.heading}" — add it to CATEGORY_META`);
+    if (!meta)
+      throw new Error(
+        `Unknown category heading: "${rawCat.heading}" — add it to CATEGORY_META`
+      );
     if (onlyCategoryIds && !onlyCategoryIds.has(meta.id)) continue;
 
-    const category: ManifestCategory = { id: meta.id, name: meta.name, group: meta.group, order: meta.order, sections: [] };
+    const category: ManifestCategory = {
+      id: meta.id,
+      name: meta.name,
+      group: meta.group,
+      order: meta.order,
+      sections: [],
+    };
     builtCategories.set(meta.id, category);
 
     // section kind -> ManifestSection (sections of the same kind that appear
@@ -481,7 +595,10 @@ function build(onlyCategoryIds: Set<string> | null) {
 
     for (const rawSection of rawCat.sections) {
       const sMeta = SECTION_META[rawSection.heading];
-      if (!sMeta) throw new Error(`Unknown section heading: "${rawSection.heading}" — add it to SECTION_META`);
+      if (!sMeta)
+        throw new Error(
+          `Unknown section heading: "${rawSection.heading}" — add it to SECTION_META`
+        );
 
       for (const item of rawSection.items) {
         let title = unescapeMd(item.rawTitle);
@@ -508,9 +625,12 @@ function build(onlyCategoryIds: Set<string> | null) {
             const override = RECATEGORIZE[resolved.messageId];
             destCategoryId = override.categoryId;
             destSectionKind = override.sectionKind;
-            destSectionTitle = SECTION_META[
-              Object.keys(SECTION_META).find((k) => SECTION_META[k].kind === override.sectionKind)!
-            ].title;
+            destSectionTitle =
+              SECTION_META[
+                Object.keys(SECTION_META).find(
+                  (k) => SECTION_META[k].kind === override.sectionKind
+                )!
+              ].title;
             if (override.title) title = override.title;
             break;
           }
@@ -532,7 +652,9 @@ function build(onlyCategoryIds: Set<string> | null) {
             continue;
           }
           if (!existsSync(resolved.absPath)) {
-            missingSourceLog.push(`${destCategoryId}/${destSectionKind} "${title}" — referenced media/${resolved.messageId}/${resolved.fileName} not present on disk (source dump gap), image skipped`);
+            missingSourceLog.push(
+              `${destCategoryId}/${destSectionKind} "${title}" — referenced media/${resolved.messageId}/${resolved.fileName} not present on disk (source dump gap), image skipped`
+            );
             continue;
           }
           let ext = path.extname(resolved.fileName).slice(1).toLowerCase();
@@ -551,22 +673,33 @@ function build(onlyCategoryIds: Set<string> | null) {
             const resolved = resolveMediaPath(link.target);
             if (!resolved) continue;
             if (!existsSync(resolved.absPath)) {
-              missingSourceLog.push(`${destCategoryId}/${destSectionKind} "${title}" — referenced media/${resolved.messageId}/${resolved.fileName} not present on disk (source dump gap), link skipped`);
+              missingSourceLog.push(
+                `${destCategoryId}/${destSectionKind} "${title}" — referenced media/${resolved.messageId}/${resolved.fileName} not present on disk (source dump gap), link skipped`
+              );
               continue;
             }
             let ext = path.extname(resolved.fileName).slice(1).toLowerCase();
-            const realExt = IMAGE_EXTS.has(ext) ? ext : detectImageExt(resolved.absPath);
+            const realExt = IMAGE_EXTS.has(ext)
+              ? ext
+              : detectImageExt(resolved.absPath);
             if (realExt) {
               pendingImages.push({ ...resolved, ext: realExt });
             } else {
               droppedLocalFiles.push(resolved.fileName || "(no name)");
             }
           } else {
-            const label = unescapeMd(link.label).replace(/^Youtube$/, "YouTube");
+            const label = unescapeMd(link.label).replace(
+              /^Youtube$/,
+              "YouTube"
+            );
             // drop redundant youtube-thumbnail preview links that just
             // duplicate the adjacent YouTube link's thumbnail
             if (label === "i.ytimg.com") continue;
-            linksOut.push({ label, url: link.target, kind: linkKind(link.target) });
+            linksOut.push({
+              label,
+              url: link.target,
+              kind: linkKind(link.target),
+            });
           }
         }
 
@@ -584,17 +717,21 @@ function build(onlyCategoryIds: Set<string> | null) {
             const kind = !looksLikeJson
               ? "other"
               : raw.includes('"npcId"')
-                ? "npcMarkers"
-                : raw.includes('"regionId"')
-                  ? "tileMarkers"
-                  : "other";
+              ? "npcMarkers"
+              : raw.includes('"regionId"')
+              ? "tileMarkers"
+              : "other";
             runelite = { label: title, kind, json: raw };
           }
         }
 
         // inline txt fences that aren't a runelite payload (no embedded-file
         // sibling) become part of the description — this is content, not noise
-        if (item.fenceContent && !item.embeddedFile && (item.fenceLang === "txt" || item.fenceLang === "text")) {
+        if (
+          item.fenceContent &&
+          !item.embeddedFile &&
+          (item.fenceLang === "txt" || item.fenceLang === "text")
+        ) {
           const blurb = item.fenceContent.trim();
           description = description ? `${description}\n\n${blurb}` : blurb;
         }
@@ -604,19 +741,23 @@ function build(onlyCategoryIds: Set<string> | null) {
             category: destCategoryId,
             section: destSectionKind,
             title,
-            reason: "judgment pass: no instructional value (blank/empty field screenshot) — whole item dropped, including its dangling source link",
+            reason:
+              "judgment pass: no instructional value (blank/empty field screenshot) — whole item dropped, including its dangling source link",
           });
           continue;
         }
 
-        const hasContent = pendingImages.length > 0 || linksOut.length > 0 || runelite;
+        const hasContent =
+          pendingImages.length > 0 || linksOut.length > 0 || runelite;
         if (!hasContent) {
           cutLog.push({
             category: destCategoryId,
             section: destSectionKind,
             title,
             reason: droppedLocalFiles.length
-              ? `local file(s) dropped (video/audio/archive, no external link): ${droppedLocalFiles.join(", ")}`
+              ? `local file(s) dropped (video/audio/archive, no external link): ${droppedLocalFiles.join(
+                  ", "
+                )}`
               : "no image/link/runelite content after parse",
           });
           continue;
@@ -627,7 +768,8 @@ function build(onlyCategoryIds: Set<string> | null) {
         const baseSlug = slugify(title);
         for (let i = 0; i < pendingImages.length; i++) {
           const img = pendingImages[i];
-          const slugBase = pendingImages.length > 1 ? `${baseSlug}-${i + 1}` : baseSlug;
+          const slugBase =
+            pendingImages.length > 1 ? `${baseSlug}-${i + 1}` : baseSlug;
           const slug = uniqueSlug(destCategoryId, slugBase);
           const destDir = path.join(ASSETS_DIR, destCategoryId);
           mkdirSync(destDir, { recursive: true });
@@ -637,7 +779,10 @@ function build(onlyCategoryIds: Set<string> | null) {
           imageCount++;
         }
 
-        const manifestItem: ManifestItem = { id: uniqueId(`${destCategoryId}-${baseSlug}`), title };
+        const manifestItem: ManifestItem = {
+          id: uniqueId(`${destCategoryId}-${baseSlug}`),
+          title,
+        };
         if (description) manifestItem.description = description;
         if (images.length) manifestItem.images = images;
         if (linksOut.length) manifestItem.links = linksOut;
@@ -648,14 +793,26 @@ function build(onlyCategoryIds: Set<string> | null) {
         if (onlyCategoryIds && !onlyCategoryIds.has(destCategoryId)) continue;
         let destCategory = builtCategories.get(destCategoryId);
         if (!destCategory) {
-          const destMeta = Object.values(CATEGORY_META).find((c) => c.id === destCategoryId)!;
-          destCategory = { id: destMeta.id, name: destMeta.name, group: destMeta.group, order: destMeta.order, sections: [] };
+          const destMeta = Object.values(CATEGORY_META).find(
+            (c) => c.id === destCategoryId
+          )!;
+          destCategory = {
+            id: destMeta.id,
+            name: destMeta.name,
+            group: destMeta.group,
+            order: destMeta.order,
+            sections: [],
+          };
           builtCategories.set(destCategoryId, destCategory);
         }
         let destSectionsByKind = sectionsByKindByCategory(destCategory);
         let destSection = destSectionsByKind.get(destSectionKind);
         if (!destSection) {
-          destSection = { kind: destSectionKind, title: destSectionTitle, items: [] };
+          destSection = {
+            kind: destSectionKind,
+            title: destSectionTitle,
+            items: [],
+          };
           destCategory.sections.push(destSection);
           destSectionsByKind.set(destSectionKind, destSection);
         }
@@ -668,8 +825,13 @@ function build(onlyCategoryIds: Set<string> | null) {
   return { builtCategories, cutLog, missingSourceLog, imageCount, itemCount };
 }
 
-const sectionsByKindCache = new WeakMap<ManifestCategory, Map<string, ManifestSection>>();
-function sectionsByKindByCategory(category: ManifestCategory): Map<string, ManifestSection> {
+const sectionsByKindCache = new WeakMap<
+  ManifestCategory,
+  Map<string, ManifestSection>
+>();
+function sectionsByKindByCategory(
+  category: ManifestCategory
+): Map<string, ManifestSection> {
   let map = sectionsByKindCache.get(category);
   if (!map) {
     map = new Map(category.sections.map((s) => [s.kind, s]));
@@ -683,10 +845,13 @@ function main() {
   let onlyCategoryIds: Set<string> | null = null;
   const onlyIdx = args.indexOf("--only");
   if (onlyIdx !== -1) {
-    onlyCategoryIds = new Set(args[onlyIdx + 1].split(",").map((s) => s.trim()));
+    onlyCategoryIds = new Set(
+      args[onlyIdx + 1].split(",").map((s) => s.trim())
+    );
   }
 
-  const { builtCategories, cutLog, missingSourceLog, imageCount, itemCount } = build(onlyCategoryIds);
+  const { builtCategories, cutLog, missingSourceLog, imageCount, itemCount } =
+    build(onlyCategoryIds);
 
   // merge with any existing manifest (categories not processed this run are preserved)
   let existing: Manifest | null = null;
@@ -711,21 +876,35 @@ function main() {
   mkdirSync(path.dirname(OUT_JSON), { recursive: true });
   writeFileSync(OUT_JSON, JSON.stringify(manifest, null, 2) + "\n");
 
-  const totalItems = manifest.categories.reduce((n, c) => n + c.sections.reduce((m, s) => m + s.items.length, 0), 0);
+  const totalItems = manifest.categories.reduce(
+    (n, c) => n + c.sections.reduce((m, s) => m + s.items.length, 0),
+    0
+  );
   const totalImages = manifest.categories.reduce(
-    (n, c) => n + c.sections.reduce((m, s) => m + s.items.reduce((k, i) => k + (i.images?.length ?? 0), 0), 0),
-    0,
+    (n, c) =>
+      n +
+      c.sections.reduce(
+        (m, s) => m + s.items.reduce((k, i) => k + (i.images?.length ?? 0), 0),
+        0
+      ),
+    0
   );
 
   console.log(`Wrote ${OUT_JSON}`);
-  console.log(`This run: ${builtCategories.size} categories, ${itemCount} items, ${imageCount} images copied.`);
-  console.log(`Manifest total: ${manifest.categories.length} categories, ${totalItems} items, ${totalImages} images.`);
+  console.log(
+    `This run: ${builtCategories.size} categories, ${itemCount} items, ${imageCount} images copied.`
+  );
+  console.log(
+    `Manifest total: ${manifest.categories.length} categories, ${totalItems} items, ${totalImages} images.`
+  );
   console.log(`Cut ${cutLog.length} items this run:`);
   for (const c of cutLog) {
     console.log(`  - [${c.category}/${c.section}] "${c.title}" — ${c.reason}`);
   }
   if (missingSourceLog.length) {
-    console.log(`${missingSourceLog.length} referenced media file(s) missing from resourcesMedia/ (source dump gap, not this script's doing):`);
+    console.log(
+      `${missingSourceLog.length} referenced media file(s) missing from resourcesMedia/ (source dump gap, not this script's doing):`
+    );
     for (const m of missingSourceLog) console.log(`  - ${m}`);
   }
 }

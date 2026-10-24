@@ -62,10 +62,8 @@ export const SidebarContext = createContext<LTSidebarContext>(initialContext);
  * its own `roles` list includes it. Children never get filtered
  * individually (see the `roles` doc comment on `SidebarItem` above).
  */
-export const filterSidebarByRole = (
-  items: SidebarItem[],
-  role: SidebarRole,
-): SidebarItem[] => items.filter((item) => item.roles?.includes(role));
+export const filterSidebarByRole = (items: SidebarItem[], role: SidebarRole): SidebarItem[] =>
+  items.filter((item) => item.roles?.includes(role));
 
 const allSidebarItems: SidebarItem[] = [
   {

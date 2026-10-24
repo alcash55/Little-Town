@@ -2,7 +2,11 @@ import { Router, Request, Response } from "express";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { protect, authorize, optionalAuth } from "../middleware/auth.js";
 import { ApiResponse } from "../types/index.js";
-import { getActiveBingo, getActiveBingoBoard, getLatestBingo } from "../db/bingos.js";
+import {
+  getActiveBingo,
+  getActiveBingoBoard,
+  getLatestBingo,
+} from "../db/bingos.js";
 import { resolveMyBingoPlayer } from "../db/players.js";
 import {
   buildDropStatusByRsn,
@@ -165,11 +169,12 @@ router.get(
       ]);
       if (pendingSubsRes.error) throw new Error(pendingSubsRes.error.message);
 
-      completedTileIdsForMyTeam = completedTileIdsByTeam.get(myTeamId) ?? new Set();
+      completedTileIdsForMyTeam =
+        completedTileIdsByTeam.get(myTeamId) ?? new Set();
       pendingTileIdsForMyTeam = new Set(
         (pendingSubsRes.data ?? [])
           .map((s: { tile_id: string | null }) => s.tile_id)
-          .filter((id: string | null): id is string => id !== null),
+          .filter((id: string | null): id is string => id !== null)
       );
     }
 
@@ -177,9 +182,13 @@ router.get(
       active: true,
       bingo: { id: bingo.id, name: bingo.name, boardSize: bingo.boardSize },
       myTeam: myTeam ? { id: myTeam.id, name: myTeam.name } : null,
-      tiles: buildBoardTileCompletion(tiles, completedTileIdsForMyTeam, pendingTileIdsForMyTeam),
+      tiles: buildBoardTileCompletion(
+        tiles,
+        completedTileIdsForMyTeam,
+        pendingTileIdsForMyTeam
+      ),
     });
-  }),
+  })
 );
 
 // All other bingo routes require a logged-in user (any role)
@@ -214,7 +223,9 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const bingo = await getActiveBingo();
     if (!bingo?.id) {
-      return res.status(404).json({ success: false, error: "No active bingo found" });
+      return res
+        .status(404)
+        .json({ success: false, error: "No active bingo found" });
     }
 
     const db = getDb();
@@ -228,8 +239,10 @@ router.get(
     const trackedSkills = new Set<string>();
     const trackedActivities = new Set<string>();
     for (const tile of tiles) {
-      if (tile.type === "Experience") trackedSkills.add(tile.task.toLowerCase());
-      if (tile.type === "Kill Count") trackedActivities.add(tile.task.toLowerCase());
+      if (tile.type === "Experience")
+        trackedSkills.add(tile.task.toLowerCase());
+      if (tile.type === "Kill Count")
+        trackedActivities.add(tile.task.toLowerCase());
     }
     const filterSkills = trackedSkills.size > 0;
     const filterActivities = trackedActivities.size > 0;
@@ -263,24 +276,47 @@ router.get(
     // as `teamProgress` below for the same tile (#54 — side accounts used to
     // be summed into teamProgress but not into this breakdown).
     const playerData = teamRows.map(({ player, start, current, accounts }) => {
-      const enginePlayer: EnginePlayer = { playerId: player.id, teamId: player.team_id, accounts };
+      const enginePlayer: EnginePlayer = {
+        playerId: player.id,
+        teamId: player.team_id,
+        accounts,
+      };
 
       const skillDeltas: Record<string, number> = {};
       if (start?.skills && current?.skills) {
-        for (const curr of current.skills as Array<{ id: number; name: string; xp: number }>) {
-          if (filterSkills && !trackedSkills.has(curr.name.toLowerCase())) continue;
+        for (const curr of current.skills as Array<{
+          id: number;
+          name: string;
+          xp: number;
+        }>) {
+          if (filterSkills && !trackedSkills.has(curr.name.toLowerCase()))
+            continue;
           const normalizedName = normalizeTaskText(curr.name);
-          const delta = playerMetricDelta(enginePlayer, { kind: "skill", normalizedName });
+          const delta = playerMetricDelta(enginePlayer, {
+            kind: "skill",
+            normalizedName,
+          });
           if (delta > 0) skillDeltas[normalizedName] = delta;
         }
       }
 
       const activityDeltas: Record<string, number> = {};
       if (start?.activities && current?.activities) {
-        for (const curr of current.activities as Array<{ id: number; name: string; kc: number }>) {
-          if (filterActivities && !trackedActivities.has(curr.name.toLowerCase())) continue;
+        for (const curr of current.activities as Array<{
+          id: number;
+          name: string;
+          kc: number;
+        }>) {
+          if (
+            filterActivities &&
+            !trackedActivities.has(curr.name.toLowerCase())
+          )
+            continue;
           const normalizedName = normalizeTaskText(curr.name);
-          const delta = playerMetricDelta(enginePlayer, { kind: "activity", normalizedName });
+          const delta = playerMetricDelta(enginePlayer, {
+            kind: "activity",
+            normalizedName,
+          });
           if (delta > 0) activityDeltas[normalizedName] = delta;
         }
       }
@@ -289,7 +325,9 @@ router.get(
         rsn: player.rsn,
         playerId: player.id,
         teamId: player.team_id,
-        teamName: player.team_id ? (teamNameById[player.team_id] ?? "Unassigned") : "Unassigned",
+        teamName: player.team_id
+          ? teamNameById[player.team_id] ?? "Unassigned"
+          : "Unassigned",
         isCaptain: !!player.captain_team_id,
         snapshotTakenAt: current?.taken_at ?? null,
         skillDeltas,
@@ -314,13 +352,20 @@ router.get(
     // for this; fixed at the source here, so that workaround is removed too
     // (Sprint 11 candidates list, todo.md ~line 132).
     const tileIdByTask = new Map<string, string>();
-    for (const row of (tileRows ?? []) as Array<{ id: string; task: string; type: string; position: number }>) {
+    for (const row of (tileRows ?? []) as Array<{
+      id: string;
+      task: string;
+      type: string;
+      position: number;
+    }>) {
       if (row.type === "Drops") tileIdByTask.set(row.task, row.id);
     }
 
     // Build set of team player IDs for submission lookup
     const teamPlayerIds = teamRows.map(({ player }) => player.id);
-    const teamPlayerIdToRsn = new Map(teamRows.map(({ player }) => [player.id, player.rsn]));
+    const teamPlayerIdToRsn = new Map(
+      teamRows.map(({ player }) => [player.id, player.rsn])
+    );
 
     // Fetch pending+approved submissions for this team on Drops tiles.
     // Attribution is via bingo_submissions.player_id (a bingo_players.id) —
@@ -340,8 +385,14 @@ router.get(
       submissionsData = (subs ?? []) as DropSubmissionAttribution[];
     }
 
-    const tileTaskById = new Map(Array.from(tileIdByTask.entries()).map(([task, id]) => [id, task]));
-    const dropStatus = buildDropStatusByRsn(submissionsData, teamPlayerIdToRsn, tileTaskById);
+    const tileTaskById = new Map(
+      Array.from(tileIdByTask.entries()).map(([task, id]) => [id, task])
+    );
+    const dropStatus = buildDropStatusByRsn(
+      submissionsData,
+      teamPlayerIdToRsn,
+      tileTaskById
+    );
 
     // Engine-driven completion/progress for this team (TEAM-BRIEF.md Sprint
     // 13, Track A item 2 — "no second implementation": the frontend used to
@@ -372,12 +423,10 @@ router.get(
     let progressForMyTeam: Map<string, number> = new Map();
     if (myTeamId) {
       const allTeamIds = (bingo.teamObjects ?? []).map((t) => t.id);
-      const { completedTileIdsByTeam, progressByTeamAndTile } = await computeBingoCompletion(
-        bingo.id,
-        engineTiles,
-        allTeamIds,
-      );
-      completedTileIdsForMyTeam = completedTileIdsByTeam.get(myTeamId) ?? new Set();
+      const { completedTileIdsByTeam, progressByTeamAndTile } =
+        await computeBingoCompletion(bingo.id, engineTiles, allTeamIds);
+      completedTileIdsForMyTeam =
+        completedTileIdsByTeam.get(myTeamId) ?? new Set();
       progressForMyTeam = progressByTeamAndTile.get(myTeamId) ?? new Map();
     }
 
@@ -388,10 +437,15 @@ router.get(
       points: tile.points,
       target: tile.target_value ?? null,
       completed: tile.id ? completedTileIdsForMyTeam.has(tile.id) : false,
-      teamProgress: tile.type === "Drops" || !tile.id ? null : progressForMyTeam.get(tile.id) ?? 0,
+      teamProgress:
+        tile.type === "Drops" || !tile.id
+          ? null
+          : progressForMyTeam.get(tile.id) ?? 0,
     }));
 
-    const teamName = myTeamId ? (teamNameById[myTeamId] ?? "Unassigned") : "Unassigned";
+    const teamName = myTeamId
+      ? teamNameById[myTeamId] ?? "Unassigned"
+      : "Unassigned";
 
     res.status(200).json({
       success: true,
@@ -410,7 +464,7 @@ router.get(
         })),
       },
     });
-  }),
+  })
 );
 
 /**
@@ -429,12 +483,14 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const bingo = await getActiveBingo();
     if (!bingo?.id) {
-      return res.status(404).json({ success: false, error: "No active bingo found" });
+      return res
+        .status(404)
+        .json({ success: false, error: "No active bingo found" });
     }
 
     const teams = await getTeamXpHistory(bingo.id, bingo.teamObjects ?? []);
     res.status(200).json({ teams });
-  }),
+  })
 );
 
 /**
@@ -455,9 +511,13 @@ router.get(
   "/:bingoId/conflicts",
   authorize("admin", "moderator"),
   asyncHandler(async (req: Request, res: Response) => {
-    const bingoId = Array.isArray(req.params.bingoId) ? req.params.bingoId[0] : req.params.bingoId;
+    const bingoId = Array.isArray(req.params.bingoId)
+      ? req.params.bingoId[0]
+      : req.params.bingoId;
     if (!bingoId) {
-      return res.status(400).json({ success: false, error: "Bingo ID is required" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Bingo ID is required" });
     }
 
     const db = getDb();
@@ -466,14 +526,15 @@ router.get(
       .select("id")
       .eq("id", bingoId)
       .maybeSingle();
-    if (bingoError) throw new Error(`Failed to look up bingo: ${bingoError.message}`);
+    if (bingoError)
+      throw new Error(`Failed to look up bingo: ${bingoError.message}`);
     if (!bingo) {
       return res.status(404).json({ success: false, error: "Bingo not found" });
     }
 
     const conflicts = await getBingoConflicts(bingoId);
     res.status(200).json({ conflicts });
-  }),
+  })
 );
 
 export default router;

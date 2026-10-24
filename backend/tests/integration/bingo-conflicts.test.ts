@@ -34,7 +34,10 @@ if (!stack.reachable) {
 }
 
 async function historyTableExists(): Promise<boolean> {
-  const { error } = await getDb().from("bingo_player_hiscore_history").select("id").limit(0);
+  const { error } = await getDb()
+    .from("bingo_player_hiscore_history")
+    .select("id")
+    .limit(0);
   if (!error) return true;
   // Postgres reports "relation does not exist" as 42P01.
   return (error as { code?: string }).code !== "42P01";
@@ -44,7 +47,7 @@ const migrationApplied = stack.reachable ? await historyTableExists() : false;
 if (stack.reachable && !migrationApplied) {
   console.warn(
     "[bingo-conflicts.test.ts] skipping: bingo_player_hiscore_history table not found " +
-      "(20260711000000_hiscore_conflict_history.sql not yet applied to this stack)",
+      "(20260711000000_hiscore_conflict_history.sql not yet applied to this stack)"
   );
 }
 
@@ -57,17 +60,24 @@ async function insertTestPlayer(bingoId: string, rsn: string): Promise<string> {
     .insert({ bingo_id: bingoId, rsn })
     .select("id")
     .single();
-  if (error || !data) throw new Error(`Failed to insert test player "${rsn}": ${error?.message}`);
+  if (error || !data)
+    throw new Error(`Failed to insert test player "${rsn}": ${error?.message}`);
   return (data as { id: string }).id;
 }
 
-async function insertTestSideAccount(playerId: string, rsn: string): Promise<string> {
+async function insertTestSideAccount(
+  playerId: string,
+  rsn: string
+): Promise<string> {
   const { data, error } = await getDb()
     .from("bingo_player_side_accounts")
     .insert({ player_id: playerId, rsn })
     .select("id")
     .single();
-  if (error || !data) throw new Error(`Failed to insert test side account "${rsn}": ${error?.message}`);
+  if (error || !data)
+    throw new Error(
+      `Failed to insert test side account "${rsn}": ${error?.message}`
+    );
   return (data as { id: string }).id;
 }
 
@@ -82,7 +92,7 @@ async function pushPoint(
   playerId: string,
   sideAccountId: string | undefined,
   totalXp: number,
-  takenAt: Date,
+  takenAt: Date
 ): Promise<void> {
   const { error } = await getDb().rpc("upsert_player_hiscore_current", {
     p_player_id: playerId,
@@ -123,14 +133,32 @@ describe.skipIf(!suite)("getBingoConflicts", () => {
     bingo = await insertTestBingo(`test-conflicts-${uniqueSuffix()}`);
     createdBingoIds.push(bingo.id);
 
-    playerANoConflict = await insertTestPlayer(bingo.id, `ConflictMainA${uniqueSuffix()}`);
-    sideANoConflict = await insertTestSideAccount(playerANoConflict, `ConflictSideA${uniqueSuffix()}`);
+    playerANoConflict = await insertTestPlayer(
+      bingo.id,
+      `ConflictMainA${uniqueSuffix()}`
+    );
+    sideANoConflict = await insertTestSideAccount(
+      playerANoConflict,
+      `ConflictSideA${uniqueSuffix()}`
+    );
 
-    playerBLow = await insertTestPlayer(bingo.id, `ConflictMainB${uniqueSuffix()}`);
-    sideBLow = await insertTestSideAccount(playerBLow, `ConflictSideB${uniqueSuffix()}`);
+    playerBLow = await insertTestPlayer(
+      bingo.id,
+      `ConflictMainB${uniqueSuffix()}`
+    );
+    sideBLow = await insertTestSideAccount(
+      playerBLow,
+      `ConflictSideB${uniqueSuffix()}`
+    );
 
-    playerCHigh = await insertTestPlayer(bingo.id, `ConflictMainC${uniqueSuffix()}`);
-    sideCHigh = await insertTestSideAccount(playerCHigh, `ConflictSideC${uniqueSuffix()}`);
+    playerCHigh = await insertTestPlayer(
+      bingo.id,
+      `ConflictMainC${uniqueSuffix()}`
+    );
+    sideCHigh = await insertTestSideAccount(
+      playerCHigh,
+      `ConflictSideC${uniqueSuffix()}`
+    );
   });
 
   test("no conflict when only the main account gains XP", async () => {
@@ -142,7 +170,9 @@ describe.skipIf(!suite)("getBingoConflicts", () => {
     await pushPoint(playerANoConflict, sideANoConflict, 200, t1);
 
     const conflicts = await getBingoConflicts(bingo.id);
-    expect(conflicts.find((c) => c.playerId === playerANoConflict)).toBeUndefined();
+    expect(
+      conflicts.find((c) => c.playerId === playerANoConflict)
+    ).toBeUndefined();
   });
 
   test("low severity: exactly one overlapping XP-gaining window", async () => {
@@ -202,5 +232,7 @@ describe.skipIf(!suite)("getBingoConflicts", () => {
 
 afterAll(async () => {
   if (!stack.reachable) return;
-  await Promise.all(createdBingoIds.map((id) => deleteTestBingo(id).catch(() => undefined)));
+  await Promise.all(
+    createdBingoIds.map((id) => deleteTestBingo(id).catch(() => undefined))
+  );
 });

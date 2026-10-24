@@ -1,4 +1,10 @@
-import { Client, GatewayIntentBits, Attachment, Message, TextBasedChannel } from "discord.js";
+import {
+  Client,
+  GatewayIntentBits,
+  Attachment,
+  Message,
+  TextBasedChannel,
+} from "discord.js";
 import { getDb } from "../db/client.js";
 import { getActiveBingo } from "../db/bingos.js";
 import {
@@ -6,7 +12,11 @@ import {
   insertPendingSubmission,
   SCREENSHOTS_BUCKET,
 } from "../db/bingoSubmissions.js";
-import { extractImgurCandidates, downloadImgurImage, type ImgurDownloadResult } from "./imageLinks.js";
+import {
+  extractImgurCandidates,
+  downloadImgurImage,
+  type ImgurDownloadResult,
+} from "./imageLinks.js";
 
 const BACKFILL_LIMIT = 100;
 
@@ -35,19 +45,19 @@ function sanitizeFileName(name: string): string {
 async function uploadAttachment(
   bingoId: string,
   discordMessageId: string,
-  attachment: Attachment,
+  attachment: Attachment
 ): Promise<string> {
   const response = await fetch(attachment.url);
   if (!response.ok) {
     throw new Error(
-      `Failed to download Discord attachment ${attachment.id}: ${response.status} ${response.statusText}`,
+      `Failed to download Discord attachment ${attachment.id}: ${response.status} ${response.statusText}`
     );
   }
 
   const buffer = Buffer.from(await response.arrayBuffer());
-  const path = `${bingoId}/${sanitizeFileName(discordMessageId)}-${sanitizeFileName(
-    attachment.name ?? attachment.id,
-  )}`;
+  const path = `${bingoId}/${sanitizeFileName(
+    discordMessageId
+  )}-${sanitizeFileName(attachment.name ?? attachment.id)}`;
 
   const { error } = await getDb()
     .storage.from(SCREENSHOTS_BUCKET)
@@ -56,7 +66,8 @@ async function uploadAttachment(
       upsert: false,
     });
 
-  if (error) throw new Error(`Failed to upload screenshot to storage: ${error.message}`);
+  if (error)
+    throw new Error(`Failed to upload screenshot to storage: ${error.message}`);
   return path;
 }
 
@@ -70,9 +81,11 @@ async function uploadAttachment(
 async function uploadImgurImage(
   bingoId: string,
   discordMessageId: string,
-  download: Extract<ImgurDownloadResult, { ok: true }>,
+  download: Extract<ImgurDownloadResult, { ok: true }>
 ): Promise<string> {
-  const path = `${bingoId}/${sanitizeFileName(discordMessageId)}-imgur-${download.id}.${download.ext}`;
+  const path = `${bingoId}/${sanitizeFileName(discordMessageId)}-imgur-${
+    download.id
+  }.${download.ext}`;
 
   const { error } = await getDb()
     .storage.from(SCREENSHOTS_BUCKET)
@@ -81,7 +94,10 @@ async function uploadImgurImage(
       upsert: false,
     });
 
-  if (error) throw new Error(`Failed to upload imgur screenshot to storage: ${error.message}`);
+  if (error)
+    throw new Error(
+      `Failed to upload imgur screenshot to storage: ${error.message}`
+    );
   return path;
 }
 
@@ -101,7 +117,9 @@ async function uploadImgurImage(
 export async function ingestMessage(message: Message): Promise<void> {
   if (message.author.bot) return;
 
-  const imageAttachments = [...message.attachments.values()].filter(isImageAttachment);
+  const imageAttachments = [...message.attachments.values()].filter(
+    isImageAttachment
+  );
   const imgurCandidates = extractImgurCandidates(message.content);
   const totalItems = imageAttachments.length + imgurCandidates.length;
   if (totalItems === 0) return;
@@ -116,7 +134,7 @@ export async function ingestMessage(message: Message): Promise<void> {
     // log loudly. No submission row is ever created for a refused message.
     console.warn(
       `[discordScreenshots] Refusing screenshot from message ${message.id} (author ${message.author.tag}) — ` +
-        `no active bingo (reacting ❌).`,
+        `no active bingo (reacting ❌).`
     );
     await reactToSubmissionMessage(message.id, "❌");
     return;
@@ -126,12 +144,17 @@ export async function ingestMessage(message: Message): Promise<void> {
 
   for (let index = 0; index < imageAttachments.length; index++) {
     const attachment = imageAttachments[index];
-    const discordMessageId = totalItems > 1 ? `${message.id}:${index}` : message.id;
+    const discordMessageId =
+      totalItems > 1 ? `${message.id}:${index}` : message.id;
 
     try {
       if (await submissionExistsByDiscordMessageId(discordMessageId)) continue;
 
-      const imagePath = await uploadAttachment(bingoId, discordMessageId, attachment);
+      const imagePath = await uploadAttachment(
+        bingoId,
+        discordMessageId,
+        attachment
+      );
 
       await insertPendingSubmission({
         bingoId,
@@ -145,12 +168,12 @@ export async function ingestMessage(message: Message): Promise<void> {
       });
 
       console.log(
-        `[discordScreenshots] Ingested screenshot from ${message.author.tag} (message ${discordMessageId})`,
+        `[discordScreenshots] Ingested screenshot from ${message.author.tag} (message ${discordMessageId})`
       );
     } catch (e) {
       console.error(
         `[discordScreenshots] Failed to ingest attachment ${attachment.id} on message ${message.id}:`,
-        e,
+        e
       );
     }
   }
@@ -158,7 +181,8 @@ export async function ingestMessage(message: Message): Promise<void> {
   for (let linkIndex = 0; linkIndex < imgurCandidates.length; linkIndex++) {
     const candidate = imgurCandidates[linkIndex];
     const index = imageAttachments.length + linkIndex;
-    const discordMessageId = totalItems > 1 ? `${message.id}:${index}` : message.id;
+    const discordMessageId =
+      totalItems > 1 ? `${message.id}:${index}` : message.id;
 
     try {
       if (await submissionExistsByDiscordMessageId(discordMessageId)) continue;
@@ -166,12 +190,16 @@ export async function ingestMessage(message: Message): Promise<void> {
       const result = await downloadImgurImage(candidate);
       if (!result.ok) {
         console.log(
-          `[discordScreenshots] Skipping imgur link ${candidate.id} on message ${message.id} (${result.reason}).`,
+          `[discordScreenshots] Skipping imgur link ${candidate.id} on message ${message.id} (${result.reason}).`
         );
         continue;
       }
 
-      const imagePath = await uploadImgurImage(bingoId, discordMessageId, result);
+      const imagePath = await uploadImgurImage(
+        bingoId,
+        discordMessageId,
+        result
+      );
 
       await insertPendingSubmission({
         bingoId,
@@ -181,12 +209,12 @@ export async function ingestMessage(message: Message): Promise<void> {
       });
 
       console.log(
-        `[discordScreenshots] Ingested imgur link ${candidate.id} from ${message.author.tag} (message ${discordMessageId})`,
+        `[discordScreenshots] Ingested imgur link ${candidate.id} from ${message.author.tag} (message ${discordMessageId})`
       );
     } catch (e) {
       console.error(
         `[discordScreenshots] Failed to ingest imgur link ${candidate.id} on message ${message.id}:`,
-        e,
+        e
       );
     }
   }
@@ -204,7 +232,9 @@ async function backfillChannel(channel: TextBasedChannel): Promise<void> {
     for (const message of ordered) {
       await ingestMessage(message);
     }
-    console.log(`[discordScreenshots] Backfill complete (${ordered.length} messages scanned).`);
+    console.log(
+      `[discordScreenshots] Backfill complete (${ordered.length} messages scanned).`
+    );
   } catch (e) {
     console.error("[discordScreenshots] Backfill failed:", e);
   }
@@ -226,12 +256,14 @@ async function backfillChannel(channel: TextBasedChannel): Promise<void> {
  * dotenv refills unset keys from `.env` (Sprint 14 finding).
  */
 export function startDiscordScreenshotService(): void {
-  const discordEnabled = process.env.DISCORD_ENABLED === "true" || process.env.NODE_ENV === "production";
+  const discordEnabled =
+    process.env.DISCORD_ENABLED === "true" ||
+    process.env.NODE_ENV === "production";
 
   if (!discordEnabled) {
     console.warn(
       "[discordScreenshots] DISCORD_ENABLED is not 'true' (and NODE_ENV isn't production) — " +
-        "Discord screenshot ingest disabled for this run. Set DISCORD_ENABLED=true to opt in locally.",
+        "Discord screenshot ingest disabled for this run. Set DISCORD_ENABLED=true to opt in locally."
     );
     return;
   }
@@ -241,7 +273,7 @@ export function startDiscordScreenshotService(): void {
 
   if (!token || !channelId) {
     console.warn(
-      "[discordScreenshots] DISCORD_BOT_TOKEN / DISCORD_SCREENSHOT_CHANNEL_ID not set — Discord screenshot ingest disabled.",
+      "[discordScreenshots] DISCORD_BOT_TOKEN / DISCORD_SCREENSHOT_CHANNEL_ID not set — Discord screenshot ingest disabled."
     );
     return;
   }
@@ -269,24 +301,32 @@ export function startDiscordScreenshotService(): void {
       const channel = await readyClient.channels.fetch(channelId);
       if (!channel || !channel.isTextBased()) {
         console.error(
-          `[discordScreenshots] Configured channel ${channelId} is not a readable text channel.`,
+          `[discordScreenshots] Configured channel ${channelId} is not a readable text channel.`
         );
         return;
       }
       await backfillChannel(channel);
     } catch (e) {
-      console.error("[discordScreenshots] Failed to fetch configured channel:", e);
+      console.error(
+        "[discordScreenshots] Failed to fetch configured channel:",
+        e
+      );
     }
   });
 
   client.on("messageCreate", (message) => {
     if (message.channelId !== channelId) return;
     ingestMessage(message).catch((e) =>
-      console.error(`[discordScreenshots] Error processing message ${message.id}:`, e),
+      console.error(
+        `[discordScreenshots] Error processing message ${message.id}:`,
+        e
+      )
     );
   });
 
-  client.on("error", (e) => console.error("[discordScreenshots] Client error:", e));
+  client.on("error", (e) =>
+    console.error("[discordScreenshots] Client error:", e)
+  );
 
   client.login(token).catch((e) => {
     console.error("[discordScreenshots] Failed to log in:", e);
@@ -320,7 +360,9 @@ async function waitForReady(): Promise<boolean> {
   const timedOut = Symbol("discordScreenshots.waitForReady timeout");
   const outcome = await Promise.race([
     readyPromise.then(() => true as const),
-    new Promise<typeof timedOut>((resolve) => setTimeout(() => resolve(timedOut), READY_TIMEOUT_MS)),
+    new Promise<typeof timedOut>((resolve) =>
+      setTimeout(() => resolve(timedOut), READY_TIMEOUT_MS)
+    ),
   ]);
   return outcome === true;
 }
@@ -357,7 +399,7 @@ async function waitForReady(): Promise<boolean> {
  */
 export async function reactToSubmissionMessage(
   discordMessageId: string,
-  emoji: "👍" | "👎" | "❌",
+  emoji: "👍" | "👎" | "❌"
 ): Promise<void> {
   const channelId = process.env.DISCORD_SCREENSHOT_CHANNEL_ID;
   if (!client || !channelId) return;
@@ -372,7 +414,10 @@ export async function reactToSubmissionMessage(
     const message = await channel.messages.fetch(realMessageId);
     await message.react(emoji);
   } catch (e) {
-    console.warn(`[discordScreenshots] Best-effort reaction failed for message ${realMessageId}:`, e);
+    console.warn(
+      `[discordScreenshots] Best-effort reaction failed for message ${realMessageId}:`,
+      e
+    );
   }
 }
 
@@ -392,7 +437,7 @@ export async function reactToSubmissionMessage(
  */
 export async function notifyBingoEndedWithPendingScreenshots(
   bingoName: string,
-  pendingCount: number,
+  pendingCount: number
 ): Promise<void> {
   const channelId = process.env.DISCORD_SCREENSHOT_CHANNEL_ID;
   if (!client || !channelId) return;
@@ -401,7 +446,7 @@ export async function notifyBingoEndedWithPendingScreenshots(
   if (!ready) {
     console.warn(
       `[discordScreenshots] Still not logged in after ${READY_TIMEOUT_MS}ms — skipping the bingo-ended ` +
-        `notification for "${bingoName}". This was a one-shot notification and will not retry.`,
+        `notification for "${bingoName}". This was a one-shot notification and will not retry.`
     );
     return;
   }
@@ -410,12 +455,14 @@ export async function notifyBingoEndedWithPendingScreenshots(
     const channel = await client.channels.fetch(channelId);
     if (!channel || !channel.isTextBased() || !channel.isSendable()) return;
     await channel.send(
-      `${bingoName} has ended — ${pendingCount} screenshot${pendingCount === 1 ? "" : "s"} still need review.`,
+      `${bingoName} has ended — ${pendingCount} screenshot${
+        pendingCount === 1 ? "" : "s"
+      } still need review.`
     );
   } catch (e) {
     console.warn(
       `[discordScreenshots] Best-effort bingo-ended notification failed for "${bingoName}":`,
-      e,
+      e
     );
   }
 }

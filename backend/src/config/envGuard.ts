@@ -44,7 +44,7 @@ export function assertEnvironmentSafety(): void {
         `"${process.env.NODE_ENV || "(unset)"}", not "production".`,
         "Any reads/writes this process makes touch REAL data.",
         "=".repeat(72),
-      ].join("\n"),
+      ].join("\n")
     );
     return;
   }
@@ -52,7 +52,9 @@ export function assertEnvironmentSafety(): void {
   throw new Error(
     [
       `Refusing to start: SUPABASE_URL (${supabaseUrl}) is not a local address,`,
-      `and NODE_ENV ("${process.env.NODE_ENV || "(unset)"}") is not "production".`,
+      `and NODE_ENV ("${
+        process.env.NODE_ENV || "(unset)"
+      }") is not "production".`,
       "",
       "backend/.env used to default to the hosted production Supabase project,",
       "so a plain local `bun run dev` would silently read and write real data",
@@ -65,6 +67,6 @@ export function assertEnvironmentSafety(): void {
       "    backend/dev-remote.sh requires typed confirmation and sets",
       "    ALLOW_REMOTE_DB=true for you.",
       "See backend/README.md for details.",
-    ].join("\n"),
+    ].join("\n")
   );
 }

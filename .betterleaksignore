@@ -47,3 +47,13 @@ e29d84ffe0ccee6fa4ba87fdaba90255413e50fa:frontend/src/components/pages/TeamProgr
 e29d84ffe0ccee6fa4ba87fdaba90255413e50fa:frontend/src/components/pages/TeamProgress/credentials.json:private-key:5
 fa8be584f5e8575c784fc36a6336920fb21dc2f9:frontend/src/components/pages/TeamProgress/credentials.json:gcp-service-account:1
 fa8be584f5e8575c784fc36a6336920fb21dc2f9:frontend/src/components/pages/TeamProgress/credentials.json:private-key:5
+# Issue 48: existing dummy invite passwords and rejected user:pass URL fixture, moved by cleanup/formatting.
+98734b460d1bf129036c81dede466e35e79c7cbb:backend/tests/unit/imageLinks.test.ts:generic-credential-uri:127
+295bbf85fa41dbd17b57b3cf5304c69c5bb0d598:backend/tests/integration/invites.test.ts:generic-password:199
+98734b460d1bf129036c81dede466e35e79c7cbb:backend/tests/integration/invites.test.ts:generic-password:176
+98734b460d1bf129036c81dede466e35e79c7cbb:backend/tests/integration/invites.test.ts:generic-password:191
+98734b460d1bf129036c81dede466e35e79c7cbb:backend/tests/integration/invites.test.ts:generic-password:209
+98734b460d1bf129036c81dede466e35e79c7cbb:backend/tests/integration/invites.test.ts:generic-password:238
+# Issue 62: local recovery-test password and intentionally rejected credential-URL fixture.
+e38f19b8041cd948c8f889bd5ee925e8c2fe3136:backend/tests/integration/accountRecovery.test.ts:generic-password:46
+e38f19b8041cd948c8f889bd5ee925e8c2fe3136:backend/tests/unit/recoveryDelivery.test.ts:generic-credential-uri:69

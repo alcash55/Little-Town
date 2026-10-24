@@ -18,7 +18,9 @@ export interface RsnClaimRow {
 }
 
 /** The current claimant of an RSN (by its normalized/lowercased form), if any. */
-export async function findRsnClaim(rsnNormalized: string): Promise<RsnClaimRow | null> {
+export async function findRsnClaim(
+  rsnNormalized: string
+): Promise<RsnClaimRow | null> {
   const db = getDb();
   const { data, error } = await db
     .from("rsn_claims")
@@ -31,7 +33,9 @@ export async function findRsnClaim(rsnNormalized: string): Promise<RsnClaimRow |
 }
 
 /** The RSN a given user currently has claimed, if any. */
-export async function findRsnClaimByUser(userId: string): Promise<RsnClaimRow | null> {
+export async function findRsnClaimByUser(
+  userId: string
+): Promise<RsnClaimRow | null> {
   const db = getDb();
   const { data, error } = await db
     .from("rsn_claims")
@@ -39,7 +43,10 @@ export async function findRsnClaimByUser(userId: string): Promise<RsnClaimRow | 
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (error) throw new Error(`Failed to look up RSN claim for user ${userId}: ${error.message}`);
+  if (error)
+    throw new Error(
+      `Failed to look up RSN claim for user ${userId}: ${error.message}`
+    );
   return data as RsnClaimRow | null;
 }
 
@@ -56,14 +63,19 @@ export async function findRsnClaimByUser(userId: string): Promise<RsnClaimRow | 
 export async function upsertRsnClaim(
   userId: string,
   rsn: string,
-  rsnNormalized: string,
+  rsnNormalized: string
 ): Promise<RsnClaimRow> {
   const db = getDb();
   const { data, error } = await db
     .from("rsn_claims")
     .upsert(
-      { user_id: userId, rsn, rsn_normalized: rsnNormalized, claimed_at: new Date().toISOString() },
-      { onConflict: "user_id" },
+      {
+        user_id: userId,
+        rsn,
+        rsn_normalized: rsnNormalized,
+        claimed_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id" }
     )
     .select("*")
     .single();
@@ -74,9 +86,15 @@ export async function upsertRsnClaim(
     // means someone else won a race to claim this RSN between this route's
     // pre-check and this write.
     if ((error as { code?: string } | null)?.code === "23505") {
-      throw new AppError(`RSN "${rsn}" is already claimed by another account`, 409, "RSN_TAKEN");
+      throw new AppError(
+        `RSN "${rsn}" is already claimed by another account`,
+        409,
+        "RSN_TAKEN"
+      );
     }
-    throw new Error(`Failed to save RSN claim for user ${userId}: ${error?.message}`);
+    throw new Error(
+      `Failed to save RSN claim for user ${userId}: ${error?.message}`
+    );
   }
 
   return data as RsnClaimRow;
@@ -109,13 +127,15 @@ export async function listRsnClaims(): Promise<RsnClaimAdminRow[]> {
 
   if (error) throw new Error(`Failed to list RSN claims: ${error.message}`);
 
-  return ((data ?? []) as unknown as Array<{
-    user_id: string;
-    rsn: string;
-    rsn_normalized: string;
-    claimed_at: string;
-    users: { username: string } | { username: string }[] | null;
-  }>).map((row) => {
+  return (
+    (data ?? []) as unknown as Array<{
+      user_id: string;
+      rsn: string;
+      rsn_normalized: string;
+      claimed_at: string;
+      users: { username: string } | { username: string }[] | null;
+    }>
+  ).map((row) => {
     // PostgREST embeds a to-one relationship as an object normally, but the
     // supabase-js generated types model every embed as possibly-array —
     // handle both shapes defensively rather than asserting one.
@@ -143,7 +163,10 @@ export async function releaseRsnClaim(rsnNormalized: string): Promise<boolean> {
     .eq("rsn_normalized", rsnNormalized)
     .select("id");
 
-  if (error) throw new Error(`Failed to release RSN claim "${rsnNormalized}": ${error.message}`);
+  if (error)
+    throw new Error(
+      `Failed to release RSN claim "${rsnNormalized}": ${error.message}`
+    );
   return (data ?? []).length > 0;
 }
 
@@ -166,7 +189,7 @@ export async function releaseRsnClaim(rsnNormalized: string): Promise<boolean> {
  */
 export async function reassignRsnClaim(
   rsnNormalized: string,
-  userId: string,
+  userId: string
 ): Promise<{ rsn: string; userId: string }> {
   const db = getDb();
 
@@ -175,7 +198,7 @@ export async function reassignRsnClaim(
     throw new AppError(
       `User already holds a different RSN claim ("${existingForUser.rsn}")`,
       409,
-      "RSN_CLAIM_CONFLICT",
+      "RSN_CLAIM_CONFLICT"
     );
   }
 
@@ -188,12 +211,22 @@ export async function reassignRsnClaim(
 
   if (error) {
     if ((error as { code?: string } | null)?.code === "23505") {
-      throw new AppError("User already holds a different RSN claim", 409, "RSN_CLAIM_CONFLICT");
+      throw new AppError(
+        "User already holds a different RSN claim",
+        409,
+        "RSN_CLAIM_CONFLICT"
+      );
     }
-    throw new Error(`Failed to reassign RSN claim "${rsnNormalized}": ${error.message}`);
+    throw new Error(
+      `Failed to reassign RSN claim "${rsnNormalized}": ${error.message}`
+    );
   }
   if (!data) {
-    throw new AppError(`No RSN claim found for "${rsnNormalized}"`, 404, "RSN_CLAIM_NOT_FOUND");
+    throw new AppError(
+      `No RSN claim found for "${rsnNormalized}"`,
+      404,
+      "RSN_CLAIM_NOT_FOUND"
+    );
   }
 
   return { rsn: data.rsn, userId: data.user_id };

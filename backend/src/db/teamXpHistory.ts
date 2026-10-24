@@ -58,7 +58,10 @@ interface HistoryRow {
  *    every configured team is always present, per the frozen contract).
  * ===========================================================================
  */
-export async function getTeamXpHistory(bingoId: string, teams: BingoTeam[]): Promise<TeamXpHistory[]> {
+export async function getTeamXpHistory(
+  bingoId: string,
+  teams: BingoTeam[]
+): Promise<TeamXpHistory[]> {
   const db = getDb();
 
   const { data: players, error: playersError } = await db
@@ -67,11 +70,16 @@ export async function getTeamXpHistory(bingoId: string, teams: BingoTeam[]): Pro
     .eq("bingo_id", bingoId)
     .not("team_id", "is", null);
 
-  if (playersError) throw new Error(`Failed to get players: ${playersError.message}`);
+  if (playersError)
+    throw new Error(`Failed to get players: ${playersError.message}`);
   const playerRows = (players ?? []) as Array<{ id: string; team_id: string }>;
 
   if (!playerRows.length) {
-    return teams.map((team) => ({ teamId: team.id, teamName: team.name, series: [] }));
+    return teams.map((team) => ({
+      teamId: team.id,
+      teamName: team.name,
+      series: [],
+    }));
   }
 
   const playerIds = playerRows.map((p) => p.id);
@@ -84,14 +92,16 @@ export async function getTeamXpHistory(bingoId: string, teams: BingoTeam[]): Pro
     .is("side_account_id", null)
     .order("taken_at", { ascending: true });
 
-  if (historyError) throw new Error(`Failed to get hiscore history: ${historyError.message}`);
+  if (historyError)
+    throw new Error(`Failed to get hiscore history: ${historyError.message}`);
   const rows = (history ?? []) as HistoryRow[];
 
   // Rule 1: baseline = earliest 'start' row's total_xp per player.
   const baselineByPlayer = new Map<string, number>();
   for (const row of rows) {
     if (row.type !== "start") continue;
-    if (!baselineByPlayer.has(row.player_id)) baselineByPlayer.set(row.player_id, row.total_xp);
+    if (!baselineByPlayer.has(row.player_id))
+      baselineByPlayer.set(row.player_id, row.total_xp);
   }
 
   // Rule 2: per-player, per-day max total_xp; also collect the global date union.
@@ -107,12 +117,16 @@ export async function getTeamXpHistory(bingoId: string, teams: BingoTeam[]): Pro
       dailyByPlayer.set(row.player_id, perPlayer);
     }
     const prevMax = perPlayer.get(date);
-    if (prevMax === undefined || row.total_xp > prevMax) perPlayer.set(date, row.total_xp);
+    if (prevMax === undefined || row.total_xp > prevMax)
+      perPlayer.set(date, row.total_xp);
   }
 
   const sortedDates = Array.from(allDates).sort();
 
-  const sortedSeriesByPlayer = new Map<string, Array<{ date: string; value: number }>>();
+  const sortedSeriesByPlayer = new Map<
+    string,
+    Array<{ date: string; value: number }>
+  >();
   for (const [playerId, dailyMap] of dailyByPlayer) {
     const arr = Array.from(dailyMap.entries())
       .map(([date, value]) => ({ date, value }))
@@ -135,16 +149,21 @@ export async function getTeamXpHistory(bingoId: string, teams: BingoTeam[]): Pro
     }
 
     // Rule 4: two-pointer carry-forward walk per player across sortedDates.
-    const seriesIndex = new Map<string, number>(teamPlayerIds.map((id) => [id, -1]));
+    const seriesIndex = new Map<string, number>(
+      teamPlayerIds.map((id) => [id, -1])
+    );
     const currentValue = new Map<string, number>(
-      teamPlayerIds.map((id) => [id, baselineByPlayer.get(id)!]),
+      teamPlayerIds.map((id) => [id, baselineByPlayer.get(id)!])
     );
 
     const series: TeamXpSeriesPoint[] = sortedDates.map((date) => {
       for (const playerId of teamPlayerIds) {
         const playerSeries = sortedSeriesByPlayer.get(playerId) ?? [];
         let i = seriesIndex.get(playerId)!;
-        while (i + 1 < playerSeries.length && playerSeries[i + 1].date <= date) {
+        while (
+          i + 1 < playerSeries.length &&
+          playerSeries[i + 1].date <= date
+        ) {
           i++;
           currentValue.set(playerId, playerSeries[i].value);
         }
@@ -152,8 +171,13 @@ export async function getTeamXpHistory(bingoId: string, teams: BingoTeam[]): Pro
       }
 
       const totalXpGained = teamPlayerIds.reduce(
-        (sum, playerId) => sum + Math.max(0, currentValue.get(playerId)! - baselineByPlayer.get(playerId)!),
-        0,
+        (sum, playerId) =>
+          sum +
+          Math.max(
+            0,
+            currentValue.get(playerId)! - baselineByPlayer.get(playerId)!
+          ),
+        0
       );
 
       return { date: `${date}T00:00:00.000Z`, totalXpGained };

@@ -35,7 +35,12 @@ import {
 } from "./integration/helpers.js";
 import { getDb } from "../src/db/client.js";
 
-const TILES: Array<{ type: "Kill Count" | "Experience" | "Drops"; task: string; points: number; target: number | null }> = [
+const TILES: Array<{
+  type: "Kill Count" | "Experience" | "Drops";
+  task: string;
+  points: number;
+  target: number | null;
+}> = [
   { type: "Kill Count", task: "Zulrah", points: 10, target: 25 },
   { type: "Kill Count", task: "Vorkath", points: 10, target: 20 },
   { type: "Kill Count", task: "General Graardor", points: 15, target: 30 },
@@ -65,11 +70,18 @@ const db = getDb();
 // Re-runnable: clear prior fixture rows first. Only one bingo may be active
 // (uq_bingos_one_active), and rsn_claims is UNIQUE on rsn_normalized, so a
 // second run collides on both unless the previous run's rows are removed.
-const { data: stale } = await db.from("bingos").select("id").like("name", "Browser Verify%");
-for (const row of stale ?? []) await db.from("bingos").delete().eq("id", row.id);
+const { data: stale } = await db
+  .from("bingos")
+  .select("id")
+  .like("name", "Browser Verify%");
+for (const row of stale ?? [])
+  await db.from("bingos").delete().eq("id", row.id);
 
 for (const prefix of ["Linkeduser%", "Unlinkeduser%", "Adminadmin%"]) {
-  const { data: users } = await db.from("users").select("id").like("username", prefix);
+  const { data: users } = await db
+    .from("users")
+    .select("id")
+    .like("username", prefix);
   // rsn_claims cascades on users.id, which is what frees "zezima" for re-seeding.
   for (const u of users ?? []) await db.from("users").delete().eq("id", u.id);
 }
@@ -131,6 +143,6 @@ console.log(
       admin: { username: admin.username, token: signTestToken(admin) },
     },
     null,
-    2,
-  ),
+    2
+  )
 );

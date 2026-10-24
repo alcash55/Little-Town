@@ -23,8 +23,12 @@ function fakeRequest(ip: string): Request {
 
 describe("rateLimitKey — IPv6 fallback (#45)", () => {
   test("two different IPv6 addresses in the same /64 share a bucket key", () => {
-    const a = rateLimitKey(fakeRequest("2001:db8:1234:5678:aaaa:bbbb:cccc:0001"));
-    const b = rateLimitKey(fakeRequest("2001:db8:1234:5678:1111:2222:3333:4444"));
+    const a = rateLimitKey(
+      fakeRequest("2001:db8:1234:5678:aaaa:bbbb:cccc:0001")
+    );
+    const b = rateLimitKey(
+      fakeRequest("2001:db8:1234:5678:1111:2222:3333:4444")
+    );
 
     expect(a).toBe(b);
   });

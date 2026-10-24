@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { assertAccountRecoverySchemaReady } from "./db/schemaReadiness.js";
 import { assertEnvironmentSafety } from "./config/envGuard.js";
 import { CORS_ALLOWED_HEADERS, buildDevCorsOrigins } from "./config/cors.js";
 import { getSameSiteAuthHost } from "./lib/session.js";
@@ -11,6 +12,8 @@ import rateLimit from "express-rate-limit";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { rateLimitKey } from "./middleware/rateLimitKey.js";
 import { loginLimiter } from "./middleware/loginLimiter.js";
+import { createRecoveryRoutes } from "./routes/accountRecovery.js";
+import { recoveryBaseUrl } from "./services/accountRecovery.js";
 import authRoutes from "./routes/auth.js";
 import hiscoresRoutes from "./routes/hiscores.js";
 import adminRoutes from "./routes/admin.js";
@@ -18,10 +21,23 @@ import bingoRoutes from "./routes/bingo.js";
 import { adminInviteRoutes, publicInviteRoutes } from "./routes/invites.js";
 import { adminUsersRoutes } from "./routes/adminUsers.js";
 import onboardingRoutes from "./routes/onboarding.js";
-import { startStaticDataCron, stopStaticDataCron, refreshStaticData } from "./services/staticDataCron.js";
-import { startPlayerSnapshotCron, stopPlayerSnapshotCron } from "./services/playerSnapshotCron.js";
-import { startDiscordScreenshotService, stopDiscordScreenshotService } from "./services/discordScreenshots.js";
-import { completeEndedBingos, deleteExpiredHiscoreHistory } from "./services/bingoLifecycle.js";
+import {
+  startStaticDataCron,
+  stopStaticDataCron,
+  refreshStaticData,
+} from "./services/staticDataCron.js";
+import {
+  startPlayerSnapshotCron,
+  stopPlayerSnapshotCron,
+} from "./services/playerSnapshotCron.js";
+import {
+  startDiscordScreenshotService,
+  stopDiscordScreenshotService,
+} from "./services/discordScreenshots.js";
+import {
+  completeEndedBingos,
+  deleteExpiredHiscoreHistory,
+} from "./services/bingoLifecycle.js";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -62,7 +78,7 @@ app.use(
     // See src/config/cors.ts — every custom request header the frontend sends
     // must be allowlisted or the browser's preflight strips it.
     allowedHeaders: [...CORS_ALLOWED_HEADERS],
-  }),
+  })
 );
 
 // Rate limiting
@@ -122,6 +138,8 @@ app.get("/api/health", (_req: Request, res: Response) => {
 });
 
 // API routes
+recoveryBaseUrl();
+app.use("/api/auth/recovery", createRecoveryRoutes());
 app.use("/api/auth", authRoutes);
 app.use("/api/hiscores", hiscoresRoutes);
 // These two must be registered BEFORE the generic /api/admin mount below:
@@ -153,30 +171,52 @@ app.use(errorHandler);
 
 // Start server
 const PORT = process.env.PORT || 8081;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/api/health`);
-  startStaticDataCron();
-  // Discord service is started BEFORE the boot-time lifecycle check below so
-  // a bingo that ended while this instance was asleep (Render free-tier
-  // instances sleep after inactivity) has the best chance of its one-time
-  // "still N pending" notification (product decision 4b) actually reaching
-  // the channel — the notification is still best-effort/skips cleanly if the
-  // bot isn't configured or hasn't finished logging in yet.
-  startDiscordScreenshotService();
-  // Boot-time lifecycle check (TEAM-BRIEF.md Sprint 15, Track A item 1):
-  // completeEndedBingos() also runs on every startPlayerSnapshotCron() tick
-  // (including that cron's own immediate first tick), but a dedicated,
-  // independently-testable call here means a bingo that ended hours ago on a
-  // sleeping instance is closed out the moment this instance wakes, not
-  // "eventually, whenever the cron machinery gets to it." Idempotent —
-  // running again moments later via the cron's first tick is a no-op.
-  completeEndedBingos().then(() => deleteExpiredHiscoreHistory()).catch((e) =>
-    console.error("[bingoLifecycle] Boot-time lifecycle check failed:", e),
+async function startServer(): Promise<void> {
+  await assertAccountRecoverySchemaReady();
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Health check: http://localhost:${PORT}/api/health`);
+    startStaticDataCron();
+    // Discord service is started BEFORE the boot-time lifecycle check below so
+    // a bingo that ended while this instance was asleep (Render free-tier
+    // instances sleep after inactivity) has the best chance of its one-time
+    // "still N pending" notification (product decision 4b) actually reaching
+    // the channel — the notification is still best-effort/skips cleanly if the
+    // bot isn't configured or hasn't finished logging in yet.
+    startDiscordScreenshotService();
+    // Boot-time lifecycle check (TEAM-BRIEF.md Sprint 15, Track A item 1):
+    // completeEndedBingos() also runs on every startPlayerSnapshotCron() tick
+    // (including that cron's own immediate first tick), but a dedicated,
+    // independently-testable call here means a bingo that ended hours ago on a
+    // sleeping instance is closed out the moment this instance wakes, not
+    // "eventually, whenever the cron machinery gets to it." Idempotent —
+    // running again moments later via the cron's first tick is a no-op.
+    completeEndedBingos()
+      .then(() => deleteExpiredHiscoreHistory())
+      .catch((e) =>
+        console.error("[bingoLifecycle] Boot-time lifecycle check failed:", e)
+      );
+    startPlayerSnapshotCron();
+  });
+}
+
+startServer().catch(() => {
+  console.error(
+    "[startup] Account recovery schema unavailable. Apply pending database migrations and verify Supabase access."
   );
-  startPlayerSnapshotCron();
+  process.exit(1);
 });
 
 // Graceful shutdown
-process.on('SIGTERM', () => { stopStaticDataCron(); stopPlayerSnapshotCron(); stopDiscordScreenshotService(); process.exit(0); });
-process.on('SIGINT', () => { stopStaticDataCron(); stopPlayerSnapshotCron(); stopDiscordScreenshotService(); process.exit(0); });
+process.on("SIGTERM", () => {
+  stopStaticDataCron();
+  stopPlayerSnapshotCron();
+  stopDiscordScreenshotService();
+  process.exit(0);
+});
+process.on("SIGINT", () => {
+  stopStaticDataCron();
+  stopPlayerSnapshotCron();
+  stopDiscordScreenshotService();
+  process.exit(0);
+});

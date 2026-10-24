@@ -1,7 +1,11 @@
 import { Router, Request, Response } from "express";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { LOCAL_DEV_USER_ID, protect, authorize } from "../middleware/auth.js";
-import { validateBody, inviteCreateSchema, inviteAcceptSchema } from "../lib/validation.js";
+import {
+  validateBody,
+  inviteCreateSchema,
+  inviteAcceptSchema,
+} from "../lib/validation.js";
 import {
   createInvite,
   listInvites,
@@ -31,10 +35,17 @@ adminInviteRoutes.post(
   "/",
   validateBody(inviteCreateSchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const { role, expiresInHours } = req.body as { role?: InviteRole; expiresInHours?: number };
-    const invite = await createInvite({ role, expiresInHours, createdBy: getAuditUserId(req) });
+    const { role, expiresInHours } = req.body as {
+      role?: InviteRole;
+      expiresInHours?: number;
+    };
+    const invite = await createInvite({
+      role,
+      expiresInHours,
+      createdBy: getAuditUserId(req),
+    });
     res.status(201).json(invite);
-  }),
+  })
 );
 
 // GET /api/admin/invites -> { invites: [...] }
@@ -43,7 +54,7 @@ adminInviteRoutes.get(
   asyncHandler(async (_req: Request, res: Response) => {
     const invites = await listInvites();
     res.status(200).json({ invites });
-  }),
+  })
 );
 
 // DELETE /api/admin/invites/:id -> revoke
@@ -51,11 +62,14 @@ adminInviteRoutes.delete(
   "/:id",
   asyncHandler(async (req: Request, res: Response) => {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    if (!id) return res.status(400).json({ success: false, error: "Invite ID is required" });
+    if (!id)
+      return res
+        .status(400)
+        .json({ success: false, error: "Invite ID is required" });
 
     await revokeInvite(id);
     res.status(200).json({ success: true, message: "Invite revoked" });
-  }),
+  })
 );
 
 // -------------------------------------------------------
@@ -71,12 +85,17 @@ export const publicInviteRoutes = Router();
 publicInviteRoutes.get(
   "/:token",
   asyncHandler(async (req: Request, res: Response) => {
-    const token = Array.isArray(req.params.token) ? req.params.token[0] : req.params.token;
-    if (!token) return res.status(400).json({ success: false, error: "Token is required" });
+    const token = Array.isArray(req.params.token)
+      ? req.params.token[0]
+      : req.params.token;
+    if (!token)
+      return res
+        .status(400)
+        .json({ success: false, error: "Token is required" });
 
     const result = await validateInviteToken(token);
     res.status(200).json(result);
-  }),
+  })
 );
 
 // POST /api/invites/:token/accept  { username, password, nickname? }
@@ -91,8 +110,13 @@ publicInviteRoutes.post(
   "/:token/accept",
   validateBody(inviteAcceptSchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const token = Array.isArray(req.params.token) ? req.params.token[0] : req.params.token;
-    if (!token) return res.status(400).json({ success: false, error: "Token is required" });
+    const token = Array.isArray(req.params.token)
+      ? req.params.token[0]
+      : req.params.token;
+    if (!token)
+      return res
+        .status(400)
+        .json({ success: false, error: "Token is required" });
 
     const { username, password, nickname } = req.body as {
       username: string;
@@ -112,5 +136,5 @@ publicInviteRoutes.post(
       data: { user, expiresAt },
     };
     res.status(201).json(response);
-  }),
+  })
 );
