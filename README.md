@@ -11,13 +11,13 @@ A web app for tracking [OSRS Bingo Competitions](https://www.youtube.com/watch?v
 
 ## Tech Stack
 
-|                | Technology                                |
-| -------------- | ----------------------------------------- |
-| **Frontend**   | React, TypeScript, MUI, Vite, Bun         |
-| **Backend**    | Node.js, Express, TypeScript              |
-| **Database**   | Supabase (Postgres)                       |
-| **Auth**       | JWT with role-based access control        |
-| **Deployment** | Cloudflare (frontend), Render (backend)   |
+|                | Technology                              |
+| -------------- | --------------------------------------- |
+| **Frontend**   | React, TypeScript, MUI, Vite, Bun       |
+| **Backend**    | Node.js, Express, TypeScript            |
+| **Database**   | Supabase (Postgres)                     |
+| **Auth**       | JWT with role-based access control      |
+| **Deployment** | Cloudflare (frontend), Render (backend) |
 
 ## Repository Structure
 
@@ -32,23 +32,23 @@ here instead of keeping its own copy, and `tools/check-pages-doc.ts` fails
 CI if the two ever drift apart again. Verified against
 [`frontend/src/components/Routes/Routes.tsx`](./frontend/src/components/Routes/Routes.tsx).
 
-| Route                               | Access | Description                                            |
-| ------------------------------------ | ------ | ------------------------------------------------------- |
-| `/`                                  | public | Home                                                     |
-| `/Resources`                         | public | Guides, strats, tiles, RuneLite marker payloads          |
-| `/BingoBoard`                        | public | Active bingo board (anonymous = no team highlighting)    |
-| `/invite/:token`                     | public | Accept an invite                                         |
-| `/unauthorized`                      | public | Access denied                                            |
-| `/BingoRules`                        | user+  | Competition rules                                        |
-| `/BingoScores`                       | user+  | Team scores and leaderboard                              |
-| `/TeamData`                          | user+  | Per-team hiscore data                                    |
-| `/AdminPanel/BingoDetails`           | admin  | Set up a new bingo event                                 |
-| `/AdminPanel/BoardBuilder`           | admin  | Build the tile board                                     |
-| `/AdminPanel/TeamDrafter`            | admin  | Draft and manage teams                                   |
-| `/AdminPanel/ScreenshotSubmission`   | admin  | Review submitted screenshots                             |
-| `/AdminPanel/BingoOverview`          | admin  | KPIs, charts, dependency health                          |
-| `/AdminPanel/Maintenance`            | admin  | Manually trigger cron jobs                               |
-| `/AdminPanel/UserInvite`             | admin  | Generate / revoke invites                                |
+| Route                              | Access | Description                                           |
+| ---------------------------------- | ------ | ----------------------------------------------------- |
+| `/`                                | public | Home                                                  |
+| `/Resources`                       | public | Guides, strats, tiles, RuneLite marker payloads       |
+| `/BingoBoard`                      | public | Active bingo board (anonymous = no team highlighting) |
+| `/invite/:token`                   | public | Accept an invite                                      |
+| `/unauthorized`                    | public | Access denied                                         |
+| `/BingoRules`                      | user+  | Competition rules                                     |
+| `/BingoScores`                     | user+  | Team scores and leaderboard                           |
+| `/TeamData`                        | user+  | Per-team hiscore data                                 |
+| `/AdminPanel/BingoDetails`         | admin  | Set up a new bingo event                              |
+| `/AdminPanel/BoardBuilder`         | admin  | Build the tile board                                  |
+| `/AdminPanel/TeamDrafter`          | admin  | Draft and manage teams                                |
+| `/AdminPanel/ScreenshotSubmission` | admin  | Review submitted screenshots                          |
+| `/AdminPanel/BingoOverview`        | admin  | KPIs, charts, dependency health                       |
+| `/AdminPanel/Maintenance`          | admin  | Manually trigger cron jobs                            |
+| `/AdminPanel/UserInvite`           | admin  | Generate / revoke invites                             |
 
 `user+` accepts `user`, `moderator`, or `admin`. Admin panel routes require `admin` specifically.
 

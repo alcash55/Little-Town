@@ -41,14 +41,19 @@ const SIGNED_URL_TTL_SECONDS = 300; // 5 minutes — just long enough to render 
  * attachment it has already processed (bot re-scans the last 100 messages on
  * every startup).
  */
-export async function submissionExistsByDiscordMessageId(discordMessageId: string): Promise<boolean> {
+export async function submissionExistsByDiscordMessageId(
+  discordMessageId: string
+): Promise<boolean> {
   const { data, error } = await getDb()
     .from("bingo_submissions")
     .select("id")
     .eq("discord_message_id", discordMessageId)
     .maybeSingle();
 
-  if (error) throw new Error(`Failed to check for existing submission: ${error.message}`);
+  if (error)
+    throw new Error(
+      `Failed to check for existing submission: ${error.message}`
+    );
   return data !== null;
 }
 
@@ -64,16 +69,18 @@ export async function insertPendingSubmission(input: {
   imagePath: string;
   notes?: string;
 }): Promise<void> {
-  const { error } = await getDb().from("bingo_submissions").upsert(
-    {
-      bingo_id: input.bingoId,
-      discord_message_id: input.discordMessageId,
-      image_path: input.imagePath,
-      notes: input.notes ?? null,
-      status: "pending",
-    },
-    { onConflict: "discord_message_id", ignoreDuplicates: true },
-  );
+  const { error } = await getDb()
+    .from("bingo_submissions")
+    .upsert(
+      {
+        bingo_id: input.bingoId,
+        discord_message_id: input.discordMessageId,
+        image_path: input.imagePath,
+        notes: input.notes ?? null,
+        status: "pending",
+      },
+      { onConflict: "discord_message_id", ignoreDuplicates: true }
+    );
 
   if (error) throw new Error(`Failed to insert submission: ${error.message}`);
 }
@@ -85,7 +92,9 @@ export async function insertPendingSubmission(input: {
 /**
  * Pending submissions for a bingo, oldest first (review queue order).
  */
-export async function getPendingSubmissions(bingoId: string): Promise<BingoSubmission[]> {
+export async function getPendingSubmissions(
+  bingoId: string
+): Promise<BingoSubmission[]> {
   const { data, error } = await getDb()
     .from("bingo_submissions")
     .select("*")
@@ -93,7 +102,8 @@ export async function getPendingSubmissions(bingoId: string): Promise<BingoSubmi
     .eq("status", "pending")
     .order("created_at", { ascending: true });
 
-  if (error) throw new Error(`Failed to get pending submissions: ${error.message}`);
+  if (error)
+    throw new Error(`Failed to get pending submissions: ${error.message}`);
   return (data ?? []) as BingoSubmission[];
 }
 
@@ -104,14 +114,17 @@ export async function getPendingSubmissions(bingoId: string): Promise<BingoSubmi
  * check, neither of which need the full rows. `head: true` skips returning
  * any rows at all, just the count.
  */
-export async function countPendingSubmissions(bingoId: string): Promise<number> {
+export async function countPendingSubmissions(
+  bingoId: string
+): Promise<number> {
   const { count, error } = await getDb()
     .from("bingo_submissions")
     .select("id", { count: "exact", head: true })
     .eq("bingo_id", bingoId)
     .eq("status", "pending");
 
-  if (error) throw new Error(`Failed to count pending submissions: ${error.message}`);
+  if (error)
+    throw new Error(`Failed to count pending submissions: ${error.message}`);
   return count ?? 0;
 }
 
@@ -131,7 +144,9 @@ export async function countPendingSubmissions(bingoId: string): Promise<number> 
  * Two-step (drops tile ids for this bingo, then submissions scoped to them)
  * rather than a join — same shape as getTeamStats' equivalent filter.
  */
-export async function getApprovedSubmissionsMissingAttribution(bingoId: string): Promise<BingoSubmission[]> {
+export async function getApprovedSubmissionsMissingAttribution(
+  bingoId: string
+): Promise<BingoSubmission[]> {
   const db = getDb();
 
   const { data: dropsTiles, error: tilesError } = await db
@@ -139,9 +154,12 @@ export async function getApprovedSubmissionsMissingAttribution(bingoId: string):
     .select("id")
     .eq("bingo_id", bingoId)
     .eq("type", "Drops");
-  if (tilesError) throw new Error(`Failed to get drops tiles: ${tilesError.message}`);
+  if (tilesError)
+    throw new Error(`Failed to get drops tiles: ${tilesError.message}`);
 
-  const dropsTileIds = ((dropsTiles ?? []) as Array<{ id: string }>).map((t) => t.id);
+  const dropsTileIds = ((dropsTiles ?? []) as Array<{ id: string }>).map(
+    (t) => t.id
+  );
   if (!dropsTileIds.length) return [];
 
   const { data, error } = await db
@@ -153,11 +171,16 @@ export async function getApprovedSubmissionsMissingAttribution(bingoId: string):
     .in("tile_id", dropsTileIds)
     .order("reviewed_at", { ascending: true });
 
-  if (error) throw new Error(`Failed to get unattributed approved submissions: ${error.message}`);
+  if (error)
+    throw new Error(
+      `Failed to get unattributed approved submissions: ${error.message}`
+    );
   return (data ?? []) as BingoSubmission[];
 }
 
-export async function getSubmissionById(id: string): Promise<BingoSubmission | null> {
+export async function getSubmissionById(
+  id: string
+): Promise<BingoSubmission | null> {
   const { data, error } = await getDb()
     .from("bingo_submissions")
     .select("*")
@@ -178,7 +201,7 @@ export async function getSubmissionById(id: string): Promise<BingoSubmission | n
 export function validateApprovalPlayerId(
   playerId: string | undefined,
   teamId: string,
-  roster: Array<{ id: string; team_id: string | null }>,
+  roster: Array<{ id: string; team_id: string | null }>
 ): string | null {
   if (playerId === undefined) return null;
   const player = roster.find((p) => p.id === playerId);
@@ -204,7 +227,7 @@ export interface DropSubmissionAttribution {
 export function buildDropStatusByRsn(
   submissions: DropSubmissionAttribution[],
   playerIdToRsn: Map<string, string>,
-  tileIdToTask: Map<string, string>,
+  tileIdToTask: Map<string, string>
 ): Record<string, Record<string, "approved" | "pending">> {
   const dropStatus: Record<string, Record<string, "approved" | "pending">> = {};
   for (const sub of submissions) {
@@ -256,10 +279,12 @@ export function buildDropStatusByRsn(
  * with `completedByMyTeam`/`pendingByMyTeam` merged in, instead of this
  * function silently dropping any field it doesn't know about.
  */
-export function buildBoardTileCompletion<T extends { id: string; task: string }>(
+export function buildBoardTileCompletion<
+  T extends { id: string; task: string }
+>(
   tiles: T[],
   completedTileIdsForMyTeam: Set<string> | null,
-  pendingTileIdsForMyTeam: Set<string> | null = null,
+  pendingTileIdsForMyTeam: Set<string> | null = null
 ): Array<T & { completedByMyTeam: boolean; pendingByMyTeam: boolean }> {
   return tiles.map((tile) => ({
     ...tile,
@@ -270,7 +295,12 @@ export function buildBoardTileCompletion<T extends { id: string; task: string }>
 
 export async function approveSubmission(
   id: string,
-  input: { tileId: string; teamId: string; playerId?: string; reviewedBy?: string },
+  input: {
+    tileId: string;
+    teamId: string;
+    playerId?: string;
+    reviewedBy?: string;
+  }
 ): Promise<BingoSubmission> {
   const { data, error } = await getDb()
     .from("bingo_submissions")
@@ -289,7 +319,8 @@ export async function approveSubmission(
     .select("*")
     .single();
 
-  if (error || !data) throw new Error(`Failed to approve submission: ${error?.message}`);
+  if (error || !data)
+    throw new Error(`Failed to approve submission: ${error?.message}`);
   return data as BingoSubmission;
 }
 
@@ -311,7 +342,7 @@ export async function approveSubmission(
  */
 export async function tagPendingSubmission(
   id: string,
-  input: { tileId: string; teamId: string },
+  input: { tileId: string; teamId: string }
 ): Promise<BingoSubmission> {
   const { data, error } = await getDb()
     .from("bingo_submissions")
@@ -320,7 +351,8 @@ export async function tagPendingSubmission(
     .select("*")
     .single();
 
-  if (error || !data) throw new Error(`Failed to tag submission: ${error?.message}`);
+  if (error || !data)
+    throw new Error(`Failed to tag submission: ${error?.message}`);
   return data as BingoSubmission;
 }
 
@@ -351,25 +383,28 @@ export async function tagPendingSubmission(
 export async function attributeApprovedSubmission(
   id: string,
   playerId: string,
-  backfillReviewedBy?: string,
+  backfillReviewedBy?: string
 ): Promise<BingoSubmission> {
   const { data, error } = await getDb()
     .from("bingo_submissions")
     .update({
       player_id: playerId,
-      ...(backfillReviewedBy !== undefined ? { reviewed_by: backfillReviewedBy } : {}),
+      ...(backfillReviewedBy !== undefined
+        ? { reviewed_by: backfillReviewedBy }
+        : {}),
     })
     .eq("id", id)
     .select("*")
     .single();
 
-  if (error || !data) throw new Error(`Failed to attribute submission: ${error?.message}`);
+  if (error || !data)
+    throw new Error(`Failed to attribute submission: ${error?.message}`);
   return data as BingoSubmission;
 }
 
 export async function denySubmission(
   id: string,
-  input: { reviewedBy?: string },
+  input: { reviewedBy?: string }
 ): Promise<BingoSubmission> {
   const { data, error } = await getDb()
     .from("bingo_submissions")
@@ -382,7 +417,8 @@ export async function denySubmission(
     .select("*")
     .single();
 
-  if (error || !data) throw new Error(`Failed to deny submission: ${error?.message}`);
+  if (error || !data)
+    throw new Error(`Failed to deny submission: ${error?.message}`);
   return data as BingoSubmission;
 }
 
@@ -421,10 +457,15 @@ export async function purgeBingoScreenshots(bingoId: string): Promise<number> {
   for (;;) {
     const { data: page, error: listError } = await db.storage
       .from(SCREENSHOTS_BUCKET)
-      .list(bingoId, { limit: SCREENSHOT_PURGE_PAGE_SIZE, sortBy: { column: "name", order: "asc" } });
+      .list(bingoId, {
+        limit: SCREENSHOT_PURGE_PAGE_SIZE,
+        sortBy: { column: "name", order: "asc" },
+      });
 
     if (listError) {
-      throw new Error(`Failed to list screenshots for bingo ${bingoId}: ${listError.message}`);
+      throw new Error(
+        `Failed to list screenshots for bingo ${bingoId}: ${listError.message}`
+      );
     }
     if (!page || page.length === 0) break;
 
@@ -434,7 +475,9 @@ export async function purgeBingoScreenshots(bingoId: string): Promise<number> {
       .remove(paths);
 
     if (removeError) {
-      throw new Error(`Failed to purge screenshots for bingo ${bingoId}: ${removeError.message}`);
+      throw new Error(
+        `Failed to purge screenshots for bingo ${bingoId}: ${removeError.message}`
+      );
     }
     purged += removed?.length ?? paths.length;
 
@@ -449,13 +492,17 @@ export async function purgeBingoScreenshots(bingoId: string): Promise<number> {
  * bucket. Returns null (instead of throwing) on failure so a single bad
  * row doesn't take down the whole pending list.
  */
-export async function getSignedScreenshotUrl(imagePath: string): Promise<string | null> {
+export async function getSignedScreenshotUrl(
+  imagePath: string
+): Promise<string | null> {
   const { data, error } = await getDb()
     .storage.from(SCREENSHOTS_BUCKET)
     .createSignedUrl(imagePath, SIGNED_URL_TTL_SECONDS);
 
   if (error || !data) {
-    console.error(`[bingoSubmissions] Failed to sign URL for "${imagePath}": ${error?.message}`);
+    console.error(
+      `[bingoSubmissions] Failed to sign URL for "${imagePath}": ${error?.message}`
+    );
     return null;
   }
   return data.signedUrl;

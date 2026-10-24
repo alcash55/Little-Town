@@ -320,7 +320,8 @@ export const useScreenshotSubmission = () => {
       await Promise.all([fetchPending(), fetchUnattributed()]);
 
       const fingerprint = JSON.stringify(fingerprintPartsRef.current);
-      const unchanged = lastFingerprintRef.current !== null && fingerprint === lastFingerprintRef.current;
+      const unchanged =
+        lastFingerprintRef.current !== null && fingerprint === lastFingerprintRef.current;
       lastFingerprintRef.current = fingerprint;
 
       nextDelayRef.current = unchanged

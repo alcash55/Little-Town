@@ -61,7 +61,10 @@ function hashToken(rawToken: string): string {
 function inviteUrl(rawToken: string): string {
   // FRONTEND_URL is required in production (see index.ts's startup check);
   // this fallback only ever applies in local dev.
-  const base = (process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/+$/, "");
+  const base = (process.env.FRONTEND_URL || "http://localhost:3000").replace(
+    /\/+$/,
+    ""
+  );
   return `${base}/invite/${rawToken}`;
 }
 
@@ -78,7 +81,10 @@ export async function createInvite(input: {
   createdBy?: string;
 }): Promise<CreatedInvite> {
   const role = input.role ?? "user";
-  const hours = Math.min(input.expiresInHours ?? DEFAULT_EXPIRY_HOURS, MAX_EXPIRY_HOURS);
+  const hours = Math.min(
+    input.expiresInHours ?? DEFAULT_EXPIRY_HOURS,
+    MAX_EXPIRY_HOURS
+  );
   const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
 
   const rawToken = crypto.randomBytes(TOKEN_BYTES).toString("hex");
@@ -95,7 +101,8 @@ export async function createInvite(input: {
     .select("*")
     .single();
 
-  if (error || !data) throw new Error(`Failed to create invite: ${error?.message}`);
+  if (error || !data)
+    throw new Error(`Failed to create invite: ${error?.message}`);
   const row = data as InviteRow;
 
   return {
@@ -157,10 +164,15 @@ export async function revokeInvite(id: string): Promise<void> {
     .select("used_at, revoked_at")
     .eq("id", id)
     .maybeSingle();
-  if (lookupError) throw new Error(`Failed to look up invite: ${lookupError.message}`);
+  if (lookupError)
+    throw new Error(`Failed to look up invite: ${lookupError.message}`);
 
   if (!existing) throw new AppError("Invite not found", 404, "NOT_FOUND");
-  throw new AppError("Invite has already been used or revoked", 409, "INVITE_ALREADY_FINAL");
+  throw new AppError(
+    "Invite has already been used or revoked",
+    409,
+    "INVITE_ALREADY_FINAL"
+  );
 }
 
 /**
@@ -168,7 +180,9 @@ export async function revokeInvite(id: string): Promise<void> {
  * merely doesn't exist vs. exists-but-invalid beyond the frozen `reason`
  * enum; never returns the invite id or any other row detail.
  */
-export async function validateInviteToken(rawToken: string): Promise<InviteValidation> {
+export async function validateInviteToken(
+  rawToken: string
+): Promise<InviteValidation> {
   const tokenHash = hashToken(rawToken);
   const { data, error } = await getDb()
     .from("invites")
@@ -179,10 +193,14 @@ export async function validateInviteToken(rawToken: string): Promise<InviteValid
   if (error) throw new Error(`Failed to validate invite: ${error.message}`);
   if (!data) return { valid: false, reason: "unknown" };
 
-  const row = data as Pick<InviteRow, "role" | "expires_at" | "used_at" | "revoked_at">;
+  const row = data as Pick<
+    InviteRow,
+    "role" | "expires_at" | "used_at" | "revoked_at"
+  >;
   if (row.revoked_at) return { valid: false, reason: "revoked" };
   if (row.used_at) return { valid: false, reason: "used" };
-  if (new Date(row.expires_at).getTime() < Date.now()) return { valid: false, reason: "expired" };
+  if (new Date(row.expires_at).getTime() < Date.now())
+    return { valid: false, reason: "expired" };
 
   return { valid: true, role: row.role };
 }
@@ -197,7 +215,7 @@ export async function validateInviteToken(rawToken: string): Promise<InviteValid
  */
 export async function acceptInvite(
   rawToken: string,
-  input: { username: string; password: string; nickname?: string },
+  input: { username: string; password: string; nickname?: string }
 ): Promise<User> {
   const tokenHash = hashToken(rawToken);
   const passwordHash = await hashPassword(input.password);
@@ -217,7 +235,11 @@ export async function acceptInvite(
       throw new AppError("This invite has been revoked", 410, "INVITE_REVOKED");
     }
     if (/invite has already been used/i.test(error.message)) {
-      throw new AppError("This invite has already been used", 410, "INVITE_USED");
+      throw new AppError(
+        "This invite has already been used",
+        410,
+        "INVITE_USED"
+      );
     }
     if (/invite has expired/i.test(error.message)) {
       throw new AppError("This invite has expired", 410, "INVITE_EXPIRED");

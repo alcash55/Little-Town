@@ -151,8 +151,10 @@ export function buildHiscoreVocab(players: EnginePlayer[]): HiscoreVocab {
     for (const account of player.accounts) {
       for (const snapshot of [account.start, account.current]) {
         if (!snapshot) continue;
-        for (const skill of snapshot.skills) skillNames.add(normalizeTaskText(skill.name));
-        for (const activity of snapshot.activities) activityNames.add(normalizeTaskText(activity.name));
+        for (const skill of snapshot.skills)
+          skillNames.add(normalizeTaskText(skill.name));
+        for (const activity of snapshot.activities)
+          activityNames.add(normalizeTaskText(activity.name));
       }
     }
   }
@@ -198,11 +200,12 @@ export const HISCORE_NAME_ALIASES: Record<string, string> = {
  */
 export function resolveTileMetric(
   tile: Pick<EngineTile, "task" | "type">,
-  vocab: HiscoreVocab,
+  vocab: HiscoreVocab
 ): ResolvedMetric | null {
   if (tile.type === "Drops") return null;
   const normalizedName = normalizeTaskText(tile.task);
-  const names = tile.type === "Experience" ? vocab.skillNames : vocab.activityNames;
+  const names =
+    tile.type === "Experience" ? vocab.skillNames : vocab.activityNames;
   const kind = tile.type === "Experience" ? "skill" : "activity";
 
   if (names.has(normalizedName)) return { kind, normalizedName };
@@ -214,29 +217,50 @@ export function resolveTileMetric(
 }
 
 /** A single account's delta for a resolved metric. Missing start -> 0 (never negative). */
-function accountMetricDelta(account: AccountSnapshots, metric: ResolvedMetric): number {
+function accountMetricDelta(
+  account: AccountSnapshots,
+  metric: ResolvedMetric
+): number {
   if (!account.current) return 0;
   if (metric.kind === "skill") {
-    const current = account.current.skills.find((s) => normalizeTaskText(s.name) === metric.normalizedName);
+    const current = account.current.skills.find(
+      (s) => normalizeTaskText(s.name) === metric.normalizedName
+    );
     if (!current) return 0;
-    const startXp = account.start?.skills.find((s) => normalizeTaskText(s.name) === metric.normalizedName)?.xp;
+    const startXp = account.start?.skills.find(
+      (s) => normalizeTaskText(s.name) === metric.normalizedName
+    )?.xp;
     const delta = current.xp - (startXp ?? current.xp);
     return delta > 0 ? delta : 0;
   }
-  const current = account.current.activities.find((a) => normalizeTaskText(a.name) === metric.normalizedName);
+  const current = account.current.activities.find(
+    (a) => normalizeTaskText(a.name) === metric.normalizedName
+  );
   if (!current) return 0;
-  const startKc = account.start?.activities.find((a) => normalizeTaskText(a.name) === metric.normalizedName)?.kc;
+  const startKc = account.start?.activities.find(
+    (a) => normalizeTaskText(a.name) === metric.normalizedName
+  )?.kc;
   const delta = current.kc - (startKc ?? current.kc);
   return delta > 0 ? delta : 0;
 }
 
 /** A single player's delta for a metric, summed across their main + side accounts. */
-export function playerMetricDelta(player: EnginePlayer, metric: ResolvedMetric): number {
-  return player.accounts.reduce((sum, account) => sum + accountMetricDelta(account, metric), 0);
+export function playerMetricDelta(
+  player: EnginePlayer,
+  metric: ResolvedMetric
+): number {
+  return player.accounts.reduce(
+    (sum, account) => sum + accountMetricDelta(account, metric),
+    0
+  );
 }
 
 /** Team-total semantics (contract 1): the sum of every member's delta on this team. */
-export function teamMetricDelta(players: EnginePlayer[], teamId: string, metric: ResolvedMetric): number {
+export function teamMetricDelta(
+  players: EnginePlayer[],
+  teamId: string,
+  metric: ResolvedMetric
+): number {
   return players
     .filter((p) => p.teamId === teamId)
     .reduce((sum, p) => sum + playerMetricDelta(p, metric), 0);
@@ -259,7 +283,7 @@ export function computeCompletion(
   tiles: EngineTile[],
   players: EnginePlayer[],
   teamIds: string[],
-  approvedDropsTileIdsByTeam: Map<string, Set<string>>,
+  approvedDropsTileIdsByTeam: Map<string, Set<string>>
 ): CompletionResult {
   const vocab = buildHiscoreVocab(players);
 
@@ -279,7 +303,10 @@ export function computeCompletion(
       for (const teamId of teamIds) {
         if (!approvedDropsTileIdsByTeam.get(teamId)?.has(tile.id)) continue;
         completedTileIdsByTeam.get(teamId)!.add(tile.id);
-        totalPointsByTeam.set(teamId, (totalPointsByTeam.get(teamId) ?? 0) + tile.points);
+        totalPointsByTeam.set(
+          teamId,
+          (totalPointsByTeam.get(teamId) ?? 0) + tile.points
+        );
       }
       continue;
     }
@@ -300,12 +327,20 @@ export function computeCompletion(
       progressByTeamAndTile.get(teamId)!.set(tile.id, delta);
       if (delta >= tile.targetValue) {
         completedTileIdsByTeam.get(teamId)!.add(tile.id);
-        totalPointsByTeam.set(teamId, (totalPointsByTeam.get(teamId) ?? 0) + tile.points);
+        totalPointsByTeam.set(
+          teamId,
+          (totalPointsByTeam.get(teamId) ?? 0) + tile.points
+        );
       }
     }
   }
 
-  return { completedTileIdsByTeam, progressByTeamAndTile, totalPointsByTeam, unresolvableTiles };
+  return {
+    completedTileIdsByTeam,
+    progressByTeamAndTile,
+    totalPointsByTeam,
+    unresolvableTiles,
+  };
 }
 
 // -------------------------------------------------------
@@ -328,7 +363,7 @@ function toSnapshotLike(snapshot: PlayerSnapshot | null): SnapshotLike | null {
  */
 async function getApprovedDropsTileIdsByTeam(
   bingoId: string,
-  dropsTileIds: string[],
+  dropsTileIds: string[]
 ): Promise<Map<string, Set<string>>> {
   const result = new Map<string, Set<string>>();
   if (!dropsTileIds.length) return result;
@@ -341,9 +376,15 @@ async function getApprovedDropsTileIdsByTeam(
     .in("tile_id", dropsTileIds)
     .not("team_id", "is", null);
 
-  if (error) throw new Error(`Failed to get approved drop submissions: ${error.message}`);
+  if (error)
+    throw new Error(
+      `Failed to get approved drop submissions: ${error.message}`
+    );
 
-  for (const row of (data ?? []) as Array<{ team_id: string | null; tile_id: string | null }>) {
+  for (const row of (data ?? []) as Array<{
+    team_id: string | null;
+    tile_id: string | null;
+  }>) {
     if (!row.team_id || !row.tile_id) continue;
     if (!result.has(row.team_id)) result.set(row.team_id, new Set());
     result.get(row.team_id)!.add(row.tile_id);
@@ -380,14 +421,21 @@ async function loadPlayerRoster(bingoId: string): Promise<PlayerRosterEntry[]> {
     getAllSideAccounts(bingoId),
   ]);
 
-  const allSideAccountIds = Object.values(sideAccountsByPlayer).flatMap((accounts) =>
-    accounts.map((a) => a.id),
+  const allSideAccountIds = Object.values(sideAccountsByPlayer).flatMap(
+    (accounts) => accounts.map((a) => a.id)
   );
-  const sideSnapshotsById = await getSideAccountSnapshotsBulk(allSideAccountIds);
+  const sideSnapshotsById = await getSideAccountSnapshotsBulk(
+    allSideAccountIds
+  );
 
   return snapshotRows.map(({ player, start, current }): PlayerRosterEntry => {
-    const mainAccount: AccountSnapshots = { start: toSnapshotLike(start), current: toSnapshotLike(current) };
-    const sideAccounts: AccountSnapshots[] = (sideAccountsByPlayer[player.id] ?? []).map((sideAccount) => {
+    const mainAccount: AccountSnapshots = {
+      start: toSnapshotLike(start),
+      current: toSnapshotLike(current),
+    };
+    const sideAccounts: AccountSnapshots[] = (
+      sideAccountsByPlayer[player.id] ?? []
+    ).map((sideAccount) => {
       const pair = sideSnapshotsById.get(sideAccount.id);
       return {
         start: toSnapshotLike(pair?.start ?? null),
@@ -398,9 +446,15 @@ async function loadPlayerRoster(bingoId: string): Promise<PlayerRosterEntry[]> {
   });
 }
 
-export async function loadEnginePlayers(bingoId: string): Promise<EnginePlayer[]> {
+export async function loadEnginePlayers(
+  bingoId: string
+): Promise<EnginePlayer[]> {
   const roster = await loadPlayerRoster(bingoId);
-  return roster.map(({ player, accounts }) => ({ playerId: player.id, teamId: player.team_id, accounts }));
+  return roster.map(({ player, accounts }) => ({
+    playerId: player.id,
+    teamId: player.team_id,
+    accounts,
+  }));
 }
 
 /**
@@ -413,7 +467,9 @@ export async function loadEnginePlayers(bingoId: string): Promise<EnginePlayer[]
  * this with `playerMetricDelta` (summed across `accounts`, side accounts
  * included) instead of recomputing the delta by hand.
  */
-export async function loadPlayerRosterWithAccounts(bingoId: string): Promise<PlayerRosterEntry[]> {
+export async function loadPlayerRosterWithAccounts(
+  bingoId: string
+): Promise<PlayerRosterEntry[]> {
   return loadPlayerRoster(bingoId);
 }
 
@@ -427,7 +483,7 @@ export async function loadPlayerRosterWithAccounts(bingoId: string): Promise<Pla
 export async function computeBingoCompletion(
   bingoId: string,
   tiles: EngineTile[],
-  teamIds: string[],
+  teamIds: string[]
 ): Promise<CompletionResult> {
   const dropsTileIds = tiles.filter((t) => t.type === "Drops").map((t) => t.id);
 

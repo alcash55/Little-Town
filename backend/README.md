@@ -53,21 +53,21 @@ debugging session reading live prod data locally) traced back to the same cause:
 `backend/.env` used to point at the hosted **production** Supabase project by default, so
 any casually started local backend talked to prod. That's fixed:
 
-| File | Purpose | Committed? |
-| --- | --- | --- |
-| `.env` | Local dev config — local Supabase URL, no real Discord token. Loaded by default. | No (gitignored) |
-| `.env.example` | Template for `.env`, safe placeholders. | Yes |
-| `.env.production` | **Real** production credentials (hosted Supabase service-role key, real Discord bot token, JWT secret). Loaded **only** by `bun run dev:remote`. | No (gitignored) |
-| `.env.production.example` | Template for `.env.production`, placeholders only. | Yes |
+| File                      | Purpose                                                                                                                                          | Committed?      |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | --------------- |
+| `.env`                    | Local dev config — local Supabase URL, no real Discord token. Loaded by default.                                                                 | No (gitignored) |
+| `.env.example`            | Template for `.env`, safe placeholders.                                                                                                          | Yes             |
+| `.env.production`         | **Real** production credentials (hosted Supabase service-role key, real Discord bot token, JWT secret). Loaded **only** by `bun run dev:remote`. | No (gitignored) |
+| `.env.production.example` | Template for `.env.production`, placeholders only.                                                                                               | Yes             |
 
 ### Scripts
 
-| Script | What it does |
-| --- | --- |
-| `bun run dev` | **Default.** Runs `dev-local.sh`: starts local Supabase, exports its URL/key into the process env (dotenv doesn't override already-set vars), builds, and runs the API against the **local** stack. |
-| `bun run dev:reset` | Same as `dev`, but also wipes and re-applies local DB migrations first (`dev-local.sh --reset`). |
+| Script               | What it does                                                                                                                                                                                                                                             |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bun run dev`        | **Default.** Runs `dev-local.sh`: starts local Supabase, exports its URL/key into the process env (dotenv doesn't override already-set vars), builds, and runs the API against the **local** stack.                                                      |
+| `bun run dev:reset`  | Same as `dev`, but also wipes and re-applies local DB migrations first (`dev-local.sh --reset`).                                                                                                                                                         |
 | `bun run dev:remote` | **Deliberate escape hatch.** Runs `dev-remote.sh`: requires typing `yes-hit-prod` to confirm, loads `.env.production`, sets `ALLOW_REMOTE_DB=true`, then runs the API against the **real hosted production** Supabase project. Only use this on purpose. |
-| `bun run dev:raw` | Bare `nodemon` — reads `.env` directly with no local-stack export step. Used internally by `dev-local.sh`/`dev-remote.sh`; only run it yourself if you know your process env is already correct. |
+| `bun run dev:raw`    | Bare `nodemon` — reads `.env` directly with no local-stack export step. Used internally by `dev-local.sh`/`dev-remote.sh`; only run it yourself if you know your process env is already correct.                                                         |
 
 ### The startup guard
 
@@ -242,11 +242,11 @@ SUPABASE_SERVICE_ROLE_KEY=<hosted service role key>
 
 ### Authentication
 
-| Method | Path               | Auth     | Description                                   |
-| ------ | ------------------ | -------- | --------------------------------------------- |
-| POST   | `/api/auth/login`  | None     | Login with username + password, sets httpOnly cookie   |
-| GET    | `/api/auth/me`     | Required | Returns the current authenticated user        |
-| POST   | `/api/auth/logout` | Required | Clears the host-only httpOnly session cookie |
+| Method | Path               | Auth     | Description                                          |
+| ------ | ------------------ | -------- | ---------------------------------------------------- |
+| POST   | `/api/auth/login`  | None     | Login with username + password, sets httpOnly cookie |
+| GET    | `/api/auth/me`     | Required | Returns the current authenticated user               |
+| POST   | `/api/auth/logout` | Required | Clears the host-only httpOnly session cookie         |
 
 ### Hiscores
 
@@ -259,12 +259,12 @@ SUPABASE_SERVICE_ROLE_KEY=<hosted service role key>
 
 ### Bingo
 
-| Method | Path                          | Auth              | Description                                        |
-| ------ | ----------------------------- | ------------------ | --------------------------------------------------- |
-| GET    | `/api/bingo/board`            | Optional           | Active bingo board and tiles. See below.             |
-| GET    | `/api/bingo/my-team-data`     | Required           | Progress for the caller's own team: players, tiles, and per-tile completion. |
-| GET    | `/api/bingo/team-xp-history`  | Required           | Bucketed team XP history for the `BingoScores` chart. |
-| GET    | `/api/bingo/:bingoId/conflicts` | admin, moderator | Main/side accounts of the same player gaining XP in overlapping windows. |
+| Method | Path                            | Auth             | Description                                                                  |
+| ------ | ------------------------------- | ---------------- | ---------------------------------------------------------------------------- |
+| GET    | `/api/bingo/board`              | Optional         | Active bingo board and tiles. See below.                                     |
+| GET    | `/api/bingo/my-team-data`       | Required         | Progress for the caller's own team: players, tiles, and per-tile completion. |
+| GET    | `/api/bingo/team-xp-history`    | Required         | Bucketed team XP history for the `BingoScores` chart.                        |
+| GET    | `/api/bingo/:bingoId/conflicts` | admin, moderator | Main/side accounts of the same player gaining XP in overlapping windows.     |
 
 `GET /board` is the one bingo read route that does not require login, via
 `optionalAuth` rather than the router-level `protect` every other route
@@ -293,19 +293,19 @@ response shape and additive-only.
 
 All admin routes require a valid JWT with role `admin` or `moderator`.
 
-| Method | Path                       | Role             | Description                                 |
-| ------ | -------------------------- | ---------------- | ------------------------------------------- |
-| POST   | `/api/admin/bingo`         | admin, moderator | Create a new bingo                          |
-| GET    | `/api/admin/bingo`         | admin            | List all bingos                             |
-| PUT    | `/api/admin/bingo/:id`     | admin, moderator | Update a bingo by ID                        |
-| POST   | `/api/admin/bingo/details` | admin            | Save bingo details from the setup form      |
-| GET    | `/api/admin/bingo/details` | admin            | Get the current active or draft bingo       |
-| POST   | `/api/admin/bingo/board`   | admin            | Save the tile board for the active bingo    |
-| PUT    | `/api/admin/bingo/board`   | admin            | Replace the tile board for the active bingo |
-| GET    | `/api/admin/bingo/board`   | admin            | Get the current tile board                  |
-| GET    | `/api/admin/bingo/screenshots/pending`        | admin, moderator | Pending Discord screenshot submissions, each with a short-lived signed image URL |
-| POST   | `/api/admin/bingo/screenshots/:id/approve`    | admin, moderator | Approve a submission; body `{ tileId, teamId }` (admin assigns which tile/team it counts for) |
-| POST   | `/api/admin/bingo/screenshots/:id/deny`       | admin, moderator | Deny a submission                            |
+| Method | Path                                       | Role             | Description                                                                                   |
+| ------ | ------------------------------------------ | ---------------- | --------------------------------------------------------------------------------------------- |
+| POST   | `/api/admin/bingo`                         | admin, moderator | Create a new bingo                                                                            |
+| GET    | `/api/admin/bingo`                         | admin            | List all bingos                                                                               |
+| PUT    | `/api/admin/bingo/:id`                     | admin, moderator | Update a bingo by ID                                                                          |
+| POST   | `/api/admin/bingo/details`                 | admin            | Save bingo details from the setup form                                                        |
+| GET    | `/api/admin/bingo/details`                 | admin            | Get the current active or draft bingo                                                         |
+| POST   | `/api/admin/bingo/board`                   | admin            | Save the tile board for the active bingo                                                      |
+| PUT    | `/api/admin/bingo/board`                   | admin            | Replace the tile board for the active bingo                                                   |
+| GET    | `/api/admin/bingo/board`                   | admin            | Get the current tile board                                                                    |
+| GET    | `/api/admin/bingo/screenshots/pending`     | admin, moderator | Pending Discord screenshot submissions, each with a short-lived signed image URL              |
+| POST   | `/api/admin/bingo/screenshots/:id/approve` | admin, moderator | Approve a submission; body `{ tileId, teamId }` (admin assigns which tile/team it counts for) |
+| POST   | `/api/admin/bingo/screenshots/:id/deny`    | admin, moderator | Deny a submission                                                                             |
 
 ### Hiscore history retention
 
@@ -346,6 +346,7 @@ Do this before each bingo that takes screenshot submissions. It is not needed be
    ```
 
    `68672` grants exactly what the code uses: View Channel, Send Messages (the bingo-ended notice), Add Reactions (the approve and deny reactions), and Read Message History (the 100-message backfill on startup).
+
 3. **Pick the channel and set its permissions.** The bot has no role check. It ingests every image posted in the channel by anyone who isn't a bot. The channel's permissions are the only control over who can submit. Give Send Messages and Attach Files to the bingo participants' role only. If the channel is private, add the bot, or the role Discord created for it, to the channel with the four permissions above.
 4. **Copy the channel ID.** In Discord, turn on **Settings > Advanced > Developer Mode**, then right-click the channel and choose **Copy Channel ID**.
 5. **Set the production env vars on Render** and redeploy: `DISCORD_BOT_TOKEN` and `DISCORD_SCREENSHOT_CHANNEL_ID`. On startup the Render log should show `[discordScreenshots] Logged in as <bot name>` and then `Backfill complete (N messages scanned)`. If it says ingest is disabled, one of the two variables is missing.
@@ -366,38 +367,38 @@ Local dev seed users (created by `db:reset`):
 
 ## Environment Variables
 
-| Variable                    | Description                                                             | Required in Production |
-| --------------------------- | ----------------------------------------------------------------------- | ---------------------- |
-| `NODE_ENV`                  | Environment mode (`development` / `production`)                         | Yes                    |
-| `PORT`                      | Server port (default: `8081`)                                           | No                     |
-| `FRONTEND_URL`              | Frontend origin for CORS (default: `http://localhost:3000`)             | Yes                    |
-| `JWT_SECRET`                | JWT signing secret — server refuses to start without this in production | Yes                    |
-| `ALLOW_DEV_AUTH`            | Set to `true` to enable local-dev auth bypasses (no-token admin, `dev:` passwords, fallback JWT secret). Ignored in production — never set it there. | No                     |
-| `JWT_EXPIRES_IN`            | JWT expiration duration (default: `24h`)                                | No                     |
-| `SUPABASE_URL`              | Supabase project API URL                                                | Yes                    |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server-only Supabase service role key — never expose to the frontend    | Yes                    |
-| `ALLOW_REMOTE_DB`           | Set to `true` to opt into a remote (non-`production`) `SUPABASE_URL` outside production — set for you by `bun run dev:remote`. See [the startup guard](#the-startup-guard). Never set this by hand for routine local dev. | No |
-| `DISCORD_ENABLED`           | Set to `true` (or run with `NODE_ENV=production`) to allow the Discord screenshot bot to log in at all. Positive opt-in, checked before token/channel presence — required since Sprint 9 caused duplicate real-bot logins on every local start otherwise. | No |
-| `DISCORD_BOT_TOKEN`         | Discord bot token for the screenshot ingest service. Optional — if unset (along with `DISCORD_SCREENSHOT_CHANNEL_ID`), or if `DISCORD_ENABLED` isn't `true`, the service logs one warning on startup and does not run; the admin screenshot review API still works. Never log this value. | No |
-| `DISCORD_SCREENSHOT_CHANNEL_ID` | Discord channel ID the bot watches for screenshot attachments      | No                      |
-| `LOGIN_RATE_LIMIT_MAX_OVERRIDE` | Raises the login attempt ceiling (default 10 per 15 min per IP) for a scripted end-to-end suite. Ignored in production; clamped at 300 outside it. See `middleware/loginLimiter.ts`. | No |
+| Variable                        | Description                                                                                                                                                                                                                                                                               | Required in Production |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| `NODE_ENV`                      | Environment mode (`development` / `production`)                                                                                                                                                                                                                                           | Yes                    |
+| `PORT`                          | Server port (default: `8081`)                                                                                                                                                                                                                                                             | No                     |
+| `FRONTEND_URL`                  | Frontend origin for CORS (default: `http://localhost:3000`)                                                                                                                                                                                                                               | Yes                    |
+| `JWT_SECRET`                    | JWT signing secret — server refuses to start without this in production                                                                                                                                                                                                                   | Yes                    |
+| `ALLOW_DEV_AUTH`                | Set to `true` to enable local-dev auth bypasses (no-token admin, `dev:` passwords, fallback JWT secret). Ignored in production — never set it there.                                                                                                                                      | No                     |
+| `JWT_EXPIRES_IN`                | JWT expiration duration (default: `24h`)                                                                                                                                                                                                                                                  | No                     |
+| `SUPABASE_URL`                  | Supabase project API URL                                                                                                                                                                                                                                                                  | Yes                    |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Server-only Supabase service role key — never expose to the frontend                                                                                                                                                                                                                      | Yes                    |
+| `ALLOW_REMOTE_DB`               | Set to `true` to opt into a remote (non-`production`) `SUPABASE_URL` outside production — set for you by `bun run dev:remote`. See [the startup guard](#the-startup-guard). Never set this by hand for routine local dev.                                                                 | No                     |
+| `DISCORD_ENABLED`               | Set to `true` (or run with `NODE_ENV=production`) to allow the Discord screenshot bot to log in at all. Positive opt-in, checked before token/channel presence — required since Sprint 9 caused duplicate real-bot logins on every local start otherwise.                                 | No                     |
+| `DISCORD_BOT_TOKEN`             | Discord bot token for the screenshot ingest service. Optional — if unset (along with `DISCORD_SCREENSHOT_CHANNEL_ID`), or if `DISCORD_ENABLED` isn't `true`, the service logs one warning on startup and does not run; the admin screenshot review API still works. Never log this value. | No                     |
+| `DISCORD_SCREENSHOT_CHANNEL_ID` | Discord channel ID the bot watches for screenshot attachments                                                                                                                                                                                                                             | No                     |
+| `LOGIN_RATE_LIMIT_MAX_OVERRIDE` | Raises the login attempt ceiling (default 10 per 15 min per IP) for a scripted end-to-end suite. Ignored in production; clamped at 300 outside it. See `middleware/loginLimiter.ts`.                                                                                                      | No                     |
 
 ## Scripts
 
-| Script                 | Description                                                                |
-| ----------------------- | --------------------------------------------------------------------------- |
-| `bun run dev`           | **Default.** Local-safe: starts Supabase, exports local env, builds, and runs the API (`dev-local.sh`). |
-| `bun run dev:reset`     | Same as `dev`, but also resets the local DB and re-applies migrations first. |
-| `bun run dev:remote`    | Deliberate opt-in to run against **real production** data (`dev-remote.sh`). Requires typed confirmation. |
-| `bun run dev:raw`       | Bare `nodemon` — no local-stack export step. Used internally by the two scripts above. |
-| `bun run build`         | Compile TypeScript to `dist/`                                               |
-| `bun run start`         | Run the compiled server                                                     |
-| `bun run db:start`      | Start local Supabase Docker containers                                      |
-| `bun run db:stop`       | Stop local Supabase Docker containers                                       |
-| `bun run db:status`     | Show local Supabase URLs and API keys                                       |
-| `bun run db:reset`      | Wipe local DB and re-apply all migrations                                   |
-| `bun run db:push`       | Push migrations to linked hosted Supabase project                           |
-| `bun run test`          | Run Node.js built-in test runner                                            |
+| Script               | Description                                                                                               |
+| -------------------- | --------------------------------------------------------------------------------------------------------- |
+| `bun run dev`        | **Default.** Local-safe: starts Supabase, exports local env, builds, and runs the API (`dev-local.sh`).   |
+| `bun run dev:reset`  | Same as `dev`, but also resets the local DB and re-applies migrations first.                              |
+| `bun run dev:remote` | Deliberate opt-in to run against **real production** data (`dev-remote.sh`). Requires typed confirmation. |
+| `bun run dev:raw`    | Bare `nodemon` — no local-stack export step. Used internally by the two scripts above.                    |
+| `bun run build`      | Compile TypeScript to `dist/`                                                                             |
+| `bun run start`      | Run the compiled server                                                                                   |
+| `bun run db:start`   | Start local Supabase Docker containers                                                                    |
+| `bun run db:stop`    | Stop local Supabase Docker containers                                                                     |
+| `bun run db:status`  | Show local Supabase URLs and API keys                                                                     |
+| `bun run db:reset`   | Wipe local DB and re-apply all migrations                                                                 |
+| `bun run db:push`    | Push migrations to linked hosted Supabase project                                                         |
+| `bun run test`       | Run Node.js built-in test runner                                                                          |
 
 ## Running tests
 
@@ -443,14 +444,14 @@ output is printed so individual cases and counts remain visible.
 
 Audit for #108:
 
-| Isolated suite | Replaced modules |
-| --- | --- |
-| `dependencyHealth` | `db/client`, `db/staticData`, `services/hiscores` |
-| `getLatestBingo` | `db/client` |
-| `discordScreenshots` | `db/client`, `db/bingoSubmissions`, `db/bingos` |
-| `hiscoresRateLimit` | `services/hiscores` |
-| `hiscoreVocab` | `services/hiscores` |
-| `staticDataCron` | `services/hiscores`, `db/staticData` |
+| Isolated suite       | Replaced modules                                  |
+| -------------------- | ------------------------------------------------- |
+| `dependencyHealth`   | `db/client`, `db/staticData`, `services/hiscores` |
+| `getLatestBingo`     | `db/client`                                       |
+| `discordScreenshots` | `db/client`, `db/bingoSubmissions`, `db/bingos`   |
+| `hiscoresRateLimit`  | `services/hiscores`                               |
+| `hiscoreVocab`       | `services/hiscores`                               |
+| `staticDataCron`     | `services/hiscores`, `db/staticData`              |
 
 `tests/integration/dbClientLeak.test.ts` checks that integration tests receive
 an actual `SupabaseClient`. A leaked query-builder stub produces an explicit

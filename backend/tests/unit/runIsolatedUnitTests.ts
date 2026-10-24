@@ -7,8 +7,16 @@ export function runIsolatedUnitTests(fixture: URL): void {
     encoding: "utf8",
     timeout: 25_000,
   });
-  if (result.error || result.status !== 0 || /[1-9]\d* skip/.test(result.stderr)) {
-    throw new Error(`Isolated unit suite failed: ${fileURLToPath(fixture)}\n${result.error?.message ?? ""}\n${result.stdout}\n${result.stderr}`);
+  if (
+    result.error ||
+    result.status !== 0 ||
+    /[1-9]\d* skip/.test(result.stderr)
+  ) {
+    throw new Error(
+      `Isolated unit suite failed: ${fileURLToPath(fixture)}\n${
+        result.error?.message ?? ""
+      }\n${result.stdout}\n${result.stderr}`
+    );
   }
   console.log(result.stderr.trim());
 }

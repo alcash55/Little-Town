@@ -45,13 +45,19 @@ const stack = await getLocalStackConfig();
 if (!stack.reachable) {
   console.warn(`[bingo-end-early.test.ts] skipping: ${stack.reason}`);
 }
-const preexistingActive = stack.reachable ? await hasPreexistingActiveBingo() : false;
+const preexistingActive = stack.reachable
+  ? await hasPreexistingActiveBingo()
+  : false;
 if (stack.reachable && preexistingActive) {
-  console.warn("[bingo-end-early.test.ts] skipping: another bingo is already active in the shared local stack");
+  console.warn(
+    "[bingo-end-early.test.ts] skipping: another bingo is already active in the shared local stack"
+  );
 }
 const suite = stack.reachable && !preexistingActive;
 
-const notifyMock = mock(async (_bingoName: string, _pendingCount: number) => {});
+const notifyMock = mock(
+  async (_bingoName: string, _pendingCount: number) => {}
+);
 mock.module("../../src/services/discordScreenshots.js", () => ({
   notifyBingoEndedWithPendingScreenshots: notifyMock,
 }));
@@ -87,7 +93,9 @@ beforeAll(async () => {
 afterAll(async () => {
   server?.close();
   if (!stack.reachable) return;
-  await Promise.all(createdBingoIds.map((id) => deleteTestBingo(id).catch(() => undefined)));
+  await Promise.all(
+    createdBingoIds.map((id) => deleteTestBingo(id).catch(() => undefined))
+  );
   await Promise.all(createdUserIds.map((id) => deleteTestUser(id)));
 });
 
@@ -97,7 +105,9 @@ afterAll(async () => {
 
 describe.skipIf(!suite)("endBingoEarly (service)", () => {
   test("transitions an active bingo to complete, returns id/endedAt/pendingCount", async () => {
-    const bingo = await insertTestBingo(`test-end-early-${uniqueSuffix()}`, { status: "active" });
+    const bingo = await insertTestBingo(`test-end-early-${uniqueSuffix()}`, {
+      status: "active",
+    });
     createdBingoIds.push(bingo.id);
 
     const before = new Date();
@@ -105,14 +115,19 @@ describe.skipIf(!suite)("endBingoEarly (service)", () => {
     expect(result).not.toBeNull();
     expect(result!.id).toBe(bingo.id);
     expect(result!.pendingCount).toBe(0);
-    expect(new Date(result!.endedAt).getTime()).toBeGreaterThanOrEqual(before.getTime());
+    expect(new Date(result!.endedAt).getTime()).toBeGreaterThanOrEqual(
+      before.getTime()
+    );
 
     const row = await getBingoRow(bingo.id);
     expect(row.status).toBe("complete");
   });
 
   test("returns null for a draft bingo (never transitions it)", async () => {
-    const bingo = await insertTestBingo(`test-end-early-draft-${uniqueSuffix()}`, { status: "draft" });
+    const bingo = await insertTestBingo(
+      `test-end-early-draft-${uniqueSuffix()}`,
+      { status: "draft" }
+    );
     createdBingoIds.push(bingo.id);
 
     const result = await endBingoEarly(bingo.id, admin.id);
@@ -123,7 +138,10 @@ describe.skipIf(!suite)("endBingoEarly (service)", () => {
   });
 
   test("returns null for an already-complete bingo (idempotent-safe, not re-processed)", async () => {
-    const bingo = await insertTestBingo(`test-end-early-complete-${uniqueSuffix()}`, { status: "complete" });
+    const bingo = await insertTestBingo(
+      `test-end-early-complete-${uniqueSuffix()}`,
+      { status: "complete" }
+    );
     createdBingoIds.push(bingo.id);
 
     const result = await endBingoEarly(bingo.id, admin.id);
@@ -131,7 +149,10 @@ describe.skipIf(!suite)("endBingoEarly (service)", () => {
   });
 
   test("returns null for a nonexistent bingo id", async () => {
-    const result = await endBingoEarly("00000000-0000-0000-0000-000000000000", admin.id);
+    const result = await endBingoEarly(
+      "00000000-0000-0000-0000-000000000000",
+      admin.id
+    );
     expect(result).toBeNull();
   });
 });
@@ -146,33 +167,53 @@ describe.skipIf(!suite)("POST /api/admin/bingo/:bingoId/end (route)", () => {
       port,
       "POST",
       "/api/admin/bingo/00000000-0000-0000-0000-000000000000/end",
-      { token: signTestToken(admin) },
+      { token: signTestToken(admin) }
     );
     expect(status).toBe(404);
     expect(body).toEqual({ success: false, error: "No such bingo" });
   });
 
   test("409 for a bingo that exists but isn't active (draft)", async () => {
-    const bingo = await insertTestBingo(`test-end-early-route-draft-${uniqueSuffix()}`, { status: "draft" });
+    const bingo = await insertTestBingo(
+      `test-end-early-route-draft-${uniqueSuffix()}`,
+      { status: "draft" }
+    );
     createdBingoIds.push(bingo.id);
 
-    const { status, body } = await jsonRequest(port, "POST", `/api/admin/bingo/${bingo.id}/end`, {
-      token: signTestToken(admin),
-    });
+    const { status, body } = await jsonRequest(
+      port,
+      "POST",
+      `/api/admin/bingo/${bingo.id}/end`,
+      {
+        token: signTestToken(admin),
+      }
+    );
     expect(status).toBe(409);
     expect(body).toEqual({ success: false, error: "Bingo is not active" });
   });
 
   test("200 happy path for an active bingo — response shape matches the frozen contract, DB flips to complete", async () => {
-    const bingo = await insertTestBingo(`test-end-early-route-active-${uniqueSuffix()}`, { status: "active" });
+    const bingo = await insertTestBingo(
+      `test-end-early-route-active-${uniqueSuffix()}`,
+      { status: "active" }
+    );
     createdBingoIds.push(bingo.id);
 
-    const { status, body } = await jsonRequest(port, "POST", `/api/admin/bingo/${bingo.id}/end`, {
-      token: signTestToken(admin),
-    });
+    const { status, body } = await jsonRequest(
+      port,
+      "POST",
+      `/api/admin/bingo/${bingo.id}/end`,
+      {
+        token: signTestToken(admin),
+      }
+    );
     expect(status).toBe(200);
     expect(body.success).toBe(true);
-    expect(body.data).toMatchObject({ id: bingo.id, status: "complete", pendingScreenshots: 0 });
+    expect(body.data).toMatchObject({
+      id: bingo.id,
+      status: "complete",
+      pendingScreenshots: 0,
+    });
     expect(typeof body.data.endedAt).toBe("string");
 
     const row = await getBingoRow(bingo.id);
@@ -180,23 +221,44 @@ describe.skipIf(!suite)("POST /api/admin/bingo/:bingoId/end (route)", () => {
   });
 
   test("a SECOND call against the now-complete bingo is 409, not a repeat 200 (idempotent-safe)", async () => {
-    const bingo = await insertTestBingo(`test-end-early-route-idempotent-${uniqueSuffix()}`, { status: "active" });
+    const bingo = await insertTestBingo(
+      `test-end-early-route-idempotent-${uniqueSuffix()}`,
+      { status: "active" }
+    );
     createdBingoIds.push(bingo.id);
 
-    const first = await jsonRequest(port, "POST", `/api/admin/bingo/${bingo.id}/end`, { token: signTestToken(admin) });
+    const first = await jsonRequest(
+      port,
+      "POST",
+      `/api/admin/bingo/${bingo.id}/end`,
+      { token: signTestToken(admin) }
+    );
     expect(first.status).toBe(200);
 
-    const second = await jsonRequest(port, "POST", `/api/admin/bingo/${bingo.id}/end`, { token: signTestToken(admin) });
+    const second = await jsonRequest(
+      port,
+      "POST",
+      `/api/admin/bingo/${bingo.id}/end`,
+      { token: signTestToken(admin) }
+    );
     expect(second.status).toBe(409);
   });
 
   test("403 for a plain user", async () => {
-    const bingo = await insertTestBingo(`test-end-early-authz-user-${uniqueSuffix()}`, { status: "active" });
+    const bingo = await insertTestBingo(
+      `test-end-early-authz-user-${uniqueSuffix()}`,
+      { status: "active" }
+    );
     createdBingoIds.push(bingo.id);
 
-    const { status } = await jsonRequest(port, "POST", `/api/admin/bingo/${bingo.id}/end`, {
-      token: signTestToken(plainUser),
-    });
+    const { status } = await jsonRequest(
+      port,
+      "POST",
+      `/api/admin/bingo/${bingo.id}/end`,
+      {
+        token: signTestToken(plainUser),
+      }
+    );
     expect(status).toBe(403);
 
     await deleteTestBingo(bingo.id);
@@ -204,12 +266,20 @@ describe.skipIf(!suite)("POST /api/admin/bingo/:bingoId/end (route)", () => {
   });
 
   test("403 for a moderator — this route is admin-only despite the router-level admin+moderator gate", async () => {
-    const bingo = await insertTestBingo(`test-end-early-authz-mod-${uniqueSuffix()}`, { status: "active" });
+    const bingo = await insertTestBingo(
+      `test-end-early-authz-mod-${uniqueSuffix()}`,
+      { status: "active" }
+    );
     createdBingoIds.push(bingo.id);
 
-    const { status } = await jsonRequest(port, "POST", `/api/admin/bingo/${bingo.id}/end`, {
-      token: signTestToken(moderator),
-    });
+    const { status } = await jsonRequest(
+      port,
+      "POST",
+      `/api/admin/bingo/${bingo.id}/end`,
+      {
+        token: signTestToken(moderator),
+      }
+    );
     expect(status).toBe(403);
 
     await deleteTestBingo(bingo.id);
@@ -217,13 +287,16 @@ describe.skipIf(!suite)("POST /api/admin/bingo/:bingoId/end (route)", () => {
   });
 
   test("401 with no token at all", async () => {
-    const bingo = await insertTestBingo(`test-end-early-authz-none-${uniqueSuffix()}`, { status: "active" });
+    const bingo = await insertTestBingo(
+      `test-end-early-authz-none-${uniqueSuffix()}`,
+      { status: "active" }
+    );
     createdBingoIds.push(bingo.id);
 
     // Deterministic regardless of the developer's local .env — see
     // withAllowDevAuth's doc comment (helpers.ts).
     const { status } = await withAllowDevAuth("false", () =>
-      jsonRequest(port, "POST", `/api/admin/bingo/${bingo.id}/end`, {}),
+      jsonRequest(port, "POST", `/api/admin/bingo/${bingo.id}/end`, {})
     );
     expect(status).toBe(401);
 
