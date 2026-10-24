@@ -18,7 +18,7 @@ export const LOGIN_RATE_LIMIT_MAX_CEILING = 300;
 /**
  * Resolves the login attempt ceiling for the current process. Production
  * always gets the fixed default, full stop — LOGIN_RATE_LIMIT_MAX_OVERRIDE
- * is read only outside it, and an unset, non-numeric, or non-positive value
+ * is read only outside it, and an unset, non-integer, or non-positive value
  * also falls back to the default. Exported for direct unit testing without
  * needing to reimport this module per environment (bun caches ES modules
  * per process).
@@ -29,7 +29,7 @@ export function resolveLoginRateLimitMax(
   if (env.NODE_ENV === "production") return DEFAULT_LOGIN_RATE_LIMIT_MAX;
 
   const override = Number(env.LOGIN_RATE_LIMIT_MAX_OVERRIDE);
-  if (!Number.isFinite(override) || override <= 0)
+  if (!Number.isInteger(override) || override <= 0)
     return DEFAULT_LOGIN_RATE_LIMIT_MAX;
 
   return Math.min(override, LOGIN_RATE_LIMIT_MAX_CEILING);
