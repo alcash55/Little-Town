@@ -1,12 +1,14 @@
 const profiles = {
   'little-town': {
     name: 'Little Town',
+    loadingAnimation: 'little-town',
     showGangIcons: true,
     analytics: true,
     discordInviteUrl: 'https://discord.com/invite/NqzwU3TyUT',
   },
   'diamond-dogs': {
     name: 'The Diamond Dogs',
+    loadingAnimation: 'clan',
     showGangIcons: false,
     analytics: false,
     discordInviteUrl: null,
