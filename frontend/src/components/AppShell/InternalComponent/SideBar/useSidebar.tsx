@@ -1,3 +1,4 @@
+import { clan } from '../../../../config/clan';
 import Home from '@mui/icons-material/Home';
 import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings';
 import Gamepad from '@mui/icons-material/Gamepad';
@@ -152,13 +153,16 @@ const allSidebarItems: SidebarItem[] = [
     icon: <DriveFileMove />,
     roles: ['public', 'user', 'admin', 'moderator'],
   },
-  {
+];
+
+if (clan.discordInviteUrl) {
+  allSidebarItems.push({
     title: 'Discord',
-    href: 'https://discord.com/invite/NqzwU3TyUT',
+    href: clan.discordInviteUrl,
     icon: <Discord />,
     roles: ['public', 'user', 'admin', 'moderator'],
-  },
-];
+  });
+}
 
 export const SidebarProvider = ({ children }: PropsWithChildren) => {
   const [loading, setLoading] = useState<boolean>(false);

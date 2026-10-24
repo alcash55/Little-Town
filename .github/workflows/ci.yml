@@ -181,6 +181,12 @@ jobs:
           VITE_BASEURL: https://little-town.onrender.com
         run: bun run build
 
+      - name: Build Diamond Dogs instance
+        env:
+          VITE_CLAN_ID: diamond-dogs
+          VITE_BASEURL: https://diamond-dogs-bingo.onrender.com
+        run: bun run build
+
   # #76: README.md's Pages table and CLAUDE.md's used to drift apart by
   # hand. CLAUDE.md now just points at the README instead of keeping its
   # own copy, which removes one of the two things that could drift, but
