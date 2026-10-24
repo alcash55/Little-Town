@@ -37,6 +37,7 @@ CI if the two ever drift apart again. Verified against
 | `/`                                | public | Home                                                  |
 | `/Resources`                       | public | Guides, strats, tiles, RuneLite marker payloads       |
 | `/BingoBoard`                      | public | Active bingo board (anonymous = no team highlighting) |
+| `/recover`                          | public | Request account recovery or set a new password            |
 | `/invite/:token`                   | public | Accept an invite                                      |
 | `/unauthorized`                    | public | Access denied                                         |
 | `/BingoRules`                      | user+  | Competition rules                                     |

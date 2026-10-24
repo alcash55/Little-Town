@@ -119,6 +119,7 @@ type AuthFailureReason =
   | "token_expired"
   | "verify_failure"
   | "user_not_found"
+  | "session_revoked"
   | "lookup_error";
 
 function logAuthFailure(
@@ -176,6 +177,7 @@ export const protect = async (
   }
 
   let userId: string;
+  let sessionVersion: unknown;
   try {
     const decoded = jwt.verify(token, getJwtSecret());
     if (typeof decoded === "string" || typeof decoded.id !== "string") {
@@ -183,6 +185,7 @@ export const protect = async (
       return next(new AppError("Not authorized to access this route", 401));
     }
     userId = decoded.id;
+    sessionVersion = decoded.sessionVersion ?? 0;
   } catch (error) {
     const reason =
       error instanceof jwt.TokenExpiredError
@@ -194,8 +197,8 @@ export const protect = async (
 
   try {
     const user = await findUserById(userId);
-    if (!user) {
-      logAuthFailure(req, "user_not_found");
+    if (!user || (user.sessionVersion ?? 0) !== sessionVersion) {
+      logAuthFailure(req, user ? "session_revoked" : "user_not_found");
       return next(new AppError("Not authorized to access this route", 401));
     }
     req.user = user;
@@ -248,9 +251,11 @@ export const optionalAuth = async (
   }
 
   try {
-    const decoded = jwt.verify(token, getJwtSecret()) as any;
+    const decoded = jwt.verify(token, getJwtSecret());
+    if (typeof decoded === "string" || typeof decoded.id !== "string")
+      return next();
     const user = await findUserById(decoded.id);
-    if (!user) {
+    if (!user || (user.sessionVersion ?? 0) !== (decoded.sessionVersion ?? 0)) {
       // Token is well-formed but no longer resolves to a real user
       // (deleted account, etc.) — degrade to anonymous rather than 401.
       return next();
