@@ -498,3 +498,12 @@ No infrastructure changes happen automatically when this code merges.
 expired tokens, absent users, and failed user lookups. Lookup errors return
 503 with `AUTH_LOOKUP_FAILED`, preserving the frontend's current session so
 users can retry. Logs omit tokens, credentials, raw driver errors, and URLs.
+
+## Account recovery
+
+Email remains optional. Members with email use `/recover`; real admins can
+issue a single-use link for email-less accounts from User invites.
+Apply `20261023000000_account_recovery.sql` before backend rollout.
+Email delivery requires both `RECOVERY_DELIVERY_URL` and
+`RECOVERY_DELIVERY_SECRET`; leave them unset to disable sending.
+See [configuration, API limits, and acceptance](../docs/account-recovery.md).

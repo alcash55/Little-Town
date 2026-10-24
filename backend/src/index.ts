@@ -11,6 +11,8 @@ import rateLimit from "express-rate-limit";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { rateLimitKey } from "./middleware/rateLimitKey.js";
 import { loginLimiter } from "./middleware/loginLimiter.js";
+import { createRecoveryRoutes } from "./routes/accountRecovery.js";
+import { recoveryBaseUrl } from "./services/accountRecovery.js";
 import authRoutes from "./routes/auth.js";
 import hiscoresRoutes from "./routes/hiscores.js";
 import adminRoutes from "./routes/admin.js";
@@ -122,6 +124,8 @@ app.get("/api/health", (_req: Request, res: Response) => {
 });
 
 // API routes
+recoveryBaseUrl();
+app.use("/api/auth/recovery", createRecoveryRoutes());
 app.use("/api/auth", authRoutes);
 app.use("/api/hiscores", hiscoresRoutes);
 // These two must be registered BEFORE the generic /api/admin mount below:

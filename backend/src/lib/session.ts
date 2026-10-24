@@ -50,13 +50,13 @@ function cookieOptions(req: Request) {
   };
 }
 
-export function signSession(user: Pick<User, "id" | "username" | "role">): {
+export function signSession(user: Pick<User, "id" | "username" | "role" | "sessionVersion">): {
   token: string;
   expiresAt: string;
 } {
   const expiresIn = (process.env.JWT_EXPIRES_IN || "24h") as SignOptions["expiresIn"];
   const token = jwt.sign(
-    { id: user.id, username: user.username, role: user.role },
+    { id: user.id, username: user.username, role: user.role, sessionVersion: user.sessionVersion ?? 0 },
     getJwtSecret(),
     { expiresIn },
   );
