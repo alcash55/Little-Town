@@ -1,4 +1,5 @@
 import type { HtmlTagDescriptor, Plugin } from 'vite';
+import { resolveClanProfile } from '../config/clanProfiles';
 
 // Cloudflare Web Analytics site token. It's public, meant to ship to every
 // browser, unlike a secret key. One call site: vite.config.ts pulls this in
@@ -48,11 +49,15 @@ export function cloudflareBeaconTag(token: string = CF_BEACON_TOKEN): HtmlTagDes
  * keeps the token defined in exactly one place.
  */
 export function cloudflareAnalyticsPlugin(token: string = CF_BEACON_TOKEN): Plugin {
+  let enabled = true;
   return {
     name: 'cloudflare-web-analytics',
+    configResolved(config) {
+      enabled = resolveClanProfile(config.env.VITE_CLAN_ID).analytics;
+    },
     apply: 'build',
     transformIndexHtml() {
-      return [cloudflareBeaconTag(token)];
+      return enabled ? [cloudflareBeaconTag(token)] : [];
     },
   };
 }

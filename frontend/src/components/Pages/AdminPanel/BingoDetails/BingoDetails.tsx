@@ -1,3 +1,4 @@
+import { clan } from '../../../../config/clan';
 import { Button, FormControl, InputLabel, MenuItem, Select, Stack, TextField } from '@mui/material';
 import { DateTimePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -64,7 +65,7 @@ const BingoDetails = () => {
           <TextField
             id="bingo-name"
             label="Bingo Name"
-            placeholder={`${new Date().getFullYear()} Little Town Bingo`}
+            placeholder={`${new Date().getFullYear()} ${clan.name} Bingo`}
             variant="outlined"
             value={bingoName}
             onChange={(e) => setBingoName(e.target.value)}

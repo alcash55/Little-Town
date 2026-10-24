@@ -1,3 +1,4 @@
+import { clan } from '../../../config/clan';
 import { FormEvent, useState } from 'react';
 import {
   Box,
@@ -86,7 +87,7 @@ const InviteAccept = () => {
     <PageLayout title="You're invited!" maxWidth={420}>
       {role && (
         <Typography variant="body2" sx={{ color: appColors.textSecondary, textAlign: 'center' }}>
-          Create your account to join Little Town as a {ROLE_LABEL[role] ?? role}.
+          Create your account to join {clan.name} as a {ROLE_LABEL[role] ?? role}.
         </Typography>
       )}
 
