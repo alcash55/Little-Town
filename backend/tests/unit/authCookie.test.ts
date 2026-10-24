@@ -29,7 +29,12 @@ beforeAll(async () => {
 });
 afterAll(() => server.close());
 afterEach(() => {
-  for (const key of ["NODE_ENV", "AUTH_SAME_SITE_HOST"]) {
+  for (const key of [
+    "NODE_ENV",
+    "AUTH_SAME_SITE_HOST",
+    "FRONTEND_DIST_DIR",
+    "FRONTEND_URL",
+  ]) {
     if (originalEnv[key] === undefined) delete process.env[key];
     else process.env[key] = originalEnv[key];
   }
@@ -84,6 +89,33 @@ test("local HTTP keeps Lax without Secure", async () => {
   const local = await cookie("localhost:8081");
   expect(local).toContain("SameSite=Lax");
   expect(local).not.toContain("Secure");
+});
+
+test("bundled clan deployment uses Lax only for its configured origin", async () => {
+  process.env.NODE_ENV = "production";
+  delete process.env.AUTH_SAME_SITE_HOST;
+  process.env.FRONTEND_DIST_DIR = "../frontend/dist";
+  process.env.FRONTEND_URL = "https://diamond-dogs.example.test";
+  const firstParty = await cookie("diamond-dogs.example.test");
+  expect(firstParty).toContain("SameSite=Lax");
+  expect(firstParty).toContain("HttpOnly");
+  expect(firstParty).toContain("Secure");
+  expect(firstParty).not.toContain("Domain=");
+  expect(
+    await cookie(
+      "little-town.onrender.com",
+      "/login",
+      "diamond-dogs.example.test"
+    )
+  ).toContain("SameSite=None");
+  for (const invalid of [
+    "http://diamond-dogs.example.test",
+    "https://user:pass@example.test",
+    "https://example.test/path",
+  ]) {
+    process.env.FRONTEND_URL = invalid;
+    expect(getSameSiteAuthHost).toThrow("Bundled frontend");
+  }
 });
 
 test("configuration rejects an unrelated hostname or URL before startup", () => {

@@ -1,0 +1,33 @@
+# Separate single-origin instance. Does not manage the Little Town service.
+services:
+  - type: web
+    name: diamond-dogs-bingo
+    runtime: node
+    plan: free
+    branch: main
+    buildCommand: bash deploy/diamond-dogs/build.sh
+    startCommand: bash deploy/diamond-dogs/start.sh
+    healthCheckPath: /api/health
+    envVars:
+      - key: BUN_VERSION
+        value: "1.3.14"
+      - key: NODE_VERSION
+        value: "24.14.1"
+      - key: NODE_ENV
+        value: production
+      - key: VITE_CLAN_ID
+        value: diamond-dogs
+      - key: INSTANCE_SUPABASE_PROJECT_REF
+        value: qslzzyhdjmvsbumoopcw
+      - key: SUPABASE_URL
+        value: https://qslzzyhdjmvsbumoopcw.supabase.co
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 24h
+      - key: DISCORD_ENABLED
+        value: "false"
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: "1000"

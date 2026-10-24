@@ -125,3 +125,15 @@ change the frontend origin used by backend CORS.
 See [the auth cutover runbook](../docs/auth-api-cutover.md). A browser cannot
 copy the Render host's httpOnly cookie to the new host, so schedule the
 frontend switch between events and allow a fresh login on the new host.
+
+## Clan deployment branding
+
+`VITE_CLAN_ID` selects `little-town` (the default) or `diamond-dogs` at build
+time. The profile sets navigation, welcome and invite copy, page metadata,
+and clan artwork. Diamond Dogs uses a neutral bingo icon and does not load
+Little Town gang icons or its analytics beacon. It uses the existing app
+theme and OSRS resources until separate clan assets/content are supplied.
+
+Branding does not isolate accounts or events. Follow the separate-instance
+[deployment guide](../deploy/diamond-dogs/README.md) and use an independent
+backend, Supabase project, and session secret.
