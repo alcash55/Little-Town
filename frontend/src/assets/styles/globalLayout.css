@@ -1,39 +1,47 @@
 html,
 body,
 #root {
-  display: block;
   height: 100%;
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
-  overflow-y: hidden;
-  cursor: url('../Images/cursor-dragon-scimitar.png'), auto;
+}
+body {
+  min-width: 0;
+}
+* {
+  box-sizing: border-box;
 }
 img {
-  font-style: italic;
+  max-width: 100%;
 }
-
-section {
-  background-color: #424242;
+button,
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
 }
-
-/* target the scrollbar track */
+button,
+a {
+  touch-action: manipulation;
+}
 ::-webkit-scrollbar {
-  width: 10px; /* width of the scrollbar */
+  width: 8px;
+  height: 8px;
 }
-
-/* handle of the scrollbar */
 ::-webkit-scrollbar-thumb {
-  background-color: #888; /* color of the scrollbar handle */
-  border-radius: 5px; /* roundness of the scrollbar handle */
+  background: #4c593f;
+  border-radius: 4px;
 }
-
-/* scrollbar track */
 ::-webkit-scrollbar-track {
-  background: #333; /* color of the scrollbar track */
+  background: #171a18;
 }
-
-/* scrollbar corner */
-::-webkit-scrollbar-corner {
-  background: #000; /* color of the scrollbar corner */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

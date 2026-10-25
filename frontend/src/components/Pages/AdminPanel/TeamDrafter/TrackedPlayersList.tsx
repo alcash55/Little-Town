@@ -1,3 +1,4 @@
+import { appColors } from '../../../../layout/Theme/appColors';
 import {
   Box,
   Card,
@@ -75,7 +76,7 @@ function CaptainSelect({
   fullWidth?: boolean;
 }) {
   if (captainUpdatingRsn === player.rsn) {
-    return <CircularProgress size={20} sx={{ color: '#2A9D8F' }} />;
+    return <CircularProgress size={20} sx={{ color: appColors.accent }} />;
   }
 
   return (
@@ -171,7 +172,7 @@ function PlayerActions({
         <IconButton
           size="small"
           onClick={() => onOpenSideAccountDialog(player)}
-          sx={{ color: '#2A9D8F' }}
+          sx={{ color: appColors.accent }}
         >
           <PersonAddAlt1Icon fontSize="small" />
         </IconButton>
@@ -411,7 +412,7 @@ export function TrackedPlayersList({
                   <IconButton
                     size="small"
                     onClick={() => onOpenSideAccountDialog(player)}
-                    sx={{ color: '#2A9D8F' }}
+                    sx={{ color: appColors.accent }}
                   >
                     <PersonAddAlt1Icon fontSize="small" />
                   </IconButton>

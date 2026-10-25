@@ -1,3 +1,5 @@
+import { appColors } from '../../../layout/Theme/appColors';
+import { alpha } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
 import { Box, Button, Typography } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -89,7 +91,7 @@ const RuneliteCopyControl = ({ config }: RuneliteCopyControlProps) => {
           flexShrink: 0,
           color: copied ? accent : textPrimary,
           borderColor: copied ? accent : subtleBorder,
-          '&:hover': { borderColor: accent, bgcolor: 'rgba(42,157,143,0.08)' },
+          '&:hover': { borderColor: accent, bgcolor: alpha(appColors.accent, 0.08) },
         }}
       >
         {copied ? 'Copied!' : 'Copy'}

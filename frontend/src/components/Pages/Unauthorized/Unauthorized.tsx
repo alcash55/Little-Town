@@ -44,7 +44,7 @@ const Unauthorized = () => {
       </Box>
       <Typography
         variant="body1"
-        sx={{ textAlign: 'center', color: darkTheme.palette.text.secondary }}
+        sx={{ textAlign: 'left', color: darkTheme.palette.text.secondary }}
       >
         {isForbidden
           ? "You don't have permission to view this page."
@@ -54,8 +54,8 @@ const Unauthorized = () => {
         direction="row"
         spacing={2}
         sx={{
-          justifyContent: 'center',
-          alignItems: 'center',
+          justifyContent: 'flex-start',
+          alignItems: 'flex-start',
         }}
       >
         {!user ? (

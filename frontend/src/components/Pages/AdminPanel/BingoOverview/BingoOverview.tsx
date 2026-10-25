@@ -1,3 +1,4 @@
+import { alpha } from '@mui/material/styles';
 import React, { useMemo } from 'react';
 import {
   Alert,
@@ -665,7 +666,7 @@ const BingoOverview = () => {
           sx={{
             color: appColors.accent,
             borderColor: appColors.accent,
-            '&:hover': { borderColor: appColors.accent, bgcolor: 'rgba(42,157,143,0.08)' },
+            '&:hover': { borderColor: appColors.accent, bgcolor: alpha(appColors.accent, 0.08) },
           }}
         >
           {refreshingStats ? 'Refreshing…' : 'Refresh Player Stats'}

@@ -1,3 +1,4 @@
+import { appColors } from '../../../../layout/Theme/appColors';
 import {
   Alert,
   Box,
@@ -64,7 +65,7 @@ export function SideAccountsDialog({
       maxWidth="sm"
       fullWidth
       slotProps={{
-        paper: { sx: { backgroundColor: darkTheme.palette.primary.main, color: textPrimary } },
+        paper: { sx: { backgroundColor: darkTheme.palette.background.paper, color: textPrimary } },
       }}
     >
       <DialogTitle sx={{ fontFamily: "'pacifico', cursive", color: textPrimary }}>
@@ -106,7 +107,7 @@ export function SideAccountsDialog({
 
         {loadingSideAccounts ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-            <CircularProgress size={24} sx={{ color: '#2A9D8F' }} />
+            <CircularProgress size={24} sx={{ color: appColors.accent }} />
           </Box>
         ) : sideAccounts.length === 0 ? (
           <Typography variant="body1" sx={{ color: textSecondary }}>

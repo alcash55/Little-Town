@@ -1,3 +1,4 @@
+import { appColors } from '../../../../layout/Theme/appColors';
 import { Autocomplete, CircularProgress, TextField } from '@mui/material';
 
 export type TileTaskAutocompleteProps = {
@@ -58,7 +59,7 @@ export const TileTaskAutocomplete = ({
             ...params.slotProps.input,
             endAdornment: (
               <>
-                {loading && <CircularProgress sx={{ color: '#2A9D8F' }} size={20} />}
+                {loading && <CircularProgress sx={{ color: appColors.accent }} size={20} />}
                 {params.slotProps.input.endAdornment}
               </>
             ),

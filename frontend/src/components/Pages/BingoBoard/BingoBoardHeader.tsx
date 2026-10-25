@@ -44,11 +44,9 @@ export const BingoBoardHeader = ({
       <Box
         sx={(theme) => ({
           width: '100%',
-          borderRadius: 3,
+          borderRadius: 1,
           border: `1px solid ${appColors.subtleBorder}`,
-          background: `linear-gradient(160deg, ${alpha(appColors.accent, 0.14)} 0%, ${
-            theme.palette.background.paper
-          } 55%)`,
+          backgroundColor: theme.palette.background.paper,
           p: { xs: 2.5, sm: 3.5 },
           boxSizing: 'border-box',
         })}

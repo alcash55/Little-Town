@@ -1,3 +1,4 @@
+import { appColors } from '../../layout/Theme/appColors';
 import React, { useState, useEffect } from 'react';
 import { Box, Stack, Typography } from '@mui/material';
 import { Gauge, gaugeClasses } from '@mui/x-charts/Gauge';
@@ -72,7 +73,7 @@ export const Countdown: React.FC<CountdownProps> = ({
                 fill: 'rgba(255,255,255,0.12)',
               },
               [`& .${gaugeClasses.valueArc}`]: {
-                fill: '#2A9D8F',
+                fill: appColors.accent,
               },
               [`& .${gaugeClasses.valueText}`]: {
                 fontFamily: "'pacifico', cursive",
