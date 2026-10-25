@@ -107,7 +107,13 @@ export function AccountRecovery() {
         password.length < 12 ||
         new TextEncoder().encode(password).length > 72)
     ) {
-      setError('Passwords must match and use at least 12 characters and at most 72 UTF-8 bytes.');
+      setError(
+        password !== confirmation
+          ? 'Passwords must match. Enter the same password in both fields.'
+          : password.length < 12
+          ? 'Use at least 12 characters.'
+          : 'This password is too long. Try a shorter password.',
+      );
       return;
     }
     setBusy(true);
@@ -192,8 +198,8 @@ export function AccountRecovery() {
             ) : (
               <>
                 <Typography>
-                  Use at least 12 characters and at most 72 UTF-8 bytes. Your other sessions will
-                  end when you reset your password.
+                  Use at least 12 characters. Resetting your password will sign you out on your
+                  other devices.
                 </Typography>
                 <TextField
                   label="New password"
