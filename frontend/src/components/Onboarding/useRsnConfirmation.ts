@@ -8,7 +8,8 @@ const ONBOARDING_BASE_URL = `${
 /**
  * After this many consecutive claim-service failures (network error, or an
  * HTTP status this step doesn't have a specific mapping for — anything
- * that isn't the frozen contract's 200/422 RSN_NOT_FOUND/409 RSN_TAKEN,
+ * that isn't the frozen contract's 200/422 RSN_NOT_FOUND/409 RSN_TAKEN
+ * or 404 NO_ACTIVE_BINGO,
  * TEAM-BRIEF.md Sprint 11 Track B #3) for the same typed RSN, stop making
  * the user retry forever and offer to continue unverified. A backend outage
  * (or, pre-merge, Track A's endpoint not existing yet) isn't something the
@@ -24,6 +25,7 @@ export type RsnValidationStatus =
   | 'valid'
   | 'invalid'
   | 'taken'
+  | 'no-bingo'
   | 'down'
   | 'soft-passed';
 
@@ -70,6 +72,7 @@ export function filterAccountDerivedRsns(
  *   - 200                              -> 'valid' (claimed + tracked)
  *   - 422 { code: 'RSN_NOT_FOUND' }    -> 'invalid'
  *   - 409 { code: 'RSN_TAKEN' }        -> 'taken'
+ *   - 404 { code: 'NO_ACTIVE_BINGO' }  -> 'no-bingo' (hiscores found, not registered)
  *   - anything else (network error,
  *     unmapped status/code, service
  *     down, or Track A not merged yet) -> 'down'
@@ -78,10 +81,11 @@ export function filterAccountDerivedRsns(
 export function classifyClaimStatus(
   httpStatus: number,
   code?: string,
-): 'valid' | 'invalid' | 'taken' | 'down' {
+): Exclude<RsnValidationStatus, 'idle' | 'validating' | 'soft-passed'> {
   if (httpStatus === 200) return 'valid';
   if (httpStatus === 422 && code === 'RSN_NOT_FOUND') return 'invalid';
   if (httpStatus === 409 && code === 'RSN_TAKEN') return 'taken';
+  if (httpStatus === 404 && code === 'NO_ACTIVE_BINGO') return 'no-bingo';
   return 'down';
 }
 
@@ -104,7 +108,7 @@ export type RsnConfirmation = {
   failures: number;
   /** True once the claim endpoint has confirmed `selected` was already tracked before this call (informational only). */
   alreadyTracked: boolean;
-  /** Whichever reason makes Next safe to enable for this step: an actual claimed RSN, or an explicit soft-pass. */
+  /** Whichever reason makes Next safe to enable for this step: an actual claimed RSN, a verified name before the first bingo, or an explicit soft-pass. */
   confirmed: boolean;
   commit: (value: string | null) => void;
   retry: () => void;
@@ -123,7 +127,9 @@ export type RsnConfirmation = {
  * `POST /api/onboarding/rsn` claim endpoint directly: per the frozen
  * contract a 200 both validates AND registers the RSN in the Team Drafter
  * pool in one call, so "confirmed" here means "actually claimed", not just
- * "looked real". Re-committing the same already-claimed value is
+ * "looked real". The documented 404 NO_ACTIVE_BINGO also follows successful
+ * hiscores validation, but writes no claim or pool entry. Let setup finish
+ * in that distinct state without saying the name is tracked. Re-committing the same already-claimed value is
  * server-side idempotent (contract: "re-claiming your own RSN is idempotent
  * 200"), so retrying/re-typing the same name is safe to repeat.
  */
@@ -214,7 +220,7 @@ export const useRsnConfirmation = (): RsnConfirmation => {
     status,
     failures,
     alreadyTracked,
-    confirmed: status === 'valid' || status === 'soft-passed',
+    confirmed: status === 'valid' || status === 'no-bingo' || status === 'soft-passed',
     commit,
     retry,
     softPass,

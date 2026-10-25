@@ -77,6 +77,18 @@ afterEach(() => {
 });
 
 describe('RsnStep (issue #49)', () => {
+  it('explains that the name was found but no bingo exists, without outage or tracking claims', () => {
+    renderStep(
+      makeProfile({ teamId: null, rsns: [] }),
+      makeRsn({ selected: 'lucky buck2', status: 'no-bingo', confirmed: true }),
+    );
+    expect(screen.getByText(/was found on the OSRS hiscores/)).toBeTruthy();
+    expect(screen.getByText(/No bingo has been set up yet/)).toBeTruthy();
+    expect(screen.queryByText(/Couldn't reach/)).toBeNull();
+    expect(screen.queryByText(/now tracked in the player pool/)).toBeNull();
+    expect(screen.queryByRole('button', { name: /Retry/ })).toBeNull();
+  });
+
   it('mounts the Autocomplete and lists roster suggestions as options', () => {
     renderStep(makeProfile(), makeRsn());
 

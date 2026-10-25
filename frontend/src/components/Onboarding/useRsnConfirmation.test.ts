@@ -85,6 +85,10 @@ describe('filterAccountDerivedRsns', () => {
 });
 
 describe('classifyClaimStatus', () => {
+  it('distinguishes a missing bingo from a failed tracking service', () => {
+    expect(classifyClaimStatus(404, 'NO_ACTIVE_BINGO')).toBe('no-bingo');
+  });
+
   it('maps 200 to valid', () => {
     expect(classifyClaimStatus(200)).toBe('valid');
   });
@@ -114,6 +118,16 @@ describe('classifyClaimStatus', () => {
 });
 
 describe('useRsnConfirmation', () => {
+  it('allows setup to continue after hiscores validation when no bingo exists, without claiming tracking', async () => {
+    mockedFetchWithAuth.mockResolvedValueOnce(jsonResponse(404, { code: 'NO_ACTIVE_BINGO' }));
+    const { result } = renderHook(() => useRsnConfirmation());
+    act(() => result.current.commit('lucky buck2'));
+    await waitFor(() => expect(result.current.status).toBe('no-bingo'));
+    expect(result.current.confirmed).toBe(true);
+    expect(result.current.failures).toBe(0);
+    expect(result.current.alreadyTracked).toBe(false);
+  });
+
   it('starts idle/unconfirmed with nothing selected — no account-derived prefill', () => {
     const { result } = renderHook(() => useRsnConfirmation());
     expect(result.current.selected).toBeNull();
