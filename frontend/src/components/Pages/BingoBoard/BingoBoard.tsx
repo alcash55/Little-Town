@@ -95,8 +95,8 @@ const BingoBoard = () => {
           <Stack
             spacing={1.5}
             sx={{
-              alignItems: 'center',
-              textAlign: 'center',
+              alignItems: 'flex-start',
+              textAlign: 'left',
               width: '100%',
               py: 4,
               color: appColors.textSecondary,
@@ -119,8 +119,8 @@ const BingoBoard = () => {
         <Stack
           spacing={1.5}
           sx={{
-            alignItems: 'center',
-            textAlign: 'center',
+            alignItems: 'flex-start',
+            textAlign: 'left',
             width: '100%',
             py: 4,
             color: appColors.textSecondary,
@@ -176,7 +176,12 @@ const BingoBoard = () => {
 
       <Box
         ref={gridContainerRef}
-        sx={{ width: '100%', maxWidth: BOARD_MAX_WIDTH, display: 'flex', justifyContent: 'center' }}
+        sx={{
+          width: '100%',
+          maxWidth: BOARD_MAX_WIDTH,
+          display: 'flex',
+          justifyContent: 'flex-start',
+        }}
       >
         <Box
           role="group"

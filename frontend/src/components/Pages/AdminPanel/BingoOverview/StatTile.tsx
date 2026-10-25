@@ -24,7 +24,14 @@ export const StatTile = ({ icon, label, value, sub }: StatTileProps) => (
           {label}
         </Typography>
       </Stack>
-      <Typography variant="h5" sx={{ fontFamily: "'pacifico', cursive" }}>
+      <Typography
+        variant="h5"
+        sx={{
+          fontFamily: "'DM Sans', sans-serif",
+          fontVariantNumeric: 'tabular-nums',
+          fontSize: 30,
+        }}
+      >
         {value}
       </Typography>
       {sub && (

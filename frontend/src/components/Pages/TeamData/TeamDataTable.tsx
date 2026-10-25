@@ -1,3 +1,4 @@
+import { alpha } from '@mui/material/styles';
 import {
   Stack,
   Table,
@@ -197,7 +198,7 @@ export function TeamDataTable({ tiles, players }: TeamDataTableProps) {
           {tiles.map((tile) => (
             <TableRow
               key={tile.task}
-              sx={{ '&:hover .team-data-cell': { bgcolor: 'rgba(42,157,143,0.06)' } }}
+              sx={{ '&:hover .team-data-cell': { bgcolor: alpha(appColors.accent, 0.06) } }}
             >
               <TileRowHeader tile={tile} />
               {players.map((p) => (

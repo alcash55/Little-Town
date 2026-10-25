@@ -1,5 +1,18 @@
 import { useMemo } from 'react';
-import { Alert, Box, Button, CircularProgress, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Typography,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  TableContainer,
+  Paper,
+} from '@mui/material';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { useBingoScores } from './useBingoScores';
@@ -86,13 +99,19 @@ const BingoScores = () => {
     return (
       <PageLayout title="Total Team XP" align="center">
         <Box
-          sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5, py: 4 }}
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            gap: 1.5,
+            py: 4,
+          }}
         >
           <ShowChartIcon sx={{ fontSize: 48, color: appColors.mutedText }} />
           <Typography variant="h6">No team XP history yet</Typography>
           <Typography
             variant="body2"
-            sx={{ color: appColors.textSecondary, textAlign: 'center', maxWidth: 420 }}
+            sx={{ color: appColors.textSecondary, textAlign: 'left', maxWidth: 420 }}
           >
             Once the bingo is active and player snapshots start rolling in, each team's total XP
             gained will show up here.
@@ -102,8 +121,40 @@ const BingoScores = () => {
     );
   }
 
+  const ranking = teams
+    .map((team) => ({
+      id: team.teamId,
+      name: team.teamName,
+      xp: [...team.series].sort((a, b) => b.date.localeCompare(a.date))[0]?.totalXpGained ?? 0,
+    }))
+    .sort((a, b) => b.xp - a.xp);
   return (
     <PageLayout title="Total Team XP" maxWidth="full">
+      <Typography color="text.secondary">
+        Team experience gained during this competition. Drop points and XP are tracked separately.
+      </Typography>
+      <TableContainer component={Paper} variant="outlined">
+        <Table aria-label="Team XP standings">
+          <TableHead>
+            <TableRow>
+              <TableCell>Rank</TableCell>
+              <TableCell>Team</TableCell>
+              <TableCell align="right">XP gained</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {ranking.map((team, index) => (
+              <TableRow key={team.id}>
+                <TableCell>{index + 1}</TableCell>
+                <TableCell>{team.name}</TableCell>
+                <TableCell align="right" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {new Intl.NumberFormat().format(team.xp)}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
       <Box sx={{ width: '100%', overflowX: 'auto' }}>
         <LineChart
           height={400}

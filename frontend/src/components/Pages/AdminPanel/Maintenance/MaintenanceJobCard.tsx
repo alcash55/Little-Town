@@ -1,3 +1,4 @@
+import { alpha } from '@mui/material/styles';
 import {
   Alert,
   Button,
@@ -68,7 +69,10 @@ export function MaintenanceJobCard({
               sx={{
                 color: appColors.accent,
                 borderColor: appColors.accent,
-                '&:hover': { borderColor: appColors.accent, bgcolor: 'rgba(42,157,143,0.08)' },
+                '&:hover': {
+                  borderColor: appColors.accent,
+                  bgcolor: alpha(appColors.accent, 0.08),
+                },
                 ...disabledOutlinedSx,
               }}
             >
