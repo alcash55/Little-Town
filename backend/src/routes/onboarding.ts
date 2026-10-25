@@ -36,8 +36,8 @@ const rsnClaimLimiter = rateLimit({
 });
 
 // -------------------------------------------------------
-// POST /api/onboarding/rsn — frozen contract, TEAM-BRIEF.md Sprint 11,
-// Track A. Body { rsn }. Effective-user aware: req.user is whatever
+// POST /api/onboarding/rsn. Body { rsn }. Saves an account-level link,
+// with optional registration into a current event. req.user is whatever
 // `protect`'s impersonation step resolved it to, so an admin impersonating
 // a user claims on that user's behalf, exactly like every other
 // protect-gated route.
@@ -50,15 +50,14 @@ const rsnClaimLimiter = rateLimit({
 //   2. Validate against the OSRS hiscores server-side (never trust the
 //      client's own validation) -> 422 RSN_NOT_FOUND if it doesn't resolve,
 //      503 HISCORES_SERVICE_UNAVAILABLE if the upstream lookup itself fails.
-//   3. Require an active/draft bingo to register into (this endpoint's
-//      whole point is landing the caller in the CURRENT drafter pool) ->
-//      404 NO_ACTIVE_BINGO if there isn't one. Checked before writing
-//      anything, so a predictable failure here has no side effects.
-//   4. Conflict-check: is this RSN already claimed by a different user? ->
+//   3. Conflict-check: is this RSN already claimed by a different user? ->
 //      409 RSN_TAKEN. Re-claiming your own RSN is a no-op 200
 //      (idempotent); claiming a different RSN than one you already hold
 //      MOVES your claim (one claim per user — see the migration header).
-//   5. Create-or-find the bingo_players pool row (case-insensitively — rsn
+//   4. Persist the account link even without a bingo. A 200 means the RSN
+//      is linked; tracked indicates whether an event pool entry also exists.
+//   5. When a draft/active bingo exists, create-or-find the bingo_players
+//      pool row (case-insensitively — rsn
 //      is citext, see 20260910000000 — so an admin-pre-registered "zezima"
 //      gets LINKED rather than duplicated by a user who types "Zezima")
 //      with no team assigned.
@@ -116,15 +115,6 @@ router.post(
       );
     }
 
-    const bingo = await getActiveBingo();
-    if (!bingo?.id) {
-      throw new AppError(
-        "No active bingo to register players to",
-        404,
-        "NO_ACTIVE_BINGO"
-      );
-    }
-
     const rsnNormalized = normalizeRsn(canonical);
     const existingClaim = await findRsnClaim(rsnNormalized);
     if (existingClaim && existingClaim.user_id !== userId) {
@@ -136,6 +126,17 @@ router.post(
     }
 
     await upsertRsnClaim(userId, canonical, rsnNormalized);
+
+    // The account link outlives bingo events. Registration in the current
+    // event is optional, so first-time clan setup can connect an RSN too.
+    const bingo = await getActiveBingo();
+    if (!bingo?.id) {
+      return res.status(200).json({
+        rsn: canonical,
+        tracked: false,
+        alreadyTracked: false,
+      });
+    }
 
     const existingPoolEntry = await getBingoPlayer(bingo.id, canonical);
     const rsnForPool = existingPoolEntry?.rsn ?? canonical;

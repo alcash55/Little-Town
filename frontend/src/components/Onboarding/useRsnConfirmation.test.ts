@@ -114,6 +114,51 @@ describe('classifyClaimStatus', () => {
 });
 
 describe('useRsnConfirmation', () => {
+  it('confirms a saved account link without an event player entry', async () => {
+    mockedFetchWithAuth.mockResolvedValueOnce(
+      jsonResponse(200, { rsn: 'Lucky Buck2', tracked: false, alreadyTracked: false }),
+    );
+    const { result } = renderHook(() => useRsnConfirmation());
+    act(() => result.current.commit('lucky buck2'));
+    await waitFor(() => expect(result.current.status).toBe('valid'));
+    expect(result.current.confirmed).toBe(true);
+    expect(result.current.failures).toBe(0);
+    expect(result.current.alreadyTracked).toBe(false);
+  });
+
+  it('edits without a request and invalidates the previous confirmation', async () => {
+    mockedFetchWithAuth.mockResolvedValueOnce(
+      jsonResponse(200, { rsn: 'First Name', tracked: false }),
+    );
+    const { result } = renderHook(() => useRsnConfirmation());
+    act(() => result.current.commit('First Name'));
+    await waitFor(() => expect(result.current.confirmed).toBe(true));
+    act(() => result.current.edit('Second '));
+    expect(result.current.selected).toBe('Second ');
+    expect(result.current.confirmed).toBe(false);
+    expect(result.current.status).toBe('idle');
+    expect(mockedFetchWithAuth).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a late lookup response after editing the name', async () => {
+    let resolve: ((response: Response) => void) | undefined;
+    mockedFetchWithAuth.mockReturnValueOnce(
+      new Promise<Response>((done) => {
+        resolve = done;
+      }),
+    );
+    const { result } = renderHook(() => useRsnConfirmation());
+    act(() => result.current.commit('First Name'));
+    act(() => result.current.edit('Second Name'));
+    await act(async () => {
+      if (!resolve) throw new Error('Missing pending response');
+      resolve(jsonResponse(200, { rsn: 'First Name', tracked: false }));
+    });
+    expect(result.current.selected).toBe('Second Name');
+    expect(result.current.confirmed).toBe(false);
+    expect(result.current.status).toBe('idle');
+  });
+
   it('starts idle/unconfirmed with nothing selected — no account-derived prefill', () => {
     const { result } = renderHook(() => useRsnConfirmation());
     expect(result.current.selected).toBeNull();
