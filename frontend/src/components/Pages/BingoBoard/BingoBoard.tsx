@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Alert, Box, Button, Stack, Typography } from '@mui/material';
 import GridViewIcon from '@mui/icons-material/GridView';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
@@ -7,17 +8,25 @@ import { useBingoBoard } from './useBingoBoard';
 import { BingoBoardHeader } from './BingoBoardHeader';
 import { BingoTile } from './BingoTile';
 import { BingoBoardSkeleton } from './BingoBoardSkeleton';
+import { useFitTileSize } from './useFitTileSize';
 
 const BingoBoard = () => {
   const { board, loading, error, refetch } = useBingoBoard();
 
-  // Let the grid fill the page width. Height-based fitting made the board
-  // shrink as the header grew, leaving most of the available width unused.
+  const gridContainerRef = useRef<HTMLDivElement>(null);
   const tiles = board?.active ? board.tiles : [];
   const columns = Math.max(
     1,
     Math.round(Math.sqrt(tiles.length || (board?.active ? board.bingo.boardSize : 0) || 1)),
   );
+  const tileSize = useFitTileSize(gridContainerRef, {
+    columns,
+    rows: Math.ceil(tiles.length / columns) || columns,
+    gapPx: 12,
+    minTileSize: 56,
+    maxTileSize: 360,
+    enabled: Boolean(board?.active),
+  });
   if (loading) {
     return (
       <PageLayout title="Bingo Board" maxWidth="full">
@@ -104,7 +113,19 @@ const BingoBoard = () => {
   const completedCount = tiles.filter((tile) => tile.completedByMyTeam).length;
 
   return (
-    <PageLayout title="Bingo Board" maxWidth="full">
+    <Box
+      component="section"
+      aria-label="Bingo board"
+      sx={{
+        width: '100%',
+        maxWidth: 1440,
+        mx: 'auto',
+        p: { xs: 2, sm: 2.5 },
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
+      }}
+    >
       <BingoBoardHeader
         bingo={bingo}
         myTeam={myTeam}
@@ -113,10 +134,11 @@ const BingoBoard = () => {
       />
 
       <Box
+        ref={gridContainerRef}
         sx={{
           width: '100%',
           display: 'flex',
-          justifyContent: 'flex-start',
+          justifyContent: 'center',
         }}
       >
         <Box
@@ -124,8 +146,11 @@ const BingoBoard = () => {
           aria-label={`${bingo.name} board, ${tiles.length} tiles`}
           sx={{
             display: 'grid',
-            width: '100%',
-            gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+            width: tileSize == null ? '100%' : 'auto',
+            gridTemplateColumns:
+              tileSize == null
+                ? `repeat(${columns}, minmax(0, 1fr))`
+                : `repeat(${columns}, ${tileSize}px)`,
             gap: { xs: 1, sm: 1.5 },
           }}
         >
@@ -139,11 +164,12 @@ const BingoBoard = () => {
               points={tile.points}
               type={tile.type}
               targetValue={tile.targetValue}
+              size={tileSize ?? undefined}
             />
           ))}
         </Box>
       </Box>
-    </PageLayout>
+    </Box>
   );
 };
 
