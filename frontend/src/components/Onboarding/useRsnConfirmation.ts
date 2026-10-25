@@ -8,7 +8,7 @@ const ONBOARDING_BASE_URL = `${
 /**
  * After this many consecutive claim-service failures (network error, or an
  * HTTP status this step doesn't have a specific mapping for — anything
- * that isn't the frozen contract's 200/422 RSN_NOT_FOUND/409 RSN_TAKEN,
+ * that isn't the frozen contract's 200/422 RSN_NOT_FOUND/409 RSN_TAKEN
  * TEAM-BRIEF.md Sprint 11 Track B #3) for the same typed RSN, stop making
  * the user retry forever and offer to continue unverified. A backend outage
  * (or, pre-merge, Track A's endpoint not existing yet) isn't something the
@@ -67,7 +67,7 @@ export function filterAccountDerivedRsns(
 /**
  * Maps a `POST /api/onboarding/rsn` response onto the step's status enum,
  * per the frozen contract (TEAM-BRIEF.md "Frozen contract" section):
- *   - 200                              -> 'valid' (claimed + tracked)
+ *   - 200                              -> 'valid' (account link saved)
  *   - 422 { code: 'RSN_NOT_FOUND' }    -> 'invalid'
  *   - 409 { code: 'RSN_TAKEN' }        -> 'taken'
  *   - anything else (network error,
@@ -78,7 +78,7 @@ export function filterAccountDerivedRsns(
 export function classifyClaimStatus(
   httpStatus: number,
   code?: string,
-): 'valid' | 'invalid' | 'taken' | 'down' {
+): Exclude<RsnValidationStatus, 'idle' | 'validating' | 'soft-passed'> {
   if (httpStatus === 200) return 'valid';
   if (httpStatus === 422 && code === 'RSN_NOT_FOUND') return 'invalid';
   if (httpStatus === 409 && code === 'RSN_TAKEN') return 'taken';
@@ -97,15 +97,16 @@ type ClaimErrorJson = {
 };
 
 export type RsnConfirmation = {
-  /** The RSN the user typed/picked and committed (via Autocomplete onChange). */
+  /** Current input, replaced with the canonical name after a successful connection. */
   selected: string | null;
   status: RsnValidationStatus;
   /** Consecutive claim-service-error count for the current `selected` RSN — drives the soft-pass offer. */
   failures: number;
   /** True once the claim endpoint has confirmed `selected` was already tracked before this call (informational only). */
   alreadyTracked: boolean;
-  /** Whichever reason makes Next safe to enable for this step: an actual claimed RSN, or an explicit soft-pass. */
+  /** Whichever reason makes Next safe to enable for this step: a saved account link or an explicit soft-pass. */
   confirmed: boolean;
+  edit: (value: string | null) => void;
   commit: (value: string | null) => void;
   retry: () => void;
   softPass: () => void;
@@ -118,14 +119,10 @@ export type RsnConfirmation = {
  * name — and so it doubles as the single source of truth OnboardingWizard
  * reads to gate the Next button.
  *
- * Every `commit` (Autocomplete select/Enter/blur — same trigger Sprint 10
- * used for its client-side hiscores probe) now calls the real
- * `POST /api/onboarding/rsn` claim endpoint directly: per the frozen
- * contract a 200 both validates AND registers the RSN in the Team Drafter
- * pool in one call, so "confirmed" here means "actually claimed", not just
- * "looked real". Re-committing the same already-claimed value is
- * server-side idempotent (contract: "re-claiming your own RSN is idempotent
- * 200"), so retrying/re-typing the same name is safe to repeat.
+ * Editing only updates the input and invalidates old requests. An explicit
+ * commit (Find and connect or Enter) validates and saves the account link.
+ * Bingo registration is optional and does not gate onboarding. A 200 means
+ * the account link is saved even when tracked is false.
  */
 export const useRsnConfirmation = (): RsnConfirmation => {
   const [selected, setSelected] = useState<string | null>(null);
@@ -187,6 +184,14 @@ export const useRsnConfirmation = (): RsnConfirmation => {
     }
   }, []);
 
+  const edit = useCallback((value: string | null) => {
+    requestIdRef.current += 1;
+    setSelected(value || null);
+    setFailures(0);
+    setAlreadyTracked(false);
+    setStatus('idle');
+  }, []);
+
   const commit = useCallback(
     (value: string | null) => {
       const trimmed = value?.trim() || null;
@@ -215,6 +220,7 @@ export const useRsnConfirmation = (): RsnConfirmation => {
     failures,
     alreadyTracked,
     confirmed: status === 'valid' || status === 'soft-passed',
+    edit,
     commit,
     retry,
     softPass,

@@ -15,16 +15,10 @@
  * to the effective/possibly-impersonated user), not re-prove impersonation
  * mechanics.
  *
- * "No active bingo" (-> 404 NO_ACTIVE_BINGO) is deliberately NOT covered
- * here: this route's fixture bingo must stay `status: 'draft'` (never
- * activated) to avoid uq_bingos_one_active fights with other test files on
- * the shared stack, and there is no reliable way to assert "getActiveBingo()
- * returns null" on a SHARED stack where other test files may leave their
- * own draft bingos around between runs -- asserting an empty result would
- * be inherently flaky. The 404 branch is a single `if (!bingo?.id)` guard
- * identical in shape to the one every other admin.ts player route already
- * has (see routes/admin.ts's `/bingo/players` handlers), so the risk here
- * is low; noted in the sprint report rather than chased into a flaky test.
+ * Event-free account links are covered in onboarding-rsn-no-bingo.fixture.ts.
+ * That isolated process substitutes only the event lookup and hiscores while
+ * keeping account links and authentication on the real local database. It
+ * never removes other suites' active/draft fixtures.
  */
 process.env.JWT_SECRET = "onboarding-rsn-test-secret-do-not-use-elsewhere";
 // This file's fixtures alone make more than the route's default 10/min
