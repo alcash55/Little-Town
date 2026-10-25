@@ -41,7 +41,8 @@ interface Props {
  * are a convenience only; committing a value always calls the real
  * `POST /api/onboarding/rsn` claim endpoint, and NEXT is gated on
  * `rsn.confirmed` (owned by the wizard via useRsnConfirmation):
- *  - a 200 claim response for the typed name, or
+ *  - a 200 claim response for the typed name,
+ *  - a 404 NO_ACTIVE_BINGO after hiscores validation, or
  *  - the user explicitly continuing unverified after repeated claim-service
  *    failures (never after a clean 422/409 — those are the check working).
  *
@@ -84,10 +85,9 @@ const RsnStep = ({ profile, rsn }: Props) => {
 
           {/* No team/roster yet — explain, but still let them claim their
               RSN below; that's exactly what registers them into the pool. */}
-          {!error && noRosterYet && (
+          {!error && noRosterYet && status !== 'no-bingo' && (
             <Alert severity="info" sx={{ width: '100%', mb: 1.5 }}>
-              We don't see a team roster for you yet on the active bingo — that's fine, type your
-              real RuneScape name below and we'll get it tracked.
+              We don't see a team roster for you yet. Enter your RuneScape name below to check it.
             </Alert>
           )}
 
@@ -152,6 +152,14 @@ const RsnStep = ({ profile, rsn }: Props) => {
                     : "Confirmed on the OSRS hiscores and you're now tracked in the player pool."}
                 </Typography>
               </Stack>
+            )}
+
+            {status === 'no-bingo' && (
+              <Alert severity="info">
+                "{selected}" was found on the OSRS hiscores. No bingo has been set up yet, so you
+                haven't been added to an event. You can finish setup now. Use Show intro to try
+                again once a bingo is ready.
+              </Alert>
             )}
 
             {status === 'invalid' && (
