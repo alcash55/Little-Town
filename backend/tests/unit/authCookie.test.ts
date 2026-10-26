@@ -5,6 +5,7 @@ import {
   setAuthCookie,
   clearAuthCookie,
   getSameSiteAuthHost,
+  getRequestToken,
 } from "../../src/lib/session.js";
 
 const originalEnv = { ...process.env };
@@ -12,6 +13,9 @@ let server: Server;
 let baseUrl: string;
 beforeAll(async () => {
   const app = express();
+  app.get("/token", (req, res) => {
+    res.json({ token: getRequestToken(req) ?? null });
+  });
   app.post("/login", (_req, res) => {
     setAuthCookie(res, "test-token");
     res.sendStatus(200);
@@ -89,6 +93,39 @@ test("local HTTP keeps Lax without Secure", async () => {
   const local = await cookie("localhost:8081");
   expect(local).toContain("SameSite=Lax");
   expect(local).not.toContain("Secure");
+});
+
+test("session cookie headers retain their exact values and attributes", async () => {
+  process.env.NODE_ENV = "production";
+  process.env.AUTH_SAME_SITE_HOST = "api.littletown.gay";
+  expect(await cookie("api.littletown.gay")).toBe(
+    "authToken=test-token; Path=/; HttpOnly; Secure; SameSite=Lax"
+  );
+  expect(await cookie("little-town.onrender.com", "/logout")).toBe(
+    "authToken=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=None"
+  );
+});
+
+test("request cookies preserve decoding, duplicate precedence and bearer fallback", async () => {
+  for (const [header, expected] of [
+    [
+      "other=ignored; authToken=header%2Epayload%2Esignature",
+      "header.payload.signature",
+    ],
+    ["authToken=first; authToken=second", "first"],
+    ['authToken="header%2Epayload%2Esignature"', "header.payload.signature"],
+    ["authToken=; authToken=second", "fallback"],
+    ["authToken=%invalid", "%invalid"],
+    ["other=ignored", "fallback"],
+  ]) {
+    const response = await fetch(`${baseUrl}/token`, {
+      headers: { cookie: header, authorization: "Bearer fallback" },
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ token: expected });
+  }
+  const response = await fetch(`${baseUrl}/token`);
+  expect(await response.json()).toEqual({ token: null });
 });
 
 test("bundled clan deployment uses Lax only for its configured origin", async () => {

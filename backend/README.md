@@ -15,7 +15,7 @@ A Bun.js/Express backend API for the Little Town application with JWT authentica
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 22+ (required by cookie 2)
 - Bun.js
 - Docker Desktop for local database development, set up once as described in
   [Docker Desktop and WSL](#docker-desktop-and-wsl)
