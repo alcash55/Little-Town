@@ -12,11 +12,9 @@
  * capability, not just one account — see the issue for the full blast-radius
  * argument.
  *
- * `parse`/`serialize` come from the `cookie` package, already a transitive
- * dependency of express — declared directly in package.json rather than
- * relied on transitively, since a future express bump is free to drop it.
+ * Cookie parsing and serialization use our direct `cookie` dependency.
  */
-import { parse, serialize } from "cookie";
+import { parseCookie, stringifySetCookie } from "cookie";
 import jwt, { SignOptions } from "jsonwebtoken";
 import { Request, Response } from "express";
 import { getJwtSecret } from "./jwt.js";
@@ -102,14 +100,23 @@ export function signSession(
 export function setAuthCookie(res: Response, token: string): void {
   res.setHeader(
     "Set-Cookie",
-    serialize(AUTH_COOKIE_NAME, token, cookieOptions(res.req))
+    stringifySetCookie({
+      name: AUTH_COOKIE_NAME,
+      value: token,
+      ...cookieOptions(res.req),
+    })
   );
 }
 
 export function clearAuthCookie(res: Response): void {
   res.setHeader(
     "Set-Cookie",
-    serialize(AUTH_COOKIE_NAME, "", { ...cookieOptions(res.req), maxAge: 0 })
+    stringifySetCookie({
+      name: AUTH_COOKIE_NAME,
+      value: "",
+      ...cookieOptions(res.req),
+      maxAge: 0,
+    })
   );
 }
 
@@ -124,7 +131,18 @@ export function clearAuthCookie(res: Response): void {
 export function getRequestToken(req: Request): string | undefined {
   const cookieHeader = req.headers.cookie;
   if (cookieHeader) {
-    const cookies = parse(cookieHeader);
+    const cookies = parseCookie(cookieHeader, {
+      decode(value) {
+        // cookie 0.7 stripped quotes before decoding. Keep existing clients'
+        // quoted session cookies working after the cookie 2 migration.
+        const unquoted = value.startsWith('"') ? value.slice(1, -1) : value;
+        try {
+          return decodeURIComponent(unquoted);
+        } catch {
+          return unquoted;
+        }
+      },
+    });
     const fromCookie = cookies[AUTH_COOKIE_NAME];
     if (fromCookie) return fromCookie;
   }

@@ -110,12 +110,20 @@ describe.skipIf(!stack.reachable)("POST /api/auth/login", () => {
   for (const [host, sameSite] of [
     ["little-town.onrender.com", "None"],
     ["api.littletown.gay", "Lax"],
+    ["diamond-dogs-bingo.onrender.com", "Lax"],
   ]) {
     test(`production cookie login/me/logout round trip on ${host}`, async () => {
       const previousMode = process.env.NODE_ENV;
       const previousHost = process.env.AUTH_SAME_SITE_HOST;
+      const previousDist = process.env.FRONTEND_DIST_DIR;
+      const previousUrl = process.env.FRONTEND_URL;
       process.env.NODE_ENV = "production";
       process.env.AUTH_SAME_SITE_HOST = "api.littletown.gay";
+      if (host === "diamond-dogs-bingo.onrender.com") {
+        delete process.env.AUTH_SAME_SITE_HOST;
+        process.env.FRONTEND_DIST_DIR = "../frontend/dist";
+        process.env.FRONTEND_URL = `https://${host}`;
+      }
       try {
         const login = await jsonRequest(port, "POST", "/api/auth/login", {
           headers: { host },
@@ -149,6 +157,10 @@ describe.skipIf(!stack.reachable)("POST /api/auth/login", () => {
         else process.env.NODE_ENV = previousMode;
         if (previousHost === undefined) delete process.env.AUTH_SAME_SITE_HOST;
         else process.env.AUTH_SAME_SITE_HOST = previousHost;
+        if (previousDist === undefined) delete process.env.FRONTEND_DIST_DIR;
+        else process.env.FRONTEND_DIST_DIR = previousDist;
+        if (previousUrl === undefined) delete process.env.FRONTEND_URL;
+        else process.env.FRONTEND_URL = previousUrl;
       }
     });
   }
