@@ -41,6 +41,7 @@ export function SortableItem({
       {...attributes}
       {...listeners}
       label={label}
+      aria-label={String(id)}
       sx={{
         transform: CSS.Translate.toString(transform),
         transition,
@@ -62,5 +63,9 @@ export function SortableItem({
 
   if (!isUnclaimed) return chip;
 
-  return <Tooltip title="No linked account has claimed this RSN yet">{chip}</Tooltip>;
+  return (
+    <Tooltip describeChild title="No linked account has claimed this RSN yet">
+      {chip}
+    </Tooltip>
+  );
 }

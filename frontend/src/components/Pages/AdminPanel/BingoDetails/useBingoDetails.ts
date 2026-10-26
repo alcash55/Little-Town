@@ -160,7 +160,7 @@ export const useBingoDetails = () => {
       end: endDate,
       size: boardSize,
       numberOfTeams,
-      teams: teamNames,
+      teams: teamNames.slice(0, numberOfTeams).map((name) => name.trim()),
     };
     const modifyDetails = {
       name: bingoName,
@@ -168,10 +168,13 @@ export const useBingoDetails = () => {
       endDate,
       boardSize,
       numberOfTeams,
-      teams: teamNames,
+      teams: teamNames.slice(0, numberOfTeams).map((name) => name.trim()),
     };
     const success = isBingo ? await modifyBingo(modifyDetails) : await planBingo(details);
-    if (success) setSubmitted(true);
+    if (success) {
+      if (!isBingo) await loadExistingBingo();
+      setSubmitted(true);
+    }
   };
 
   const handleTeamNameChange = (index: number, value: string) => {
@@ -181,7 +184,7 @@ export const useBingoDetails = () => {
   };
 
   const handleStartDateChange = (newDate: Date | null) => {
-    const iso = newDate ? newDate.toISOString() : '';
+    const iso = newDate && Number.isFinite(newDate.getTime()) ? newDate.toISOString() : '';
     setStartDate(iso);
     // Clear end date if it is now before the new start
     if (iso && endDate && new Date(endDate) < new Date(iso)) {
@@ -190,7 +193,7 @@ export const useBingoDetails = () => {
   };
 
   const handleEndDateChange = (newDate: Date | null) => {
-    setEndDate(newDate ? newDate.toISOString() : '');
+    setEndDate(newDate && Number.isFinite(newDate.getTime()) ? newDate.toISOString() : '');
   };
 
   const clearBingo = () => {

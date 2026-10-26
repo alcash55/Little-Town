@@ -29,7 +29,8 @@ export const StatTile = ({ icon, label, value, sub }: StatTileProps) => (
         sx={{
           fontFamily: "'DM Sans', sans-serif",
           fontVariantNumeric: 'tabular-nums',
-          fontSize: 30,
+          fontSize: typeof value === 'number' ? 30 : 18,
+          overflowWrap: 'anywhere',
         }}
       >
         {value}

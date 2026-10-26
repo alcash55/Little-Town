@@ -75,3 +75,48 @@ describe('event setup flow', () => {
     expect(request.mock.calls.some(([, init]) => init?.method === 'PUT')).toBe(false);
   });
 });
+
+describe('event setup audit regressions', () => {
+  it('submits only the displayed teams after reducing the team count', async () => {
+    await open();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue →' }));
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: /Number of teams/ }));
+    fireEvent.click(await screen.findByRole('option', { name: '3 teams' }));
+    fireEvent.change(screen.getByLabelText(/Team 3/), { target: { value: 'Hidden team' } });
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: /Number of teams/ }));
+    fireEvent.click(await screen.findByRole('option', { name: '2 teams' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue →' }));
+    expect(screen.queryByText('North, South, Hidden team')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Modify Bingo' }));
+    await waitFor(() =>
+      expect(request.mock.calls.some(([, init]) => init?.method === 'PUT')).toBe(true),
+    );
+    const update = request.mock.calls.find(([, init]) => init?.method === 'PUT');
+    expect(JSON.parse(String(update?.[1]?.body)).teams).toEqual(['North', 'South']);
+  });
+  it('rejects duplicate team names before review, including case and whitespace differences', async () => {
+    await open();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue →' }));
+    fireEvent.change(screen.getByLabelText(/Team 2/), { target: { value: ' north ' } });
+    fireEvent.click(screen.getByRole('tab', { name: /Review & save/ }));
+    expect(screen.getByText('Each team needs a different name.')).toBeTruthy();
+    expect(request.mock.calls.some(([, init]) => init?.method === 'PUT')).toBe(false);
+  });
+});
+
+describe('board format labels', () => {
+  it('describes the existing 35-tile format accurately and preserves its saved value', async () => {
+    await open();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue →' }));
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Board size' }));
+    fireEvent.click(await screen.findByRole('option', { name: '35 tiles' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue →' }));
+    expect(screen.getByText('35 tiles')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Modify Bingo' }));
+    await waitFor(() =>
+      expect(request.mock.calls.some(([, init]) => init?.method === 'PUT')).toBe(true),
+    );
+    const update = request.mock.calls.find(([, init]) => init?.method === 'PUT');
+    expect(JSON.parse(String(update?.[1]?.body)).boardSize).toBe(35);
+  });
+});

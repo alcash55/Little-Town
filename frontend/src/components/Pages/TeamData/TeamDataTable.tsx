@@ -45,7 +45,7 @@ const CornerCell = () => (
         fontWeight: 700,
         textTransform: 'uppercase',
         letterSpacing: '0.06em',
-        fontSize: 11,
+        fontSize: 12,
       }}
     >
       Tile
@@ -82,7 +82,7 @@ const PlayerHeaderCell = ({ player }: { player: PlayerRow }) => (
           {player.rsn}
         </Typography>
       </Stack>
-      <Typography variant="caption" sx={{ color: appColors.mutedText, fontSize: 10 }}>
+      <Typography variant="caption" sx={{ color: appColors.mutedText, fontSize: 12 }}>
         {player.snapshotTakenAt ? fmtDate(player.snapshotTakenAt) : 'No snapshot yet'}
       </Typography>
     </Stack>
@@ -125,15 +125,15 @@ const TileRowHeader = ({ tile }: { tile: TileInfo }) => {
         </Typography>
       </Tooltip>
       <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', mt: 0.25 }}>
-        <Typography variant="caption" sx={{ color: tileTypeColor(tile.type), fontSize: 10 }}>
+        <Typography variant="caption" sx={{ color: tileTypeColor(tile.type), fontSize: 12 }}>
           {tile.type}
         </Typography>
         {target && (
-          <Typography variant="caption" sx={{ color: appColors.mutedText, fontSize: 10 }}>
+          <Typography variant="caption" sx={{ color: appColors.mutedText, fontSize: 12 }}>
             · {target}
           </Typography>
         )}
-        <Typography variant="caption" sx={{ color: appColors.mutedText, fontSize: 10 }}>
+        <Typography variant="caption" sx={{ color: appColors.mutedText, fontSize: 12 }}>
           · {tile.points}pt
         </Typography>
       </Stack>
