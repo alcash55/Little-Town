@@ -104,7 +104,7 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
               size="large"
               onClick={toggleSidebar}
               sx={{
-                display: { xs: 'inline-flex', lg: 'none' },
+                display: 'inline-flex',
                 color: 'text.primary',
                 '&:hover': {
                   bgcolor: 'action.hover',
@@ -195,7 +195,7 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
                     fontSize: 13,
                     fontWeight: 700,
                     bgcolor: 'primary.main',
-                    color: 'text.primary',
+                    color: 'primary.contrastText',
                     cursor: 'pointer',
                   }}
                 >

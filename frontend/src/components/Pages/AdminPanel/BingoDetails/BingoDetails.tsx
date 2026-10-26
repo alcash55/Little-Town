@@ -71,6 +71,14 @@ export function BingoDetails() {
       setStepError('Give every team a name before reviewing.');
       return;
     }
+    if (
+      next > 1 &&
+      new Set(teamNames.slice(0, numberOfTeams).map((name) => name.trim().toLowerCase())).size !==
+        numberOfTeams
+    ) {
+      setStepError('Each team needs a different name.');
+      return;
+    }
     setStepError('');
     setStep(next);
   };
@@ -93,7 +101,7 @@ export function BingoDetails() {
       maxWidth="full"
       showExistingWarning={isBingo}
       submitted={submitted}
-      successMessage={isBingo ? 'Bingo details updated.' : 'Bingo details created.'}
+      successMessage="Bingo details saved."
       warningMessage="You are editing an existing event. Saving replaces its current details."
       permissionDenied={permissionDenied}
       error={submitError ?? loadError}
@@ -200,7 +208,7 @@ export function BingoDetails() {
                       onChange={(e) => setBoardSize(Number(e.target.value))}
                     >
                       <MenuItem value={16}>4 × 4</MenuItem>
-                      <MenuItem value={35}>5 × 5</MenuItem>
+                      <MenuItem value={35}>35 tiles</MenuItem>
                     </Select>
                   </FormControl>
                   <FormControl fullWidth required>
@@ -252,7 +260,7 @@ export function BingoDetails() {
                     ['Bingo name', bingoName],
                     ['Start', formatDate(startDate)],
                     ['End', formatDate(endDate)],
-                    ['Board size', boardSize === 16 ? '4 × 4' : '5 × 5'],
+                    ['Board size', boardSize === 16 ? '4 × 4' : '35 tiles'],
                     ['Number of teams', String(numberOfTeams)],
                     ['Team names', teamNames.slice(0, numberOfTeams).join(', ')],
                   ].map(([label, value]) => (

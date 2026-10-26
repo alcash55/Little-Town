@@ -1,12 +1,14 @@
 import { Box, Button, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { useLocation, Outlet, NavLink } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
+import { useLoginModal } from '../LoginModal/useLoginModal';
 import { useSidebar } from './InternalComponent/SideBar/useSidebar';
 import { Bar, SideBar } from './InternalComponent';
 import { ImpersonationBannerHost } from './InternalComponent/Impersonation';
 
 export const AppShell = () => {
   const { loading, sidebar } = useSidebar();
+  const { user } = useLoginModal();
   const { pathname } = useLocation();
   const theme = useTheme();
   const mobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -93,7 +95,7 @@ export const AppShell = () => {
             bgcolor: 'background.default',
           }}
         >
-          <Outlet />
+          <Outlet key={user?.id ?? 'guest'} />
         </Box>
       </Box>
       <SideBar

@@ -18,7 +18,6 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
-import Grid from '@mui/material/Grid';
 import { useBoardBuilder, Tile } from './useBoardBuilder';
 import Close from '@mui/icons-material/Close';
 import Edit from '@mui/icons-material/Edit';
@@ -60,21 +59,15 @@ const SortableTileCard = ({
   };
 
   return (
-    <Grid
+    <Box
       ref={setNodeRef}
       style={style}
       sx={{
-        width: '220px',
-        height: '200px',
+        width: '100%',
+        minWidth: 0,
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-      }}
-      size={{
-        xs: 12,
-        sm: 6,
-        md: 4,
-        lg: 3,
       }}
     >
       <Card
@@ -96,9 +89,10 @@ const SortableTileCard = ({
           avatar={
             <IconButton
               size="small"
+              aria-label={`Move ${tile.task} tile`}
               {...listeners}
               {...attributes}
-              sx={{ cursor: 'grab', color: 'black', touchAction: 'none' }}
+              sx={{ cursor: 'grab', color: 'text.secondary', touchAction: 'none' }}
             >
               <DragIndicator />
             </IconButton>
@@ -106,14 +100,20 @@ const SortableTileCard = ({
           action={
             <Stack direction="row">
               <IconButton aria-label="edit tile" onClick={onEdit}>
-                <Edit fontSize="small" sx={{ color: 'black' }} />
+                <Edit fontSize="small" sx={{ color: 'text.secondary' }} />
               </IconButton>
               <IconButton aria-label="remove tile" onClick={onRemove}>
-                <Close sx={{ color: 'black' }} />
+                <Close sx={{ color: 'text.secondary' }} />
               </IconButton>
             </Stack>
           }
-          slotProps={{ title: { variant: 'h6', fontSize: 16, noWrap: true } }}
+          slotProps={{ title: { variant: 'h6', fontSize: 16, sx: { overflowWrap: 'anywhere' } } }}
+          sx={{
+            alignItems: 'flex-start',
+            '& .MuiCardHeader-content': { minWidth: 0 },
+            '& .MuiCardHeader-avatar': { mr: 1 },
+            '& .MuiCardHeader-action': { flexShrink: 0 },
+          }}
         />
         <CardContent>
           <Stack>
@@ -130,7 +130,7 @@ const SortableTileCard = ({
           </Stack>
         </CardContent>
       </Card>
-    </Grid>
+    </Box>
   );
 };
 
@@ -361,7 +361,15 @@ const BoardBuilder = () => {
             onDragEnd={handleDragEnd}
           >
             <SortableContext items={board.map((_, i) => i)} strategy={rectSortingStrategy}>
-              <Grid container spacing={2} sx={{ width: '100%', p: 0 }}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))',
+                  gap: 2,
+                  width: '100%',
+                  p: 0,
+                }}
+              >
                 {board.map((tile, idx) => (
                   <SortableTileCard
                     key={idx}
@@ -371,7 +379,7 @@ const BoardBuilder = () => {
                     onEdit={() => startEditingTile(idx)}
                   />
                 ))}
-              </Grid>
+              </Box>
             </SortableContext>
           </DndContext>
         </Box>

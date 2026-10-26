@@ -78,11 +78,11 @@ export function Home() {
           {clan.showGangIcons && (
             <Stack
               direction="row"
-              spacing={2}
+              spacing={1.5}
               useFlexGap
               sx={{ flexWrap: 'wrap', mt: 4, alignItems: 'center' }}
             >
-              {gangIcons.slice(0, 5).map((icon) => (
+              {gangIcons.map((icon) => (
                 <Box
                   component="img"
                   key={icon.name}

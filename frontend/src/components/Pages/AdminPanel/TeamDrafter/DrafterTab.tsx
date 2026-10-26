@@ -23,7 +23,7 @@ import Grid from '@mui/material/Grid';
 import { DraftItems, BingoTeam } from './useTeamDrafter';
 import { DroppableContainer } from './DroppableContainer';
 import { SortableItem } from './SortableItem';
-import { outlinedButtonSx, textPrimary } from './teamDrafterStyles';
+import { outlinedButtonSx } from './teamDrafterStyles';
 import { appColors } from '../../../../layout/Theme/appColors';
 
 export type DrafterTabProps = {
@@ -63,6 +63,7 @@ export function DrafterTab({
   bingoError,
   unclaimedRsnSet,
 }: DrafterTabProps) {
+  const dragStartItems = useRef<DraftItems | null>(null);
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const lastOverId = useRef<UniqueIdentifier | null>(null);
   const recentlyMovedToNewContainer = useRef(false);
@@ -105,6 +106,9 @@ export function DrafterTab({
 
   const handleDragStart = ({ active }: DragStartEvent) => {
     if (active.id in draftItems) return;
+    dragStartItems.current = Object.fromEntries(
+      Object.entries(draftItems).map(([id, items]) => [id, [...items]]),
+    );
     setActiveId(active.id);
   };
 
@@ -131,6 +135,7 @@ export function DrafterTab({
   };
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    dragStartItems.current = null;
     setActiveId(null);
     if (!over || active.id in draftItems) return;
 
@@ -196,7 +201,11 @@ export function DrafterTab({
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
-        onDragCancel={() => setActiveId(null)}
+        onDragCancel={() => {
+          if (dragStartItems.current) setDraftItems(dragStartItems.current);
+          dragStartItems.current = null;
+          setActiveId(null);
+        }}
       >
         <Box
           sx={{
@@ -248,7 +257,11 @@ export function DrafterTab({
           {activeId ? (
             <Chip
               label={String(activeId)}
-              sx={{ backgroundColor: appColors.accent, color: textPrimary, cursor: 'grabbing' }}
+              sx={{
+                backgroundColor: appColors.accent,
+                color: appColors.onAccent,
+                cursor: 'grabbing',
+              }}
             />
           ) : null}
         </DragOverlay>
