@@ -23,7 +23,7 @@ export function StatusLegend() {
         return (
           <Stack key={state} direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
             <Icon aria-hidden sx={{ fontSize: 14, color: meta.color }} />
-            <Typography variant="caption" sx={{ color: appColors.mutedText, fontSize: 11 }}>
+            <Typography variant="caption" sx={{ color: appColors.mutedText, fontSize: 12 }}>
               {label}
             </Typography>
           </Stack>

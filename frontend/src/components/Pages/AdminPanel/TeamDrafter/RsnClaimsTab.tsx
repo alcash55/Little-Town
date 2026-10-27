@@ -1,3 +1,4 @@
+import { appColors } from '../../../../layout/Theme/appColors';
 import { Alert, Box, Card, CardContent, Chip, CircularProgress, Typography } from '@mui/material';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { useTeamDrafter } from './useTeamDrafter';
@@ -57,7 +58,7 @@ export function RsnClaimsTab(props: ReturnType<typeof useTeamDrafter>) {
 
           {loadingUnclaimed ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-              <CircularProgress size={28} sx={{ color: '#2A9D8F' }} />
+              <CircularProgress size={28} sx={{ color: appColors.accent }} />
             </Box>
           ) : unclaimedPlayers.length === 0 ? (
             <Typography variant="body1" sx={{ color: textSecondary }}>
@@ -107,7 +108,7 @@ export function RsnClaimsTab(props: ReturnType<typeof useTeamDrafter>) {
 
           {loadingRsnClaims ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-              <CircularProgress size={28} sx={{ color: '#2A9D8F' }} />
+              <CircularProgress size={28} sx={{ color: appColors.accent }} />
             </Box>
           ) : rsnClaims.length === 0 ? (
             <Typography variant="body1" sx={{ color: textSecondary }}>

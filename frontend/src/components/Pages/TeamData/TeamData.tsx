@@ -105,6 +105,7 @@ const TeamData = () => {
               '& .MuiInputBase-input::placeholder': { color: appColors.mutedText, opacity: 1 },
             }}
             slotProps={{
+              htmlInput: { 'aria-label': 'Search players' },
               input: {
                 startAdornment: (
                   <InputAdornment position="start">
@@ -117,11 +118,12 @@ const TeamData = () => {
           <Tooltip title="Refresh team data">
             <span>
               <IconButton
+                aria-label="Refresh team data"
                 onClick={refresh}
                 disabled={loading}
                 sx={{
                   color: appColors.accent,
-                  border: `1px solid rgba(42,157,143,0.4)`,
+                  border: `1px solid ${appColors.cardBorder}`,
                   borderRadius: 2,
                 }}
               >

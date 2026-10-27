@@ -1,3 +1,4 @@
+import { alpha } from '@mui/material/styles';
 import { Box, Button, Typography } from '@mui/material';
 import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import { appColors } from '../../../layout/Theme';
@@ -56,7 +57,7 @@ export function UnlinkedAccountCallout() {
             mt: 0.5,
             color: appColors.accent,
             borderColor: appColors.accent,
-            '&:hover': { borderColor: appColors.accent, bgcolor: 'rgba(42,157,143,0.08)' },
+            '&:hover': { borderColor: appColors.accent, bgcolor: alpha(appColors.accent, 0.08) },
           }}
         >
           Confirm your RSN

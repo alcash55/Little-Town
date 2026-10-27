@@ -1,3 +1,4 @@
+import { alpha } from '@mui/material/styles';
 import { useState } from 'react';
 import { Alert, Box, Button, Divider, Stack, Typography } from '@mui/material';
 import { Link } from 'react-router-dom';
@@ -79,11 +80,11 @@ export function BingoLifecycle({ source, onChanged }: BingoLifecycleProps) {
         <>
           <Typography
             variant="h2"
-            sx={{ fontSize: 20, color: appColors.textPrimary, textAlign: 'center' }}
+            sx={{ fontSize: 20, color: appColors.textPrimary, textAlign: 'left' }}
           >
             Bingo Lifecycle
           </Typography>
-          <Typography variant="body2" sx={{ color: appColors.textSecondary, textAlign: 'center' }}>
+          <Typography variant="body2" sx={{ color: appColors.textSecondary, textAlign: 'left' }}>
             Actions below apply to &quot;{lc.bingo.name}&quot; ({lc.bingo.status ?? 'unknown'}).
           </Typography>
 
@@ -106,7 +107,10 @@ export function BingoLifecycle({ source, onChanged }: BingoLifecycleProps) {
                 flex: 1,
                 color: appColors.accent,
                 borderColor: appColors.accent,
-                '&:hover': { borderColor: appColors.accent, bgcolor: 'rgba(42,157,143,0.08)' },
+                '&:hover': {
+                  borderColor: appColors.accent,
+                  bgcolor: alpha(appColors.accent, 0.08),
+                },
               }}
             >
               Clone Board Into New Draft

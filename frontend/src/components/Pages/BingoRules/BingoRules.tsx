@@ -1,259 +1,241 @@
-import { Link, List, ListItem, ListItemText, Box, Stack, Typography } from '@mui/material';
+import { useState } from 'react';
+import {
+  Box,
+  Button,
+  ButtonBase,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Link,
+  Stack,
+  Typography,
+} from '@mui/material';
 import daRules from '../../../assets/Images/daRules.png';
-import blastfurnace from '../../../assets/Images/blastfurnace.png';
-import clanEventsSettings from '../../../assets/Images/clanEventsSettings.png';
-import untradeableLootNotifications from '../../../assets/Images/untradeableLootNotifications.png';
-import lootDropNotifications from '../../../assets/Images/lootDropNotifications.png';
+import blastMine from '../../../assets/Images/blastfurnace.png';
+import clanEvents from '../../../assets/Images/clanEventsSettings.png';
+import untradeableLoot from '../../../assets/Images/untradeableLootNotifications.png';
+import lootDrops from '../../../assets/Images/lootDropNotifications.png';
+import bankBlock from '../../../assets/Images/screenshotsBlock.png';
+import bankAgility from '../../../assets/Images/screenshotsAgility.png';
 import PageLayout from '../../../layout/PageLayout/PageLayout';
 
-const BingoRules = () => {
+const sections = [
+  ['objective', 'Objective'],
+  ['setup', 'RuneLite setup'],
+  ['screenshots', 'Screenshots & fairness'],
+  ['ties', 'Tie breakers'],
+];
+export function BingoRules() {
+  const [image, setImage] = useState<{ src: string; alt: string } | null>(null);
+  const screenshot = (src: string, alt: string) => (
+    <Box
+      component="figure"
+      sx={{
+        m: 0,
+        my: 3,
+        p: 2,
+        border: 1,
+        borderColor: 'divider',
+        borderRadius: 1,
+        bgcolor: 'background.paper',
+      }}
+    >
+      <ButtonBase
+        onClick={() => setImage({ src, alt })}
+        aria-label={`Enlarge ${alt}`}
+        sx={{ display: 'block', maxWidth: '100%', textAlign: 'left', cursor: 'zoom-in' }}
+      >
+        <Box
+          component="img"
+          src={src}
+          alt={alt}
+          sx={{ display: 'block', maxWidth: '100%', height: 'auto' }}
+        />
+      </ButtonBase>
+      <Typography
+        component="figcaption"
+        variant="caption"
+        color="text.secondary"
+        sx={{ display: 'block', mt: 1.5 }}
+      >
+        {alt} · Click to enlarge
+      </Typography>
+    </Box>
+  );
   return (
-    <PageLayout maxWidth="full" contentSx={{ alignItems: 'stretch' }}>
+    <PageLayout maxWidth="full">
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{ justifyContent: 'space-between', alignItems: 'center' }}
+      >
+        <Box>
+          <Typography variant="overline" color="text.secondary">
+            Competition handbook
+          </Typography>
+          <Typography variant="h1" sx={{ my: 1 }}>
+            Ready before the first drop.
+          </Typography>
+          <Typography color="text.secondary">
+            The clan rules and setup screenshots, kept together.
+          </Typography>
+        </Box>
+        <Box
+          component="img"
+          src={daRules}
+          alt="Original bingo rules artwork"
+          sx={{ width: { xs: 60, sm: 90 }, height: 'auto' }}
+        />
+      </Stack>
       <Box
         sx={{
-          width: '100%',
-          position: 'sticky',
-          // `top: 0` sticks flush with the *padding* edge of PageLayout's
-          // scrollport, which has its own p:{xs:3,sm:5} — that padding is
-          // still scrollable space above the stuck element, so on scroll the
-          // heading text underneath briefly shows through the gap before
-          // this bar catches up. A negative `top` (matching that padding)
-          // lets it stick flush with the scrollport's actual top edge
-          // instead, right under the app bar, closing the gap.
-          //
-          // Note: negative `margin` can't do this here — this Box is a
-          // direct child of an MUI Stack, whose own
-          // `& > :not(style):not(style) { margin: 0 }` child reset (two
-          // chained `:not()` pseudo-classes) out-specifies a plain
-          // single-class sx rule and always wins, silently zeroing any
-          // margin set here (that's *also* true of the pre-existing `mx`
-          // below — it's a no-op, left as-is since it doesn't cause a
-          // visible bug given the image is centered regardless).
-          top: { xs: -24, sm: -40 },
-          zIndex: 1,
-          display: 'flex',
-          justifyContent: 'center',
-          bgcolor: '#424242',
-          pt: '.5rem',
-          mx: { xs: -3, sm: -5 },
-          px: { xs: 3, sm: 5 },
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: '190px minmax(0, 1fr)' },
+          gap: 4,
+          alignItems: 'start',
         }}
       >
-        <img src={daRules} alt="bingo rules" width="10%" height="auto" />
+        <Box
+          component="nav"
+          aria-label="Rule sections"
+          sx={{
+            position: { md: 'sticky' },
+            top: 24,
+            display: 'flex',
+            flexDirection: { xs: 'row', md: 'column' },
+            overflowX: 'auto',
+            gap: 1,
+          }}
+        >
+          {sections.map(([id, label], i) => (
+            <Link
+              href={`#rule-${id}`}
+              key={id}
+              underline="hover"
+              sx={{ py: 1, color: 'text.secondary', whiteSpace: 'nowrap', fontSize: 12 }}
+            >
+              {String(i + 1).padStart(2, '0')} / {label}
+            </Link>
+          ))}
+        </Box>
+        <Box
+          component="article"
+          sx={{
+            maxWidth: 850,
+            minWidth: 0,
+            '& section': {
+              mb: 5,
+              pb: 4,
+              borderBottom: 1,
+              borderColor: 'divider',
+              scrollMarginTop: 24,
+            },
+            '& h2': { mb: 2 },
+            '& ul': { color: 'text.secondary', lineHeight: 1.9 },
+            '& p': { color: 'text.secondary', mb: 2 },
+          }}
+        >
+          <section id="rule-objective">
+            <Typography variant="h2">Complete the board together.</Typography>
+            <Typography>
+              The aim is for your team to complete as much of the board as possible within the
+              allotted time.
+            </Typography>
+          </section>
+          <section id="rule-setup">
+            <Typography variant="h2">Set up RuneLite before the event.</Typography>
+            <Typography>
+              The event password will be shared at the start. Use this password in the{' '}
+              <Link
+                href="https://runelite.net/plugin-hub/show/elysiumevents-plugin"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Clan Events plugin in RuneLite
+              </Link>
+              .
+            </Typography>
+            {screenshot(clanEvents, 'Clan Events plugin settings')}
+            <Typography>
+              Make sure these settings are checked to ensure drops show up in the chat for
+              screenshots.
+            </Typography>
+            {screenshot(untradeableLoot, 'Untradeable loot notifications setting')}
+            {screenshot(lootDrops, 'Loot drop notifications setting')}
+          </section>
+          <section id="rule-screenshots">
+            <Typography variant="h2">Start with a clean slate.</Typography>
+            <Typography>Stacking methods are not allowed, including but not limited to:</Typography>
+            <ul>
+              {[
+                'Dark Essence Blocks',
+                'Blast Mine',
+                'Clue Caskets',
+                'Brimhaven Agility Arena tickets',
+                'Lockboxes',
+                'Keys',
+              ].map((x) => (
+                <li key={x}>{x}</li>
+              ))}
+            </ul>
+            <Typography>
+              You must provide screenshots of your open bank, searching for the words "block" and
+              "agility". If you have any of these items in your bank, you must end the event with
+              the same quantity.
+            </Typography>
+            <Box
+              sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}
+            >
+              {screenshot(bankBlock, 'Open bank searched for block')}
+              {screenshot(bankAgility, 'Open bank searched for agility')}
+            </Box>
+            <Typography>
+              Provide a screenshot of yourself at the Blast Mine to ensure no stacked ores for large
+              XP drops.
+            </Typography>
+            {screenshot(blastMine, 'Blast Mine screenshot example')}
+            <Link href="https://imgur.com/7PiSDtp" target="_blank" rel="noreferrer">
+              Open the original Blast Mine example ↗
+            </Link>
+            <Typography sx={{ mt: 3 }}>
+              You cannot stack KC or XP for a boss or skill before the event begins. This means no
+              accumulating XP or KC for a 6-hour log and then logging out after the bingo starts.
+            </Typography>
+            <Typography>
+              Please log out before the event starts to ensure fairness. If you don't, your XP and
+              KC will be manually removed.
+            </Typography>
+          </section>
+          <section id="rule-ties">
+            <Typography variant="h2">Know how a tie is settled.</Typography>
+            <Typography>
+              In the event of a tie, the admins will use the predetermined tie breaker communicated
+              at the start of the bingo.
+            </Typography>
+          </section>
+        </Box>
       </Box>
-      <Stack
-        spacing={4}
-        sx={{
-          width: '100%',
-        }}
-      >
-        <Stack spacing={2}>
-          <Typography
-            variant="h1"
-            sx={{
-              fontSize: 48,
-            }}
-          >
-            Objective
-          </Typography>
-          <List sx={{ listStyleType: 'disc', pl: 4 }}>
-            <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-              <ListItemText
-                primary={
-                  'The aim is for your team to complete as much of the board as possible within the allotted time.'
-                }
-              />
-            </ListItem>
-          </List>
-        </Stack>
-        <Stack spacing={2}>
-          <Typography
-            variant="h1"
-            sx={{
-              fontSize: 48,
-            }}
-          >
-            Setup
-          </Typography>
-          <List sx={{ listStyleType: 'disc', pl: 4 }}>
-            <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-              <ListItemText
-                primary={
-                  <>
-                    The event password will be shared at the start, use this password in the{' '}
-                    <Link
-                      href="https://runelite.net/plugin-hub/show/elysiumevents-plugin"
-                      underline="hover"
-                      target="_blank"
-                      rel="noreferrer"
-                      color="green"
-                    >
-                      Clan Events plugin in RuneLite
-                    </Link>
-                    . For example:{' '}
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        py: 2,
-                      }}
-                    >
-                      <img
-                        src={clanEventsSettings}
-                        alt="clan events settings"
-                        width="20%"
-                        height="auto"
-                      />
-                    </Box>
-                  </>
-                }
-              />
-            </ListItem>
-            <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-              <ListItemText
-                primary={
-                  <>
-                    Make sure these settings are checked to ensure drops show up in the chat for
-                    screenshots:{' '}
-                    <Stack
-                      spacing={2}
-                      sx={{
-                        justifyContent: 'center',
-                        width: '100%',
-                        alignItems: 'center',
-                        py: 2,
-                      }}
-                    >
-                      <img
-                        src={untradeableLootNotifications}
-                        alt="untradable loot notifications setting"
-                        width="50%"
-                        height="10%"
-                      />
-                      <img
-                        src={lootDropNotifications}
-                        alt="loot drop notifications setting"
-                        width="50%"
-                        height="10%"
-                      />
-                    </Stack>
-                  </>
-                }
-              />
-            </ListItem>
-          </List>
-        </Stack>
-
-        <Stack spacing={1}>
-          <Typography
-            variant="h1"
-            sx={{
-              fontSize: 48,
-            }}
-          >
-            Screenshots
-          </Typography>
-          <List sx={{ listStyleType: 'disc', pl: 4 }}>
-            <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-              <ListItemText
-                primary={
-                  <>
-                    Stacking methods are not allowed, including but not limited to:
-                    <List sx={{ listStyleType: 'circle', pl: 4 }}>
-                      <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-                        <ListItemText primary="Dark Essence Blocks" />
-                      </ListItem>
-                      <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-                        <ListItemText primary="Blast Mine" />
-                      </ListItem>
-                      <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-                        <ListItemText primary="Clue Caskets" />
-                      </ListItem>
-                      <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-                        <ListItemText primary="Brimhaven Agility Arena tickets" />
-                      </ListItem>
-                      <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-                        <ListItemText primary="Lockboxes" />
-                      </ListItem>
-                      <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-                        <ListItemText primary="Keys" />
-                      </ListItem>
-                    </List>
-                  </>
-                }
-              />
-            </ListItem>
-            <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-              <ListItemText
-                primary={
-                  <>
-                    You must provide screenshots of your open bank, searching for the words "block"
-                    and "agility." If you have any of these items in your bank, you must end the
-                    event with the same quantity. Example:
-                  </>
-                }
-              />
-            </ListItem>
-            <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-              <ListItemText
-                primary={
-                  <>
-                    Provide a screenshot of yourself at the Blast Mine to ensure no stacked ores for
-                    large XP drops. Example:{' '}
-                    <Box
-                      sx={{
-                        width: '100%',
-                        height: 'auto',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        py: 2,
-                      }}
-                    >
-                      <img
-                        src={blastfurnace}
-                        alt="Blast Mine"
-                        width="auto"
-                        height="20%"
-                        style={{ cursor: 'pointer', minWidth: '20%' }}
-                        onClick={() => window.open('https://imgur.com/7PiSDtp', '_blank')}
-                      />
-                    </Box>
-                  </>
-                }
-              />
-            </ListItem>
-            <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-              <ListItemText
-                primary={
-                  ' You CANNOT stack KC or XP for a Boss or Skill before the event begins. This means no accumulating XP or KC for a 6-hour log and then logging out after the bingo starts.'
-                }
-              />
-            </ListItem>
-            <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-              <ListItemText primary=" Please log out before the event starts to ensure fairness. If you don't, your XP and KC will be manually removed." />
-            </ListItem>
-          </List>
-        </Stack>
-        <Stack spacing={1}>
-          <Typography
-            variant="h1"
-            sx={{
-              fontSize: 48,
-            }}
-          >
-            Tie Breakers
-          </Typography>
-          <List sx={{ listStyleType: 'disc', pl: 4 }}>
-            <ListItem sx={{ p: 0, m: 0, display: 'list-item' }}>
-              <ListItemText primary="In the result of a tie their will be a predetermined tie breaker that the admins have decided and commuinicated at the start of the bingo." />
-            </ListItem>
-          </List>
-        </Stack>
-      </Stack>
+      <Dialog open={image !== null} onClose={() => setImage(null)} maxWidth="lg" fullWidth>
+        <DialogTitle
+          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}
+        >
+          {image?.alt}
+          <Button onClick={() => setImage(null)} aria-label="Close screenshot">
+            Close
+          </Button>
+        </DialogTitle>
+        <DialogContent>
+          {image && (
+            <Box
+              component="img"
+              src={image.src}
+              alt={image.alt}
+              sx={{ display: 'block', maxWidth: '100%', height: 'auto', mx: 'auto' }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </PageLayout>
   );
-};
-
+}
 export default BingoRules;

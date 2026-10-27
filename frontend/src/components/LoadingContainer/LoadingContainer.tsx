@@ -21,9 +21,9 @@ export const LoadingContainer = ({ width, height, loading, children, ...rest }: 
         aria-busy="true"
         sx={{
           display: 'flex',
-          justifyContent: 'center',
+          justifyContent: 'flex-start',
           alignItems: 'center',
-          height: '100vh',
+          minHeight: 160,
           overflow: 'hidden',
           p: 0,
           bgcolor: darkTheme.palette.secondary.main,
@@ -35,7 +35,7 @@ export const LoadingContainer = ({ width, height, loading, children, ...rest }: 
             alt="Little Town loading animation"
             height={320}
             width={189}
-            style={{ borderRadius: '50%', objectFit: 'cover', width, height }}
+            style={{ objectFit: 'contain', maxWidth: '100%', width, height }}
           />
         ) : (
           <Stack spacing={2} sx={{ alignItems: 'center', maxWidth: '100%', p: 2 }}>

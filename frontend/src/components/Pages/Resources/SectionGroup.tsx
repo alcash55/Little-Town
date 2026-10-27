@@ -15,7 +15,7 @@ const SectionGroup = ({ section }: SectionGroupProps) => {
         id={`section-${section.kind}-${section.title}`}
         variant="h6"
         sx={{
-          fontFamily: "'Inter', sans-serif",
+          fontFamily: "'DM Sans', sans-serif",
           fontSize: 16,
           fontWeight: 700,
           color: textPrimary,

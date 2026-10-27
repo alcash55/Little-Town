@@ -7,6 +7,7 @@ import {
   useSensors,
   MouseSensor,
   TouchSensor,
+  KeyboardSensor,
   pointerWithin,
   rectIntersection,
   getFirstCollision,
@@ -16,13 +17,13 @@ import {
   DragEndEvent,
   UniqueIdentifier,
 } from '@dnd-kit/core';
-import { arrayMove } from '@dnd-kit/sortable';
+import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { Alert, Box, Button, Chip, CircularProgress } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { DraftItems, BingoTeam } from './useTeamDrafter';
 import { DroppableContainer } from './DroppableContainer';
 import { SortableItem } from './SortableItem';
-import { outlinedButtonSx, textPrimary } from './teamDrafterStyles';
+import { outlinedButtonSx } from './teamDrafterStyles';
 import { appColors } from '../../../../layout/Theme/appColors';
 
 export type DrafterTabProps = {
@@ -62,6 +63,7 @@ export function DrafterTab({
   bingoError,
   unclaimedRsnSet,
 }: DrafterTabProps) {
+  const dragStartItems = useRef<DraftItems | null>(null);
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const lastOverId = useRef<UniqueIdentifier | null>(null);
   const recentlyMovedToNewContainer = useRef(false);
@@ -69,6 +71,7 @@ export function DrafterTab({
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
   const findContainer = (id: UniqueIdentifier): string | undefined => {
@@ -103,6 +106,9 @@ export function DrafterTab({
 
   const handleDragStart = ({ active }: DragStartEvent) => {
     if (active.id in draftItems) return;
+    dragStartItems.current = Object.fromEntries(
+      Object.entries(draftItems).map(([id, items]) => [id, [...items]]),
+    );
     setActiveId(active.id);
   };
 
@@ -129,6 +135,7 @@ export function DrafterTab({
   };
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    dragStartItems.current = null;
     setActiveId(null);
     if (!over || active.id in draftItems) return;
 
@@ -181,6 +188,10 @@ export function DrafterTab({
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}>
+      <Alert severity="info">
+        Drag players from the pool into a team. Move players between teams or reorder them.
+        Keyboard: Space to pick up, arrow keys to move, Space to drop.
+      </Alert>
       {submitError && <Alert severity="error">{submitError}</Alert>}
       {submitSuccess && <Alert severity="success">Teams saved successfully!</Alert>}
       <DndContext
@@ -190,7 +201,11 @@ export function DrafterTab({
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
-        onDragCancel={() => setActiveId(null)}
+        onDragCancel={() => {
+          if (dragStartItems.current) setDraftItems(dragStartItems.current);
+          dragStartItems.current = null;
+          setActiveId(null);
+        }}
       >
         <Box
           sx={{
@@ -242,12 +257,16 @@ export function DrafterTab({
           {activeId ? (
             <Chip
               label={String(activeId)}
-              sx={{ backgroundColor: appColors.accent, color: textPrimary, cursor: 'grabbing' }}
+              sx={{
+                backgroundColor: appColors.accent,
+                color: appColors.onAccent,
+                cursor: 'grabbing',
+              }}
             />
           ) : null}
         </DragOverlay>
       </DndContext>
-      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, pt: 1 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: 2, pt: 2, flexWrap: 'wrap' }}>
         {showSubmitButton && (
           <Button
             variant="outlined"
@@ -255,7 +274,7 @@ export function DrafterTab({
             disabled={submitTeamsDisabled}
             startIcon={submitting ? <CircularProgress size={16} /> : undefined}
             onClick={submitDraft}
-            sx={{ width: '25%', ...outlinedButtonSx }}
+            sx={{ minWidth: 140, width: { xs: 'auto', sm: 180 }, ...outlinedButtonSx }}
           >
             {submitting ? 'Saving…' : submitTeamsLabel}
           </Button>
@@ -265,7 +284,7 @@ export function DrafterTab({
             variant="outlined"
             color="error"
             onClick={resetDraft}
-            sx={{ width: '25%', ...outlinedButtonSx }}
+            sx={{ minWidth: 140, width: { xs: 'auto', sm: 180 }, ...outlinedButtonSx }}
           >
             Reset Teams
           </Button>
