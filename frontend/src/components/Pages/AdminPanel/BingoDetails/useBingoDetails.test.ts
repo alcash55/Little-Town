@@ -178,6 +178,62 @@ describe('useBingoDetails — error-message formatting on submit (bug-report inv
   });
 });
 
+describe('event date entry', () => {
+  it('clears incomplete dates without throwing when the date picker returns Invalid Date', async () => {
+    mockedFetchWithAuth.mockResolvedValue(jsonResponse(404, { error: 'Not found' }));
+    const { result } = renderHook(() => useBingoDetails());
+    await waitFor(() => expect(mockedFetchWithAuth).toHaveBeenCalled());
+    act(() => result.current.handleStartDateChange(new Date('2026-12-01')));
+    expect(() =>
+      act(() => result.current.handleStartDateChange(new Date('invalid'))),
+    ).not.toThrow();
+    expect(result.current.startDate).toBe('');
+    expect(() => act(() => result.current.handleEndDateChange(new Date('invalid')))).not.toThrow();
+    expect(result.current.endDate).toBe('');
+  });
+});
+
+describe('creating an event', () => {
+  it('loads the saved identity so the next save updates the event instead of creating another draft', async () => {
+    let created = false;
+    const saved = {
+      id: 'new-event',
+      name: 'New event',
+      status: 'draft',
+      boardSize: 16,
+      numberOfTeams: 2,
+      teams: ['North', 'South'],
+      startDate: '2099-12-01T20:00:00.000Z',
+      endDate: '2099-12-15T20:00:00.000Z',
+      tasks: [],
+    };
+    mockedFetchWithAuth.mockImplementation(async (_url, init) => {
+      if (init?.method === 'POST') created = true;
+      return jsonResponse(200, { data: created ? saved : null });
+    });
+    const { result } = renderHook(() => useBingoDetails());
+    await waitFor(() => expect(mockedFetchWithAuth).toHaveBeenCalled());
+    act(() => {
+      result.current.setBingoName(saved.name);
+      result.current.handleStartDateChange(new Date(saved.startDate));
+      result.current.handleEndDateChange(new Date(saved.endDate));
+      result.current.setNumberOfTeams(2);
+      result.current.handleTeamNameChange(0, 'North');
+    });
+    act(() => result.current.handleTeamNameChange(1, 'South'));
+    await act(() => result.current.handleSubmit());
+    expect(result.current.bingoId).toBe('new-event');
+    expect(result.current.isBingo).toBe(true);
+    await act(() => result.current.handleSubmit());
+    expect(
+      mockedFetchWithAuth.mock.calls.filter(([, init]) => init?.method === 'POST'),
+    ).toHaveLength(1);
+    expect(
+      mockedFetchWithAuth.mock.calls.filter(([, init]) => init?.method === 'PUT'),
+    ).toHaveLength(1);
+  });
+});
+
 describe('event date handling', () => {
   beforeEach(() => {
     mockedFetchWithAuth.mockResolvedValue(jsonResponse(404, {}));
@@ -197,7 +253,7 @@ describe('event date handling', () => {
     expect(result.current.isFormValid).toBe(true);
     mockedFetchWithAuth.mockResolvedValueOnce(jsonResponse(200, {}));
     await act(() => result.current.handleSubmit());
-    expect(mockedFetchWithAuth).toHaveBeenLastCalledWith(
+    expect(mockedFetchWithAuth).toHaveBeenCalledWith(
       expect.stringContaining('/bingo/details'),
       expect.objectContaining({
         body: JSON.stringify({
@@ -243,7 +299,7 @@ describe('event date handling', () => {
     await waitFor(() => expect(result.current.isBingo).toBe(true));
     act(() => result.current.setBingoName('Renamed'));
     await act(() => result.current.handleSubmit());
-    expect(mockedFetchWithAuth).toHaveBeenLastCalledWith(
+    expect(mockedFetchWithAuth).toHaveBeenCalledWith(
       expect.stringContaining('/bingo/local-fixture'),
       expect.objectContaining({
         body: JSON.stringify({

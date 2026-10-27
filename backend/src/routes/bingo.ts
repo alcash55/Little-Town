@@ -5,6 +5,7 @@ import { ApiResponse } from "../types/index.js";
 import {
   getActiveBingo,
   getActiveBingoBoard,
+  getBingoBoardById,
   getLatestBingo,
 } from "../db/bingos.js";
 import { resolveMyBingoPlayer } from "../db/players.js";
@@ -129,10 +130,10 @@ router.get(
       ? (bingo.teamObjects ?? []).find((t) => t.id === myTeamId) ?? null
       : null;
 
-    // getActiveBingoBoard() always attaches each row's id (its Tile type
+    // getBingoBoardById() always attaches each row's id (its Tile type
     // marks `id` optional only because the same type also describes tile
     // literals passed INTO saveActiveBingoBoard(), which never have one).
-    const rawTiles = await getActiveBingoBoard();
+    const rawTiles = await getBingoBoardById(bingo.id);
     const tiles = rawTiles.map((tile) => ({
       id: tile.id!,
       task: tile.task,
@@ -232,8 +233,8 @@ router.get(
     const myPlayer = await resolveMyBingoPlayer(bingo.id, req.user!.id);
     const myTeamId = myPlayer?.team_id ?? null;
 
-    // Load ordered board tiles
-    const tiles = await getActiveBingoBoard();
+    // Keep tile filters on the same event as the caller and roster.
+    const tiles = await getBingoBoardById(bingo.id);
 
     // Build skill/activity filter sets
     const trackedSkills = new Set<string>();
@@ -409,8 +410,7 @@ router.get(
     // doc comment on why vocab/matching needs the full player set), then
     // this team's slice is picked out; skipped entirely when the caller has
     // no team, matching every other team-scoped block on this route.
-    // getActiveBingoBoard() always attaches each row's id (same guarantee
-    // /board's handler above relies on).
+    // getBingoBoardById() always attaches each row's id.
     const engineTiles: EngineTile[] = tiles.map((t) => ({
       id: t.id!,
       task: t.task,

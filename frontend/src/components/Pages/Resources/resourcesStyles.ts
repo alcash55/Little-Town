@@ -1,3 +1,5 @@
+import { alpha } from '@mui/material/styles';
+import { appColors } from '../../../layout/Theme/appColors';
 import {
   textPrimary,
   textSecondary,
@@ -6,7 +8,7 @@ import {
 
 export { textPrimary, textSecondary, subtleBorder };
 
-export const accent = '#2A9D8F';
+export const accent = appColors.accent;
 export const mutedText = 'rgba(255,255,255,0.52)';
 
 export const railSx = {
@@ -20,13 +22,13 @@ export const categoryButtonSx = (selected: boolean) => ({
   textAlign: 'left' as const,
   textTransform: 'none' as const,
   color: selected ? accent : textPrimary,
-  bgcolor: selected ? 'rgba(42,157,143,0.14)' : 'transparent',
+  bgcolor: selected ? alpha(appColors.accent, 0.14) : 'transparent',
   borderRadius: 1,
   px: 1.25,
   py: 0.75,
   fontWeight: selected ? 600 : 400,
   '&:hover': {
-    bgcolor: selected ? 'rgba(42,157,143,0.2)' : 'rgba(255,255,255,0.06)',
+    bgcolor: selected ? alpha(appColors.accent, 0.2) : 'rgba(255,255,255,0.06)',
   },
 });
 
@@ -62,5 +64,5 @@ export const linkKindChipSx = {
   color: textPrimary,
   borderColor: subtleBorder,
   textTransform: 'none' as const,
-  '&:hover': { borderColor: accent, bgcolor: 'rgba(42,157,143,0.08)' },
+  '&:hover': { borderColor: accent, bgcolor: alpha(appColors.accent, 0.08) },
 };

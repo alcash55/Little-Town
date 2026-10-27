@@ -8,12 +8,15 @@ import {
   MenuItem,
   Toolbar,
   Typography,
+  Button,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import Login from '@mui/icons-material/Login';
 import Logout from '@mui/icons-material/Logout';
 
-import { useNavigate } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
+import { ClanIdentity } from '../../../ClanIdentity/ClanIdentity';
+import { useSidebar } from '../SideBar/useSidebar';
 import { lazy, Suspense, useState } from 'react';
 import { darkTheme } from '../../../../layout/Theme';
 import { useLoginModal } from '../../../../components/LoginModal/useLoginModal';
@@ -47,7 +50,9 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
     setOpenSidebar(!openSidebar);
   };
 
-  const navigate = useNavigate();
+  const { sidebar } = useSidebar();
+  const navItems = sidebar.filter((item) => !item.children && !item.href.startsWith('http'));
+  const organizer = sidebar.find((item) => item.children)?.children;
   const { openLogin, prefetchLoginModal, user, logout } = useLoginModal();
   const {
     target: impersonationTarget,
@@ -70,9 +75,22 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
   };
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static" sx={{ bgcolor: darkTheme.palette.secondary.main }}>
-        <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Box sx={{ flexShrink: 0 }}>
+      <AppBar
+        position="static"
+        elevation={0}
+        sx={{ bgcolor: 'background.default', borderBottom: 1, borderColor: 'divider' }}
+      >
+        <Toolbar
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 1.5,
+            minHeight: { xs: 68, sm: 76 },
+            px: { xs: 2, sm: 4 },
+          }}
+        >
           <Box
             sx={{
               display: 'flex',
@@ -86,37 +104,62 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
               size="large"
               onClick={toggleSidebar}
               sx={{
-                color: 'white',
+                display: 'inline-flex',
+                color: 'text.primary',
                 '&:hover': {
-                  bgcolor: '#163a36',
+                  bgcolor: 'action.hover',
                 },
               }}
             >
               <MenuIcon />
             </IconButton>
-            <Typography
-              onClick={() => navigate('/')}
-              component={'a'}
-              variant="h1"
-              tabIndex={0}
-              noWrap
+            <Button
+              component={Link}
+              to="/"
+              aria-label={`${clan.name} home`}
               sx={{
-                fontSize: 18,
-
-                '&:hover': {
-                  transform: 'scale(1.1)',
-                  animationName: 'hover',
-                },
-
-                minWidth: '100px',
-                height: '44px',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
+                color: 'text.primary',
+                minWidth: 0,
+                p: 0,
+                textAlign: 'left',
+                '&:hover': { bgcolor: 'transparent' },
               }}
             >
-              {clan.name}
-            </Typography>
+              <ClanIdentity />
+            </Button>
+          </Box>
+
+          <Box
+            component="nav"
+            aria-label="Main navigation"
+            sx={{ display: { xs: 'none', lg: 'flex' }, gap: 1, ml: 'auto', mr: 'auto' }}
+          >
+            {navItems.map((item) => (
+              <Button
+                key={item.href}
+                component={NavLink}
+                to={item.href}
+                end={item.href === '/'}
+                sx={{
+                  color: 'text.secondary',
+                  '&.active': {
+                    color: 'primary.main',
+                    boxShadow: `inset 0 -2px ${darkTheme.palette.primary.main}`,
+                  },
+                }}
+              >
+                {item.title}
+              </Button>
+            ))}
+            {organizer && (
+              <Button
+                component={NavLink}
+                to="/AdminPanel/BingoOverview"
+                sx={{ color: 'text.secondary', '&.active': { color: 'primary.main' } }}
+              >
+                Organizer
+              </Button>
+            )}
           </Box>
 
           {user ? (
@@ -143,7 +186,7 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
                 size="large"
                 aria-label="User menu"
                 onClick={handleMenuOpen}
-                sx={{ p: 0.5, '&:hover': { bgcolor: '#163a36' } }}
+                sx={{ p: 0.5, '&:hover': { bgcolor: 'action.hover' } }}
               >
                 <Avatar
                   sx={{
@@ -151,8 +194,8 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
                     height: 34,
                     fontSize: 13,
                     fontWeight: 700,
-                    bgcolor: '#2A9D8F',
-                    color: 'white',
+                    bgcolor: 'primary.main',
+                    color: 'primary.contrastText',
                     cursor: 'pointer',
                   }}
                 >
@@ -167,8 +210,8 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
                   paper: {
                     sx: {
                       bgcolor: darkTheme.palette.secondary.main,
-                      border: `1px solid ${darkTheme.palette.primary.main}`,
-                      color: 'white',
+                      border: `1px solid ${darkTheme.palette.divider}`,
+                      color: 'text.primary',
                     },
                   },
                 }}
@@ -189,9 +232,9 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
               onClick={openLogin}
               onMouseEnter={prefetchLoginModal}
               sx={{
-                color: 'white',
+                color: 'text.primary',
                 '&:hover': {
-                  bgcolor: '#163a36',
+                  bgcolor: 'action.hover',
                 },
               }}
             >

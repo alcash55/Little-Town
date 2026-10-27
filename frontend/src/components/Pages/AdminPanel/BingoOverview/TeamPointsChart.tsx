@@ -50,11 +50,11 @@ export const TeamPointsChart = ({ playerStats, teamStats }: TeamPointsChartProps
   return (
     <Box sx={{ width: '100%', overflowX: 'auto' }}>
       <BarChart
-        height={Math.max(120, rows.length * 44)}
+        height={Math.max(180, rows.length * 44 + 48)}
         layout="horizontal"
         hideLegend
-        yAxis={[{ scaleType: 'band', data: rows.map((r) => r.team) }]}
-        xAxis={[{ min: 0 }]}
+        yAxis={[{ scaleType: 'band', data: rows.map((r) => r.team), width: 150 }]}
+        xAxis={[{ min: 0, max: Math.max(1, ...rows.map((row) => row.points)), tickMinStep: 1 }]}
         series={[
           {
             data: rows.map((r) => r.points),
@@ -64,7 +64,7 @@ export const TeamPointsChart = ({ playerStats, teamStats }: TeamPointsChartProps
           },
         ]}
         grid={{ vertical: true }}
-        margin={{ left: 110 }}
+        margin={{ left: 8, right: 24, top: 12, bottom: 24 }}
         sx={{
           '& .MuiChartsAxis-tickLabel': { fill: textSecondary },
           '& .MuiChartsAxis-line': { stroke: appColors.subtleBorder },

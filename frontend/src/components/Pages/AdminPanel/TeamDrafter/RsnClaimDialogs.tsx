@@ -21,7 +21,7 @@ import { outlinedButtonSx, subtleBorder, textPrimary, textSecondary } from './te
 // pattern elsewhere in this folder.
 // -------------------------------------------------------
 
-const dialogPaperSx = { backgroundColor: darkTheme.palette.primary.main, color: textPrimary };
+const dialogPaperSx = { backgroundColor: darkTheme.palette.background.paper, color: textPrimary };
 
 export type ReleaseRsnClaimDialogProps = {
   claim: RsnClaimAdminRow;

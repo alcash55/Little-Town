@@ -1,3 +1,4 @@
+import { appColors } from '../../../../layout/Theme/appColors';
 import {
   Alert,
   Autocomplete,
@@ -161,7 +162,7 @@ export function PlayerManagementTab(props: ReturnType<typeof useTeamDrafter>) {
 
           {loadingPlayers ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-              <CircularProgress size={28} sx={{ color: '#2A9D8F' }} />
+              <CircularProgress size={28} sx={{ color: appColors.accent }} />
             </Box>
           ) : players.length === 0 ? (
             <Typography variant="body1" sx={{ color: textSecondary }}>

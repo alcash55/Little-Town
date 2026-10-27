@@ -30,7 +30,7 @@ export function TileStatusCell({ cell }: { cell: TileCellData }) {
         <Icon aria-hidden sx={{ fontSize: 16, color: meta.color, flexShrink: 0 }} />
         <Typography
           variant="caption"
-          sx={{ fontSize: 11, color: appColors.textSecondary, whiteSpace: 'nowrap' }}
+          sx={{ fontSize: 12, color: appColors.textSecondary, whiteSpace: 'nowrap' }}
         >
           {cell.label}
         </Typography>
