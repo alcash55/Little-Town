@@ -5,6 +5,7 @@ import { ApiResponse } from "../types/index.js";
 import {
   getActiveBingo,
   getActiveBingoBoard,
+  getBingoBoardById,
   getLatestBingo,
 } from "../db/bingos.js";
 import { resolveMyBingoPlayer } from "../db/players.js";
@@ -129,10 +130,10 @@ router.get(
       ? (bingo.teamObjects ?? []).find((t) => t.id === myTeamId) ?? null
       : null;
 
-    // getActiveBingoBoard() always attaches each row's id (its Tile type
+    // getBingoBoardById() always attaches each row's id (its Tile type
     // marks `id` optional only because the same type also describes tile
     // literals passed INTO saveActiveBingoBoard(), which never have one).
-    const rawTiles = await getActiveBingoBoard();
+    const rawTiles = await getBingoBoardById(bingo.id);
     const tiles = rawTiles.map((tile) => ({
       id: tile.id!,
       task: tile.task,
