@@ -233,3 +233,84 @@ describe('creating an event', () => {
     ).toHaveLength(1);
   });
 });
+
+describe('event date handling', () => {
+  beforeEach(() => {
+    mockedFetchWithAuth.mockResolvedValue(jsonResponse(404, {}));
+  });
+
+  it('submits local date selections as the same UTC instants', async () => {
+    const { result } = renderHook(() => useBingoDetails());
+    await waitFor(() => expect(mockedFetchWithAuth).toHaveBeenCalledOnce());
+    const start = new Date(2027, 2, 14, 10, 30);
+    const end = new Date(2027, 2, 15, 18, 45);
+    act(() => {
+      result.current.setBingoName('Date regression');
+      result.current.handleTeamNameChange(0, 'Red');
+      result.current.handleStartDateChange(start);
+    });
+    act(() => result.current.handleEndDateChange(end));
+    expect(result.current.isFormValid).toBe(true);
+    mockedFetchWithAuth.mockResolvedValueOnce(jsonResponse(200, {}));
+    await act(() => result.current.handleSubmit());
+    expect(mockedFetchWithAuth).toHaveBeenCalledWith(
+      expect.stringContaining('/bingo/details'),
+      expect.objectContaining({
+        body: JSON.stringify({
+          name: 'Date regression',
+          start: start.toISOString(),
+          end: end.toISOString(),
+          size: 16,
+          numberOfTeams: 3,
+          teams: ['Red'],
+        }),
+      }),
+    );
+  });
+
+  it('clears an earlier end when start advances, and permits clearing either required date', async () => {
+    const { result } = renderHook(() => useBingoDetails());
+    await waitFor(() => expect(mockedFetchWithAuth).toHaveBeenCalledOnce());
+    act(() => result.current.handleStartDateChange(new Date('2027-01-01T12:00:00Z')));
+    act(() => result.current.handleEndDateChange(new Date('2027-01-02T12:00:00Z')));
+    act(() => result.current.handleStartDateChange(new Date('2027-01-03T12:00:00Z')));
+    expect(result.current.endDate).toBe('');
+    expect(result.current.isFormValid).toBe(false);
+    act(() => result.current.handleStartDateChange(null));
+    act(() => result.current.handleEndDateChange(null));
+    expect(result.current.startDate).toBe('');
+    expect(result.current.endDate).toBe('');
+  });
+
+  it('retains existing dates with offsets when modifying another field', async () => {
+    const existing = {
+      id: 'local-fixture',
+      name: 'Existing',
+      status: 'active',
+      startDate: '2026-10-25T10:30:00-04:00',
+      endDate: '2026-11-02T18:45:00-05:00',
+      boardSize: 16,
+      numberOfTeams: 2,
+      teams: ['Red', 'Blue'],
+      tasks: [],
+    };
+    mockedFetchWithAuth.mockImplementation(async () => jsonResponse(200, { data: existing }));
+    const { result } = renderHook(() => useBingoDetails());
+    await waitFor(() => expect(result.current.isBingo).toBe(true));
+    act(() => result.current.setBingoName('Renamed'));
+    await act(() => result.current.handleSubmit());
+    expect(mockedFetchWithAuth).toHaveBeenCalledWith(
+      expect.stringContaining('/bingo/local-fixture'),
+      expect.objectContaining({
+        body: JSON.stringify({
+          name: 'Renamed',
+          startDate: existing.startDate,
+          endDate: existing.endDate,
+          boardSize: 16,
+          numberOfTeams: 2,
+          teams: ['Red', 'Blue'],
+        }),
+      }),
+    );
+  });
+});
