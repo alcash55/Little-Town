@@ -206,7 +206,7 @@ describe('event date picker integration', () => {
       </ThemeProvider>,
     );
     await waitFor(() => expect(fetchWithAuth).toHaveBeenCalledOnce());
-    fireEvent.click(screen.getByRole('button', { name: 'Continue →' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Board & teams' }));
     expect(
       screen.getByText('Enter a bingo name and choose an end date after the start.'),
     ).toBeTruthy();
