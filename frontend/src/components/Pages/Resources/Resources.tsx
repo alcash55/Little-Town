@@ -1,3 +1,4 @@
+import { appColors } from '../../../layout/Theme/appColors';
 import { Alert, Box, CircularProgress, InputAdornment, TextField, Typography } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import PageLayout from '../../../layout/PageLayout/PageLayout';
@@ -35,7 +36,7 @@ const Resources = () => {
   if (loading) {
     return (
       <PageLayout title="Resources" align="center">
-        <CircularProgress sx={{ color: '#2A9D8F' }} />
+        <CircularProgress sx={{ color: appColors.accent }} />
         <Typography variant="body2" sx={{ color: textSecondary, mt: 2 }}>
           Loading resources…
         </Typography>
@@ -100,7 +101,7 @@ const Resources = () => {
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
               <Typography
                 variant="h6"
-                sx={{ fontFamily: "'Inter', sans-serif", fontWeight: 700, color: textPrimary }}
+                sx={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 700, color: textPrimary }}
               >
                 {selectedCategory.name}
               </Typography>

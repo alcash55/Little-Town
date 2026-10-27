@@ -1,3 +1,4 @@
+import { alpha } from '@mui/material/styles';
 import React, { useMemo } from 'react';
 import {
   Alert,
@@ -305,8 +306,7 @@ const BingoOverview = () => {
   }
 
   // ── Derived display values ───────────────────────────────────────────────
-  const boardLabel =
-    bingo.boardSize === 16 ? '4×4' : bingo.boardSize === 35 ? '5×5' : `${bingo.boardSize} tiles`;
+  const boardLabel = bingo.boardSize === 16 ? '4×4' : `${bingo.boardSize} tiles`;
   // Prefer team-level ground truth (team-stats, computed straight from
   // team_id — never depends on the optional per-submission player
   // attribution) for the headline KPIs; falls back to summing playerStats
@@ -665,7 +665,7 @@ const BingoOverview = () => {
           sx={{
             color: appColors.accent,
             borderColor: appColors.accent,
-            '&:hover': { borderColor: appColors.accent, bgcolor: 'rgba(42,157,143,0.08)' },
+            '&:hover': { borderColor: appColors.accent, bgcolor: alpha(appColors.accent, 0.08) },
           }}
         >
           {refreshingStats ? 'Refreshing…' : 'Refresh Player Stats'}

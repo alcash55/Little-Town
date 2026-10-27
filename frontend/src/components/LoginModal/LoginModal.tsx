@@ -1,3 +1,4 @@
+import { appColors } from '../../layout/Theme/appColors';
 import { useState, FormEvent } from 'react';
 import {
   Alert,
@@ -208,7 +209,7 @@ const LoginModal = ({
                 size="small"
                 sx={{
                   color: 'rgba(255,255,255,0.5)',
-                  '&.Mui-checked': { color: '#2A9D8F' },
+                  '&.Mui-checked': { color: appColors.accent },
                   p: 0.5,
                 }}
               />

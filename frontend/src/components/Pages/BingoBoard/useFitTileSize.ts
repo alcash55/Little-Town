@@ -3,6 +3,7 @@ import { useMediaQuery, useTheme } from '@mui/material';
 
 interface FitTileSizeOptions {
   /** Grid columns (== rows for the square boards this app builds). */
+  enabled?: boolean;
   columns: number;
   /** Grid rows — usually equal to `columns`, kept separate in case of a short last row. */
   rows: number;
@@ -38,14 +39,14 @@ interface FitTileSizeOptions {
  */
 export function useFitTileSize(
   containerRef: RefObject<HTMLElement | null>,
-  { columns, rows, gapPx, minTileSize, maxTileSize }: FitTileSizeOptions,
+  { columns, rows, gapPx, minTileSize, maxTileSize, enabled = true }: FitTileSizeOptions,
 ): number | null {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('sm'));
   const [tileSize, setTileSize] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!isDesktop) {
+    if (!isDesktop || !enabled) {
       setTileSize(null);
       return;
     }
@@ -76,7 +77,7 @@ export function useFitTileSize(
       observer.disconnect();
       window.removeEventListener('resize', recompute);
     };
-  }, [isDesktop, containerRef, columns, rows, gapPx, minTileSize, maxTileSize]);
+  }, [isDesktop, enabled, containerRef, columns, rows, gapPx, minTileSize, maxTileSize]);
 
   return tileSize;
 }

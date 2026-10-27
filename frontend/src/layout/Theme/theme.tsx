@@ -1,184 +1,110 @@
-import { ThemeProvider as MuiThemeProvider, CssBaseline, createTheme } from '@mui/material';
-import '@fontsource/pacifico';
-import '@fontsource/inter';
-import cursor from '../../assets/Images/cursor-dragon-scimitar.png';
+import { ThemeProvider as MuiThemeProvider, CssBaseline, createTheme, alpha } from '@mui/material';
+import '@fontsource/dm-sans/400.css';
+import '@fontsource/dm-sans/500.css';
+import '@fontsource/dm-sans/600.css';
+import '@fontsource/dm-sans/700.css';
+import '@fontsource/marcellus';
+import { appColors as c } from './appColors';
 
-/**
- * @see https://bareynol.github.io/mui-theme-creator/
- */
+const heading = { fontFamily: "'Marcellus', Georgia, serif", fontWeight: 400 };
 export const darkTheme = createTheme({
   palette: {
-    // Without an explicit mode, MUI components that read the palette directly —
-    // Select/Autocomplete menus, Popovers, Tooltips, Menus — fall back to MUI's
-    // *light* defaults (white background.paper) while this theme's typography
-    // forces white text everywhere (see `allVariants` below). That combination is
-    // the white-on-white/light-gray "can't read the options" bug: the popped-out
-    // menu itself was never actually themed dark, only the in-page Cards were
-    // (via per-component overrides). `mode: 'dark'` plus explicit background/text
-    // fixes every Select/Autocomplete/Menu app-wide from one place.
     mode: 'dark',
-    primary: {
-      main: '#424242',
-    },
-
-    secondary: {
-      main: '#121212',
-    },
-    background: {
-      default: '#0d0d0d',
-      paper: '#1a1a1a',
-    },
-    text: {
-      primary: '#ffffff',
-      secondary: '#9e9e9e',
-    },
+    primary: { main: c.accent, contrastText: c.onAccent },
+    secondary: { main: c.surface, contrastText: c.textPrimary },
+    background: { default: c.background, paper: c.surface },
+    text: { primary: c.textPrimary, secondary: c.textSecondary },
+    divider: c.subtleBorder,
+    success: { main: c.completed },
   },
+  shape: { borderRadius: 6 },
   typography: {
-    h1: {
-      fontFamily: "'pacifico', cursive",
-      fontWeight: 300,
-      fontSize: '6rem',
-      lineHeight: 1,
-      letterSpacing: '-0.01562em',
-      color: '#fff',
-    },
-    h2: {
-      fontFamily: "'pacifico', cursive",
-      color: '#fff',
-    },
-    h3: {
-      fontFamily: "'pacifico', cursive",
-    },
-    h4: {
-      fontFamily: "'pacifico', cursive",
-    },
-    h5: {
-      fontFamily: "'pacifico', cursive",
-    },
-    h6: {
-      fontFamily: "'pacifico', cursive",
-    },
-    body1: {
-      fontFamily: "'Inter', sans-serif",
-      fontWeight: 400,
-      fontSize: '1rem',
-      lineHeight: 1.5,
-      letterSpacing: '0.00938em',
-    },
-    allVariants: {
-      color: '#fff',
-    },
+    fontFamily: "'DM Sans', sans-serif",
+    h1: { ...heading, fontSize: '2.5rem', lineHeight: 1.15 },
+    h2: { ...heading, fontSize: '1.8rem', lineHeight: 1.25 },
+    h3: { ...heading, fontSize: '1.4rem', lineHeight: 1.3 },
+    h4: { ...heading, fontSize: '1.3rem' },
+    h5: { ...heading, fontSize: '1.2rem' },
+    h6: { ...heading, fontSize: '1.1rem' },
+    body1: { fontSize: '0.9rem', lineHeight: 1.8 },
+    body2: { fontSize: '0.8rem', lineHeight: 1.7 },
+    button: { textTransform: 'none', fontWeight: 600, fontSize: '0.8rem' },
   },
   components: {
-    MuiButtonBase: {
+    MuiCssBaseline: {
       styleOverrides: {
-        root: {
-          cursor: `url(${cursor}), auto`,
-        },
+        a: { color: c.accent },
+        ':focus-visible': { outline: `2px solid ${c.accent}`, outlineOffset: 3 },
+        '::selection': { background: alpha(c.accent, 0.25) },
       },
     },
+    MuiButton: {
+      defaultProps: { disableElevation: true },
+      styleOverrides: {
+        root: { borderRadius: 4, padding: '10px 16px', minHeight: 40 },
+        outlined: { borderColor: c.cardBorder, '&:hover': { backgroundColor: c.raised } },
+        contained: { '&.MuiButton-colorPrimary:hover': { backgroundColor: c.accentHover } },
+      },
+    },
+    MuiPaper: { styleOverrides: { root: { backgroundImage: 'none' } } },
     MuiCard: {
       styleOverrides: {
         root: {
-          backgroundColor: '#000',
+          backgroundColor: c.surface,
+          border: `1px solid ${c.subtleBorder}`,
+          boxShadow: 'none',
         },
       },
     },
     MuiOutlinedInput: {
       styleOverrides: {
         root: {
-          color: '#ffffff',
-          backgroundColor: 'transparent',
-          '& .MuiOutlinedInput-notchedOutline': { borderColor: 'black' },
-          '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#2A9D8F' },
-          '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#2A9D8F' },
-          '& input': { backgroundColor: 'transparent' },
+          backgroundColor: c.background,
+          '& .MuiOutlinedInput-notchedOutline': { borderColor: c.cardBorder },
+          '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: c.accent },
+          '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: c.accent },
           '& input:-webkit-autofill': {
-            WebkitBoxShadow: '0 0 0 1000px transparent inset',
-            WebkitTextFillColor: '#ffffff',
-            caretColor: '#ffffff',
-            transition: 'background-color 5000s ease-in-out 0s',
+            WebkitBoxShadow: `0 0 0 1000px ${c.background} inset`,
+            WebkitTextFillColor: c.textPrimary,
           },
         },
       },
     },
-    MuiInputLabel: {
+    MuiInputLabel: { styleOverrides: { root: { color: c.textSecondary } } },
+    MuiTableCell: {
+      styleOverrides: {
+        root: { borderColor: c.subtleBorder, padding: '14px 16px' },
+        head: { color: c.mutedText, fontWeight: 500, backgroundColor: c.surface },
+      },
+    },
+    MuiTabs: { styleOverrides: { root: { borderBottom: `1px solid ${c.subtleBorder}` } } },
+    MuiTab: {
       styleOverrides: {
         root: {
-          color: '#9e9e9e',
-          '&.Mui-focused': { color: '#2A9D8F' },
+          textTransform: 'none',
+          alignItems: 'flex-start',
+          padding: '12px 16px',
+          minHeight: 48,
         },
       },
     },
-    MuiSelect: {
-      styleOverrides: {
-        icon: {
-          color: '#9e9e9e',
-        },
-      },
-    },
-    MuiAutocomplete: {
-      styleOverrides: {
-        popupIndicator: {
-          color: '#9e9e9e',
-        },
-        clearIndicator: {
-          color: '#9e9e9e',
-        },
-        paper: {
-          backgroundColor: '#1a1a1a',
-          backgroundImage: 'none',
-        },
-        listbox: {
-          backgroundColor: '#1a1a1a',
-        },
-        option: {
-          color: '#ffffff',
-          '&.Mui-focused, &[aria-selected="true"]': {
-            backgroundColor: 'rgba(42,157,143,0.16)',
-          },
-        },
-      },
-    },
-    // Belt-and-suspenders on top of palette.mode: 'dark' above — Select/Autocomplete
-    // menus and any other Popover-based menu render in a portal, so they must be
-    // explicitly readable here rather than relying on ad-hoc per-page backgrounds.
-    MuiPopover: {
-      styleOverrides: {
-        paper: {
-          backgroundColor: '#1a1a1a',
-          backgroundImage: 'none',
-        },
-      },
-    },
-    MuiMenu: {
-      styleOverrides: {
-        paper: {
-          backgroundColor: '#1a1a1a',
-          backgroundImage: 'none',
-        },
-      },
-    },
+    MuiDialog: { styleOverrides: { paper: { border: `1px solid ${c.cardBorder}`, padding: 8 } } },
     MuiMenuItem: {
       styleOverrides: {
-        root: {
-          color: '#ffffff',
-          '&.Mui-selected': {
-            backgroundColor: 'rgba(42,157,143,0.16)',
-          },
-          '&.Mui-selected:hover, &:hover': {
-            backgroundColor: 'rgba(255,255,255,0.08)',
-          },
-        },
+        root: { fontSize: '0.85rem', '&.Mui-selected': { backgroundColor: alpha(c.accent, 0.12) } },
       },
     },
+    MuiAlert: { styleOverrides: { root: { borderRadius: 4, alignItems: 'flex-start' } } },
+    MuiChip: { styleOverrides: { root: { borderRadius: 4 } } },
+    MuiTooltip: { styleOverrides: { tooltip: { fontSize: '0.75rem' } } },
   },
 });
 
 export function ThemeProvider({ children }: React.PropsWithChildren) {
   return (
     <MuiThemeProvider theme={darkTheme}>
-      <CssBaseline>{children}</CssBaseline>
+      <CssBaseline />
+      {children}
     </MuiThemeProvider>
   );
 }

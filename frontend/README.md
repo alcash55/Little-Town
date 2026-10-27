@@ -137,3 +137,32 @@ theme and OSRS resources until separate clan assets/content are supplied.
 Branding does not isolate accounts or events. Follow the separate-instance
 [deployment guide](../deploy/diamond-dogs/README.md) and use an independent
 backend, Supabase project, and session secret.
+
+## Redesign preview
+
+The whole-site redesign is on `feat/white-label-redesign` in the `lt-redesign` worktree. It retains the existing build-time clan profiles.
+
+With local Supabase running and `backend/.env` pointing to `http://127.0.0.1:54321`, start the backend in WSL:
+
+```sh
+cd backend
+bun install --frozen-lockfile
+bun run build
+bun --bun dist/index.js
+```
+
+Use `NODE_ENV=development` and `ALLOW_DEV_AUTH=true` for the documented local seed accounts, `admin` / `password` and `user` / `password`. Keep these settings in the ignored local `.env`. Discord ingestion stays disabled unless explicitly enabled.
+
+Run each frontend in its own terminal from `frontend/`:
+
+```sh
+# Little Town: http://localhost:3000
+VITE_BASEURL=http://localhost:8081 BROWSER=none bun run dev --host 0.0.0.0 --port 3000 --strictPort
+
+# Diamond Dogs: http://localhost:3001
+VITE_BASEURL=http://localhost:8081 VITE_CLAN_ID=diamond-dogs BROWSER=none bun run dev --host 0.0.0.0 --port 3001 --strictPort
+```
+
+Both previews use the same local database. This is a visual comparison of the two builds, not isolated local clan data. Windows browsers can open both localhost URLs through WSL forwarding.
+
+Start with the homepage, rules screenshot enlargement, and Organizer > Bingo Details. Setup has event dates, board and team details, then a review step. Drafting still uses the player pool and drag-and-drop teams. An unfinished local event may need its dates and teams configured before drafting is available.

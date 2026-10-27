@@ -41,21 +41,31 @@ export function SortableItem({
       {...attributes}
       {...listeners}
       label={label}
+      aria-label={String(id)}
       sx={{
         transform: CSS.Translate.toString(transform),
         transition,
         opacity: isDragging ? 0.4 : 1,
         cursor: 'grab',
-        backgroundColor: appColors.accent,
+        backgroundColor: appColors.raised,
         color: textPrimary,
         width: '100%',
         justifyContent: 'flex-start',
-        '&:hover': { backgroundColor: '#238a7e' },
+        '&:hover': { backgroundColor: appColors.surface },
+        border: `1px solid ${appColors.cardBorder}`,
+        borderRadius: 1,
+        minHeight: 42,
+        touchAction: 'none',
+        '&:focus-visible': { outline: `2px solid ${appColors.accent}`, outlineOffset: 2 },
       }}
     />
   );
 
   if (!isUnclaimed) return chip;
 
-  return <Tooltip title="No linked account has claimed this RSN yet">{chip}</Tooltip>;
+  return (
+    <Tooltip describeChild title="No linked account has claimed this RSN yet">
+      {chip}
+    </Tooltip>
+  );
 }

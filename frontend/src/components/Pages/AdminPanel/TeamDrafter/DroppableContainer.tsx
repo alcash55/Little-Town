@@ -2,6 +2,7 @@ import React from 'react';
 import { UniqueIdentifier, useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Box, Card, CardContent, Typography } from '@mui/material';
+import { appColors } from '../../../../layout/Theme/appColors';
 import { cardSx, textPrimary } from './teamDrafterStyles';
 
 export function DroppableContainer({
@@ -21,7 +22,7 @@ export function DroppableContainer({
     <Card sx={{ ...cardSx, height: '100%', minWidth: 170 }}>
       <CardContent>
         <Typography variant="h2" sx={{ fontSize: 16, mb: 1, color: textPrimary }} noWrap>
-          {label}
+          {label} · {items.length}
         </Typography>
         <Box
           ref={setNodeRef}
@@ -29,13 +30,18 @@ export function DroppableContainer({
             display: 'flex',
             flexDirection: 'column',
             gap: 0.75,
-            minHeight: 52,
-            border: isOver ? '1.5px dashed #2A9D8F' : '1px solid rgba(255,255,255,0.1)',
+            minHeight: 180,
+            border: `1px dashed ${isOver ? appColors.accent : appColors.cardBorder}`,
             borderRadius: 1,
             padding: 0.75,
             transition: 'border-color 0.15s',
           }}
         >
+          {items.length === 0 && (
+            <Typography variant="caption" color="text.secondary" sx={{ p: 1 }}>
+              Drop players here
+            </Typography>
+          )}
           <SortableContext items={items} strategy={verticalListSortingStrategy}>
             {children}
           </SortableContext>
