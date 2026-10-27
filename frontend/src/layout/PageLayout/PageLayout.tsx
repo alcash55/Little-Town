@@ -1,28 +1,6 @@
-import { Alert, Box, Stack, SxProps, Theme, Typography, useTheme } from '@mui/material';
+import { Alert, Box, Stack, SxProps, Theme, Typography } from '@mui/material';
 import LockOutlined from '@mui/icons-material/LockOutlined';
-import { darkTheme } from '../Theme/theme';
 import { ReactNode } from 'react';
-
-const DEFAULT_TOOLBAR_OFFSET = '64px';
-
-/**
- * Pages render below the AppShell toolbar — 100vh overflows by this amount.
- * Also subtracts `--impersonation-banner-height` (0px unless the admin
- * "view as user" banner is showing — see ImpersonationBanner.tsx), which
- * sits between the toolbar and the page content, so the page's own scroll
- * area doesn't get pushed past the bottom of the viewport while it's up.
- */
-const getViewportHeightBelowAppBar = (toolbarMinHeight: unknown) => {
-  let offset = DEFAULT_TOOLBAR_OFFSET;
-
-  if (typeof toolbarMinHeight === 'number') {
-    offset = `${toolbarMinHeight}px`;
-  } else if (typeof toolbarMinHeight === 'string') {
-    offset = toolbarMinHeight;
-  }
-
-  return `calc(100dvh - ${offset} - var(--impersonation-banner-height, 0px))`;
-};
 
 interface PageLayoutProps {
   children?: ReactNode;
@@ -56,7 +34,7 @@ interface PageLayoutProps {
   maxWidth?: number | 'full';
   /**
    * 'top'    — content starts at the top (default, suits forms)
-   * 'center' — content is vertically centred (suits empty/error states)
+   * 'center' — retained for callers; states stay beside the page heading
    */
   align?: 'top' | 'center';
   /** Extra sx on the inner content column */
@@ -76,9 +54,7 @@ const PageLayout = ({
   align = 'top',
   contentSx,
 }: PageLayoutProps) => {
-  const theme = useTheme();
-  const viewportHeight = getViewportHeightBelowAppBar(theme.mixins.toolbar.minHeight);
-  const contentMaxWidth = maxWidth === 'full' ? '100%' : maxWidth;
+  const contentMaxWidth = maxWidth === 'full' ? '100%' : Math.max(maxWidth, 560);
   const alertMaxWidth = maxWidth === 'full' ? 500 : contentMaxWidth;
 
   const resolvedWarning =
@@ -86,18 +62,18 @@ const PageLayout = ({
 
   return (
     <Stack
+      component="section"
+      data-content-align={align}
       sx={{
         width: '100%',
-        justifyContent: align === 'center' ? 'center' : 'flex-start',
-        alignItems: 'center',
-        bgcolor: darkTheme.palette.primary.main,
-        p: { xs: 3, sm: 5 },
+        justifyContent: 'flex-start',
+        alignItems: 'stretch',
+        bgcolor: 'background.default',
+        p: { xs: 2.5, sm: 4, lg: 5 },
         boxSizing: 'border-box',
-        overflowX: 'hidden',
-        overflowY: 'auto',
-        height: viewportHeight,
-        maxHeight: viewportHeight,
-        minHeight: viewportHeight,
+        maxWidth: 1440,
+        mx: 'auto',
+        minWidth: 0,
       }}
     >
       <Stack
@@ -106,13 +82,13 @@ const PageLayout = ({
           {
             width: '100%',
             maxWidth: contentMaxWidth,
-            alignItems: 'center',
+            alignItems: 'stretch',
           },
           ...(Array.isArray(contentSx) ? contentSx : [contentSx]),
         ]}
       >
         {title && (
-          <Typography variant="h1" sx={{ fontSize: { xs: 32, sm: 42 }, textAlign: 'center' }}>
+          <Typography variant="h1" sx={{ fontSize: { xs: 30, sm: 38 }, mb: 1, textAlign: 'left' }}>
             {title}
           </Typography>
         )}
@@ -122,14 +98,14 @@ const PageLayout = ({
             sx={{
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'center',
+              alignItems: 'stretch',
               gap: 2,
-              color: darkTheme.palette.text.secondary,
+              color: 'text.secondary',
               pt: 4,
             }}
           >
             <LockOutlined fontSize="inherit" sx={{ fontSize: 64 }} />
-            <Typography variant="body1" sx={{ textAlign: 'center' }}>
+            <Typography variant="body1" sx={{ textAlign: 'left' }}>
               You don&apos;t have permission to view this page.
             </Typography>
           </Box>
@@ -138,7 +114,7 @@ const PageLayout = ({
             {showExistingWarning && (
               <Alert
                 severity="warning"
-                variant="filled"
+                variant="outlined"
                 sx={{ width: '100%', maxWidth: alertMaxWidth }}
               >
                 {resolvedWarning}

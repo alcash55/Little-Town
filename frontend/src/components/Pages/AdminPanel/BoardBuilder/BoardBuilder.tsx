@@ -18,7 +18,6 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
-import Grid from '@mui/material/Grid';
 import { useBoardBuilder, Tile } from './useBoardBuilder';
 import Close from '@mui/icons-material/Close';
 import Edit from '@mui/icons-material/Edit';
@@ -60,28 +59,22 @@ const SortableTileCard = ({
   };
 
   return (
-    <Grid
+    <Box
       ref={setNodeRef}
       style={style}
       sx={{
-        width: '220px',
-        height: '200px',
+        width: '100%',
+        minWidth: 0,
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-      }}
-      size={{
-        xs: 12,
-        sm: 6,
-        md: 4,
-        lg: 3,
       }}
     >
       <Card
         sx={{
           width: '100%',
           height: '100%',
-          backgroundImage: 'linear-gradient(to bottom, #2A9D8F, rgba(13, 13, 13, 0.86))',
+          backgroundColor: 'background.paper',
           cursor: 'default',
         }}
       >
@@ -96,9 +89,10 @@ const SortableTileCard = ({
           avatar={
             <IconButton
               size="small"
+              aria-label={`Move ${tile.task} tile`}
               {...listeners}
               {...attributes}
-              sx={{ cursor: 'grab', color: 'black', touchAction: 'none' }}
+              sx={{ cursor: 'grab', color: 'text.secondary', touchAction: 'none' }}
             >
               <DragIndicator />
             </IconButton>
@@ -106,14 +100,20 @@ const SortableTileCard = ({
           action={
             <Stack direction="row">
               <IconButton aria-label="edit tile" onClick={onEdit}>
-                <Edit fontSize="small" sx={{ color: 'black' }} />
+                <Edit fontSize="small" sx={{ color: 'text.secondary' }} />
               </IconButton>
               <IconButton aria-label="remove tile" onClick={onRemove}>
-                <Close sx={{ color: 'black' }} />
+                <Close sx={{ color: 'text.secondary' }} />
               </IconButton>
             </Stack>
           }
-          slotProps={{ title: { variant: 'h6', fontSize: 16, noWrap: true } }}
+          slotProps={{ title: { variant: 'h6', fontSize: 16, sx: { overflowWrap: 'anywhere' } } }}
+          sx={{
+            alignItems: 'flex-start',
+            '& .MuiCardHeader-content': { minWidth: 0 },
+            '& .MuiCardHeader-avatar': { mr: 1 },
+            '& .MuiCardHeader-action': { flexShrink: 0 },
+          }}
         />
         <CardContent>
           <Stack>
@@ -130,7 +130,7 @@ const SortableTileCard = ({
           </Stack>
         </CardContent>
       </Card>
-    </Grid>
+    </Box>
   );
 };
 
@@ -195,172 +195,194 @@ const BoardBuilder = () => {
       submitted={submitted}
       successMessage={isExistingBoard ? 'Board updated!' : 'Board created!'}
     >
-      <Stack
-        spacing={3}
+      <Box
         sx={{
-          justifyContent: 'center',
-          alignItems: 'center',
-          maxWidth: 500,
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', lg: 'minmax(260px, 340px) minmax(0, 1fr)' },
+          gap: 4,
           width: '100%',
+          alignItems: 'start',
         }}
       >
-        <FormControl variant="outlined" sx={{ m: 1, minWidth: 120, width: '100%' }} required>
-          <InputLabel id="tile-type-select-label">Tile Type</InputLabel>
-          <Select
-            labelId="tile-type-select-label"
-            id="tile-type-select"
-            value={tileType.value}
-            onChange={(e: SelectChangeEvent<number>) => {
-              const selected = tilesTypeOptions.find((o) => o.value === e.target.value);
-              if (selected) {
-                setTileType(selected);
-                setTileTask('');
-              }
-            }}
-            label="Tile Type"
-          >
-            {tilesTypeOptions.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        {tileType.value === 1 && (
-          <TileTaskAutocomplete
-            id="tile-task-kc"
-            label="Boss / Monster / Mini Game"
-            value={tileTask}
-            onChange={setTileTask}
-            options={activities}
-            loading={loading}
-          />
-        )}
-
-        {tileType.value === 2 && (
-          <TileTaskAutocomplete
-            id="tile-task-xp"
-            label="Skill"
-            value={tileTask}
-            onChange={setTileTask}
-            options={skills}
-            loading={loading}
-          />
-        )}
-
-        {tileType.value === 3 && (
-          <TileTaskAutocomplete
-            id="tile-task-drops"
-            label="Item Name"
-            value={tileTask}
-            onChange={setTileTask}
-            options={items}
-            loading={loading}
-          />
-        )}
-
-        <TextField
-          id="tile-points"
-          label="Tile Points"
-          variant="outlined"
-          type="number"
-          fullWidth
-          required
-          value={tilePoints ?? ''}
-          onChange={(e) => setTilePoints(Number(e.target.value))}
-        />
-
-        {tileType.name === 'Kill Count' ? (
-          <TextField
-            id="kc"
-            label="Number of Kills"
-            type="number"
-            required
-            fullWidth
-            value={tileKillCount ?? ''}
-            onChange={(e) => setTileKillCount(Number(e.target.value))}
-          />
-        ) : tileType.name === 'Experience' ? (
-          <TextField
-            id="xp"
-            label="Total Experience"
-            type="number"
-            required
-            fullWidth
-            value={tileExperience ?? ''}
-            onChange={(e) => setTileExperience(Number(e.target.value))}
-          />
-        ) : (
-          <TextField
-            id="drops"
-            label="How many drops?"
-            type="number"
-            required
-            fullWidth
-            value={tileDropsAmount ?? ''}
-            onChange={(e) => setTileDropsAmount(Number(e.target.value))}
-          />
-        )}
-
         <Stack
-          spacing={2}
-          direction="row"
+          spacing={3}
           sx={{
+            justifyContent: 'center',
+            alignItems: 'center',
+            maxWidth: 500,
             width: '100%',
           }}
         >
-          <Button
-            variant="outlined"
-            color="success"
-            disabled={!isTileValid}
-            onClick={addTile}
-            sx={{ width: '50%' }}
-          >
-            Add Tile
-          </Button>
-          <Button variant="outlined" color="error" onClick={clearTileForm} sx={{ width: '50%' }}>
-            Clear
-          </Button>
-        </Stack>
-
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          {board.length} / {boardSize} tiles added
-        </Typography>
-
-        {isBoardComplete && (
-          <Button
-            variant="outlined"
-            color={isExistingBoard ? 'info' : 'success'}
-            onClick={submitBoard}
-            fullWidth
-          >
-            {isExistingBoard ? 'Update Board' : 'Submit Board'}
-          </Button>
-        )}
-
-        {board.length > 0 && (
-          <Button variant="outlined" color="error" onClick={clearBoard} fullWidth>
-            Clear Entire Board
-          </Button>
-        )}
-      </Stack>
-      <Box sx={{ width: '100%', boxSizing: 'border-box', pb: 8 }}>
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={board.map((_, i) => i)} strategy={rectSortingStrategy}>
-            <Grid container spacing={2} sx={{ width: '100%', p: 0 }}>
-              {board.map((tile, idx) => (
-                <SortableTileCard
-                  key={idx}
-                  tile={tile}
-                  idx={idx}
-                  onRemove={() => removeTile(tile)}
-                  onEdit={() => startEditingTile(idx)}
-                />
+          <FormControl variant="outlined" sx={{ m: 1, minWidth: 120, width: '100%' }} required>
+            <InputLabel id="tile-type-select-label">Tile Type</InputLabel>
+            <Select
+              labelId="tile-type-select-label"
+              id="tile-type-select"
+              value={tileType.value}
+              onChange={(e: SelectChangeEvent<number>) => {
+                const selected = tilesTypeOptions.find((o) => o.value === e.target.value);
+                if (selected) {
+                  setTileType(selected);
+                  setTileTask('');
+                }
+              }}
+              label="Tile Type"
+            >
+              {tilesTypeOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.name}
+                </MenuItem>
               ))}
-            </Grid>
-          </SortableContext>
-        </DndContext>
+            </Select>
+          </FormControl>
+
+          {tileType.value === 1 && (
+            <TileTaskAutocomplete
+              id="tile-task-kc"
+              label="Boss / Monster / Mini Game"
+              value={tileTask}
+              onChange={setTileTask}
+              options={activities}
+              loading={loading}
+            />
+          )}
+
+          {tileType.value === 2 && (
+            <TileTaskAutocomplete
+              id="tile-task-xp"
+              label="Skill"
+              value={tileTask}
+              onChange={setTileTask}
+              options={skills}
+              loading={loading}
+            />
+          )}
+
+          {tileType.value === 3 && (
+            <TileTaskAutocomplete
+              id="tile-task-drops"
+              label="Item Name"
+              value={tileTask}
+              onChange={setTileTask}
+              options={items}
+              loading={loading}
+            />
+          )}
+
+          <TextField
+            id="tile-points"
+            label="Tile Points"
+            variant="outlined"
+            type="number"
+            fullWidth
+            required
+            value={tilePoints ?? ''}
+            onChange={(e) => setTilePoints(Number(e.target.value))}
+          />
+
+          {tileType.name === 'Kill Count' ? (
+            <TextField
+              id="kc"
+              label="Number of Kills"
+              type="number"
+              required
+              fullWidth
+              value={tileKillCount ?? ''}
+              onChange={(e) => setTileKillCount(Number(e.target.value))}
+            />
+          ) : tileType.name === 'Experience' ? (
+            <TextField
+              id="xp"
+              label="Total Experience"
+              type="number"
+              required
+              fullWidth
+              value={tileExperience ?? ''}
+              onChange={(e) => setTileExperience(Number(e.target.value))}
+            />
+          ) : (
+            <TextField
+              id="drops"
+              label="How many drops?"
+              type="number"
+              required
+              fullWidth
+              value={tileDropsAmount ?? ''}
+              onChange={(e) => setTileDropsAmount(Number(e.target.value))}
+            />
+          )}
+
+          <Stack
+            spacing={2}
+            direction="row"
+            sx={{
+              width: '100%',
+            }}
+          >
+            <Button
+              variant="outlined"
+              color="success"
+              disabled={!isTileValid}
+              onClick={addTile}
+              sx={{ width: '50%' }}
+            >
+              Add Tile
+            </Button>
+            <Button variant="outlined" color="error" onClick={clearTileForm} sx={{ width: '50%' }}>
+              Clear
+            </Button>
+          </Stack>
+
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            {board.length} / {boardSize} tiles added
+          </Typography>
+
+          {isBoardComplete && (
+            <Button
+              variant="outlined"
+              color={isExistingBoard ? 'info' : 'success'}
+              onClick={submitBoard}
+              fullWidth
+            >
+              {isExistingBoard ? 'Update Board' : 'Submit Board'}
+            </Button>
+          )}
+
+          {board.length > 0 && (
+            <Button variant="outlined" color="error" onClick={clearBoard} fullWidth>
+              Clear Entire Board
+            </Button>
+          )}
+        </Stack>
+        <Box sx={{ width: '100%', minWidth: 0, boxSizing: 'border-box', pb: 4 }}>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext items={board.map((_, i) => i)} strategy={rectSortingStrategy}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))',
+                  gap: 2,
+                  width: '100%',
+                  p: 0,
+                }}
+              >
+                {board.map((tile, idx) => (
+                  <SortableTileCard
+                    key={idx}
+                    tile={tile}
+                    idx={idx}
+                    onRemove={() => removeTile(tile)}
+                    onEdit={() => startEditingTile(idx)}
+                  />
+                ))}
+              </Box>
+            </SortableContext>
+          </DndContext>
+        </Box>
       </Box>
       {/* Inline edit dialog */}
       <Dialog open={!!editingTile} onClose={cancelEditingTile} maxWidth="xs" fullWidth>

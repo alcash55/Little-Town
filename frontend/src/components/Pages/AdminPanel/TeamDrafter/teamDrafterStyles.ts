@@ -65,7 +65,7 @@ export const teamDrafterTabsSx = {
   mb: 2,
   '& .MuiTab-root': {
     color: textSecondary,
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "'DM Sans', sans-serif",
     textTransform: 'none',
     fontSize: 15,
     minHeight: 44,

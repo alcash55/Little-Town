@@ -16,7 +16,15 @@ export default function TeamDrafter() {
       contentSx={{ alignItems: 'stretch' }}
       permissionDenied={hook.permissionDenied}
     >
-      <Tabs value={hook.activeTab} onChange={(_, v) => hook.setActiveTab(v)} sx={teamDrafterTabsSx}>
+      <Tabs
+        aria-label="Team management"
+        variant="scrollable"
+        scrollButtons="auto"
+        allowScrollButtonsMobile
+        value={hook.activeTab}
+        onChange={(_, v) => hook.setActiveTab(v)}
+        sx={teamDrafterTabsSx}
+      >
         <Tab label="Drafter" />
         <Tab label="Player Management" />
         <Tab

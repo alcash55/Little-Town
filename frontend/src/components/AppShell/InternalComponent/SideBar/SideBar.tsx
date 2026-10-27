@@ -1,5 +1,4 @@
-import { clan } from '../../../../config/clan';
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Close from '@mui/icons-material/Close';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
@@ -7,6 +6,7 @@ import HelpOutline from '@mui/icons-material/HelpOutlineOutlined';
 import {
   Box,
   Collapse,
+  CircularProgress,
   Divider,
   Drawer,
   IconButton,
@@ -17,12 +17,10 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
-import { Link } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
+import { clan } from '../../../../config/clan';
 import { SidebarItem } from './useSidebar';
-import { darkTheme } from '../../../../layout/Theme';
-import { LoadingContainer } from '../../../LoadingContainer/LoadingContainer';
 import { useOnboarding } from '../../../Onboarding';
-
 interface Props {
   loading: boolean;
   openSidebar: boolean;
@@ -30,243 +28,123 @@ interface Props {
   sidebarItems: SidebarItem[];
   width: string | number;
 }
-
-const Sidebar = ({ loading, openSidebar, setOpenSidebar, sidebarItems, width }: Props) => {
-  const [drawerWidth, setDrawerWidth] = useState(width);
-  /**
-   * expand and collapse children
-   */
-  const [openChilodren, setOpenChildren] = useState(true);
-
-  const closeSideBar = () => {
-    setOpenSidebar(false);
+export default function Sidebar({
+  loading,
+  openSidebar,
+  setOpenSidebar,
+  sidebarItems,
+  width,
+}: Props) {
+  const [expanded, setExpanded] = useState(true);
+  const { showIntro, canShowIntro } = useOnboarding();
+  const close = () => setOpenSidebar(false);
+  const itemSx = {
+    borderRadius: 1,
+    mb: 0.5,
+    '&.active': { color: 'primary.main', bgcolor: 'action.selected' },
+    '& .MuiListItemIcon-root': { color: 'inherit', minWidth: 36 },
   };
-
-  useEffect(() => {
-    setDrawerWidth(width);
-  }, [window.innerWidth]);
-
-  const buttonStyles = {
-    width: '100%',
-    color: 'white',
-    bgcolor: 'inherit',
-    borderRadius: '5px',
-    '&:hover': {
-      bgcolor: '#163a36',
-    },
-  };
-
-  /**
-   * Title and X button for the sidebar
-   */
-  const SideBarTopItem = () => {
-    return (
-      <>
-        <Toolbar
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <Typography
-            variant={'h1'}
-            sx={{
-              fontSize: 24,
-              color: 'white',
-            }}
-          >
-            {clan.name}
-          </Typography>
-          <IconButton
-            aria-label="Close menu"
-            onClick={closeSideBar}
-            sx={{ color: 'white', '&:hover': { bgcolor: '#163a36' } }}
-          >
-            <Close />
-          </IconButton>
-        </Toolbar>
-        <Divider sx={{ bgcolor: 'white' }} />
-      </>
+  const link = (item: SidebarItem) =>
+    item.href.startsWith('http') ? (
+      <ListItemButton
+        key={item.href}
+        component="a"
+        href={item.href}
+        target="_blank"
+        rel="noreferrer"
+        onClick={close}
+        sx={itemSx}
+      >
+        <ListItemIcon>{item.icon}</ListItemIcon>
+        <ListItemText primary={item.title} />
+      </ListItemButton>
+    ) : (
+      <ListItemButton
+        key={item.href}
+        component={NavLink}
+        to={item.href}
+        end={item.href === '/'}
+        onClick={close}
+        sx={itemSx}
+      >
+        <ListItemIcon>{item.icon}</ListItemIcon>
+        <ListItemText primary={item.title} />
+      </ListItemButton>
     );
-  };
-
-  /**
-   * Sublist of children for each parent item in the sidebar
-   */
-  const SideBarChildren = (children: SidebarItem[]) => (
-    <>
-      {children.map((child, idx) => {
-        return (
-          <React.Fragment key={idx}>
-            <ListItemButton
-              component={Link}
-              to={`${child.href}`}
-              color="inherit"
-              sx={{ ...buttonStyles }}
-            >
-              <ListItemIcon sx={{ color: 'white' }}>{child.icon}</ListItemIcon>
-              <ListItemText>{child.title}</ListItemText>
-            </ListItemButton>
-            <Divider sx={{ color: 'white' }} />
-          </React.Fragment>
-        );
-      })}
-    </>
-  );
-
-  /**
-   * List of all the items in the sidebar
-   */
-  const SideBarItems = () => {
-    return (
-      <>
-        {sidebarItems.map((item: SidebarItem) => {
-          return (
-            <List
-              component={'nav'}
-              sx={{
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                p: 0,
-              }}
-              key={item.title}
-            >
-              {/* If the item has children, render the children list */}
-              {item.children && item.children.length ? (
-                <>
-                  <ListItemButton
-                    onClick={() => setOpenChildren(!openChilodren)}
-                    color="inherit"
-                    sx={{ ...buttonStyles }}
-                  >
-                    <ListItemIcon
-                      sx={{
-                        fill: 'white',
-                        color: 'white',
-                      }}
-                    >
-                      {item.icon}
-                    </ListItemIcon>
-                    <ListItemText primary={item.title} />
-                    <ListItemIcon
-                      sx={{
-                        fill: 'white',
-                        color: 'white',
-                      }}
-                    >
-                      {openChilodren ? <ExpandLess /> : <ExpandMore />}
-                    </ListItemIcon>
-                  </ListItemButton>
-                  <Divider sx={{ color: 'white' }} />
-                  <Collapse
-                    in={openChilodren}
-                    timeout="auto"
-                    unmountOnExit
-                    sx={{ width: '100%', ml: 5 }}
-                  >
-                    <List
-                      component="div"
-                      sx={{
-                        width: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        p: 0,
-                      }}
-                    >
-                      {SideBarChildren(item.children)}
-                    </List>
-                  </Collapse>
-                </>
-              ) : (
-                <>
-                  <ListItemButton
-                    component={Link}
-                    to={`${item.href}`}
-                    target={item.href.includes('discord') ? '_blank' : ''}
-                    color="inherit"
-                    sx={{ ...buttonStyles }}
-                  >
-                    <ListItemIcon sx={{ fill: 'white', color: 'white' }}>{item.icon}</ListItemIcon>
-                    <ListItemText primary={item.title} />
-                  </ListItemButton>
-                  <Divider sx={{ color: 'white' }} />
-                </>
-              )}
-            </List>
-          );
-        })}
-      </>
-    );
-  };
-
-  /**
-   * "Show intro" — re-opens the onboarding wizard on demand (TEAM-BRIEF.md
-   * Track B #2). Only rendered for a signed-in user, since the wizard's
-   * completion state is keyed by user id.
-   */
-  const SideBarFooter = () => {
-    const { showIntro, canShowIntro } = useOnboarding();
-    if (!canShowIntro) return null;
-    return (
-      <>
-        <Divider sx={{ bgcolor: 'white' }} />
-        <ListItemButton onClick={showIntro} color="inherit" sx={{ ...buttonStyles }}>
-          <ListItemIcon sx={{ color: 'white' }}>
-            <HelpOutline />
-          </ListItemIcon>
-          <ListItemText primary="Show intro" />
-        </ListItemButton>
-      </>
-    );
-  };
-
   return (
     <Drawer
       id="sidebar"
-      anchor={'left'}
+      anchor="left"
       open={openSidebar}
-      onClose={closeSideBar}
+      onClose={close}
       slotProps={{
         paper: {
           sx: {
-            width: drawerWidth,
-            // `.MuiDrawer-paper` is `position: fixed; height: 100%` — for a
-            // fixed element, a `%` height resolves against the *large*
-            // viewport, which on mobile Safari includes the space the
-            // address/tab bar can occupy. That makes the paper taller than
-            // what's actually visible whenever the bar is showing, so the
-            // bottom of a long menu (e.g. the admin role's items) renders
-            // past the visible viewport with nothing left to scroll it into
-            // view. `100dvh` tracks the *actual* visible viewport instead —
-            // same fix PageLayout.tsx applies to page content below the app
-            // bar.
+            width,
             height: '100dvh',
-            overflowX: 'hidden',
-            overflowY: 'hidden',
-            bgcolor: darkTheme.palette.secondary.main,
+            bgcolor: 'background.paper',
+            borderRight: 1,
+            borderColor: 'divider',
           },
         },
       }}
     >
-      <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <SideBarTopItem />
-        <Box sx={{ flexGrow: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
-          <LoadingContainer loading={loading} width={100} height={100}>
-            <SideBarItems />
-          </LoadingContainer>
-        </Box>
-        <Box sx={{ flexShrink: 0 }}>
-          <SideBarFooter />
-        </Box>
+      <Toolbar sx={{ gap: 2, justifyContent: 'space-between' }}>
+        <Typography variant="h6" sx={{ overflowWrap: 'anywhere' }}>
+          {clan.name}
+        </Typography>
+        <IconButton aria-label="Close menu" onClick={close}>
+          <Close />
+        </IconButton>
+      </Toolbar>
+      <Divider />
+      <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: 2 }}>
+        {loading ? (
+          <CircularProgress aria-label="Loading navigation" />
+        ) : (
+          <List component="nav" aria-label="Site navigation" disablePadding>
+            {sidebarItems.map((item) =>
+              item.children ? (
+                <Box key={item.href}>
+                  <ListItemButton
+                    onClick={() => setExpanded(!expanded)}
+                    aria-expanded={expanded}
+                    sx={itemSx}
+                  >
+                    <ListItemIcon>{item.icon}</ListItemIcon>
+                    <ListItemText primary={item.title} />
+                    {expanded ? <ExpandLess /> : <ExpandMore />}
+                  </ListItemButton>
+                  <Collapse in={expanded}>
+                    <List disablePadding sx={{ pl: 2 }}>
+                      {item.children.map(link)}
+                    </List>
+                  </Collapse>
+                  <Divider sx={{ my: 1 }} />
+                </Box>
+              ) : (
+                link(item)
+              ),
+            )}
+          </List>
+        )}
       </Box>
+      {canShowIntro && (
+        <Box sx={{ borderTop: 1, borderColor: 'divider', p: 2 }}>
+          <ListItemButton
+            onClick={() => {
+              close();
+              showIntro();
+            }}
+            sx={itemSx}
+          >
+            <ListItemIcon>
+              <HelpOutline />
+            </ListItemIcon>
+            <ListItemText primary="Show intro" />
+          </ListItemButton>
+        </Box>
+      )}
     </Drawer>
   );
-};
-
-export default Sidebar;
+}

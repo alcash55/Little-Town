@@ -63,14 +63,14 @@ const PlayerPanel = ({ player, tiles }: { player: PlayerRow; tiles: TileInfo[] }
                 </Typography>
                 <Typography
                   variant="caption"
-                  sx={{ color: tileTypeColor(tile.type), fontSize: 10 }}
+                  sx={{ color: tileTypeColor(tile.type), fontSize: 12 }}
                 >
                   {tile.type}
                   {target && (
                     <Typography
                       component="span"
                       variant="caption"
-                      sx={{ color: appColors.mutedText, fontSize: 10 }}
+                      sx={{ color: appColors.mutedText, fontSize: 12 }}
                     >
                       {' '}
                       · {target}
@@ -82,7 +82,7 @@ const PlayerPanel = ({ player, tiles }: { player: PlayerRow; tiles: TileInfo[] }
                 <Icon aria-hidden sx={{ fontSize: 16, color: meta.color }} />
                 <Typography
                   variant="caption"
-                  sx={{ color: appColors.textSecondary, fontSize: 11, whiteSpace: 'nowrap' }}
+                  sx={{ color: appColors.textSecondary, fontSize: 12, whiteSpace: 'nowrap' }}
                 >
                   {cell.label}
                 </Typography>

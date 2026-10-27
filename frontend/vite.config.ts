@@ -1,11 +1,16 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { cloudflareAnalyticsPlugin } from './src/utils/cloudflareAnalyticsPlugin';
 import { clanBrandingPlugin } from './src/utils/clanBrandingPlugin';
 import { productionApiUrlPlugin } from './src/utils/productionApiUrlPlugin';
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  // Concurrent clan previews must not invalidate each other's optimized dependencies.
+  cacheDir:
+    loadEnv(mode, process.cwd(), 'VITE_').VITE_CLAN_ID === 'diamond-dogs'
+      ? 'node_modules/.vite-diamond-dogs'
+      : 'node_modules/.vite-little-town',
   build: {
     outDir: './dist',
   },
@@ -37,4 +42,4 @@ export default defineConfig({
     port: 3000,
     open: '/',
   },
-});
+}));
