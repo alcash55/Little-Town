@@ -1,4 +1,5 @@
 import {
+  Alert,
   Box,
   Button,
   Card,
@@ -18,6 +19,7 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
+import { Link } from 'react-router-dom';
 import { useBoardBuilder, Tile } from './useBoardBuilder';
 import Close from '@mui/icons-material/Close';
 import Edit from '@mui/icons-material/Edit';
@@ -155,6 +157,7 @@ const BoardBuilder = () => {
     loading,
     board,
     boardSize,
+    noBingo,
     submitted,
     submitError,
     permissionDenied,
@@ -176,6 +179,17 @@ const BoardBuilder = () => {
   } = useBoardBuilder();
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  if (noBingo) {
+    return (
+      <PageLayout title="Board Builder">
+        <Alert severity="info">Create an event before building its board.</Alert>
+        <Button component={Link} to="/AdminPanel/BingoDetails">
+          Set up an event
+        </Button>
+      </PageLayout>
+    );
+  }
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
