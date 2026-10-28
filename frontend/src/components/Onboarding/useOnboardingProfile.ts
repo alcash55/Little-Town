@@ -43,7 +43,10 @@ type MyTeamDataJson = {
  * already exists and is used by TeamData.tsx) for the RSN/Team onboarding
  * steps. Only fetches while `enabled` (the wizard is open).
  */
-export const useOnboardingProfile = (enabled: boolean): OnboardingProfile => {
+export const useOnboardingProfile = (
+  enabled: boolean,
+  linkedRsn: string | null = null,
+): OnboardingProfile => {
   const [state, setState] = useState<OnboardingProfile>(INITIAL);
 
   useEffect(() => {
@@ -103,7 +106,7 @@ export const useOnboardingProfile = (enabled: boolean): OnboardingProfile => {
     return () => {
       cancelled = true;
     };
-  }, [enabled]);
+  }, [enabled, linkedRsn]);
 
   return state;
 };

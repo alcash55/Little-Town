@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { useBoardBuilder } from './useBoardBuilder';
 
 // Every request goes through fetchWithAuth — mocked so these tests never
@@ -18,7 +18,7 @@ const jsonResponse = (status: number, body: unknown) =>
 
 function installRouter(overrides: Record<string, Response> = {}) {
   const defaults: Record<string, Response> = {
-    '/bingo/details': jsonResponse(200, { data: { boardSize: 16 } }),
+    '/bingo/details': jsonResponse(200, { data: { id: 'event-current', boardSize: 16 } }),
     '/bingo/board': jsonResponse(200, { data: [] }),
     '/hiscores/activities/list': jsonResponse(200, []),
     '/hiscores/skills/list': jsonResponse(200, []),
@@ -172,4 +172,59 @@ describe('useBoardBuilder — loads without a stored authToken (dev-auth bypass 
     await waitFor(() => expect(result.current.permissionDenied).toBe(true));
     expect(result.current.board).toHaveLength(0);
   });
+});
+
+describe('board drafts belong to their event', () => {
+  it('does not present a completed event board when there is no current event', async () => {
+    installRouter({
+      '/bingo/details': jsonResponse(200, { data: null }),
+      '/bingo/board': jsonResponse(200, {
+        data: [{ type: 'Kill Count', task: 'Zulrah', points: 10, killCount: 5 }],
+      }),
+    });
+    const { result } = renderHook(() => useBoardBuilder());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.board).toEqual([]);
+    expect(mockedFetchWithAuth).not.toHaveBeenCalledWith(expect.stringContaining('/bingo/board'));
+  });
+
+  it('ignores another event draft and the old unscoped saved board', async () => {
+    const other = [{ type: 'Kill Count', task: 'Zulrah', points: 10, killCount: 5 }];
+    localStorage.setItem('bingoBoard:event-other', JSON.stringify(other));
+    localStorage.setItem('bingoBoard', JSON.stringify(other));
+    installRouter();
+    const { result } = renderHook(() => useBoardBuilder());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.board).toEqual([]);
+  });
+
+  it('restores an unsaved draft for the current event', async () => {
+    const draft = [{ type: 'Kill Count', task: 'Zulrah', points: 10, killCount: 5 }];
+    localStorage.setItem('bingoBoard:event-current', JSON.stringify(draft));
+    installRouter();
+    const { result } = renderHook(() => useBoardBuilder());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.board).toEqual(draft);
+  });
+});
+
+it('clears only its own draft after saving and uses update for subsequent saves', async () => {
+  installRouter();
+  const { result } = renderHook(() => useBoardBuilder());
+  await waitFor(() => expect(result.current.loading).toBe(false));
+  localStorage.setItem('bingoBoard:event-current', '[]');
+  localStorage.setItem('bingoBoard:event-other', '[]');
+  await act(async () => {
+    await result.current.submitBoard();
+  });
+  expect(result.current.isExistingBoard).toBe(true);
+  expect(localStorage.getItem('bingoBoard:event-current')).toBeNull();
+  expect(localStorage.getItem('bingoBoard:event-other')).toBe('[]');
+  await act(async () => {
+    await result.current.submitBoard();
+  });
+  const methods = mockedFetchWithAuth.mock.calls.flatMap(([, init]) =>
+    init?.method ? [init.method] : [],
+  );
+  expect(methods).toEqual(['POST', 'PUT']);
 });
