@@ -40,6 +40,8 @@ export const useBoardBuilder = () => {
   const [board, setBoard] = useState<Tile[]>([]);
   const [boardSize, setBoardSize] = useState<number>(16);
   const [boardFromBackend, setBoardFromBackend] = useState(false);
+  const [bingoId, setBingoId] = useState<string | null>(null);
+  const [noBingo, setNoBingo] = useState(false);
 
   // UI state
   const [submitted, setSubmitted] = useState(false);
@@ -82,6 +84,7 @@ export const useBoardBuilder = () => {
   // On mount: fetch existing board from backend, fallback to localStorage, load autocomplete data
   useEffect(() => {
     const loadBoard = async () => {
+      let storageKey: string | undefined;
       // Deliberately NOT gated on a stored `authToken`. It used to be, which
       // silently broke the whole page under `bun dev`: ProtectedRoute bypasses
       // auth in dev (see ProtectedRoute.tsx) and the backend's `protect` does
@@ -97,6 +100,12 @@ export const useBoardBuilder = () => {
         const bingoRes = await fetchWithAuth(`${BASEURL}/bingo/details`);
         if (bingoRes.ok) {
           const bingoJson = await bingoRes.json();
+          if (!bingoJson.data?.id) {
+            setNoBingo(true);
+            return;
+          }
+          setBingoId(bingoJson.data.id);
+          storageKey = `bingoBoard:${bingoJson.data.id}`;
           if (bingoJson.data?.boardSize) setBoardSize(bingoJson.data.boardSize);
           setPermissionDenied(false);
         } else {
@@ -121,7 +130,6 @@ export const useBoardBuilder = () => {
             if (Array.isArray(boardJson.data) && boardJson.data.length > 0) {
               setBoard(boardJson.data);
               setBoardFromBackend(true);
-              localStorage.setItem('bingoBoard', JSON.stringify(boardJson.data));
               return;
             }
           }
@@ -139,7 +147,7 @@ export const useBoardBuilder = () => {
       }
 
       // Fallback to localStorage for unsaved board
-      const saved = localStorage.getItem('bingoBoard');
+      const saved = storageKey ? localStorage.getItem(storageKey) : null;
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
@@ -200,7 +208,7 @@ export const useBoardBuilder = () => {
 
     setBoard((prev) => {
       const updated = [...prev, tileToAdd];
-      localStorage.setItem('bingoBoard', JSON.stringify(updated));
+      if (bingoId) localStorage.setItem(`bingoBoard:${bingoId}`, JSON.stringify(updated));
       return updated;
     });
 
@@ -211,19 +219,22 @@ export const useBoardBuilder = () => {
     const idx = board.indexOf(tileToRemove);
     if (idx === -1) return;
     const updated = board.filter((_, i) => i !== idx);
-    localStorage.setItem('bingoBoard', JSON.stringify(updated));
+    if (bingoId) localStorage.setItem(`bingoBoard:${bingoId}`, JSON.stringify(updated));
     setBoard(updated);
   };
 
-  const reorderTiles = useCallback((oldIndex: number, newIndex: number) => {
-    setBoard((prev) => {
-      const updated = [...prev];
-      const [moved] = updated.splice(oldIndex, 1);
-      updated.splice(newIndex, 0, moved);
-      localStorage.setItem('bingoBoard', JSON.stringify(updated));
-      return updated;
-    });
-  }, []);
+  const reorderTiles = useCallback(
+    (oldIndex: number, newIndex: number) => {
+      setBoard((prev) => {
+        const updated = [...prev];
+        const [moved] = updated.splice(oldIndex, 1);
+        updated.splice(newIndex, 0, moved);
+        if (bingoId) localStorage.setItem(`bingoBoard:${bingoId}`, JSON.stringify(updated));
+        return updated;
+      });
+    },
+    [bingoId],
+  );
 
   const startEditingTile = (index: number) => {
     setEditingTile({ index, tile: { ...board[index] } as Tile });
@@ -239,7 +250,7 @@ export const useBoardBuilder = () => {
     setBoard((prev) => {
       const updated = [...prev];
       updated[editingTile.index] = editingTile.tile;
-      localStorage.setItem('bingoBoard', JSON.stringify(updated));
+      if (bingoId) localStorage.setItem(`bingoBoard:${bingoId}`, JSON.stringify(updated));
       return updated;
     });
     setEditingTile(null);
@@ -261,10 +272,9 @@ export const useBoardBuilder = () => {
   const clearBoard = () => {
     clearTileForm();
     setBoard([]);
-    setBoardFromBackend(false);
     setSubmitted(false);
     setSubmitError(null);
-    localStorage.removeItem('bingoBoard');
+    if (bingoId) localStorage.removeItem(`bingoBoard:${bingoId}`);
   };
 
   const submitBoard = async () => {
@@ -278,7 +288,8 @@ export const useBoardBuilder = () => {
 
       if (response.ok) {
         setSubmitted(true);
-        localStorage.removeItem('bingoBoard');
+        setBoardFromBackend(true);
+        if (bingoId) localStorage.removeItem(`bingoBoard:${bingoId}`);
       } else {
         const info = await describeApiError(response, 'Failed to save board');
         setSubmitError(info.message);
@@ -313,6 +324,7 @@ export const useBoardBuilder = () => {
     // Board
     board,
     boardSize,
+    noBingo,
     // UI state
     submitted,
     setSubmitted,

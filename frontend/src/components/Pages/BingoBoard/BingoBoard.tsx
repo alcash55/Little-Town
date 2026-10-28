@@ -75,9 +75,8 @@ const BingoBoard = () => {
             }}
           >
             <EmojiEventsIcon sx={{ fontSize: 48, color: appColors.mutedText }} />
-            <Typography variant="h6">
-              {name} has ended{endedLabel ? ` ${endedLabel}` : ''}
-            </Typography>
+            <Typography variant="h6">{name} has ended</Typography>
+            {endedLabel && <Typography variant="body2">Scheduled end: {endedLabel}</Typography>}
             <Typography variant="body2" sx={{ color: appColors.textSecondary, maxWidth: 420 }}>
               Check back once the next bingo kicks off.
             </Typography>
@@ -149,7 +148,10 @@ const BingoBoard = () => {
             width: tileSize == null ? '100%' : 'auto',
             gridTemplateColumns:
               tileSize == null
-                ? `repeat(${columns}, minmax(0, 1fr))`
+                ? {
+                    xs: `repeat(${Math.min(2, columns)}, minmax(0, 1fr))`,
+                    sm: `repeat(${columns}, minmax(0, 1fr))`,
+                  }
                 : `repeat(${columns}, ${tileSize}px)`,
             gap: { xs: 1, sm: 1.5 },
           }}
