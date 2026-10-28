@@ -4,7 +4,6 @@ import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../../src/lib/jwt.js";
 import { assertAccountRecoverySchemaReady } from "../../src/db/schemaReadiness.js";
 import { SQL } from "bun";
-import { execFileSync } from "node:child_process";
 import type http from "node:http";
 import { getDb } from "../../src/db/client.js";
 import { hashPassword, loginUser } from "../../src/db/users.js";
@@ -27,6 +26,7 @@ import {
 import {
   deleteTestUser,
   getLocalStackConfig,
+  resolveDbUrl,
   insertTestUser,
   jsonRequest,
   signTestToken,
@@ -200,14 +200,7 @@ describe("account recovery", () => {
     expect(await loginUser(account.username, password)).toBeNull();
   });
   test("expiry is checked after waiting for the user lock", async () => {
-    const statusEnv = execFileSync(
-      "bun",
-      ["x", "supabase", "status", "-o", "env"],
-      { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }
-    );
-    const dbUrl =
-      process.env.TEST_SUPABASE_DB_URL ||
-      statusEnv.match(/^DB_URL="([^\"]*)"/m)?.[1];
+    const dbUrl = await resolveDbUrl();
     if (!dbUrl)
       throw new Error("Local Postgres URL required for lock-wait expiry test");
     const sql = new SQL(dbUrl, { max: 1 });

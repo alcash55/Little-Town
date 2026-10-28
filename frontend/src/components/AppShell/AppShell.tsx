@@ -1,5 +1,5 @@
 import { Box, Button, Typography, useMediaQuery, useTheme } from '@mui/material';
-import { useLocation, Outlet, NavLink } from 'react-router-dom';
+import { useLocation, useMatch, Outlet, NavLink } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { useLoginModal } from '../LoginModal/useLoginModal';
 import { useSidebar } from './InternalComponent/SideBar/useSidebar';
@@ -10,6 +10,7 @@ export const AppShell = () => {
   const { loading, sidebar } = useSidebar();
   const { user } = useLoginModal();
   const { pathname } = useLocation();
+  const recoveryPage = useMatch('/recover') !== null;
   const theme = useTheme();
   const mobile = useMediaQuery(theme.breakpoints.down('md'));
   const [openSidebar, setOpenSidebar] = useState(false);
@@ -95,7 +96,9 @@ export const AppShell = () => {
             bgcolor: 'background.default',
           }}
         >
-          <Outlet key={user?.id ?? 'guest'} />
+          {/* Recovery removes the link token from the URL and keeps it in memory.
+              Preserve it through session restoration and the reset's sign-out. */}
+          <Outlet key={recoveryPage ? 'recovery' : user?.id ?? 'guest'} />
         </Box>
       </Box>
       <SideBar
