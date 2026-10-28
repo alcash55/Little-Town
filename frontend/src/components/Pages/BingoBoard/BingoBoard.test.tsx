@@ -45,6 +45,7 @@ describe('BingoBoard — ended state (TEAM-BRIEF.md Sprint 15)', () => {
     renderBoard();
 
     expect(await screen.findByText(/summer bingo has ended/i)).toBeTruthy();
+    expect(screen.getByText(/^Scheduled end:/)).toBeTruthy();
     expect(screen.queryByText(/no active bingo/i)).toBeNull();
   });
 
