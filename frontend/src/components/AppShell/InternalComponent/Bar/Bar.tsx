@@ -14,9 +14,8 @@ import MenuIcon from '@mui/icons-material/Menu';
 import Login from '@mui/icons-material/Login';
 import Logout from '@mui/icons-material/Logout';
 
-import { Link, NavLink } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ClanIdentity } from '../../../ClanIdentity/ClanIdentity';
-import { useSidebar } from '../SideBar/useSidebar';
 import { lazy, Suspense, useState } from 'react';
 import { darkTheme } from '../../../../layout/Theme';
 import { useLoginModal } from '../../../../components/LoginModal/useLoginModal';
@@ -42,17 +41,15 @@ const getInitials = (nickname?: string | null, username?: string): string => {
 
 interface Props {
   openSidebar: boolean;
+  mobile: boolean;
   setOpenSidebar: (value: boolean) => void;
 }
 
-const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
+const Bar = ({ openSidebar, setOpenSidebar, mobile }: Props) => {
   const toggleSidebar = () => {
     setOpenSidebar(!openSidebar);
   };
 
-  const { sidebar } = useSidebar();
-  const navItems = sidebar.filter((item) => !item.children && !item.href.startsWith('http'));
-  const organizer = sidebar.find((item) => item.children)?.children;
   const { openLogin, prefetchLoginModal, user, logout } = useLoginModal();
   const {
     target: impersonationTarget,
@@ -97,22 +94,24 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
               gap: 2,
             }}
           >
-            <IconButton
-              aria-label="Toggle sidebar"
-              aria-expanded={openSidebar}
-              aria-controls="sidebar"
-              size="large"
-              onClick={toggleSidebar}
-              sx={{
-                display: 'inline-flex',
-                color: 'text.primary',
-                '&:hover': {
-                  bgcolor: 'action.hover',
-                },
-              }}
-            >
-              <MenuIcon />
-            </IconButton>
+            {mobile && (
+              <IconButton
+                aria-label="Toggle sidebar"
+                aria-expanded={openSidebar}
+                aria-controls="sidebar"
+                size="large"
+                onClick={toggleSidebar}
+                sx={{
+                  display: 'inline-flex',
+                  color: 'text.primary',
+                  '&:hover': {
+                    bgcolor: 'action.hover',
+                  },
+                }}
+              >
+                <MenuIcon />
+              </IconButton>
+            )}
             <Button
               component={Link}
               to="/"
@@ -127,39 +126,6 @@ const Bar = ({ openSidebar, setOpenSidebar }: Props) => {
             >
               <ClanIdentity />
             </Button>
-          </Box>
-
-          <Box
-            component="nav"
-            aria-label="Main navigation"
-            sx={{ display: { xs: 'none', lg: 'flex' }, gap: 1, ml: 'auto', mr: 'auto' }}
-          >
-            {navItems.map((item) => (
-              <Button
-                key={item.href}
-                component={NavLink}
-                to={item.href}
-                end={item.href === '/'}
-                sx={{
-                  color: 'text.secondary',
-                  '&.active': {
-                    color: 'primary.main',
-                    boxShadow: `inset 0 -2px ${darkTheme.palette.primary.main}`,
-                  },
-                }}
-              >
-                {item.title}
-              </Button>
-            ))}
-            {organizer && (
-              <Button
-                component={NavLink}
-                to="/AdminPanel/BingoOverview"
-                sx={{ color: 'text.secondary', '&.active': { color: 'primary.main' } }}
-              >
-                Organizer
-              </Button>
-            )}
           </Box>
 
           {user ? (

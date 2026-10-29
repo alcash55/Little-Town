@@ -1,5 +1,5 @@
-import { Box, Button, Typography, useMediaQuery, useTheme } from '@mui/material';
-import { useLocation, useMatch, Outlet, NavLink } from 'react-router-dom';
+import { Box, useMediaQuery, useTheme } from '@mui/material';
+import { useLocation, useMatch, Outlet } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { useLoginModal } from '../LoginModal/useLoginModal';
 import { useSidebar } from './InternalComponent/SideBar/useSidebar';
@@ -15,8 +15,6 @@ export const AppShell = () => {
   const mobile = useMediaQuery(theme.breakpoints.down('md'));
   const [openSidebar, setOpenSidebar] = useState(false);
   const content = useRef<HTMLElement>(null);
-  const organizerItems = sidebar.find((item) => item.children)?.children;
-  const organizerPage = pathname.startsWith('/AdminPanel/');
   useEffect(() => {
     setOpenSidebar(false);
     content.current?.scrollTo({ top: 0 });
@@ -35,54 +33,17 @@ export const AppShell = () => {
       >
         Skip to content
       </Box>
-      <Bar openSidebar={openSidebar} setOpenSidebar={setOpenSidebar} />
+      <Bar openSidebar={openSidebar} setOpenSidebar={setOpenSidebar} mobile={mobile} />
       <ImpersonationBannerHost />
       <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
-        {organizerPage && organizerItems && (
-          <Box
-            component="aside"
-            aria-label="Organizer navigation"
-            sx={{
-              display: { xs: 'none', md: 'block' },
-              width: 216,
-              flexShrink: 0,
-              borderRight: 1,
-              borderColor: 'divider',
-              bgcolor: 'background.paper',
-              p: 2,
-              overflowY: 'auto',
-            }}
-          >
-            <Typography
-              variant="overline"
-              color="text.secondary"
-              sx={{ display: 'block', px: 1, mb: 2 }}
-            >
-              Organizer workspace
-            </Typography>
-            {organizerItems.map((item) => (
-              <Button
-                key={item.href}
-                component={NavLink}
-                to={item.href}
-                fullWidth
-                sx={{
-                  textAlign: 'left',
-                  justifyContent: 'flex-start',
-                  fontSize: 12,
-                  color: 'text.secondary',
-                  my: 0.25,
-                  '&.active': { color: 'primary.main', bgcolor: 'action.selected' },
-                }}
-              >
-                {item.title}
-              </Button>
-            ))}
-            <Button component={NavLink} to="/BingoBoard" sx={{ mt: 3 }}>
-              ← Player view
-            </Button>
-          </Box>
-        )}
+        <SideBar
+          loading={loading}
+          openSidebar={openSidebar}
+          setOpenSidebar={setOpenSidebar}
+          sidebarItems={sidebar}
+          desktop={!mobile}
+          width={mobile ? 'min(90%, 360px)' : 248}
+        />
         <Box
           component="main"
           id="main-content"
@@ -101,13 +62,6 @@ export const AppShell = () => {
           <Outlet key={recoveryPage ? 'recovery' : user?.id ?? 'guest'} />
         </Box>
       </Box>
-      <SideBar
-        loading={loading}
-        openSidebar={openSidebar}
-        setOpenSidebar={setOpenSidebar}
-        sidebarItems={sidebar}
-        width={mobile ? 'min(90%, 360px)' : 300}
-      />
     </Box>
   );
 };
