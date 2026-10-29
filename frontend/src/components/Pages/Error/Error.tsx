@@ -1,14 +1,7 @@
-import { Button } from '@mui/material';
-import PageLayout from '../../../layout/PageLayout/PageLayout';
+import { RouteFailure } from '../../RouteFailure/RouteFailure';
 
 const Error = () => {
-  return (
-    <PageLayout title="404 - Page Not Found" align="center">
-      <Button size="large" variant="contained" href="/">
-        Go Home
-      </Button>
-    </PageLayout>
-  );
+  return <RouteFailure kind="not-found" />;
 };
 
 export default Error;

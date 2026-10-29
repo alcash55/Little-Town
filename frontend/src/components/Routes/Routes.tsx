@@ -1,6 +1,7 @@
 import { Providers } from '../../layout/Providers';
 import { Pages } from '../Pages';
 import { ProtectedRoute } from './ProtectedRoute';
+import { RouteErrorBoundary } from './RouteErrorBoundary';
 import { createBrowserRouter, Route, createRoutesFromElements } from 'react-router-dom';
 
 /**
@@ -12,7 +13,7 @@ import { createBrowserRouter, Route, createRoutesFromElements } from 'react-rout
  */
 export const Routes = createBrowserRouter(
   createRoutesFromElements(
-    <Route path="/" element={<Providers />}>
+    <Route path="/" element={<Providers />} errorElement={<RouteErrorBoundary />}>
       {/* Public routes */}
       <Route index element={<Pages.Home />} />
       <Route path="unauthorized" element={<Pages.Unauthorized />} />
