@@ -54,7 +54,7 @@ const PageLayout = ({
   align = 'top',
   contentSx,
 }: PageLayoutProps) => {
-  const contentMaxWidth = maxWidth === 'full' ? '100%' : Math.max(maxWidth, 560);
+  const contentMaxWidth = maxWidth === 'full' ? '100%' : maxWidth;
   const alertMaxWidth = maxWidth === 'full' ? 500 : contentMaxWidth;
 
   const resolvedWarning =
@@ -82,6 +82,7 @@ const PageLayout = ({
           {
             width: '100%',
             maxWidth: contentMaxWidth,
+            mx: 'auto',
             alignItems: 'stretch',
           },
           ...(Array.isArray(contentSx) ? contentSx : [contentSx]),
