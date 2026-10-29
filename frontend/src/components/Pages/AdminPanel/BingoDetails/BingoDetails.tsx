@@ -98,7 +98,7 @@ export function BingoDetails() {
   return (
     <PageLayout
       title="Set up your bingo"
-      maxWidth="full"
+      maxWidth={900}
       showExistingWarning={isBingo}
       submitted={submitted}
       successMessage="Bingo details saved."
