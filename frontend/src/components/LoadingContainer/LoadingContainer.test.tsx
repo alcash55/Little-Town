@@ -4,7 +4,9 @@ import { resolveClanProfile } from '../../config/clanProfiles';
 
 const config = vi.hoisted(() => ({ id: 'little-town' }));
 vi.mock('../../config/clan', () => ({
-  get clan() { return resolveClanProfile(config.id); },
+  get clan() {
+    return resolveClanProfile(config.id);
+  },
 }));
 import { LoadingContainer } from './LoadingContainer';
 
@@ -26,9 +28,24 @@ describe('clan loading screen', () => {
     expect(screen.getByText('The Diamond Dogs')).toBeTruthy();
   });
 
+  it.each(['little-town', 'diamond-dogs'])('escapes a constrained parent for %s loading', (id) => {
+    config.id = id;
+    const { container } = render(
+      <div style={{ height: 160, overflow: 'hidden', transform: 'translateX(40px)' }}>
+        <LoadingContainer loading width={250} height={250} />
+      </div>,
+    );
+    expect(container.contains(screen.getByRole('status'))).toBe(false);
+    expect(document.body.contains(screen.getByRole('status'))).toBe(true);
+  });
+
   it('shows content after loading instead of either loading screen', () => {
     config.id = 'diamond-dogs';
-    render(<LoadingContainer loading={false} width={100} height={100}>Ready</LoadingContainer>);
+    render(
+      <LoadingContainer loading={false} width={100} height={100}>
+        Ready
+      </LoadingContainer>,
+    );
     expect(screen.getByText('Ready')).toBeTruthy();
     expect(screen.queryByRole('status')).toBeNull();
   });
