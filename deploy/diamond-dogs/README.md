@@ -11,6 +11,19 @@ an exact hostname. `RENDER_EXTERNAL_URL` configures both the built API URL
 and the runtime frontend origin. Matching requests use host-only
 `SameSite=Lax; Secure; HttpOnly` cookies.
 
+## Keep-warm health check
+
+`.github/workflows/diamond-dogs-keep-warm.yml` requests this instance's
+`/api/health` every five minutes and checks for HTTP success and `status: OK`.
+It runs independently of release CI, needs no credentials, and supports manual
+runs from GitHub Actions. Scheduled runs start after the workflow reaches main.
+
+This reduces cold starts, but GitHub can delay scheduled runs and disables them
+after 60 days without repository activity. Re-enable the workflow if needed.
+Render restarts can still happen. Its 750 monthly free instance hours are shared
+across the workspace, so keeping this service running uses hours also available
+to the other free services. No paid plan is enabled by this workflow.
+
 ## Prepared database
 
 The independent Supabase project is `qslzzyhdjmvsbumoopcw`, named
