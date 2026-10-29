@@ -27,6 +27,7 @@ interface Props {
   setOpenSidebar: (value: boolean) => void;
   sidebarItems: SidebarItem[];
   width: string | number;
+  desktop: boolean;
 }
 export default function Sidebar({
   loading,
@@ -34,6 +35,7 @@ export default function Sidebar({
   setOpenSidebar,
   sidebarItems,
   width,
+  desktop,
 }: Props) {
   const [expanded, setExpanded] = useState(true);
   const { showIntro, canShowIntro } = useOnboarding();
@@ -75,13 +77,16 @@ export default function Sidebar({
     <Drawer
       id="sidebar"
       anchor="left"
+      variant={desktop ? 'permanent' : 'temporary'}
+      sx={desktop ? { width, flexShrink: 0, height: '100%' } : undefined}
       open={openSidebar}
       onClose={close}
       slotProps={{
         paper: {
           sx: {
             width,
-            height: '100dvh',
+            height: desktop ? '100%' : '100dvh',
+            position: desktop ? 'relative' : undefined,
             bgcolor: 'background.paper',
             borderRight: 1,
             borderColor: 'divider',
@@ -89,15 +94,17 @@ export default function Sidebar({
         },
       }}
     >
-      <Toolbar sx={{ gap: 2, justifyContent: 'space-between' }}>
-        <Typography variant="h6" sx={{ overflowWrap: 'anywhere' }}>
-          {clan.name}
-        </Typography>
-        <IconButton aria-label="Close menu" onClick={close}>
-          <Close />
-        </IconButton>
-      </Toolbar>
-      <Divider />
+      {!desktop && (
+        <Toolbar sx={{ gap: 2, justifyContent: 'space-between' }}>
+          <Typography variant="h6" sx={{ overflowWrap: 'anywhere' }}>
+            {clan.name}
+          </Typography>
+          <IconButton aria-label="Close menu" onClick={close}>
+            <Close />
+          </IconButton>
+        </Toolbar>
+      )}
+      {!desktop && <Divider />}
       <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: 2 }}>
         {loading ? (
           <CircularProgress aria-label="Loading navigation" />
