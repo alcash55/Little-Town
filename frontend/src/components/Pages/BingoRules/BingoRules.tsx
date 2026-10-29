@@ -63,7 +63,7 @@ export function BingoRules() {
     </Box>
   );
   return (
-    <PageLayout maxWidth="full">
+    <PageLayout maxWidth={1100}>
       <Stack
         direction="row"
         spacing={2}
