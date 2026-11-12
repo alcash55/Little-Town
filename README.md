@@ -53,6 +53,28 @@ CI if the two ever drift apart again. Verified against
 
 `user+` accepts `user`, `moderator`, or `admin`. Admin panel routes require `admin` specifically.
 
+## Key decisions
+
+- **One deployment per clan, not shared-database tenants.** Each deployment
+  needs its own Supabase project and JWT secret, so one clan's data and
+  sessions never share a database with another's. The
+  [backend README](./backend/README.md#optional-single-origin-clan-instances)
+  explains the setup.
+- **Postgres through Supabase, with the schema as migrations.** Every table
+  change is a SQL file in [`backend/supabase/migrations`](./backend/supabase/migrations),
+  and `bun run db:reset` replays all of them, so a local database matches the
+  schema the API expects.
+- **Scores come from stored snapshots, not live lookups.** A job in
+  [`playerSnapshotCron.ts`](./backend/src/services/playerSnapshotCron.ts) saves
+  player hiscore snapshots to Postgres every 20 minutes. The cache policy in
+  [`hiscoreCacheStrategy.ts`](./backend/src/services/hiscoreCacheStrategy.ts)
+  serves a stale cache entry when the live OSRS call fails instead of throwing.
+- **JWT auth with three roles.** Routes accept `user`, `moderator`, or `admin`,
+  and the [Pages](#pages) table lists which role reaches each route.
+- **Docs that fail CI when they drift.**
+  [`tools/check-pages-doc.ts`](./tools/check-pages-doc.ts) compares the Pages
+  table to the real routes, so the table cannot go stale unnoticed.
+
 ## Local Development
 
 Both the frontend and backend need to be running locally. See each package's README for full setup instructions:
@@ -81,6 +103,18 @@ bun run dev
 See [`backend/README.md`](./backend/README.md) and
 [`frontend/README.md`](./frontend/README.md) for environment variables and
 the full script list.
+
+## Tests
+
+```bash
+cd backend && bun install && bun test    # integration tests need the local Supabase stack running
+cd frontend && bun install && bun run test    # Vitest
+```
+
+Backend integration tests live in [`backend/tests`](./backend/tests) and run
+against a real local database, so they skip when Supabase is not up. The
+[backend README](./backend/README.md) explains how to check the skip count.
+[CI](./.github/workflows/ci.yml) runs both suites on every pull request.
 
 ## Links
 
